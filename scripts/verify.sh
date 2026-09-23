@@ -19,6 +19,9 @@ cargo clippy -p webonsive --features http --all-targets -- -D warnings
 echo "== tests (unit, doc, only-one-script, Blitz layout + screenshots)"
 cargo test --workspace
 
+echo "== rustdoc (deny warnings, all features)"
+RUSTDOCFLAGS="-D warnings" cargo doc --no-deps -p wo-caps -p webonsive --all-features
+
 echo "== no <script> outside enhance.rs"
 # The enhancement tag is built in webonsive/src/enhance.rs; nothing else may write one.
 if grep -rn '<script' webonsive/src demo/src webonsive-test/src \

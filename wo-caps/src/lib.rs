@@ -42,6 +42,9 @@
 //! assert_eq!(caps::beacon_cookie("flag=nope"), None);
 //! ```
 
+// docs.rs builds with nightly and `--cfg docsrs`: feature-gated items get a "requires feature" badge.
+#![cfg_attr(docsrs, feature(doc_auto_cfg))]
+
 #![warn(missing_docs)]
 
 use maud::{Markup, html};

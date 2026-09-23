@@ -167,7 +167,7 @@ pub fn script_url() -> String {
     format!("{SCRIPT_PATH}?v={}", version())
 }
 
-/// `<script src=… defer>` for the end of `<body>`. [`crate::layout`] includes it.
+/// `<script src=… defer>` for the end of `<body>`. [`crate::layout()`] includes it.
 pub fn script_tag() -> Markup {
     html! { script src=(script_url()) defer {} }
 }

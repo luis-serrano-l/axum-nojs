@@ -1,6 +1,6 @@
 //! # Paged table
 //!
-//! [`crate::table`] for data too long for one page: page links, a page-size `<select>`, and a
+//! [`crate::table()`] for data too long for one page: page links, a page-size `<select>`, and a
 //! line saying which rows of how many are shown. Everything is a URL, so a page can be
 //! bookmarked, and the sort and filter survive paging.
 //!

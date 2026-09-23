@@ -46,6 +46,9 @@
 //! assert!(!page.contains("<script"));
 //! ```
 
+// docs.rs builds with nightly and `--cfg docsrs`: feature-gated items get a "requires feature" badge.
+#![cfg_attr(docsrs, feature(doc_auto_cfg))]
+
 #![warn(missing_docs)]
 
 pub mod accordion;
