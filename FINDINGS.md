@@ -70,7 +70,7 @@ action need no script. Editors, real-time collaboration and per-keystroke reacti
 
 ## 4. What the optional script adds
 
-One 6 KB file, no framework, no build step, `script-src 'self'` compatible. It never changes
+One 9 KB file, no framework, no build step, `script-src 'self'` compatible. It never changes
 what the server sends; it changes what the browser does with it.
 
 - **Swap roots.** A root with `id` and `data-wo="swap"` has its forms and links fetched in the

@@ -107,6 +107,26 @@ try {
   await click("a[data-wo-target='#count']");
   await until(async () => await js("return !/down/.test(String(window.fetch))"), "document reloaded after the failed fetch");
   assert(await js("return location.search") === "?n=2" && (await text("#count")) === "2", "busy: failed request fell back to a full navigation");
+  // History: Back and Forward restore the root from the entry's copy, with no request; wo:swap fires.
+  await js("window.__swaps = []; addEventListener('wo:swap', function (e) { window.__swaps.push(e.detail); })");
+  await click("a[data-wo-target='#count']:not([data-wo-push])");
+  await until(async () => (await text("#count")) === "3", "count pushed to 3");
+  await js("window.__fetch = window.fetch; window.fetch = function () { return Promise.reject(new Error('down')); }; history.back()");
+  await until(async () => (await text("#count")) === "2", "count restored by Back");
+  assert(await js("return location.search") === "?n=2" && await navigations() === 1, "history: Back restored the root from the cached copy");
+  await js("history.forward()");
+  await until(async () => (await text("#count")) === "3", "count restored by Forward");
+  assert(await js("return location.search") === "?n=3", "history: Forward restored the root too");
+  assert(await js("return window.__swaps.filter(function (d) { return d.id === 'count'; }).length") === 3, "history: wo:swap fired for the swap and both restores");
+  await js("window.fetch = window.__fetch");
+  await click("a[data-wo-push='false']");
+  await until(async () => (await text("#count")) === "12", "count swapped with the URL kept");
+  assert(await js("return location.search") === "?n=3", "history: data-wo-push=false keeps the URL");
+  const len = await js("var a = document.querySelector('a[data-wo-push]'); a.removeAttribute('data-wo-push'); a.setAttribute('data-wo-replace', ''); return history.length");
+  const swapsBefore = await js("return window.__swaps.length");
+  await click("a[data-wo-replace]");
+  await until(async () => (await js("return window.__swaps.length")) === swapsBefore + 1, "swap with replace");
+  assert(await js("return history.length") === len && await js("return location.search") === "?n=12", "history: data-wo-replace rewrites the entry");
 
   // Range: output mirrors while moving, before any submit.
   await go("/inputs");

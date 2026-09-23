@@ -73,7 +73,7 @@ const COMPONENTS: [(&str, &str, &str, &str); 15] = [
     ("/table", "Table", "Server state", "sort links, <search> filter, sticky header, ?page=n"),
     ("/caps", "Capabilities", "Server state", "@supports beacons + cookie"),
     ("/stream", "Streaming", "Server state", "declarative shadow DOM slots"),
-    ("/swap", "Swap targets", "Server state", "data-wo-target, data-wo-swap, data-wo-oob, data-wo-indicator, Wo-Enhance header"),
+    ("/swap", "Swap targets", "Server state", "data-wo-target, data-wo-swap, data-wo-oob, data-wo-indicator, data-wo-push, Wo-Enhance header"),
 ];
 const GROUPS: [&str; 4] = ["Overlays", "Disclosure", "Input", "Server state"];
 
@@ -351,7 +351,8 @@ async fn swap_page(caps: Caps, jar: CookieJar, Query(q): Query<SwapQuery>) -> Ma
     page(&caps, &jar, "Swap targets", html! {
         (flash(&caps, jar.get("wo-flash").map(|c| c.value().to_string()).as_deref()))
         p class="wo-note" { "Neither control sits inside a swap root. " code { "data-wo-target" } " names the root to update and " code { "data-wo-swap" } " how; without the script both are ordinary navigations to the same URL." }
-        p { "Count: " span id="count" data-wo="swap" { (n) } " " a href={ "/swap?n=" (n + 1) } data-wo-target="#count" { "Add one" } }
+        p { "Count: " span id="count" data-wo="swap" { (n) } " " a href={ "/swap?n=" (n + 1) } data-wo-target="#count" { "Add one" }
+            " · " a href={ "/swap?n=" (n + 10) } data-wo-target="#count" data-wo-push="false" { "Add ten, keep the URL" } }
         p { "Notes so far: " span id="note-count" { (notes_of(&jar).len()) } }
         form method="post" action="/swap" data-wo-target="#log" data-wo-swap="append" data-wo-indicator="#saving" {
             input name="note" required placeholder="A note" aria-label="Note" autocomplete="off";

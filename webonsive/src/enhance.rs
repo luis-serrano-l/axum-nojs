@@ -29,7 +29,11 @@
 //! buttons are disabled, and an element named by `data-wo-indicator="#id"` (authored with
 //! `hidden`) is shown; the `--wo-busy` property sets how much the busy root fades. A request
 //! that fails becomes the plain navigation the browser would have made, so the server's
-//! answer is always seen.
+//! answer is always seen. The URL follows the response (links push a history entry, forms
+//! replace it); `data-wo-push="false"` keeps the URL as it is and `data-wo-replace` always
+//! replaces. Every swap stores a copy of the roots in the history entry, so Back and Forward
+//! restore them without a request. After every swap the root dispatches a bubbling `wo:swap`
+//! event with `{ id, url, mode }` in `detail`.
 //! Rapid actions on one root are queued, so a counter clicked five times counts five. The
 //! script also mirrors `<input type=range>` and `type=color` values while they move, opens
 //! the `:target` dialog fallback as a real modal, and searches a combobox as you type.
@@ -48,7 +52,7 @@ use maud::{Markup, html};
 /// Path the script is served from. [`script_url`] appends a content hash.
 pub const SCRIPT_PATH: &str = "/wo/enhance.js";
 
-/// The whole enhancement script. Plain ES2020, no build step, under 8 KB.
+/// The whole enhancement script. Plain ES2020, no build step, under 10 KB.
 pub const JS: &str = r##"(function () {
 "use strict";
 var roots = "[data-wo=swap]", queue = {};
@@ -77,7 +81,19 @@ function place(root, fresh, mode) {
   return root;
 }
 
-function apply(doc, id, url, push, mode) {
+// Copy of every swap root, kept in the history entry so Back and Forward restore in place.
+function snapshot() {
+  var wo = {};
+  document.querySelectorAll(roots).forEach(function (r) { if (r.id) wo[r.id] = r.outerHTML; });
+  return { wo: wo };
+}
+function swapped(el, url, mode) {
+  history.replaceState(snapshot(), "", location.href);
+  el.dispatchEvent(new CustomEvent("wo:swap", { bubbles: true, detail: { id: el.id, url: url, mode: mode } }));
+}
+
+// hist: "push" adds a history entry, "replace" rewrites the current one, "none" keeps the URL.
+function apply(doc, id, url, hist, mode) {
   var root = document.getElementById(id), fresh = doc.getElementById(id);
   if (!root || !fresh) { if (url !== location.href) location.href = url; else location.reload(); return; }
   var f = focusState();
@@ -96,19 +112,26 @@ function apply(doc, id, url, push, mode) {
     var theme = doc.documentElement.getAttribute("data-theme");
     if (theme) document.documentElement.setAttribute("data-theme", theme);
     restoreFocus(f);
+    swapped(anchor, url, mode);
   };
-  if (url !== location.href) history[push ? "pushState" : "replaceState"](null, "", url);
+  if (hist !== "none" && url !== location.href) {
+    if (hist === "push") { history.replaceState(snapshot(), "", location.href); history.pushState(null, "", url); }
+    else history.replaceState(null, "", url);
+  }
   if (document.startViewTransition && !reduced) document.startViewTransition(swap); else swap();
 }
 
 // The root an element acts on: the one named by data-wo-target on it or an ancestor, else
-// the closest swap root. data-wo-swap on the same element picks the mode.
-function target(el) {
+// the closest swap root. data-wo-swap picks the mode; data-wo-push="false" and
+// data-wo-replace pick what happens to the URL (links push by default, forms replace).
+function target(el, hist) {
   var t = el.closest("[data-wo-target]");
   var root = t ? document.querySelector(t.getAttribute("data-wo-target")) : el.closest(roots);
   if (!root || !root.id) return null;
-  var m = el.closest("[data-wo-swap]");
-  return { id: root.id, mode: m ? m.getAttribute("data-wo-swap") : "outer" };
+  var m = el.closest("[data-wo-swap]"), p = el.closest("[data-wo-push]");
+  if (p && p.getAttribute("data-wo-push") === "false") hist = "none";
+  else if (el.closest("[data-wo-replace]")) hist = "replace";
+  return { id: root.id, mode: m ? m.getAttribute("data-wo-swap") : "outer", hist: hist };
 }
 
 var pending = {};
@@ -128,13 +151,13 @@ function busy(t, src, on) {
   if (ind) ind.hidden = !on;
 }
 
-function request(t, src, url, init, push, fallback) {
+function request(t, src, url, init, fallback) {
   var id = t.id;
   pending[id] = (pending[id] || 0) + 1;
   busy(t, src, true);
   var run = function () {
     return fetch(url, init).then(function (res) {
-      return res.text().then(function (html) { apply(parse(html), id, res.url, push, t.mode); });
+      return res.text().then(function (html) { apply(parse(html), id, res.url, t.hist, t.mode); });
     }).then(function () { done(); }, function () { done(); fallback(); });
   };
   var done = function () { pending[id]--; busy(t, src, false); if (pending[id]) busy(t, src, true); };
@@ -143,7 +166,7 @@ function request(t, src, url, init, push, fallback) {
 }
 
 function submit(form, submitter) {
-  var t = target(form);
+  var t = target(form, "replace");
   if (!t) return false;
   var data = new FormData(form);
   if (submitter && submitter.name) data.append(submitter.name, submitter.value);
@@ -152,7 +175,7 @@ function submit(form, submitter) {
   var params = new URLSearchParams(data);
   if ((form.method || "get").toLowerCase() === "post") { init.method = "POST"; init.body = params; }
   else url.search = params.toString();
-  request(t, form, url.href, init, false, function () { HTMLFormElement.prototype.submit.call(form); });
+  request(t, form, url.href, init, function () { HTMLFormElement.prototype.submit.call(form); });
   return true;
 }
 
@@ -173,10 +196,10 @@ document.addEventListener("click", function (e) {
   if (d && a.getAttribute("href") === "#" && d.querySelector("dialog[open]")) {
     e.preventDefault(); d.querySelector("dialog").close(); return;
   }
-  var t = target(a);
+  var t = target(a, "push");
   if (!t || a.origin !== location.origin) return;
   e.preventDefault();
-  request(t, a, a.href, { credentials: "same-origin", headers: { "Wo-Enhance": "1" } }, true, function () { location.href = a.href; });
+  request(t, a, a.href, { credentials: "same-origin", headers: { "Wo-Enhance": "1" } }, function () { location.href = a.href; });
 });
 
 var typing;
@@ -204,12 +227,21 @@ document.addEventListener("click", function (e) {
   });
 });
 
-addEventListener("popstate", function () {
+// Back and Forward: the entry's stored copy of each root when there is one, else a fetch.
+addEventListener("popstate", function (e) {
+  var wo = e.state && e.state.wo;
+  if (wo) {
+    Object.keys(wo).forEach(function (id) {
+      var root = document.getElementById(id), fresh = parse(wo[id]).getElementById(id);
+      if (root && fresh) { root.replaceWith(fresh); swapped(fresh, location.href, "outer"); }
+    });
+    return;
+  }
   fetch(location.href, { credentials: "same-origin", headers: { "Wo-Enhance": "1" } })
     .then(function (r) { return r.text(); })
     .then(function (html) {
       var doc = parse(html);
-      document.querySelectorAll(roots).forEach(function (r) { apply(doc, r.id, location.href, false, "outer"); });
+      document.querySelectorAll(roots).forEach(function (r) { apply(doc, r.id, location.href, "none", "outer"); });
     });
 });
 })();
@@ -265,7 +297,7 @@ mod tests {
 
     #[test]
     fn script_is_small_and_plain() {
-        assert!(JS.len() < 8192, "enhance.js is {} bytes", JS.len());
+        assert!(JS.len() < 10240, "enhance.js is {} bytes", JS.len());
         assert!(!JS.contains("eval(") && !JS.contains("innerHTML"));
         assert!(script_url().starts_with("/wo/enhance.js?v="));
         assert_eq!(swap_id("wo-form", "/sign-up"), "wo-form--sign-up");

@@ -155,6 +155,7 @@ async fn swap_targets_render_without_script() {
     assert!(page.exists("a[data-wo-target='#count']"));
     assert!(page.exists("form[data-wo-target='#log'][data-wo-swap='append']"));
     assert!(!page.exists("form [data-wo=swap]"), "the form is not inside a root");
+    assert!(page.exists("a[data-wo-push='false'][data-wo-target='#count']"), "the quiet link is a plain link");
     assert!(page.exists("form[data-wo-indicator='#saving']") && !page.is_visible("#saving"), "indicator hidden without the script");
     assert!(!page.exists("[data-wo-busy], [aria-busy]"), "nothing is busy without the script");
 }

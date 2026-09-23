@@ -111,7 +111,7 @@ script does its job.
   `aria-busy="true"`, submit buttons disabled, a `--wo-busy` CSS hook; optional
   `data-wo-indicator="#id"` element shown while pending. Failed requests fall back to a normal
   navigation so the user always sees the server's answer.
-- [ ] History and URL control: `data-wo-push="false"` keeps the URL, `data-wo-replace` uses
+- [x] History and URL control: `data-wo-push="false"` keeps the URL, `data-wo-replace` uses
   `replaceState`, and Back/Forward restore the swapped roots from a cached copy instead of a
   reload; a `wo:swap` custom event fires after every swap for anything that must react.
 - [ ] Spec entry for the enhancement script updated, README "How the script works" section,
