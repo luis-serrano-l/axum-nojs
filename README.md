@@ -122,7 +122,7 @@ reacts per keystroke, it is not.
 
 ```
 webonsive/src/lib.rs        crate docs, re-exports, stylesheet()
-webonsive/src/caps.rs       Caps bitset, @supports beacons, cookie parsing, /wo/caps route
+wo-caps/src/lib.rs          Caps bitset, @supports beacons, cookie parsing, /wo/caps route (own crate)
 webonsive/src/layout.rs     page shell + base CSS + beacons
 webonsive/src/stream.rs     Streamed response: DSD slots out of order, in-order fallback (http feature)
 webonsive/src/state.rs      UiState (query + cookie), prg_parts()/prg() redirect with flash

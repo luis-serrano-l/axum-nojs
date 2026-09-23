@@ -9,7 +9,8 @@
 //! in place.
 //!
 //! Every component takes `&Caps` first and emits only the markup that browser needs: the
-//! modern variant or the fallback, never both. See [`caps`] for how the server learns it.
+//! modern variant or the fallback, never both. See [`caps`] (the `wo-caps` crate) for how the
+//! server learns it.
 //!
 //! One component lives in one file. Each file starts with a doc header that lists the platform
 //! features it relies on, the browser baseline, and the fallback for older browsers.
@@ -48,7 +49,6 @@
 #![warn(missing_docs)]
 
 pub mod accordion;
-pub mod caps;
 pub mod color;
 pub mod combobox;
 pub mod counter;
@@ -68,8 +68,12 @@ pub mod stream;
 pub mod tabs;
 pub mod theme;
 
+/// Server-side feature detection: the [`wo_caps`] crate, re-exported so `webonsive::caps`
+/// keeps working.
+pub use wo_caps as caps;
+
 pub use accordion::accordion;
-pub use caps::{Cap, Caps};
+pub use wo_caps::{Cap, Caps};
 pub use color::color;
 pub use combobox::combobox;
 pub use counter::counter;

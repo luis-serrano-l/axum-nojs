@@ -9,10 +9,11 @@ default = []
 # Framework-neutral responses: `prg` as an `http::Response`, `Streamed` as a chunk stream.
 http = ["dep:http", "dep:futures-util"]
 # Axum glue on top of `http`: extractors, the `/wo/caps` beacon route, `IntoResponse` impls.
-axum = ["http", "dep:axum", "dep:bytes"]
+axum = ["http", "dep:axum", "dep:bytes", "wo-caps/axum"]
 
 [dependencies]
 maud.workspace = true
+wo-caps = { path = "../wo-caps", version = "0.1.0" }
 http = { version = "1", optional = true }
 axum = { workspace = true, optional = true }
 futures-util = { version = "0.3", optional = true, default-features = false, features = ["std"] }

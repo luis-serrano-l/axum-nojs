@@ -310,7 +310,7 @@ mod tests {
     const SOURCES: &[(&str, &str)] = &[
         ("enhance", include_str!("enhance.rs")),
         ("layout", include_str!("layout.rs")),
-        ("caps", include_str!("caps.rs")),
+        ("caps", include_str!("../../wo-caps/src/lib.rs")),
         ("dialog", include_str!("dialog.rs")),
         ("popover", include_str!("popover.rs")),
         ("tabs", include_str!("tabs.rs")),

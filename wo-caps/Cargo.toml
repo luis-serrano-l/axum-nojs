@@ -1,0 +1,17 @@
+[package]
+name = "wo-caps"
+version = "0.1.0"
+edition = "2024"
+description = "Server-side browser feature detection with no JavaScript: @supports beacons set one cookie per capability"
+
+[features]
+default = []
+# Axum glue: `Caps` extractor and the `/wo/caps` beacon route.
+axum = ["dep:axum"]
+
+[dependencies]
+maud.workspace = true
+axum = { workspace = true, optional = true }
+
+[package.metadata.docs.rs]
+all-features = true

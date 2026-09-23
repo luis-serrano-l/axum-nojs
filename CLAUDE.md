@@ -31,7 +31,10 @@ scripts/verify.sh                  # everything above plus a <script> grep and t
 
 ## Workspace layout
 
-- `webonsive/` – the library crate. Depends only on `maud`. Feature `http` adds `prg` as an
+- `wo-caps/` – the detection crate: `Caps`/`Cap` bitset, `@supports` beacons, cookie and
+  query parsing, `beacon_cookie`, and an `axum` feature with the extractor and beacon route.
+  `webonsive` re-exports it as `webonsive::caps`, so nothing else changes.
+- `webonsive/` – the library crate. Depends only on `maud` and `wo-caps`. Feature `http` adds `prg` as an
   `http::Response` and `Streamed` (a chunk stream); feature `axum` adds the `Caps`/`UiState`
   extractors, `IntoResponse` impls and the `/wo/caps` beacon route on top. Everything else is
   plain functions over strings (`Caps::from_cookie_header`, `UiState::from_request`,

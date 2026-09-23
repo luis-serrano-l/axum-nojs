@@ -12,6 +12,7 @@ cargo build --workspace --all-targets
 echo "== clippy (deny warnings)"
 cargo clippy --workspace --all-targets -- -D warnings
 # The library must build and be clean at every feature level: none, http, axum.
+cargo clippy -p wo-caps --all-targets -- -D warnings
 cargo clippy -p webonsive --all-targets -- -D warnings
 cargo clippy -p webonsive --features http --all-targets -- -D warnings
 

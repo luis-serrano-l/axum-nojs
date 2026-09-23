@@ -1,5 +1,5 @@
 [workspace]
-members = ["webonsive", "demo", "webonsive-test"]
+members = ["wo-caps", "webonsive", "demo", "webonsive-test"]
 resolver = "2"
 
 [workspace.dependencies]

@@ -1,4 +1,4 @@
-//! # Caps
+//! # wo-caps
 //!
 //! Server-side feature detection with no script. The page carries a few empty beacon elements;
 //! `@supports` rules give each one a background image only when the browser understands the
@@ -14,10 +14,13 @@
 //! view is tailored. Browsers that never load CSS images (`curl`, readers) stay on fallbacks.
 //!
 //! **Finding:** CSS cannot test HTML attributes, so `invokers` and `streaming_dsd` are proxies
-//! for CSS features that shipped in the same release. See `FINDINGS.md`.
+//! for CSS features that shipped in the same release. See `docs/caps.md` in the webonsive repo.
 //!
 //! One cookie per flag (`wo-cap-<name>=1`) rather than one cookie holding a list: the beacons
 //! fire in parallel, and parallel `Set-Cookie` headers on one name would overwrite each other.
+//!
+//! This crate is the detection half of `webonsive` and stands on its own: any server that can
+//! read a `Cookie:` header and answer one tiny route can use it.
 //!
 //! **Any server.** Three plain functions are the whole protocol, and none needs Axum:
 //! [`Caps::from_cookie_header`] reads the flags out of a `Cookie:` header,
@@ -27,7 +30,7 @@
 //! feature only wraps them: a `Caps` extractor and [`router`] for the beacon route.
 //!
 //! ```rust
-//! use webonsive::caps::{self, Cap, Caps};
+//! use wo_caps::{self as caps, Cap, Caps};
 //! let caps = Caps::from_cookie_header("wo-cap-probed=1; wo-cap-popover=1; theme=dark");
 //! assert!(caps.has(Cap::Popover));
 //! assert!(!caps.has(Cap::Invokers));
@@ -38,6 +41,8 @@
 //! assert!(caps::beacon_cookie("flag=popover").unwrap().starts_with("wo-cap-popover=1"));
 //! assert_eq!(caps::beacon_cookie("flag=nope"), None);
 //! ```
+
+#![warn(missing_docs)]
 
 use maud::{Markup, html};
 
@@ -243,7 +248,7 @@ pub fn beacon_cookie(query: &str) -> Option<String> {
 }
 
 /// The `@supports` rules. Each one gives a beacon element a background image whose URL is the
-/// beacon route with the flag name. Included in `stylesheet()`.
+/// beacon route with the flag name. Put it in the page's stylesheet; `webonsive::stylesheet()` does.
 pub fn beacon_css() -> String {
     let mut css = String::from(
         "\n.wo-caps { position: fixed; bottom: 0; right: 0; width: 1px; height: 1px; overflow: hidden; opacity: 0; pointer-events: none; }\n.wo-cap { display: block; width: 1px; height: 1px; }\n",
@@ -265,7 +270,7 @@ pub fn beacon_css() -> String {
 }
 
 /// The beacon elements. Empty once the browser has been probed, so a known browser pays
-/// nothing. `layout` puts this at the end of `<body>`.
+/// nothing. Put it at the end of `<body>`; `webonsive::layout` does.
 pub fn beacons(caps: &Caps) -> Markup {
     html! {
         @if !caps.has(Cap::Probed) {
