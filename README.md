@@ -86,6 +86,7 @@ browser-compat-data; `no` means unshipped, so that browser gets the fallback.
 | Accordion | `<details name`, `::details-content`, `interpolate-size` | 120 / 130 / 17.2; 131 / 143 / 18.4; 129 / no / no | plain <details>: no exclusivity, no animation | No |
 | Combobox | `<datalist>`, `<search>` | 20 / 4 / 12.1; 118 / 118 / 17 | none needed | Partly: static suggestions and per-submit results; live filtering needs script |
 | Load-more list | `view-transition-name`, `scroll-margin` | 111 / 144 / 18; 69 / 90 / 14.1 | plain navigation to ?page=n#more | Partly: click-to-load; scroll-to-load needs script |
+| Table | `?sort=<col>&dir=asc|desc`, `<search>`, `aria-sort`, `position: sticky`, `view-transition-name` | 1 / 1 / 1; 118 / 118 / 17; 1 / 1 / 1; 56 / 32 / 13; 111 / 144 / 18 | none needed: sorting and filtering are plain navigations | No |
 | Validated form | `required`, `pattern`, `:user-invalid` | 4 / 4 / 5; 4 / 4 / 5; 119 / 88 / 16.5 | server re-renders with messages; no early styling | No |
 | Counter | `<form method="post">`, `<button name value>`, `cookie` | 1 / 1 / 1; 1 / 1 / 1; 1 / 1 / 1 | none needed | No |
 | Theme toggle | `prefers-color-scheme`, `color-scheme`, `cookie` | 76 / 67 / 12.1; 81 / 96 / 13; 1 / 1 / 1 | OS preference | No |

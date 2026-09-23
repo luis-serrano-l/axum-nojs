@@ -168,6 +168,7 @@ engine, so passing there is proof the page needs none.
 | Tables with `border-collapse: collapse` get a 2 px black grid on every edge | [#386](https://github.com/DioxusLabs/blitz/issues/386), [#504](https://github.com/DioxusLabs/blitz/issues/504) |
 | `<dialog open>` is 114 px wide: absolutely positioned box sized by its DOM parent | [#764](https://github.com/DioxusLabs/blitz/issues/764) |
 | Header reads "webonsive· zero": leading space of a span after an inline is trimmed | [#857](https://github.com/DioxusLabs/blitz/pull/857) (open PR, whitespace collapsing across spans) |
+| `/table`: the sticky header cells paint at the top of the viewport, leaving an empty row in the table | `stylo_taffy::convert::position` maps `sticky` to `relative` with a `TODO`; tracked under [#389](https://github.com/DioxusLabs/blitz/issues/389) ("position sticky") |
 
 The DSD gap is pinned by a test (`blitz_has_no_declarative_shadow_dom`) that fails the day
 Blitz gains it, so the exception in the screenshot loop gets removed then. Do not expect that

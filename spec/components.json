@@ -100,6 +100,19 @@
       "needs_js_note": "click-to-load; scroll-to-load needs script"
     },
     {
+      "name": "Table",
+      "module": "table",
+      "features": [
+        { "name": "?sort=<col>&dir=asc|desc", "baseline": { "chrome": "1", "firefox": "1", "safari": "1" } },
+        { "name": "<search>", "baseline": { "chrome": "118", "firefox": "118", "safari": "17" } },
+        { "name": "aria-sort", "baseline": { "chrome": "1", "firefox": "1", "safari": "1" } },
+        { "name": "position: sticky", "baseline": { "chrome": "56", "firefox": "32", "safari": "13" } },
+        { "name": "view-transition-name", "baseline": { "chrome": "111", "firefox": "144", "safari": "18" } }
+      ],
+      "fallback": "none needed: sorting and filtering are plain navigations",
+      "needs_js": "no"
+    },
+    {
       "name": "Validated form",
       "module": "form",
       "features": [

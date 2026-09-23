@@ -163,6 +163,19 @@ pub const SPECS: &[ComponentSpec] = &[
         needs_js: NeedsJs::Partial("click-to-load; scroll-to-load needs script"),
     },
     ComponentSpec {
+        name: "Table",
+        module: "table",
+        features: &[
+            f("?sort=<col>&dir=asc|desc", b("1", "1", "1")),
+            f("<search>", b("118", "118", "17")),
+            f("aria-sort", b("1", "1", "1")),
+            f("position: sticky", b("56", "32", "13")),
+            f("view-transition-name", b("111", "144", "18")),
+        ],
+        fallback: "none needed: sorting and filtering are plain navigations",
+        needs_js: NeedsJs::No,
+    },
+    ComponentSpec {
         name: "Validated form",
         module: "form",
         features: &[
@@ -317,6 +330,7 @@ mod tests {
         ("accordion", include_str!("accordion.rs")),
         ("combobox", include_str!("combobox.rs")),
         ("pager", include_str!("pager.rs")),
+        ("table", include_str!("table.rs")),
         ("form", include_str!("form.rs")),
         ("counter", include_str!("counter.rs")),
         ("theme", include_str!("theme.rs")),

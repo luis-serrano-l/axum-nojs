@@ -13,15 +13,16 @@ use maud::{Markup, html};
 use serde::Deserialize;
 use webonsive::{
     Cap, Caps, Field, FieldKind, Streamed, Theme, UiState, accordion, caps, color, combobox,
-    counter, dialog, flash, form, layout, pager, popover_menu, prg, range, select, slot, tabs,
-    theme_toggle,
+    counter, dialog, flash, form, layout, pager, popover_menu, prg, range, select, slot, table,
+    table::{Column, sort_from_query}, tabs, theme_toggle,
 };
 use std::time::Duration;
 
 /// Every demo path the no-script test and the screenshot test visit.
-pub const PATHS: [&str; 13] = [
+pub const PATHS: [&str; 14] = [
     "/", "/caps", "/stream", "/settings", "/dialog?dialog=confirm", "/popover", "/tabs?tab.demo=1",
     "/accordion?open.faq=1", "/combobox?q=r", "/list?page=2", "/form", "/counter", "/inputs",
+    "/table?sort=size&dir=desc&q=a",
 ];
 
 /// The whole demo app.
@@ -35,6 +36,7 @@ pub fn router() -> Router {
         .route("/accordion", get(accordion_page))
         .route("/combobox", get(combobox_page))
         .route("/list", get(list_page))
+        .route("/table", get(table_page))
         .route("/form", get(form_page).post(form_submit))
         .route("/counter", get(counter_page).post(counter_submit))
         .route("/stream", get(stream_page))
@@ -53,7 +55,7 @@ fn theme_of(jar: &CookieJar) -> Theme {
 
 /// Every component in the index: path, title (what each route passes to `page`), group, and
 /// the platform features it is built on.
-const COMPONENTS: [(&str, &str, &str, &str); 12] = [
+const COMPONENTS: [(&str, &str, &str, &str); 13] = [
     ("/dialog", "Dialog", "Overlays", "<dialog>, invoker commands"),
     ("/popover", "Popover menu", "Overlays", "popover, anchor positioning"),
     ("/tabs", "Tabs", "Disclosure", "<details name>, ::details-content"),
@@ -64,6 +66,7 @@ const COMPONENTS: [(&str, &str, &str, &str); 12] = [
     ("/counter", "Counter", "Server state", "form POST + cookie"),
     ("/settings", "Settings", "Server state", "UiState, PRG + flash"),
     ("/list", "Load-more list", "Server state", "links + view transitions"),
+    ("/table", "Table", "Server state", "sort links, <search> filter, sticky header"),
     ("/caps", "Capabilities", "Server state", "@supports beacons + cookie"),
     ("/stream", "Streaming", "Server state", "declarative shadow DOM slots"),
 ];
@@ -174,6 +177,32 @@ async fn list_page(caps: Caps, jar: CookieJar, Query(p): Query<PageQuery>) -> Ma
         .map(|n| html! { "Row " (n) })
         .collect();
     page(&caps, &jar, "Load-more list", html! { (pager(&caps, "/list", &rows, current, PER, TOTAL)) })
+}
+
+#[derive(Deserialize, Default)]
+struct TableQuery { sort: Option<String>, dir: Option<String>, q: Option<String> }
+
+/// Twelve files sorted and filtered on the server; the table only renders and links.
+async fn table_page(caps: Caps, jar: CookieJar, Query(t): Query<TableQuery>) -> Markup {
+    const FILES: [(&str, u32, &str); 12] = [
+        ("archive.tar", 40960, "backup"), ("build.rs", 1200, "script"), ("cargo.lock", 8800, "generated"),
+        ("index.html", 2100, "page"), ("logo.svg", 3400, "image"), ("main.rs", 5600, "source"),
+        ("notes.md", 900, "text"), ("photo.jpg", 250000, "image"), ("readme.md", 4100, "text"),
+        ("style.css", 1500, "stylesheet"), ("tests.rs", 7700, "source"), ("video.mp4", 9800000, "video"),
+    ];
+    let cols = [Column::sortable("name", "Name"), Column::sortable("size", "Size"), Column::sortable("kind", "Kind")];
+    let sort = sort_from_query(&cols, t.sort.as_deref(), t.dir.as_deref());
+    let q = t.q.unwrap_or_default().to_lowercase();
+    let mut files: Vec<_> = FILES.iter().filter(|f| q.is_empty() || f.0.contains(&q) || f.2.contains(&q)).collect();
+    if let Some((key, desc)) = sort {
+        files.sort_by(|a, b| match key { "size" => a.1.cmp(&b.1), "kind" => a.2.cmp(b.2), _ => a.0.cmp(b.0) });
+        if desc { files.reverse(); }
+    }
+    let rows: Vec<Vec<Markup>> = files.iter().map(|f| vec![html! { code { (f.0) } }, html! { (f.1 / 1024) " KB" }, html! { (f.2) }]).collect();
+    page(&caps, &jar, "Table", html! {
+        p { "Click a header to sort, again to flip. Type to filter. Every state is a URL." }
+        (table(&caps, "files", "/table", &cols, &rows, sort, &q))
+    })
 }
 
 #[derive(Deserialize, Default)]
