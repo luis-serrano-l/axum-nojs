@@ -1,0 +1,8 @@
+[package]
+name = "webonsive"
+version = "0.1.0"
+edition = "2024"
+description = "Zero-JavaScript interactive HTML components for Rust servers"
+
+[dependencies]
+maud.workspace = true

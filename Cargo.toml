@@ -1,0 +1,9 @@
+[workspace]
+members = ["webonsive", "demo"]
+resolver = "2"
+
+[workspace.dependencies]
+maud = { version = "0.27", features = ["axum"] }
+axum = "0.8"
+tokio = { version = "1", features = ["full"] }
+serde = { version = "1", features = ["derive"] }

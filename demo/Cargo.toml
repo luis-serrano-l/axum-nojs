@@ -1,0 +1,15 @@
+[package]
+name = "demo"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+webonsive = { path = "../webonsive" }
+maud.workspace = true
+axum.workspace = true
+tokio.workspace = true
+serde.workspace = true
+axum-extra = { version = "0.10", features = ["cookie"] }
+
+[dev-dependencies]
+tower = { version = "0.5", features = ["util"] }
