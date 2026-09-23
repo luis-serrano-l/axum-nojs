@@ -165,3 +165,44 @@ involved) a Firefox check.
 - [ ] Every options struct grows only setters that map to real HTML/CSS; the doc header of each
   component gains a "What it does not do without script" paragraph; README matrix, spec and
   FINDINGS updated as each box lands.
+
+## M16 · Cut latency
+Every page is one server round trip, so latency is the whole experience. Measure first, then
+take the cheap wins, then the ones that cost structure. Each box records before/after numbers
+in FINDINGS.md (`hyperfine` against the demo, Firefox navigation timing from
+`scripts/browser-check.mjs`) so a change that does not move a number is reverted.
+- [ ] Measure: a `scripts/bench.sh` that starts the release demo and reports p50/p95 time to
+  first byte and full response for `/`, `/table`, `/stream` cold and warm; Firefox
+  `performance.getEntriesByType("navigation")` for the same routes; numbers in FINDINGS.md.
+- [ ] Cheap wins, server: `stylesheet()` built once (`OnceLock`) instead of per page; the
+  `Tokens::css()` string cached; `Content-Length` on every response; `Cache-Control` with a
+  hash on `/wo/caps` beacon images and `/wo/enhance.js` verified; gzip/br on the demo through
+  `tower-http` `CompressionLayer`; release profile with `lto = "fat"`, `codegen-units = 1`,
+  `panic = "abort"` for the demo binary.
+- [ ] Cheap wins, page: the inline stylesheet minified (whitespace and comments stripped at
+  build time, a test proves it still parses); beacons `loading="lazy"` and `fetchpriority="low"`
+  so they never delay first paint; `<script defer>` stays last; `<link rel="preconnect">` not
+  needed (no third party) and recorded as such; the caps cookie small enough to fit one
+  `Set-Cookie`.
+- [ ] Cheap wins, script: `enhance.js` requests carry `Accept: text/html` and the server's
+  fragment answer (`Wo-Enhance: 1`) used on every swap route in the demo, not only `/swap`,
+  so a swap moves a few hundred bytes instead of the page; `fetch` with `priority: "high"`
+  for user actions; prefetch on `mouseenter`/`focus` for same-origin links inside a swap root
+  (`data-wo-prefetch`), cached for a few seconds and reused by the click.
+- [ ] Speculation rules: a `<script type="speculationrules">` is a `<script>` tag and so out
+  of bounds by CLAUDE.md; instead `<link rel="prefetch">` for the index's component links and
+  `<link rel="prerender">`-free; record in FINDINGS what the platform cannot prefetch without
+  the rules script.
+- [ ] Streaming everywhere it pays: `layout` sends `<head>` and the shell before the body is
+  built (an `http`-feature `Streamed` page for every demo route whose body waits on anything),
+  `Transfer-Encoding: chunked` with an early flush after `</head>` so the stylesheet parses
+  while the server works; measured on `/stream` and `/table`.
+- [ ] Structural: `Caps` from a bitset cookie is already O(1); `UiState` parse checked for
+  allocations; Maud templates render into a pre-sized `String` (`html!` with capacity hints
+  where a component knows its size); `paged_table` builds rows without intermediate `String`s;
+  a `cargo bench` (criterion) for `layout`, `table` with 1 000 rows and `stylesheet()`.
+- [ ] HTTP/2 and HTTP/3 in the hyper example so many beacon images share one connection; a
+  note in `docs/caps.md` on why the beacons cost nothing after the first visit (cookie) and
+  how to serve them from the same origin as the page.
+- [ ] Docs: `docs/latency.md` with the numbers, what moved them, what did not, and the order a
+  user should apply them to their own server; README gets one line pointing at it.
