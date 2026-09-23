@@ -89,7 +89,7 @@ pub use form::{Field, FieldKind, form};
 pub use layout::{Tokens, layout, layout_with};
 pub use paged_table::{PagedTableOptions, paged_table};
 pub use pager::{PagerOptions, pager};
-pub use popover::popover_menu;
+pub use popover::{MenuItem, Placement, PopoverOptions, popover_menu};
 pub use range::{RangeOptions, range};
 pub use select::select;
 #[cfg(feature = "http")]

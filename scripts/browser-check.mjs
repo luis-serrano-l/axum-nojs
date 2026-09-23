@@ -142,6 +142,19 @@ try {
   await until(async () => /Account deleted/.test(await js("return document.querySelector('.wo-flash')?.textContent || ''")), "flash after confirm");
   assert(await js("return location.pathname") === "/dialog" && !(await js("return document.querySelector('dialog').open")), "dialog: confirm posted and the server came back");
 
+  // Popover: arrow keys walk the items, submenu opens inside, an action posts and comes back.
+  await go("/popover");
+  await click("button[popovertarget=account]");
+  await until(async () => await js("return document.querySelector('#account').matches(':popover-open')"), "menu open");
+  await type("button[popovertarget=account]", ""); // ArrowDown from the button
+  assert(await js("return document.activeElement.querySelector('.wo-popover-text').textContent") === "Profile", "popover: ArrowDown focuses the first item");
+  await js("document.activeElement.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }))");
+  assert(await js("return document.activeElement.querySelector('.wo-popover-text').textContent") === "Settings", "popover: ArrowDown moves to the next item");
+  await click("button[popovertarget=account-theme]");
+  await until(async () => await js("return document.querySelector('#account-theme').matches(':popover-open') && document.querySelector('#account').matches(':popover-open')"), "submenu open with parent");
+  await click("#account form button");
+  await until(async () => /Signed out/.test(await js("return document.querySelector('.wo-flash')?.textContent || ''")), "flash after the action");
+
   // Range: output mirrors while moving, before any submit.
   await go("/inputs");
   await type("input[type=range]", ""); // ArrowRight

@@ -16,6 +16,10 @@ follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); the project us
 - `dialog`: `title` with a close control, `size` (`DialogSize::Sm|Md|Lg`), `danger`,
   `confirm(label, action)` footer as a real `<form method="post">`, `returns_to`,
   `cancel_label`, `closedby`. `button.wo-danger` in the base styles.
+- `popover_menu` takes `&[MenuItem]` and `PopoverOptions`: links, post-form actions, headings,
+  separators, nested submenus, icons, shortcut labels, disabled and danger items,
+  `Placement::BottomStart|BottomEnd|Right`. The enhancement script walks an open menu with the
+  arrow keys. **Breaking:** the `(text, href)` tuple form is gone.
 
 ## [0.1.0] - 2026-09-23
 

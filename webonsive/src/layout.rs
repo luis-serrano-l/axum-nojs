@@ -234,6 +234,7 @@ th { color: var(--wo-muted); font-weight: 600; }
 /* Demo shell: toolbar with the way back and the theme switch, the lede under a title,
    the "built on" line, and the grouped index. */
 .wo-toolbar { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: var(--wo-space); margin: 0 0 calc(var(--wo-space) * 3); min-height: 2.25rem; }
+.wo-popover-row { display: flex; justify-content: space-between; gap: var(--wo-space); margin-bottom: calc(var(--wo-space) * 2); }
 .wo-back { color: var(--wo-muted); text-decoration: none; }
 .wo-back::before { content: "\2190"; margin-right: 0.35em; }
 .wo-back:hover { color: var(--wo-accent); text-decoration: underline; }

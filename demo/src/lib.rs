@@ -14,7 +14,7 @@ use serde::Deserialize;
 use webonsive::{
     Cap, Caps, Field, FieldKind, Streamed, Theme, UiState, accordion, caps, color, combobox,
     counter, dialog, dialog::{DialogOptions, DialogSize}, flash, form, layout, layout::{Palette, Tokens, layout_with}, paged_table, paged_table::PagedTableOptions,
-    pager, pager::PagerOptions, popover_menu, prg, range, range::RangeOptions, select, slot,
+    pager, pager::PagerOptions, popover::{MenuItem, Placement, PopoverOptions}, popover_menu, prg, range, range::RangeOptions, select, slot,
     table::{Column, sort_from_query}, tabs, theme_toggle, wizard, wizard::{Step, WizardOptions},
 };
 use std::time::Duration;
@@ -34,6 +34,7 @@ pub fn router() -> Router {
         .route("/dialog", get(dialog_page))
         .route("/dialog/delete", post(dialog_delete))
         .route("/popover", get(popover_page))
+        .route("/popover/signout", post(popover_signout))
         .route("/tabs", get(tabs_page))
         .route("/accordion", get(accordion_page))
         .route("/combobox", get(combobox_page))
@@ -61,7 +62,7 @@ fn theme_of(jar: &CookieJar) -> Theme {
 /// the platform features it is built on.
 const COMPONENTS: [(&str, &str, &str, &str); 15] = [
     ("/dialog", "Dialog", "Overlays", "<dialog>, closedby, invoker commands, form footer"),
-    ("/popover", "Popover menu", "Overlays", "popover, anchor positioning"),
+    ("/popover", "Popover menu", "Overlays", "popover, anchor positioning, nested popover, form actions"),
     ("/tabs", "Tabs", "Disclosure", "<details name>, ::details-content"),
     ("/accordion", "Accordion", "Disclosure", "<details name>"),
     ("/combobox", "Combobox", "Input", "<datalist>, <search>"),
@@ -165,10 +166,32 @@ async fn dialog_delete(Form(f): Form<DeleteForm>) -> axum::response::Response {
 }
 
 async fn popover_page(caps: Caps, jar: CookieJar) -> Markup {
+    const THEME: &[MenuItem] = &[MenuItem::link("Light", "/popover?theme=light"), MenuItem::link("Dark", "/popover?theme=dark")];
     page(&caps, &jar, "Popover menu", html! {
-        (popover_menu(&caps, "account", "Account", &[("Profile", "/"), ("Settings", "/"), ("Sign out", "/")]))
-        p class="wo-note" { "Click outside or press Escape to close." }
+        (flash(&caps, jar.get("wo-flash").map(|c| c.value().to_string()).as_deref()))
+        div class="wo-popover-row" {
+            (popover_menu(&caps, "account", "Account", &[
+                MenuItem::heading("Signed in as Ada"),
+                MenuItem::link("Profile", "/popover").icon("@").shortcut("g p"),
+                MenuItem::link("Settings", "/settings").icon("\u{2699}").shortcut("g s"),
+                MenuItem::link("Billing", "/popover").icon("$").disabled(true),
+                MenuItem::separator(),
+                MenuItem::submenu("Theme", "account-theme", THEME).icon("\u{25d0}"),
+                MenuItem::separator(),
+                MenuItem::action("Sign out", "/popover/signout").icon("\u{2192}").danger(true),
+            ], Default::default()))
+            (popover_menu(&caps, "more", "More", &[
+                MenuItem::link("Documentation", "/").icon("?"),
+                MenuItem::action("Clear cache", "/popover/signout"),
+            ], PopoverOptions::default().placement(Placement::BottomEnd)))
+        }
+        p class="wo-note" { "Links, a heading, a disabled item, a submenu that is another popover, and a " code { "<form method=\"post\">" } " action. Click outside or press Escape to close; the second menu opens end-aligned." }
     })
+}
+
+/// A menu action: Post/Redirect/Get back to the menu page with a flash.
+async fn popover_signout() -> axum::response::Response {
+    prg::<axum::body::Body>("/popover", Some("Signed out (not really)"))
 }
 
 async fn tabs_page(caps: Caps, jar: CookieJar, state: UiState) -> (UiState, Markup) {

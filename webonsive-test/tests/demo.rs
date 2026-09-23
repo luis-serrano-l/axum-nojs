@@ -86,9 +86,17 @@ async fn popover_variants() {
     let modern = Page::render(demo::router(), "/popover", MODERN).await;
     assert!(modern.is_visible("button[popovertarget]"));
     assert!(!modern.is_visible("nav[popover]"), "closed popover is hidden");
+    assert_eq!(modern.count("#account [role=menuitem]"), 7, "links, submenu button, action and the disabled link");
+    assert!(modern.exists("#account .wo-popover-heading") && modern.count("#account .wo-popover-sep") == 2);
+    assert!(modern.exists("#account a[aria-disabled=true]:not([href])"), "disabled link has no href");
+    assert!(modern.exists("#account form[method=post][action='/popover/signout'] button.wo-popover-danger"), "action is a post form");
+    assert!(modern.exists("#account nav#account-theme[popover]") && modern.exists("#account button[popovertarget=account-theme]"), "submenu is a nested popover");
+    assert!(modern.exists("#account kbd.wo-popover-kbd"));
+    assert!(modern.exists(".wo-popover-end nav#more[popover]"), "placement class");
     let old = Page::render(demo::router(), "/popover", OLD).await;
     assert!(old.is_visible(".wo-popover-details summary"));
     assert!(!old.is_visible(".wo-popover-details nav"), "closed details hides the menu");
+    assert!(old.exists("details#account details#account-theme"), "submenu is a nested details");
 }
 
 #[tokio::test]

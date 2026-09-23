@@ -54,7 +54,7 @@
         { "name": "popover", "baseline": { "chrome": "114", "firefox": "125", "safari": "17" } },
         { "name": "anchor-name", "baseline": { "chrome": "125", "firefox": "147", "safari": "26" } }
       ],
-      "fallback": "no anchor: UA-centred popover; no popover: <details> dropdown",
+      "fallback": "no anchor: UA-centred popover; no popover: <details> dropdown (submenus nested); actions are plain post forms either way",
       "needs_js": "no"
     },
     {

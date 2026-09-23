@@ -130,7 +130,7 @@ pub const SPECS: &[ComponentSpec] = &[
             f("popover", b("114", "125", "17")),
             f("anchor-name", b("125", "147", "26")),
         ],
-        fallback: "no anchor: UA-centred popover; no popover: <details> dropdown",
+        fallback: "no anchor: UA-centred popover; no popover: <details> dropdown (submenus nested); actions are plain post forms either way",
         needs_js: NeedsJs::No,
     },
     ComponentSpec {

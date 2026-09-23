@@ -128,7 +128,7 @@ involved) a Firefox check.
   (confirm form posting to a URL, cancel), `danger` variant, focus lands on the first field,
   `Escape` and backdrop close honour `closedby`; an optional `returns_to` so the server can
   redirect back to the page that opened it.
-- [ ] Popover menu: items with icons and keyboard shortcuts shown, separators and section
+- [x] Popover menu: items with icons and keyboard shortcuts shown, separators and section
   headings, disabled and destructive items, a submenu that is another popover, items that are
   `<form method="post">` buttons for actions (not just links), placement options
   (`bottom-start|bottom-end|right`) via `anchor-name`, arrow keys move between items.
