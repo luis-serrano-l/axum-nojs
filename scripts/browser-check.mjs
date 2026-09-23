@@ -30,7 +30,9 @@ const S = "/session/" + sessionId;
 const go = (path) => wd("POST", S + "/url", { url: DEMO + path });
 const js = (script, ...args) => wd("POST", S + "/execute/sync", { script, args });
 const find = (css) => wd("POST", S + "/element", { using: "css selector", value: css }).then((e) => Object.values(e)[0]);
-const click = async (css) => wd("POST", S + `/element/${await find(css)}/click`, {});
+// A swap can land between find and click; a stale reference just means "find it again".
+const click = async (css) => wd("POST", S + `/element/${await find(css)}/click`, {})
+  .catch((e) => (/stale/.test(e.message) ? click(css) : Promise.reject(e)));
 const type = async (css, text) => wd("POST", S + `/element/${await find(css)}/value`, { text });
 const navigations = () => js("return performance.getEntriesByType('navigation').length");
 async function until(fn, what, ms = 3000) {

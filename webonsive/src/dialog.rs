@@ -56,7 +56,8 @@ pub const CSS: &str = r#"
   border: 1px solid var(--wo-line); border-radius: var(--wo-radius);
   padding: calc(var(--wo-space) * 3); max-width: 28rem; width: calc(100% - 2rem);
 }
-.wo-dialog dialog::backdrop { background: rgb(0 0 0 / 0.45); }
+.wo-dialog dialog::backdrop { background: color-mix(in srgb, var(--wo-fg) 45%, transparent); }
+.wo-dialog dialog h2 { margin-top: 0; }
 .wo-dialog-actions { display: flex; justify-content: flex-end; gap: var(--wo-space); margin: var(--wo-space) 0 0; }
 .wo-dialog-open, .wo-dialog-actions a[role="button"] {
   display: inline-block; padding: 0.5rem 1rem; border: 1px solid var(--wo-line);

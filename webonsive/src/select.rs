@@ -45,7 +45,7 @@ pub const CSS: &str = r#"
 .wo-select { min-width: 12rem; }
 .wo-select::picker(select) {
   border: 1px solid var(--wo-line); border-radius: var(--wo-radius); padding: var(--wo-space) 0;
-  background: var(--wo-surface); color: var(--wo-fg); box-shadow: 0 8px 24px rgb(0 0 0 / 0.15);
+  background: var(--wo-surface); color: var(--wo-fg); box-shadow: 0 8px 24px color-mix(in srgb, var(--wo-fg) 14%, transparent);
 }
 .wo-select option { padding: 0.4rem 1rem; }
 .wo-select option:hover, .wo-select option:checked { background: var(--wo-bg); }

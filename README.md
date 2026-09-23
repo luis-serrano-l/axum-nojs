@@ -23,7 +23,7 @@ let page = layout(&caps, "Hello", Theme::Auto, html! {
 ## Run the demo
 
 ```sh
-cargo run -p demo      # http://127.0.0.1:3000
+cargo run -p demo      # http://127.0.0.1:3000: index grouped by what the platform gives, every page links back
 cargo test             # includes: only the enhancement <script> on any route, and Blitz layout tests
 scripts/verify.sh      # build + clippy -D warnings + tests + screenshots + <script> grep + Firefox check
 ```
@@ -43,7 +43,9 @@ search as you type, live range output, theme).
 - `Caps` is server-side feature detection with no script: `@supports` beacons set one cookie per
   capability, and each component emits only the variant that browser needs (see `/caps`).
 - Output HTML is semantic with one `wo-<component>` class per root. `curl` any page and read it.
-- CSS lives beside its component as `const CSS`. Theming is via `--wo-*` custom properties only.
+- CSS lives beside its component as `const CSS`. Theming is via `--wo-*` custom properties only
+  (`bg`, `surface`, `fg`, `muted`, `line`, `accent`, `on-accent`, `danger`, `ok`, `radius`, `space`,
+  defined for light and dark in `layout.rs`).
 
 ## Feature matrix
 

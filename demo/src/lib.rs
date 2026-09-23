@@ -51,50 +51,63 @@ fn theme_of(jar: &CookieJar) -> Theme {
     jar.get("theme").map(|c| Theme::parse(c.value())).unwrap_or_default()
 }
 
-/// Every page: the theme from its cookie, the body, the theme toggle, and the caps beacons.
+/// Every component in the index: path, title (what each route passes to `page`), group, and
+/// the platform features it is built on.
+const COMPONENTS: [(&str, &str, &str, &str); 12] = [
+    ("/dialog", "Dialog", "Overlays", "<dialog>, invoker commands"),
+    ("/popover", "Popover menu", "Overlays", "popover, anchor positioning"),
+    ("/tabs", "Tabs", "Disclosure", "<details name>, ::details-content"),
+    ("/accordion", "Accordion", "Disclosure", "<details name>"),
+    ("/combobox", "Combobox", "Input", "<datalist>, <search>"),
+    ("/form", "Validated form", "Input", ":user-invalid, PRG"),
+    ("/inputs", "Select, range, colour", "Input", "<selectedcontent>, type=range, type=color"),
+    ("/counter", "Counter", "Server state", "form POST + cookie"),
+    ("/settings", "Settings", "Server state", "UiState, PRG + flash"),
+    ("/list", "Load-more list", "Server state", "links + view transitions"),
+    ("/caps", "Capabilities", "Server state", "@supports beacons + cookie"),
+    ("/stream", "Streaming", "Server state", "declarative shadow DOM slots"),
+];
+const GROUPS: [&str; 4] = ["Overlays", "Disclosure", "Input", "Server state"];
+
+/// The row above every title: the way back to the index (not on the index) and the theme switch.
+fn toolbar(caps: &Caps, theme: Theme, back: bool) -> Markup {
+    html! { nav class="wo-toolbar" {
+        @if back { a class="wo-back" href="/" { "All components" } } @else { span {} }
+        (theme_toggle(caps, "/theme", theme))
+    } }
+}
+
+/// Every page: the theme from its cookie, the toolbar, the title, what it is built on, the body.
 fn page(caps: &Caps, jar: &CookieJar, title: &str, body: Markup) -> Markup {
     let theme = theme_of(jar);
+    let built = COMPONENTS.iter().find(|c| c.1 == title).map(|c| c.3);
     layout(caps, title, theme, html! {
+        (toolbar(caps, theme, built.is_some()))
         h1 { (title) }
+        @if let Some(feats) = built { p class="wo-built" { "Built on " @for f in feats.split(", ") { code { (f) } " " } } }
         (body)
-        h2 { "Theme" }
-        (theme_toggle(caps, "/theme", theme))
     })
 }
 
 // ---------- routes ----------
 
 async fn index(caps: Caps, jar: CookieJar) -> Markup {
-    let rows = [
-        ("/dialog", "Dialog", "<dialog>, invoker commands"),
-        ("/popover", "Popover menu", "popover, anchor positioning"),
-        ("/tabs", "Tabs", "<details name>, ::details-content"),
-        ("/accordion", "Accordion", "<details name>"),
-        ("/combobox", "Combobox", "<datalist>, <search>"),
-        ("/list", "Load-more list", "links + view transitions"),
-        ("/form", "Validated form", ":user-invalid, PRG"),
-        ("/counter", "Counter", "form POST + cookie"),
-        ("/caps", "Capabilities", "@supports beacons + cookie"),
-        ("/stream", "Streaming", "declarative shadow DOM slots"),
-        ("/settings", "Settings", "UiState, PRG + flash"),
-        ("/inputs", "Select, range, colour", "<selectedcontent>, type=range, type=color"),
-    ];
     page(&caps, &jar, "Components", html! {
-        p { "Every page here ships zero " code { "<script>" } " tags." }
+        p class="wo-lede" { "Twelve interactive components for Axum and Maud. Every page here ships zero " code { "<script>" } " tags: the HTML platform does the work, and one optional script only makes the same markup swap in place." }
         @if !caps.has(Cap::Probed) { p class="wo-note" { "First visit: this page is the fallback variant. Reload and the server will know your browser." } }
-        table {
-            thead { tr { th { "Component" } th { "Platform features" } } }
-            tbody { @for (href, name, feats) in rows {
-                tr { td { a href=(href) { (name) } } td { (feats) } }
+        div class="wo-index" { @for group in GROUPS {
+            h2 { (group) }
+            ul { @for (href, title, _, feats) in COMPONENTS.iter().filter(|c| c.2 == group) {
+                li { a href=(href) { (title) } span { @for f in feats.split(", ") { code { (f) } " " } } }
             } }
-        }
+        } }
     })
 }
 
 async fn dialog_page(caps: Caps, jar: CookieJar, state: UiState) -> Markup {
     page(&caps, &jar, "Dialog", html! {
         (dialog(&caps, "confirm", "Delete account", html! {
-            h2 style="margin-top:0" { "Delete account?" }
+            h2 { "Delete account?" }
             p { "This cannot be undone. The dialog is opened by an invoker button and closed by a " code { "method=dialog" } " form." }
         }, state.dialog() == Some("confirm")))
         p class="wo-note" { "Server-opened: " a href="/dialog?dialog=confirm" { "?dialog=confirm" } }
@@ -104,7 +117,7 @@ async fn dialog_page(caps: Caps, jar: CookieJar, state: UiState) -> Markup {
 async fn popover_page(caps: Caps, jar: CookieJar) -> Markup {
     page(&caps, &jar, "Popover menu", html! {
         (popover_menu(&caps, "account", "Account", &[("Profile", "/"), ("Settings", "/"), ("Sign out", "/")]))
-        p class="wo-note" style="margin-top:1rem" { "Click outside or press Escape to close." }
+        p class="wo-note" { "Click outside or press Escape to close." }
     })
 }
 
@@ -256,7 +269,7 @@ const SIZES: [(&str, &str); 3] = [("s", "Small"), ("m", "Medium"), ("l", "Large"
 async fn inputs_page(caps: Caps, jar: CookieJar, state: UiState) -> (UiState, Markup) {
     let saved = jar.get("inputs").map(|c| c.value().to_string()).unwrap_or_default();
     let mut parts = saved.split('|');
-    let (size, volume, accent) = (parts.next().unwrap_or("m"), parts.next().unwrap_or("40"), parts.next().unwrap_or("#2f5bea"));
+    let (size, volume, accent) = (parts.next().unwrap_or("m"), parts.next().unwrap_or("40"), parts.next().unwrap_or("#1f6f5f"));
     let options: Vec<(&str, Markup)> = SIZES.iter()
         .map(|(v, l)| (*v, html! { span class="wo-swatch" style={ "background: " (accent) } {} (l) }))
         .collect();
@@ -275,7 +288,7 @@ async fn inputs_page(caps: Caps, jar: CookieJar, state: UiState) -> (UiState, Ma
 
 async fn inputs_submit(jar: CookieJar, Form(f): Form<Inputs>) -> (CookieJar, axum::response::Response) {
     let size = SIZES.iter().find(|(v, _)| *v == f.size).map(|(v, _)| *v).unwrap_or("m");
-    let accent = if f.accent.len() == 7 && f.accent.starts_with('#') { f.accent.as_str() } else { "#2f5bea" };
+    let accent = if f.accent.len() == 7 && f.accent.starts_with('#') { f.accent.as_str() } else { "#1f6f5f" };
     let value = format!("{size}|{}|{accent}", f.volume.clamp(0, 100));
     (jar.add(Cookie::new("inputs", value)), prg("/inputs", Some("Inputs saved.")))
 }
@@ -283,7 +296,9 @@ async fn inputs_submit(jar: CookieJar, Form(f): Form<Inputs>) -> (CookieJar, axu
 /// Three sections declared slowest first, so out-of-order arrival is visible.
 async fn stream_page(caps: Caps, jar: CookieJar) -> Streamed {
     let sections = [("slow", 2000), ("medium", 800), ("fast", 100)];
-    let page = Streamed::page(&caps, "Streaming", theme_of(&jar), html! {
+    let theme = theme_of(&jar);
+    let page = Streamed::page(&caps, "Streaming", theme, html! {
+        (toolbar(&caps, theme, true))
         h1 { "Streaming" }
         p { @if caps.has(Cap::StreamingDsd) { "Sections arrive out of order into named slots." }
             @else { "This browser has no declarative shadow DOM: sections stream in document order." } }

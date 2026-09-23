@@ -57,7 +57,7 @@ pub const CSS: &str = r#"
   margin: 0; padding: var(--wo-space) 0; min-width: 12rem;
   background: var(--wo-surface); color: var(--wo-fg);
   border: 1px solid var(--wo-line); border-radius: var(--wo-radius);
-  box-shadow: 0 8px 24px rgb(0 0 0 / 0.15);
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--wo-fg) 14%, transparent);
 }
 .wo-popover-anchored nav { position-area: bottom span-right; margin-top: 4px; }
 .wo-popover ul { list-style: none; margin: 0; padding: 0; }

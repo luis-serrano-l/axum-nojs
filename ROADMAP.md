@@ -47,6 +47,7 @@ matrix and findings are updated, and the work is committed. Unknowns become entr
 - [x] Crate docs on docs.rs style: every pub item documented, `#![warn(missing_docs)]`
 - [x] Examples in `webonsive/examples/`
 - [x] Publish dry run: `cargo publish --dry-run -p webonsive`
+- [x] Demo visual pass: one palette (`--wo-*` for light and dark, moss accent), one type scale, index grouped by platform feature, toolbar with a back link and the theme switch on every component page
 
 ## M7 · Optional enhancement script
 - [x] `webonsive::enhance`: one small script (`/wo/enhance.js`, content-hashed, immutable) that upgrades swap roots (`id` + `data-wo="swap"`) to fetch + replace, queued per root, with focus, flash, title, theme and URL synced
