@@ -67,8 +67,10 @@ component gives the HTML to another template engine.
   (`Caps::from_cookie_header`, `Caps::from_query`, `caps::beacon_cookie`); Axum only wraps them.
 - Output HTML is semantic with one `wo-<component>` class per root. `curl` any page and read it.
 - CSS lives beside its component as `const CSS`. Theming is via `--wo-*` custom properties only
-  (`bg`, `surface`, `fg`, `muted`, `line`, `accent`, `on-accent`, `danger`, `ok`, `radius`, `space`,
-  defined for light and dark in `layout.rs`).
+  (`bg`, `surface`, `fg`, `muted`, `line`, `accent`, `on-accent`, `danger`, `ok`, `radius`, `space`).
+  `layout::Tokens` holds them for light and dark, `layout_with` applies another set once per
+  page, and `docs/theming.md` says what each one affects and which pairs must keep contrast.
+  `/?palette=linen` in the demo is the same index under a second palette.
 
 ## Feature matrix
 
@@ -142,6 +144,7 @@ webonsive/examples/         render_page (no server), axum_server (--features axu
 spec/components.json        generated from SPECS (cargo run -p demo -- spec write)
 docs/state.md               how state works with no script
 docs/caps.md                how the beacons work, cookie format, the first view, adding a flag
+docs/theming.md             every --wo-* token, contrast pairs, a second palette as a Tokens value
 webonsive/src/<name>.rs     one component each: dialog, popover, tabs, accordion, table, paged_table, wizard,
                             combobox, pager, form, counter, theme
 demo/src/lib.rs             Axum routes, ≤15 lines each, plus the no-script test

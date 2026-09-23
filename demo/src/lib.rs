@@ -13,7 +13,7 @@ use maud::{Markup, html};
 use serde::Deserialize;
 use webonsive::{
     Cap, Caps, Field, FieldKind, Streamed, Theme, UiState, accordion, caps, color, combobox,
-    counter, dialog, dialog::DialogOptions, flash, form, layout, paged_table, paged_table::PagedTableOptions,
+    counter, dialog, dialog::DialogOptions, flash, form, layout, layout::{Palette, Tokens, layout_with}, paged_table, paged_table::PagedTableOptions,
     pager, pager::PagerOptions, popover_menu, prg, range, range::RangeOptions, select, slot,
     table::{Column, sort_from_query}, tabs, theme_toggle, wizard, wizard::{Step, WizardOptions},
 };
@@ -85,22 +85,50 @@ fn toolbar(caps: &Caps, theme: Theme, back: bool) -> Markup {
 
 /// Every page: the theme from its cookie, the toolbar, the title, what it is built on, the body.
 fn page(caps: &Caps, jar: &CookieJar, title: &str, body: Markup) -> Markup {
+    page_with(caps, jar, title, None, body)
+}
+
+/// `page` under other [`Tokens`] (`/?palette=linen`), to show a theme is a value.
+fn page_with(caps: &Caps, jar: &CookieJar, title: &str, tokens: Option<&Tokens>, body: Markup) -> Markup {
     let theme = theme_of(jar);
     let built = COMPONENTS.iter().find(|c| c.1 == title).map(|c| c.3);
-    layout(caps, title, theme, html! {
+    let body = html! {
         (toolbar(caps, theme, built.is_some()))
         h1 { (title) }
         @if let Some(feats) = built { p class="wo-built" { "Built on " @for f in feats.split(", ") { code { (f) } " " } } }
         (body)
-    })
+    };
+    match tokens {
+        Some(t) => layout_with(caps, title, theme, t, body),
+        None => layout(caps, title, theme, body),
+    }
 }
+
+/// The second palette from `docs/theming.md`: warm paper, copper accent, amber in the dark.
+const LINEN: Tokens = Tokens {
+    light: Palette {
+        bg: "#f4efe6", fg: "#1d1a17", muted: "#5d574f", line: "#d6cdbf", surface: "#fffdf9",
+        accent: "#8a3b12", on_accent: "#ffffff", danger: "#a0261c", ok: "#2f6b3a",
+    },
+    dark: Palette {
+        bg: "#161311", fg: "#ece6dc", muted: "#a59c90", line: "#3a332c", surface: "#1f1b18",
+        accent: "#e8965a", on_accent: "#1a0f06", danger: "#ff8f85", ok: "#8fd39a",
+    },
+    radius: "3px",
+    space: "8px",
+};
 
 // ---------- routes ----------
 
-async fn index(caps: Caps, jar: CookieJar) -> Markup {
-    page(&caps, &jar, "Components", html! {
+#[derive(Deserialize)]
+struct IndexQuery { palette: Option<String> }
+
+async fn index(caps: Caps, jar: CookieJar, Query(q): Query<IndexQuery>) -> Markup {
+    let tokens = (q.palette.as_deref() == Some("linen")).then_some(&LINEN);
+    page_with(&caps, &jar, "Components", tokens, html! {
         p class="wo-lede" { "Twelve interactive components for Axum and Maud. Every page here ships zero " code { "<script>" } " tags: the HTML platform does the work, and one optional script only makes the same markup swap in place." }
         @if !caps.has(Cap::Probed) { p class="wo-note" { "First visit: this page is the fallback variant. Reload and the server will know your browser." } }
+        p class="wo-note" { "Theme: " @if tokens.is_some() { a href="/" { "ink and moss" } " · linen and copper" } @else { "ink and moss · " a href="/?palette=linen" { "linen and copper" } } ", see " code { "docs/theming.md" } }
         div class="wo-index" { @for group in GROUPS {
             h2 { (group) }
             ul { @for (href, title, _, feats) in COMPONENTS.iter().filter(|c| c.2 == group) {

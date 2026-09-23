@@ -10,6 +10,16 @@ fn shot(page: &mut Page, name: &str) {
     page.screenshot(format!("{dir}/{name}.png")).unwrap();
 }
 
+/// The same index under the second palette from `docs/theming.md`: `index-alt.png` next to
+/// `index-modern.png` is the proof that a theme is a value passed to `layout_with`.
+#[tokio::test]
+async fn index_under_another_palette() {
+    let mut page = Page::render(demo::router(), "/?palette=linen", MODERN).await;
+    assert!(page.exists("style.wo-tokens"), "layout_with emits the token overrides");
+    assert!(page.is_visible("h1"));
+    shot(&mut page, "index-alt");
+}
+
 /// Screenshot every route twice: as a modern browser and as one that supports nothing.
 #[tokio::test]
 async fn every_route_renders_and_is_captured() {

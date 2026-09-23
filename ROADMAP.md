@@ -84,8 +84,8 @@ matrix and findings are updated, and the work is committed. Unknowns become entr
 
 ## M12 · Theming guide
 - [x] `layout::Tokens` struct (`accent`, `bg`, `fg`, …, light and dark) with `Default` = ink and moss; `layout_with(&caps, title, theme, &tokens, body)` emits the overrides once per page
-- [ ] `docs/theming.md`: every `--wo-*` token, what it affects, contrast requirements, one worked example with a different palette
-- [ ] Demo `/theme-demo` (or a query flag on the index) rendering the same page under a second palette; Blitz screenshot pair `index-modern.png` vs `index-alt.png`
+- [x] `docs/theming.md`: every `--wo-*` token, what it affects, contrast requirements, one worked example with a different palette
+- [x] Demo `/theme-demo` (or a query flag on the index) rendering the same page under a second palette; Blitz screenshot pair `index-modern.png` vs `index-alt.png`
 - [ ] Test: no colour literal outside `layout.rs` (grep for `#[0-9a-f]{3,6}` in component CSS)
 
 ## M13 · Publish
