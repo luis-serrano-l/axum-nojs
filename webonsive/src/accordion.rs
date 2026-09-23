@@ -2,21 +2,25 @@
 //!
 //! Stacked disclosure sections; at most one open at a time, no script.
 //!
-//! **Platform features:** `<details name="group">` (baseline 2024). Omit `name` behaviour by
-//! passing an empty group name to allow several open at once.
+//! **Platform features:** `<details name="group">` (baseline 2024). Pass an empty group name
+//! to allow several open at once. `::details-content` (Chrome 131, Firefox 143, Safari 18.4)
+//! animates the open transition where present.
 //!
-//! **Fallback:** `<details>` alone (baseline 2020) still toggles; only the exclusivity is lost.
+//! **Fallback:** `<details>` alone (baseline 2020) still toggles; only the exclusivity and the
+//! animation are lost. No `Caps` branch is needed; the markup is the same everywhere.
 //!
 //! ```rust
 //! use maud::html;
-//! use webonsive::accordion;
-//! let m = accordion("faq", &[("What?", html!{ p{"A"} }), ("Why?", html!{ p{"B"} })]);
+//! use webonsive::{Caps, accordion};
+//! let m = accordion(&Caps::all(), "faq", &[("What?", html!{ p{"A"} }), ("Why?", html!{ p{"B"} })]);
 //! ```
 
 use maud::{Markup, html};
 
+use crate::Caps;
+
 /// `group` empty means sections open independently.
-pub fn accordion(group: &str, items: &[(&str, Markup)]) -> Markup {
+pub fn accordion(_caps: &Caps, group: &str, items: &[(&str, Markup)]) -> Markup {
     html! {
         div class="wo-accordion" {
             @for (title, body) in items {

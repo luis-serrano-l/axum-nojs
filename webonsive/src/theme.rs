@@ -6,14 +6,18 @@
 //! CSS custom properties. The toggle is a `<form method="post">`; the server stores the choice
 //! in a cookie and sets `data-theme` on `<html>`.
 //!
-//! **Fallback:** none needed. Without a cookie the OS preference wins.
+//! **Fallback:** none needed. Without a cookie the OS preference wins. Colours are switched by
+//! a media query and `data-theme`, so `light-dark()` support (`Caps::LightDark`) is only
+//! reported, never required.
 //!
 //! ```rust
-//! use webonsive::{Theme, theme_toggle};
-//! let markup = theme_toggle("/theme", Theme::Dark);
+//! use webonsive::{Caps, Theme, theme_toggle};
+//! let markup = theme_toggle(&Caps::all(), "/theme", Theme::Dark);
 //! ```
 
 use maud::{Markup, html};
+
+use crate::Caps;
 
 /// The theme the page should render with.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -46,7 +50,7 @@ impl Theme {
 }
 
 /// A three-button form that posts the chosen theme to `action`.
-pub fn theme_toggle(action: &str, current: Theme) -> Markup {
+pub fn theme_toggle(_caps: &Caps, action: &str, current: Theme) -> Markup {
     let choices = [Theme::Auto, Theme::Light, Theme::Dark];
     html! {
         form class="wo-theme" method="post" action=(action) {

@@ -8,18 +8,22 @@
 //! - `<search>` element (baseline 2023) for semantics.
 //! - Submitting the form (Enter) re-renders with a filtered list from the server.
 //!
+//! **Fallback:** none needed; `Caps` is accepted for uniformity and unused.
+//!
 //! **Finding:** filtering *as you type* against server data needs script. The datalist covers
 //! suggestions; results only update per round trip.
 //!
 //! ```rust
-//! use webonsive::combobox;
-//! let m = combobox("/combobox", "q", &["Rust", "Ruby"], "Ru");
+//! use webonsive::{Caps, combobox};
+//! let m = combobox(&Caps::all(), "/combobox", "q", &["Rust", "Ruby"], "Ru");
 //! ```
 
 use maud::{Markup, html};
 
+use crate::Caps;
+
 /// A search form posting `name` to `action` (GET). `options` feed the datalist.
-pub fn combobox(action: &str, name: &str, options: &[&str], value: &str) -> Markup {
+pub fn combobox(_caps: &Caps, action: &str, name: &str, options: &[&str], value: &str) -> Markup {
     let list_id = format!("{name}-options");
     html! {
         search class="wo-combobox" {

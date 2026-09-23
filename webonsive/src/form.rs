@@ -11,16 +11,20 @@
 //! - Post/Redirect/Get for success; on error the server re-renders the form with values and
 //!   messages.
 //!
+//! **Fallback:** none needed; `Caps` is accepted for uniformity and unused.
+//!
 //! **Finding:** custom cross-field rules (password confirmation, async uniqueness) only run
 //! on the server round trip.
 //!
 //! ```rust
-//! use webonsive::{form, Field, FieldKind};
+//! use webonsive::{Caps, form, Field, FieldKind};
 //! let fields = [Field { name: "email", label: "Email", kind: FieldKind::Email, value: "", error: None, required: true }];
-//! let m = form("/form", &fields, "Sign up");
+//! let m = form(&Caps::all(), "/form", &fields, "Sign up");
 //! ```
 
 use maud::{Markup, html};
+
+use crate::Caps;
 
 /// Input type for a [`Field`].
 #[derive(Clone, Copy, Debug)]
@@ -45,7 +49,7 @@ pub struct Field<'a> {
 }
 
 /// Render `fields` as a POST form to `action` with a submit button labelled `submit`.
-pub fn form(action: &str, fields: &[Field<'_>], submit: &str) -> Markup {
+pub fn form(_caps: &Caps, action: &str, fields: &[Field<'_>], submit: &str) -> Markup {
     html! {
         form class="wo-form" method="post" action=(action) {
             @for f in fields {

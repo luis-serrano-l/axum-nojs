@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-webonsive = { path = "../webonsive" }
+webonsive = { path = "../webonsive", features = ["axum"] }
 maud.workspace = true
 axum.workspace = true
 tokio.workspace = true

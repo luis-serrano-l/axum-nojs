@@ -7,20 +7,26 @@
 //! transitions) and from ordinary form round trips. No page produced by this crate needs a
 //! `<script>` tag.
 //!
+//! Every component takes `&Caps` first and emits only the markup that browser needs: the
+//! modern variant or the fallback, never both. See [`caps`] for how the server learns it.
+//!
 //! One component lives in one file. Each file starts with a doc header that lists the platform
 //! features it relies on, the browser baseline, and the fallback for older browsers.
 //!
 //! ```rust
 //! use maud::html;
-//! use webonsive::{layout, dialog, Theme};
+//! use webonsive::{Caps, layout, dialog, Theme};
 //!
-//! let page = layout("Hello", Theme::Auto, html! {
-//!     (dialog("hi", "Say hi", html! { p { "Hello from a <dialog>." } }))
+//! // `Caps` says what the browser supports; the demo reads it from a cookie set by beacons.
+//! let caps = Caps::all();
+//! let page = layout(&caps, "Hello", Theme::Auto, html! {
+//!     (dialog(&caps, "hi", "Say hi", html! { p { "Hello from a <dialog>." } }))
 //! });
 //! assert!(!page.into_string().contains("<script"));
 //! ```
 
 pub mod accordion;
+pub mod caps;
 pub mod combobox;
 pub mod counter;
 pub mod dialog;
@@ -32,6 +38,7 @@ pub mod tabs;
 pub mod theme;
 
 pub use accordion::accordion;
+pub use caps::{Cap, Caps};
 pub use combobox::combobox;
 pub use counter::counter;
 pub use dialog::dialog;
@@ -44,6 +51,7 @@ pub use theme::{Theme, theme_toggle};
 
 /// All component stylesheets, concatenated. `layout` inlines this once per page.
 pub fn stylesheet() -> String {
+    let beacons = caps::beacon_css();
     [
         layout::CSS,
         dialog::CSS,
@@ -55,6 +63,7 @@ pub fn stylesheet() -> String {
         form::CSS,
         counter::CSS,
         theme::CSS,
+        beacons.as_str(),
     ]
     .join("\n")
 }

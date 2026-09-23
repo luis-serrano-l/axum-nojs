@@ -23,7 +23,8 @@ cargo clippy --all-targets         # must be clean before a roadmap milestone co
 
 ## Workspace layout
 
-- `webonsive/` – the library crate. Depends only on `maud`. No axum, no serde.
+- `webonsive/` – the library crate. Depends only on `maud`; the optional `axum` feature adds the
+  `Caps` extractor and the `/wo/caps` beacon route. No serde.
 - `demo/` – Axum binary, one route per component. Handlers only parse input (query, form,
   cookie) and call `webonsive`; keep each route around 15 lines. The no-script test lives here
   and hits every route via `tower::oneshot`, so **add new demo routes to its path list**.
@@ -39,7 +40,8 @@ cargo clippy --all-targets         # must be clean before a roadmap milestone co
    `--wo-*` custom properties defined in `layout.rs`.
 4. Root element carries a single `wo-<component>` class; sub-parts use `wo-<component>-<part>`.
    Output should be readable via `curl`.
-5. No macros beyond `html!`. Signature order: `id`, required args, then options.
+5. No macros beyond `html!`. Signature order: `caps: &Caps` first, then `id`, required args,
+   then options. Branch on `caps.has(Cap::X)` and emit only one variant, never both.
 6. Server-held state (theme, counter, active tab) travels via cookie or `?query=`; mutations use
    `<form method="post">` + redirect (Post/Redirect/Get), never GET side effects.
 7. Update the README feature matrix and Findings when a component or its fallback changes.

@@ -1,25 +1,27 @@
 //! # Layout
 //!
-//! The HTML shell every demo page uses: doctype, head, inline stylesheet, `<main>`.
+//! The HTML shell every demo page uses: doctype, head, inline stylesheet, `<main>`, and the
+//! capability beacons that teach the server what this browser supports.
 //!
 //! **Platform features:** `@view-transition { navigation: auto }` (Chrome 126+, Safari 18.2+)
 //! makes full-page navigations cross-fade, so server round trips feel in-place.
-//! `color-scheme` + custom properties give light/dark with no script.
+//! `prefers-color-scheme` + custom properties give light/dark with no script.
 //!
-//! **Fallback:** browsers without view transitions navigate normally.
+//! **Fallback:** browsers without view transitions navigate normally. Theme colours are plain
+//! custom properties switched by a media query and `data-theme`, so no `light-dark()` needed.
 //!
 //! ```rust
 //! use maud::html;
-//! use webonsive::{layout, Theme};
-//! let page = layout("Title", Theme::Auto, html! { p { "body" } });
+//! use webonsive::{Caps, layout, Theme};
+//! let page = layout(&Caps::all(), "Title", Theme::Auto, html! { p { "body" } });
 //! ```
 
 use maud::{DOCTYPE, Markup, PreEscaped, html};
 
-use crate::{Theme, stylesheet};
+use crate::{Caps, Theme, caps, stylesheet};
 
-/// Wrap `body` in a full page.
-pub fn layout(title: &str, theme: Theme, body: Markup) -> Markup {
+/// Wrap `body` in a full page. Beacons are added while the browser is still unknown.
+pub fn layout(caps: &Caps, title: &str, theme: Theme, body: Markup) -> Markup {
     html! {
         (DOCTYPE)
         html lang="en" data-theme=(theme.as_str()) {
@@ -35,6 +37,7 @@ pub fn layout(title: &str, theme: Theme, body: Markup) -> Markup {
                     span { " · zero JavaScript" }
                 }
                 main { (body) }
+                (caps::beacons(caps))
             }
         }
     }
@@ -45,19 +48,23 @@ pub const CSS: &str = r#"
 
 :root {
   color-scheme: light dark;
-  --wo-bg: light-dark(#fafafa, #141416);
-  --wo-fg: light-dark(#1b1b1f, #e8e8ea);
-  --wo-muted: light-dark(#5f6168, #9a9ca6);
-  --wo-line: light-dark(#d9d9de, #2e2e34);
-  --wo-surface: light-dark(#ffffff, #1c1c20);
-  --wo-accent: light-dark(#2f5bea, #7c9cff);
-  --wo-on-accent: light-dark(#ffffff, #0f1220);
-  --wo-danger: light-dark(#c62828, #ff7b72);
+  --wo-bg: #fafafa; --wo-fg: #1b1b1f; --wo-muted: #5f6168; --wo-line: #d9d9de;
+  --wo-surface: #ffffff; --wo-accent: #2f5bea; --wo-on-accent: #ffffff; --wo-danger: #c62828;
   --wo-radius: 8px;
   --wo-space: 8px;
 }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --wo-bg: #141416; --wo-fg: #e8e8ea; --wo-muted: #9a9ca6; --wo-line: #2e2e34;
+    --wo-surface: #1c1c20; --wo-accent: #7c9cff; --wo-on-accent: #0f1220; --wo-danger: #ff7b72;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --wo-bg: #141416; --wo-fg: #e8e8ea; --wo-muted: #9a9ca6; --wo-line: #2e2e34;
+  --wo-surface: #1c1c20; --wo-accent: #7c9cff; --wo-on-accent: #0f1220; --wo-danger: #ff7b72;
+}
 :root[data-theme="light"] { color-scheme: light; }
-:root[data-theme="dark"]  { color-scheme: dark; }
 
 * { box-sizing: border-box; }
 html { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; line-height: 1.5; }
@@ -79,6 +86,8 @@ input, select, textarea { background: var(--wo-surface); border: 1px solid var(-
 table { border-collapse: collapse; width: 100%; }
 th, td { text-align: left; padding: 0.5rem; border-bottom: 1px solid var(--wo-line); vertical-align: top; }
 .wo-note { color: var(--wo-muted); font-size: 0.9rem; }
+.wo-yes { color: #2e7d32; font-weight: 600; }
+.wo-no { color: var(--wo-danger); font-weight: 600; }
 
 @media (prefers-reduced-motion: reduce) {
   *, ::before, ::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }

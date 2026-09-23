@@ -6,12 +6,12 @@ matrix and findings are updated, and the work is committed. Unknowns become entr
 `FINDINGS.md`, never reasons to add script.
 
 ## M1 · Capability beacons (server-side feature detection, no script)
-- [ ] `webonsive::caps`: `Caps` bitset (invokers, anchor, details_content, view_transitions, popover, light_dark, streaming_dsd)
-- [ ] `caps::beacon_css()` emits `@supports` rules that request `/wo/caps?flag=1` as a background image
-- [ ] Axum route `/wo/caps` sets/extends a `wo-caps` cookie; `Caps` implements `FromRequestParts`
-- [ ] Every component takes `&Caps` and emits only the best markup for that browser (dialog: invokers vs `:target`; popover: anchor vs centred; tabs: `::details-content` vs accordion)
-- [ ] Demo page `/caps` shows what the server thinks the browser supports
-- [ ] Screenshot verification in Firefox headless; old-Chrome-109 check confirms fallbacks render
+- [x] `webonsive::caps`: `Caps` bitset (invokers, anchor, details_content, view_transitions, popover, light_dark, streaming_dsd)
+- [x] `caps::beacon_css()` emits `@supports` rules that request `/wo/caps?flag=1` as a background image
+- [x] Axum route `/wo/caps` sets/extends a `wo-caps` cookie; `Caps` implements `FromRequestParts`
+- [x] Every component takes `&Caps` and emits only the best markup for that browser (dialog: invokers vs `:target`; popover: anchor vs centred; tabs: `::details-content` vs accordion)
+- [x] Demo page `/caps` shows what the server thinks the browser supports
+- [x] Screenshot verification in Firefox headless; old-Chrome-109 check confirms fallbacks render
 
 ## M2 · Out-of-order streaming without script
 - [ ] `webonsive::stream`: `Streamed` response type built on `axum::body::Body::from_stream`

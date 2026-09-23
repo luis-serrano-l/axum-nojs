@@ -5,33 +5,40 @@
 //! **Platform features:**
 //! - `<dialog>` element (baseline 2022) and its `::backdrop`.
 //! - Invoker commands: `<button command="show-modal" commandfor="id">` (Chrome 135+,
-//!   Firefox 144+, Safari 26+). Closing uses `command="close"`.
-//! - `<form method="dialog">` (baseline 2022) closes the dialog on submit.
+//!   Firefox 144+, Safari 26.2+). Closing uses `<form method="dialog">` (baseline 2022).
 //!
-//! **Fallback:** the dialog also has an `id`, so a plain link `href="#id"` opens it via a
-//! `:target` CSS rule in browsers without invokers. CSS cannot feature-detect the `command`
-//! attribute, so the fallback links are hidden behind `@supports (anchor-name: --x)`, which
-//! shipped in the same Chrome release as invokers. That proxy is a documented finding.
+//! **Fallback:** when `Caps` lacks `Invokers`, the opener is a link to `#id` and a `:target`
+//! rule shows the dialog as a fixed overlay; a link to `#` closes it. Only one variant is ever
+//! in the markup.
 //!
 //! ```rust
 //! use maud::html;
-//! use webonsive::dialog;
-//! let m = dialog("confirm", "Delete", html! { p { "Are you sure?" } });
+//! use webonsive::{Caps, dialog};
+//! let m = dialog(&Caps::all(), "confirm", "Delete", html! { p { "Are you sure?" } });
 //! ```
 
 use maud::{Markup, html};
 
+use crate::{Cap, Caps};
+
 /// A modal dialog. `id` must be unique on the page; `trigger` is the opening button's label.
-pub fn dialog(id: &str, trigger: &str, body: Markup) -> Markup {
+pub fn dialog(caps: &Caps, id: &str, trigger: &str, body: Markup) -> Markup {
+    let invokers = caps.has(Cap::Invokers);
     html! {
         div class="wo-dialog" {
-            button type="button" command="show-modal" commandfor=(id) { (trigger) }
-            a class="wo-dialog-fallback" href={ "#" (id) } { (trigger) " (fallback)" }
+            @if invokers {
+                button type="button" command="show-modal" commandfor=(id) { (trigger) }
+            } @else {
+                a class="wo-dialog-open" role="button" href={ "#" (id) } { (trigger) }
+            }
             dialog id=(id) closedby="any" {
                 div class="wo-dialog-body" { (body) }
-                form method="dialog" class="wo-dialog-actions" {
-                    a href="#" class="wo-dialog-fallback" { "Close (fallback)" }
-                    button type="submit" class="wo-primary" { "Close" }
+                @if invokers {
+                    form method="dialog" class="wo-dialog-actions" {
+                        button type="submit" class="wo-primary" { "Close" }
+                    }
+                } @else {
+                    p class="wo-dialog-actions" { a href="#" role="button" { "Close" } }
                 }
             }
         }
@@ -46,17 +53,16 @@ pub const CSS: &str = r#"
   padding: calc(var(--wo-space) * 3); max-width: 28rem; width: calc(100% - 2rem);
 }
 .wo-dialog dialog::backdrop { background: rgb(0 0 0 / 0.45); }
-.wo-dialog-actions { display: flex; justify-content: flex-end; gap: var(--wo-space); margin-top: var(--wo-space); }
-.wo-dialog-fallback { font-size: 0.85rem; }
+.wo-dialog-actions { display: flex; justify-content: flex-end; gap: var(--wo-space); margin: var(--wo-space) 0 0; }
+.wo-dialog-open, .wo-dialog-actions a[role="button"] {
+  display: inline-block; padding: 0.5rem 1rem; border: 1px solid var(--wo-line);
+  border-radius: var(--wo-radius); background: var(--wo-surface); color: inherit; text-decoration: none;
+}
+.wo-dialog-actions a[role="button"] { background: var(--wo-accent); color: var(--wo-on-accent); border-color: transparent; }
 
 /* :target fallback: a dialog that is the URL fragment renders as a fixed overlay. */
 .wo-dialog dialog:target {
   display: block; position: fixed; inset: 0; margin: auto; height: fit-content; z-index: 10;
   box-shadow: 0 0 0 100vmax rgb(0 0 0 / 0.45);
-}
-
-/* Hide the fallback links once the browser understands invoker commands. */
-@supports (anchor-name: --x) { /* proxy: shipped alongside invokers in Chrome 135 */
-  .wo-dialog-fallback { display: none; }
 }
 "#;

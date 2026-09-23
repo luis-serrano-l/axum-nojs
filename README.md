@@ -7,10 +7,12 @@ platform and ordinary form round trips. No page ships a `<script>` tag, and a te
 
 ```rust
 use maud::html;
-use webonsive::{layout, dialog, Theme};
+use webonsive::{Caps, layout, dialog, Theme};
 
-let page = layout("Hello", Theme::Auto, html! {
-    (dialog("hi", "Say hi", html! { p { "Hello from a <dialog>." } }))
+// `Caps` is what the server knows about the browser; in Axum it is an extractor.
+let caps = Caps::all();
+let page = layout(&caps, "Hello", Theme::Auto, html! {
+    (dialog(&caps, "hi", "Say hi", html! { p { "Hello from a <dialog>." } }))
 });
 ```
 
@@ -25,7 +27,9 @@ cargo test             # includes: no route may contain "<script"
 
 - One component = one file in `webonsive/src/`. Each starts with a `//!` header: what it does,
   the platform features it uses (with browser baseline), the fallback, a usage example.
-- Signatures are uniform: `fn name(id, ...required, ...) -> Markup`. No macros beyond `html!`.
+- Signatures are uniform: `fn name(&caps, id, ...required, ...) -> Markup`. No macros beyond `html!`.
+- `Caps` is server-side feature detection with no script: `@supports` beacons set one cookie per
+  capability, and each component emits only the variant that browser needs (see `/caps`).
 - Output HTML is semantic with one `wo-<component>` class per root. `curl` any page and read it.
 - CSS lives beside its component as `const CSS`. Theming is via `--wo-*` custom properties only.
 
@@ -33,15 +37,16 @@ cargo test             # includes: no route may contain "<script"
 
 | Component | Platform feature | Baseline | Fallback | Needs JS? |
 |---|---|---|---|---|
-| Dialog | `<dialog>`, `command`/`commandfor` invokers, `closedby`, `<form method=dialog>` | dialog 2022; invokers Chrome 135 / Firefox 144 / Safari 26 | `:target` overlay via `href="#id"` link | No |
-| Popover menu | `popover` + `popovertarget`, anchor positioning | popover 2024; anchors Chrome 125 / Safari 26, Firefox flag | UA-centred popover | No |
-| Tabs | `<details name>`, `display: contents`, `::details-content` + `order` | details name 2024; ::details-content Chrome 131 / Firefox 138 / Safari 18.4 | plain accordion | No |
+| Capability beacons | `@supports` + background-image beacons + cookies | 2015 (`selector()` 2022) | unknown browser gets every fallback | No |
+| Dialog | `<dialog>`, `command`/`commandfor` invokers, `closedby`, `<form method=dialog>` | dialog 2022; invokers Chrome 135 / Firefox 144 / Safari 26.2 | `:target` overlay via `href="#id"` link, chosen server-side | No |
+| Popover menu | `popover` + `popovertarget`, anchor positioning | popover 2024; anchors Chrome 125 / Firefox 147 / Safari 26 | no anchor: UA-centred popover; no popover: `<details>` dropdown | No |
+| Tabs | `<details name>`, `display: contents`, `::details-content` + `order` | details name 2024; ::details-content Chrome 131 / Firefox 143 / Safari 18.4 | accordion markup, chosen server-side | No |
 | Accordion | `<details name>`, `::details-content` transition | 2024 | non-exclusive `<details>` | No |
 | Combobox | `<input list>` + `<datalist>`, `<search>` | 2020 / 2023 | none needed | Suggestions no; live results **yes** |
 | Load-more list | links + `@view-transition { navigation: auto }` + `scroll-margin` | Chrome 126 / Safari 18.2, Firefox flag | plain navigation | Click-to-load no; scroll-to-load **yes** |
 | Validated form | `required`/`pattern`/`min`, `:user-invalid`, Post/Redirect/Get | 2015 / 2023 | none needed | No |
 | Counter | `<form method=post>`, `<button name value>`, cookie | forever | none needed | No |
-| Theme toggle | `prefers-color-scheme`, `light-dark()`, cookie + `data-theme` | light-dark() 2024 | OS preference | No |
+| Theme toggle | `prefers-color-scheme`, cookie + `data-theme` | 2020 | OS preference | No |
 
 ## Findings
 
@@ -53,10 +58,14 @@ cargo test             # includes: no route may contain "<script"
 - `:user-invalid` gives validation UX that used to need a library.
 
 **What needs a fallback today**
-- Invoker commands and anchor positioning are Chrome-first. Firefox 144+ has invokers; anchor
-  positioning is still behind a flag there. The dialog's `:target` fallback covers it.
-- CSS cannot feature-detect HTML attributes, so the dialog hides its fallback links behind
-  `@supports (anchor-name: --x)` as a proxy. This is the ugliest thing in the crate.
+- Invoker commands need Chrome 135 / Firefox 144 / Safari 26.2. The server picks the `:target`
+  dialog for anything older, so a page never carries both variants.
+- CSS cannot feature-detect HTML attributes. `invokers` and `streaming_dsd` are detected through
+  CSS features that shipped in the same releases; the proxies and their error bands are listed in
+  `FINDINGS.md`.
+- The first page view of a new browser is always the fallback variant: the beacons fire during
+  that load, the cookie lands, and the second view is tailored. A `curl` client stays on
+  fallbacks forever, which is what you want.
 
 **What is impossible without script**
 - Filtering results as you type against server data. Datalist covers static suggestions only.
@@ -73,8 +82,10 @@ reacts per keystroke, it is not.
 
 ```
 webonsive/src/lib.rs        crate docs, re-exports, stylesheet()
-webonsive/src/layout.rs     page shell + base CSS
+webonsive/src/caps.rs       Caps bitset, @supports beacons, cookie parsing, /wo/caps route
+webonsive/src/layout.rs     page shell + base CSS + beacons
 webonsive/src/<name>.rs     one component each: dialog, popover, tabs, accordion,
                             combobox, pager, form, counter, theme
 demo/src/main.rs            Axum routes, ≤15 lines each, plus the no-script test
+FINDINGS.md                 what works, what needs a fallback, what is impossible without JS
 ```
