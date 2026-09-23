@@ -8,7 +8,9 @@ same markup update in place: forms and links inside a swap root (`id` + `data-wo
 fetched and only that root is replaced, so a counter clicked five times counts five without a
 reload. A control anywhere can name its root with `data-wo-target="#id"` and how the new
 markup lands with `data-wo-swap="outer|inner|append|prepend"`; elements marked `data-wo-oob`
-in a response update their twin anywhere on the page. Every page works identically with the script blocked; that is the only `<script>` tag
+in a response update their twin anywhere on the page. While a request runs the root and form
+carry `data-wo-busy` and `aria-busy`, submit buttons are disabled and a `data-wo-indicator`
+element shows; a failed request becomes the plain navigation. Every page works identically with the script blocked; that is the only `<script>` tag
 allowed, and a test enforces it.
 
 ```rust

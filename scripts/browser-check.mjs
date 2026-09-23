@@ -94,6 +94,19 @@ try {
   assert((await text("#note-count")) === String(before + 1), "swap: out-of-band count updated outside the target");
   assert(!(await js("return document.querySelector('[data-wo-oob]')")), "swap: oob element not left in the page");
   assert(await navigations() === 1, "swap: target and append without a reload");
+  // Busy state is observable synchronously right after the submit is dispatched.
+  await type("input[name=note]", "again");
+  const busy = await js(`var f = document.querySelector("form[data-wo-target='#log']"); f.requestSubmit();
+    return [document.querySelector('#log').hasAttribute('data-wo-busy'), f.getAttribute('aria-busy'), f.querySelector('button').disabled, !document.querySelector('#saving').hidden]`);
+  assert(busy.every(Boolean), "busy: root marked, form aria-busy, button disabled, indicator shown while pending");
+  await until(async () => (await js("return document.querySelectorAll('#log li').length")) === before + 2, "second note appended");
+  const idle = await js("return [!document.querySelector('[data-wo-busy],[aria-busy],[data-wo-disabled]'), !document.querySelector('form button').disabled, document.querySelector('#saving').hidden]");
+  assert(idle.every(Boolean), "busy: everything restored after the swap");
+  // A failed fetch becomes the navigation the browser would have made.
+  await js("window.fetch = function () { return Promise.reject(new Error('down')); }");
+  await click("a[data-wo-target='#count']");
+  await until(async () => await js("return !/down/.test(String(window.fetch))"), "document reloaded after the failed fetch");
+  assert(await js("return location.search") === "?n=2" && (await text("#count")) === "2", "busy: failed request fell back to a full navigation");
 
   // Range: output mirrors while moving, before any submit.
   await go("/inputs");

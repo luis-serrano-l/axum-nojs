@@ -20,6 +20,7 @@ page.
 | `--wo-ok` | `#2f7a3a` / `#7bd389` | The "yes" cells on `/caps`; free for your own success states. |
 | `--wo-radius` | `6px` | Corners of buttons, inputs, dialogs, popovers, chips, `<code>`, the colour swatch. |
 | `--wo-space` | `8px` | The unit every gap, margin and padding is a multiple of (`calc(var(--wo-space) * 3)`). |
+| `--wo-busy` | `0.6` | Not a `Tokens` field: the opacity of a swap root or form while the enhancement script has a request in flight (`[data-wo-busy]`). Set it to `1` on `:root` or on one root to turn the fade off. |
 
 The dark palette applies under `prefers-color-scheme: dark` unless `<html data-theme="light">`,
 and always under `data-theme="dark"`. `theme_toggle` sets that attribute through a cookie, so a

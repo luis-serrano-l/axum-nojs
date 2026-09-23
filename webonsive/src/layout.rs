@@ -220,6 +220,9 @@ button:hover { border-color: var(--wo-accent); }
 button.wo-primary { background: var(--wo-accent); color: var(--wo-on-accent); border-color: transparent; }
 input, select, textarea { background: var(--wo-surface); border: 1px solid var(--wo-line); border-radius: var(--wo-radius); padding: 0.5rem 0.75rem; }
 :focus-visible { outline: 2px solid var(--wo-accent); outline-offset: 2px; }
+/* A swap root or form with a request in flight (set by the enhancement script only). The
+   fade waits so a fast answer never flickers; --wo-busy: 1 turns it off. */
+[data-wo-busy] { opacity: var(--wo-busy, 0.6); transition: opacity 0.15s 0.2s; cursor: progress; }
 table { border-collapse: collapse; width: 100%; }
 th, td { text-align: left; padding: 0.5rem; border-bottom: 1px solid var(--wo-line); vertical-align: top; }
 th { color: var(--wo-muted); font-weight: 600; }

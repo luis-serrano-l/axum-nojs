@@ -107,7 +107,7 @@ script does its job.
 - [x] Out-of-band updates: a response may carry extra swap roots marked `data-wo-oob`; the
   script replaces each matching `id` anywhere in the page (flash banner, counter in the header)
   and drops them from the main swap. Without the script the full page already shows them.
-- [ ] Request lifecycle feedback: `data-wo-busy` class on the root while a request is in flight,
+- [x] Request lifecycle feedback: `data-wo-busy` class on the root while a request is in flight,
   `aria-busy="true"`, submit buttons disabled, a `--wo-busy` CSS hook; optional
   `data-wo-indicator="#id"` element shown while pending. Failed requests fall back to a normal
   navigation so the user always sees the server's answer.

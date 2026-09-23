@@ -24,7 +24,12 @@
 //! navigation to the same URL. A response may also carry elements marked `data-wo-oob`
 //! (out of band): each replaces the element of the same `id` anywhere in the page, in the
 //! mode the attribute names (`outer` by default), and is dropped from the main swap; the
-//! full page without the script already shows them in place.
+//! full page without the script already shows them in place. While a request is in flight
+//! the root and the form carry `data-wo-busy` and `aria-busy="true"`, the form's submit
+//! buttons are disabled, and an element named by `data-wo-indicator="#id"` (authored with
+//! `hidden`) is shown; the `--wo-busy` property sets how much the busy root fades. A request
+//! that fails becomes the plain navigation the browser would have made, so the server's
+//! answer is always seen.
 //! Rapid actions on one root are queued, so a counter clicked five times counts five. The
 //! script also mirrors `<input type=range>` and `type=color` values while they move, opens
 //! the `:target` dialog fallback as a real modal, and searches a combobox as you type.
@@ -106,12 +111,33 @@ function target(el) {
   return { id: root.id, mode: m ? m.getAttribute("data-wo-swap") : "outer" };
 }
 
-function request(t, url, init, push) {
-  var id = t.id, run = function () {
+var pending = {};
+// Busy marks on the root and the source (form or link): attributes for CSS and assistive
+// tech, submit buttons disabled, the named indicator shown. Everything is undone after.
+function busy(t, src, on) {
+  var root = document.getElementById(t.id);
+  [root, src].forEach(function (el) {
+    if (!el) return;
+    if (on) { el.setAttribute("data-wo-busy", ""); el.setAttribute("aria-busy", "true"); }
+    else { el.removeAttribute("data-wo-busy"); el.removeAttribute("aria-busy"); }
+  });
+  if (src.tagName === "FORM") src.querySelectorAll(on ? "button:not([type=button]):not(:disabled),input[type=submit]:not(:disabled)" : "[data-wo-disabled]").forEach(function (b) {
+    b.disabled = on; if (on) b.setAttribute("data-wo-disabled", ""); else b.removeAttribute("data-wo-disabled");
+  });
+  var i = src.closest("[data-wo-indicator]"), ind = i && document.querySelector(i.getAttribute("data-wo-indicator"));
+  if (ind) ind.hidden = !on;
+}
+
+function request(t, src, url, init, push, fallback) {
+  var id = t.id;
+  pending[id] = (pending[id] || 0) + 1;
+  busy(t, src, true);
+  var run = function () {
     return fetch(url, init).then(function (res) {
       return res.text().then(function (html) { apply(parse(html), id, res.url, push, t.mode); });
-    }).catch(function () { location.reload(); });
+    }).then(function () { done(); }, function () { done(); fallback(); });
   };
+  var done = function () { pending[id]--; busy(t, src, false); if (pending[id]) busy(t, src, true); };
   queue[id] = (queue[id] || Promise.resolve()).then(run, run);
   return queue[id];
 }
@@ -126,7 +152,7 @@ function submit(form, submitter) {
   var params = new URLSearchParams(data);
   if ((form.method || "get").toLowerCase() === "post") { init.method = "POST"; init.body = params; }
   else url.search = params.toString();
-  request(t, url.href, init, false);
+  request(t, form, url.href, init, false, function () { HTMLFormElement.prototype.submit.call(form); });
   return true;
 }
 
@@ -150,7 +176,7 @@ document.addEventListener("click", function (e) {
   var t = target(a);
   if (!t || a.origin !== location.origin) return;
   e.preventDefault();
-  request(t, a.href, { credentials: "same-origin", headers: { "Wo-Enhance": "1" } }, true);
+  request(t, a, a.href, { credentials: "same-origin", headers: { "Wo-Enhance": "1" } }, true, function () { location.href = a.href; });
 });
 
 var typing;
