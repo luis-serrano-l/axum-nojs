@@ -36,6 +36,24 @@ cannot render is listed with issue links in `FINDINGS.md`. `scripts/browser-chec
 headless Firefox through geckodriver to check the enhancement script (in-place counter, tabs,
 search as you type, live range output, theme).
 
+## Use with any server
+
+The crate depends on Maud alone. Axum is an optional feature, and everything it does is a
+thin wrapper over plain functions on strings, so any server can do the same in a few lines:
+
+| You need | Without a framework | With `--features http` | With `--features axum` |
+|---|---|---|---|
+| What the browser supports | `Caps::from_query(query)` then `Caps::from_cookie_header(cookies)` | same | `caps: Caps` extractor |
+| The beacon route `GET /wo/caps?flag=x` | `caps::beacon_cookie(query)` → 204 + `Set-Cookie`, or 404 | same | `caps::router()` |
+| Tab, accordion, dialog state | `UiState::from_request(path, query, cookies)`, `state.set_cookies()` | same | `state: UiState` extractor, return `(state, page)` |
+| Post/Redirect/Get with a flash | `state::prg_parts(to, flash)` → 303, `Location`, `Set-Cookie` | `prg(to, flash)` → `http::Response<B>` | `prg(to, flash)` → `Response` |
+| Out-of-order streaming | | `Streamed::into_stream()` → chunks | `impl IntoResponse for Streamed` |
+| The optional script | serve `enhance::JS` at `enhance::SCRIPT_PATH` | same | `enhance::router()` |
+
+`webonsive/examples/hyper_server.rs` is the whole of it on raw hyper: three components, the
+beacon route, a POST answered with PRG, the script served by hand. `.into_string()` on any
+component gives the HTML to another template engine.
+
 ## How to read this crate
 
 - One component = one file in `webonsive/src/`. Each starts with a `//!` header: what it does,

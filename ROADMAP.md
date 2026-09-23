@@ -61,7 +61,7 @@ matrix and findings are updated, and the work is committed. Unknowns become entr
 - [x] Every component returns `Markup` that also implements `Render`; a `string` feature (or `.into_string()` docs) shows use without Maud templates
 - [x] `state::prg`, `flash` and `stream` compile without Axum: an `http` feature exposes `http::Response` builders, the `axum` feature wraps them
 - [x] Example `webonsive/examples/actix_server.rs` (or `hyper_server.rs`) rendering three components with the beacon route wired by hand
-- [ ] README: "Use with any server" section; CLAUDE.md workspace notes updated
+- [x] README: "Use with any server" section; CLAUDE.md workspace notes updated
 
 ## M9 · `wo-caps` as its own crate
 - [ ] Move `caps.rs` (bitset, `@supports` beacons, cookie parsing, beacon route) into `wo-caps/` in the workspace; `webonsive` depends on it and re-exports `Caps`, `Cap`
