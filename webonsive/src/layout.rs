@@ -80,8 +80,11 @@ pub const CSS: &str = r#"
 /* The root does not cross-fade: the swap is instant and only named parts morph, so a
    navigation never feels slower than the plain reload it replaces. */
 ::view-transition-old(root), ::view-transition-new(root) { animation: none; }
-::view-transition-group(*) { animation-duration: 160ms; animation-timing-function: ease-out; }
-::view-transition-old(*), ::view-transition-new(*) { animation-duration: 160ms; }
+::view-transition-group(*) { animation-duration: 120ms; animation-timing-function: ease-out; }
+::view-transition-old(*), ::view-transition-new(*) { animation-duration: 120ms; }
+/* The transition overlay must not eat clicks: a counter tapped twice quickly would lose the
+   second tap while the first one is still morphing. */
+::view-transition { pointer-events: none; }
 
 :root {
   color-scheme: light dark;

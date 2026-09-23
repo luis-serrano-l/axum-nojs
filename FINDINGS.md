@@ -49,6 +49,11 @@ from `webonsive::spec` into `spec/components.json` and README.
   gives a backdrop and focus trap. `#id` + `:target` fakes the overlay.
 - Persisting a native `<details>` toggle. The title link now fills the summary so every
   click is a navigation; an instant client-only toggle would be undone by the next render.
+- Clicking faster than a document reloads. Every counter press is POST, 303, GET and a fresh
+  document; a click that lands while the old one is unloading is dropped. The floor is the
+  browser's reload time, tens of milliseconds on localhost, and nothing in HTML batches it.
+  The transition overlay at least no longer swallows clicks (`::view-transition {
+  pointer-events: none }`).
 - Optimistic UI, offline behaviour, undo without a round trip.
 - Drag and drop, resizable panes, canvas or charts drawn from data.
 - Feature-detecting HTML attributes. CSS can only test CSS; `invokers` and `streaming_dsd`
