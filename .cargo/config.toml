@@ -1,0 +1,3 @@
+[alias]
+# `cargo dev`: rebuild and restart the demo whenever a source file changes.
+dev = ["watch", "-x", "run -p demo"]

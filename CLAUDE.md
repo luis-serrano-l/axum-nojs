@@ -19,6 +19,7 @@ second file; when something needs more, extend `enhance.rs` and keep the no-scri
 
 ```sh
 cargo run -p demo                  # demo server at http://127.0.0.1:3000
+cargo dev                          # same, rebuilt and restarted on every save (needs cargo-watch)
 cargo test                         # all tests, including the only-one-script test and doctests
 cargo test -p demo pages_ship_only_the_enhancement_script   # the single enforcement test
 node scripts/browser-check.mjs     # headless Firefox via geckodriver: the script works (needs a built demo)

@@ -24,6 +24,7 @@ let page = layout(&caps, "Hello", Theme::Auto, html! {
 
 ```sh
 cargo run -p demo      # http://127.0.0.1:3000: index grouped by what the platform gives, every page links back
+cargo dev              # same, restarted on every save (cargo install cargo-watch)
 cargo test             # includes: only the enhancement <script> on any route, and Blitz layout tests
 scripts/verify.sh      # build + clippy -D warnings + tests + screenshots + <script> grep + Firefox check
 ```
