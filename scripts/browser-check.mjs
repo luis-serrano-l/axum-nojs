@@ -128,6 +128,20 @@ try {
   await until(async () => (await js("return window.__swaps.length")) === swapsBefore + 1, "swap with replace");
   assert(await js("return history.length") === len && await js("return location.search") === "?n=12", "history: data-wo-replace rewrites the entry");
 
+  // Dialog: opens modal from the invoker, focus on the first field, Escape closes, confirm posts.
+  await go("/dialog");
+  await click("button[command=show-modal]");
+  await until(async () => await js("return document.querySelector('dialog').open"), "dialog open");
+  assert(await js("return document.activeElement.name") === "reason", "dialog: focus landed on the first field");
+  await type("input[name=reason]", "\uE00C"); // Escape
+  await until(async () => !(await js("return document.querySelector('dialog').open")), "dialog closed by Escape");
+  await click("button[command=show-modal]");
+  await until(async () => await js("return document.querySelector('dialog').open"), "dialog open again");
+  await click("dialog button.wo-danger");
+  await until(async () => (await js("return document.querySelector('.wo-flash')?.textContent")) || "").then(() => {}, () => {});
+  await until(async () => /Account deleted/.test(await js("return document.querySelector('.wo-flash')?.textContent || ''")), "flash after confirm");
+  assert(await js("return location.pathname") === "/dialog" && !(await js("return document.querySelector('dialog').open")), "dialog: confirm posted and the server came back");
+
   // Range: output mirrors while moving, before any submit.
   await go("/inputs");
   await type("input[type=range]", ""); // ArrowRight

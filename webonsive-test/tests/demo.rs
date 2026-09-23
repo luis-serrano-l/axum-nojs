@@ -53,6 +53,13 @@ async fn dialog_variants_follow_caps() {
     let page = Page::render(demo::router(), "/dialog?dialog=confirm", OLD).await;
     assert!(page.is_visible("dialog[open]"), "server-opened dialog renders");
     assert_eq!(page.text("dialog h2").as_deref(), Some("Delete account?"));
+    assert!(page.exists("dialog.wo-dialog-sm[aria-labelledby='confirm-title']"));
+    assert!(page.is_visible(".wo-dialog-danger form[method=post][action='/dialog/delete'] button.wo-danger"), "confirm is a real form");
+    assert!(page.exists("form input[type=hidden][name=returns_to][value='/dialog']"));
+    assert!(page.is_visible("a.wo-dialog-cancel[href='#']") && page.is_visible("a.wo-dialog-close[href='#']"), "fallback closes through links");
+    let page = Page::render(demo::router(), "/dialog?dialog=confirm", MODERN).await;
+    assert!(page.is_visible("button[command=close][commandfor=confirm]"), "cancel is an invoker");
+    assert!(page.exists("dialog > .wo-dialog-close:last-child"), "close control is last so focus lands on the field");
 }
 
 #[tokio::test]

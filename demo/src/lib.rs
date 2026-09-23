@@ -13,7 +13,7 @@ use maud::{Markup, html};
 use serde::Deserialize;
 use webonsive::{
     Cap, Caps, Field, FieldKind, Streamed, Theme, UiState, accordion, caps, color, combobox,
-    counter, dialog, dialog::DialogOptions, flash, form, layout, layout::{Palette, Tokens, layout_with}, paged_table, paged_table::PagedTableOptions,
+    counter, dialog, dialog::{DialogOptions, DialogSize}, flash, form, layout, layout::{Palette, Tokens, layout_with}, paged_table, paged_table::PagedTableOptions,
     pager, pager::PagerOptions, popover_menu, prg, range, range::RangeOptions, select, slot,
     table::{Column, sort_from_query}, tabs, theme_toggle, wizard, wizard::{Step, WizardOptions},
 };
@@ -32,6 +32,7 @@ pub fn router() -> Router {
         .route("/", get(index))
         .route("/caps", get(caps_page))
         .route("/dialog", get(dialog_page))
+        .route("/dialog/delete", post(dialog_delete))
         .route("/popover", get(popover_page))
         .route("/tabs", get(tabs_page))
         .route("/accordion", get(accordion_page))
@@ -59,7 +60,7 @@ fn theme_of(jar: &CookieJar) -> Theme {
 /// Every component in the index: path, title (what each route passes to `page`), group, and
 /// the platform features it is built on.
 const COMPONENTS: [(&str, &str, &str, &str); 15] = [
-    ("/dialog", "Dialog", "Overlays", "<dialog>, invoker commands"),
+    ("/dialog", "Dialog", "Overlays", "<dialog>, closedby, invoker commands, form footer"),
     ("/popover", "Popover menu", "Overlays", "popover, anchor positioning"),
     ("/tabs", "Tabs", "Disclosure", "<details name>, ::details-content"),
     ("/accordion", "Accordion", "Disclosure", "<details name>"),
@@ -142,12 +143,25 @@ async fn index(caps: Caps, jar: CookieJar, Query(q): Query<IndexQuery>) -> Marku
 
 async fn dialog_page(caps: Caps, jar: CookieJar, state: UiState) -> Markup {
     page(&caps, &jar, "Dialog", html! {
+        (flash(&caps, jar.get("wo-flash").map(|c| c.value().to_string()).as_deref()))
         (dialog(&caps, "confirm", "Delete account", html! {
-            h2 { "Delete account?" }
-            p { "This cannot be undone. The dialog is opened by an invoker button and closed by a " code { "method=dialog" } " form." }
-        }, DialogOptions::default().open(state.dialog() == Some("confirm"))))
-        p class="wo-note" { "Server-opened: " a href="/dialog?dialog=confirm" { "?dialog=confirm" } }
+            p { "This cannot be undone. Everything you wrote goes with it." }
+            label { "Tell us why (optional)" input name="reason" placeholder="Moving on"; }
+        }, DialogOptions::default().title("Delete account?").size(DialogSize::Sm).danger(true)
+            .confirm("Delete account", "/dialog/delete").returns_to("/dialog").cancel_label("Keep it")
+            .open(state.dialog() == Some("confirm"))))
+        p class="wo-note" { "Opened by an invoker button; the footer is a real form posting to " code { "/dialog/delete" } " with a hidden " code { "returns_to" } " so the server comes back here. Server-opened: " a href="/dialog?dialog=confirm" { "?dialog=confirm" } }
     })
+}
+
+#[derive(Deserialize)]
+struct DeleteForm { #[serde(default)] reason: String, #[serde(default)] returns_to: String }
+
+/// The confirm form's target: only ever redirects to a local path from `returns_to`.
+async fn dialog_delete(Form(f): Form<DeleteForm>) -> axum::response::Response {
+    let back = if f.returns_to.starts_with('/') && !f.returns_to.starts_with("//") { f.returns_to.as_str() } else { "/dialog" };
+    let msg = if f.reason.is_empty() { "Account deleted (not really)".to_string() } else { format!("Account deleted (not really). Reason: {}", f.reason) };
+    prg::<axum::body::Body>(back, Some(&msg))
 }
 
 async fn popover_page(caps: Caps, jar: CookieJar) -> Markup {

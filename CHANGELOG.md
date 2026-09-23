@@ -6,6 +6,17 @@ follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); the project us
 
 ## [Unreleased]
 
+### `webonsive`
+
+- Enhancement script: `data-wo-target`, `data-wo-swap`, `data-wo-oob`, the `Wo-Enhance: 1`
+  request header, busy state (`data-wo-busy`, `aria-busy`, disabled submit buttons,
+  `data-wo-indicator`, `--wo-busy`), failed requests fall back to a navigation,
+  `data-wo-push="false"`, `data-wo-replace`, Back/Forward restore from history state,
+  `wo:swap` event. Size limit raised to 10 KB.
+- `dialog`: `title` with a close control, `size` (`DialogSize::Sm|Md|Lg`), `danger`,
+  `confirm(label, action)` footer as a real `<form method="post">`, `returns_to`,
+  `cancel_label`, `closedby`. `button.wo-danger` in the base styles.
+
 ## [0.1.0] - 2026-09-23
 
 First release. Nothing here is published to crates.io yet.

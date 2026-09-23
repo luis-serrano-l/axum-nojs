@@ -41,9 +41,10 @@
       "features": [
         { "name": "<dialog>", "baseline": { "chrome": "37", "firefox": "98", "safari": "15.4" } },
         { "name": "command=\"show-modal\"", "baseline": { "chrome": "135", "firefox": "144", "safari": "26.2" } },
-        { "name": "<form method=\"dialog\">", "baseline": { "chrome": "37", "firefox": "98", "safari": "15.4" } }
+        { "name": "<form method=\"dialog\">", "baseline": { "chrome": "37", "firefox": "98", "safari": "15.4" } },
+        { "name": "closedby", "baseline": { "chrome": "134", "firefox": "141", "safari": "26" } }
       ],
-      "fallback": "link to #id opens it through a :target rule, chosen server-side",
+      "fallback": "link to #id opens it through a :target rule, chosen server-side; the confirm footer is a plain form either way",
       "needs_js": "no"
     },
     {

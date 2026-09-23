@@ -83,7 +83,7 @@ pub use wo_caps::{Cap, Caps};
 pub use color::color;
 pub use combobox::combobox;
 pub use counter::counter;
-pub use dialog::{DialogOptions, dialog};
+pub use dialog::{DialogOptions, DialogSize, dialog};
 pub use flash::flash;
 pub use form::{Field, FieldKind, form};
 pub use layout::{Tokens, layout, layout_with};

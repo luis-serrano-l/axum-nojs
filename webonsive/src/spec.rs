@@ -118,8 +118,9 @@ pub const SPECS: &[ComponentSpec] = &[
             f("<dialog>", b("37", "98", "15.4")),
             f("command=\"show-modal\"", b("135", "144", "26.2")),
             f("<form method=\"dialog\">", b("37", "98", "15.4")),
+            f("closedby", b("134", "141", "26")),
         ],
-        fallback: "link to #id opens it through a :target rule, chosen server-side",
+        fallback: "link to #id opens it through a :target rule, chosen server-side; the confirm footer is a plain form either way",
         needs_js: NeedsJs::No,
     },
     ComponentSpec {

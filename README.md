@@ -111,7 +111,7 @@ browser-compat-data; `no` means unshipped, so that browser gets the fallback.
 | Enhancement script | `fetch`, `history.pushState`, `document.startViewTransition`, `CustomEvent` | 42 / 39 / 10.1; 5 / 4 / 5; 111 / 144 / 18; 15 / 11 / 6 | none needed: without the script every form and link is a normal navigation and every data-wo-* attribute is inert | No |
 | Layout | `@view-transition`, `prefers-color-scheme`, `custom properties` | 126 / no / 18.2; 76 / 67 / 12.1; 49 / 31 / 9.1 | plain navigations (root never cross-fades); colours still switch by media query and data-theme | No |
 | Capability beacons | `@supports`, `selector()`, `background images`, `cookies` | 28 / 22 / 9; 83 / 69 / 14.1; 1 / 1 / 1; 1 / 1 / 1 | unknown browser gets every fallback; the first view always does | No |
-| Dialog | `<dialog>`, `command="show-modal"`, `<form method="dialog">` | 37 / 98 / 15.4; 135 / 144 / 26.2; 37 / 98 / 15.4 | link to #id opens it through a :target rule, chosen server-side | No |
+| Dialog | `<dialog>`, `command="show-modal"`, `<form method="dialog">`, `closedby` | 37 / 98 / 15.4; 135 / 144 / 26.2; 37 / 98 / 15.4; 134 / 141 / 26 | link to #id opens it through a :target rule, chosen server-side; the confirm footer is a plain form either way | No |
 | Popover menu | `popover`, `anchor-name` | 114 / 125 / 17; 125 / 147 / 26 | no anchor: UA-centred popover; no popover: <details> dropdown | No |
 | Tabs | `<details name`, `display: contents`, `::details-content` | 120 / 130 / 17.2; 65 / 37 / 11.1; 131 / 143 / 18.4 | accordion markup, chosen server-side | No |
 | Accordion | `<details name`, `::details-content`, `interpolate-size` | 120 / 130 / 17.2; 131 / 143 / 18.4; 129 / no / no | plain <details>: no exclusivity, no animation | No |
