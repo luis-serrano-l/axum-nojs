@@ -2,7 +2,7 @@
 
 use webonsive_test::Page;
 
-const MODERN: &str = "wo-cap-probed=1; wo-cap-invokers=1; wo-cap-anchor=1; wo-cap-details_content=1; wo-cap-view_transitions=1; wo-cap-popover=1; wo-cap-light_dark=1; wo-cap-streaming_dsd=1";
+const MODERN: &str = "wo-cap-probed=1; wo-cap-invokers=1; wo-cap-anchor=1; wo-cap-details_content=1; wo-cap-view_transitions=1; wo-cap-popover=1; wo-cap-light_dark=1; wo-cap-streaming_dsd=1; wo-cap-base_select=1";
 const OLD: &str = "wo-cap-probed=1";
 
 fn shot(page: &mut Page, name: &str) {
@@ -90,13 +90,13 @@ async fn settings_flash_and_form_values() {
 #[tokio::test]
 async fn caps_table_lists_every_flag() {
     let page = Page::render(demo::router(), "/caps", MODERN).await;
-    assert_eq!(page.count(".wo-caps-table tbody tr"), 8);
-    assert_eq!(page.count(".wo-yes"), 8);
+    assert_eq!(page.count(".wo-caps-table tbody tr"), 9);
+    assert_eq!(page.count(".wo-yes"), 9);
     let old = Page::render(demo::router(), "/caps", OLD).await;
-    assert_eq!(old.count(".wo-no"), 7);
+    assert_eq!(old.count(".wo-no"), 8);
     assert!(!old.exists(".wo-caps"), "probed browser gets no beacons");
     let fresh = Page::render(demo::router(), "/caps", "").await;
-    assert_eq!(fresh.count(".wo-cap"), 8, "unknown browser gets one beacon per flag");
+    assert_eq!(fresh.count(".wo-cap"), 9, "unknown browser gets one beacon per flag");
 }
 
 /// Documented limitation (FINDINGS.md, M4): Blitz parses `<template>` as inert and does not

@@ -49,6 +49,7 @@ pub fn tabs(caps: &Caps, name: &str, panels: &[(&str, Markup)], state: Option<&U
     }
 }
 
+/// Styles for this component; included in [`crate::stylesheet`].
 pub const CSS: &str = r#"
 .wo-tabs:not(.wo-accordion) { display: flex; flex-wrap: wrap; border-bottom: 1px solid var(--wo-line); }
 .wo-tabs:not(.wo-accordion) summary {

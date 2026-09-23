@@ -60,6 +60,9 @@ browser-compat-data; `no` means unshipped, so that browser gets the fallback.
 | Theme toggle | `prefers-color-scheme`, `color-scheme`, `cookie` | 76 / 67 / 12.1; 81 / 96 / 13; 1 / 1 / 1 | OS preference | No |
 | Flash | `cookie`, `role="status"` | 1 / 1 / 1; 1 / 1 / 1 | none needed | No |
 | UI state | `links`, `cookies`, `303 See Other` | 1 / 1 / 1; 1 / 1 / 1; 1 / 1 / 1 | without cookies, state still travels in links on one page | No |
+| Select | `<selectedcontent>`, `appearance: base-select` | 135 / no / 27; 135 / no / 27 | plain <select>, chosen server-side | No |
+| Range | `<input type="range">`, `<datalist>` | 4 / 23 / 3.1; 20 / 110 / 12.1 | ticks not drawn | Partly: value shown after submit; live mirroring needs script |
+| Color | `<input type="color">` | 20 / 29 / 12.1 | text field accepting #rrggbb | No |
 | Streaming | `<template shadowrootmode="open">`, `<slot name`, `Chunked transfer` | 111 / 123 / 16.4; 53 / 63 / 10; 1 / 1 / 1 | in-order streaming with in-place splicing | No |
 <!-- matrix:end -->
 
@@ -76,6 +79,7 @@ issues.
   declarative shadow DOM, and the first page view of every browser (beacons not fired yet).
   All fallbacks are chosen server-side from `Caps`; a page never carries both variants.
 - **Impossible without script:** filtering as you type against server data, infinite scroll,
+  mirroring a slider's value while it moves,
   a modal opened on load, persisting client-side `<details>` toggles, optimistic UI, offline,
   undo, drag and drop, canvas, and feature-detecting HTML attributes from CSS.
 
@@ -92,7 +96,11 @@ webonsive/src/layout.rs     page shell + base CSS + beacons
 webonsive/src/stream.rs     Streamed response: DSD slots out of order, in-order fallback
 webonsive/src/state.rs      UiState (query + cookie), prg() redirect with flash
 webonsive/src/flash.rs      one-shot status banner
+webonsive/src/select.rs     <select> with <selectedcontent> where supported
+webonsive/src/range.rs      <input type=range> with ticks and a server-rendered <output>
+webonsive/src/color.rs      <input type=color> with a swatch of the saved value
 webonsive/src/spec.rs       SPECS: features, per-browser baselines, fallback, needs_js
+webonsive/examples/         render_page (no server), axum_server (--features axum)
 spec/components.json        generated from SPECS (cargo run -p demo -- spec write)
 docs/state.md               how state works with no script
 webonsive/src/<name>.rs     one component each: dialog, popover, tabs, accordion,

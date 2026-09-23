@@ -25,7 +25,9 @@ pub enum Theme {
     /// Follow the operating system preference.
     #[default]
     Auto,
+    /// Always light.
     Light,
+    /// Always dark.
     Dark,
 }
 
@@ -64,6 +66,7 @@ pub fn theme_toggle(_caps: &Caps, action: &str, current: Theme) -> Markup {
     }
 }
 
+/// Styles for this component; included in [`crate::stylesheet`].
 pub const CSS: &str = r#"
 .wo-theme { display: inline-flex; gap: 0; border: 1px solid var(--wo-line); border-radius: var(--wo-radius); overflow: hidden; }
 .wo-theme button { border: 0; border-radius: 0; background: transparent; padding: 0.4rem 0.8rem; text-transform: capitalize; }

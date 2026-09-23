@@ -51,6 +51,7 @@ pub fn pager(caps: &Caps, href: &str, items: &[Markup], page: usize, per_page: u
     }
 }
 
+/// Styles for this component; included in [`crate::stylesheet`].
 pub const CSS: &str = r#"
 .wo-pager-list { margin: 0; padding-left: 1.5rem; }
 .wo-pager-list li { padding: 0.4rem 0; border-bottom: 1px solid var(--wo-line); }

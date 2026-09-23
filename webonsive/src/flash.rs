@@ -28,6 +28,7 @@ pub fn flash(_caps: &Caps, message: Option<&str>) -> Markup {
     }
 }
 
+/// Styles for this component; included in [`crate::stylesheet`].
 pub const CSS: &str = r#"
 .wo-flash {
   padding: 0.6rem 1rem; border-radius: var(--wo-radius);

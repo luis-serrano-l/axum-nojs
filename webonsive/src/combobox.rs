@@ -39,6 +39,7 @@ pub fn combobox(_caps: &Caps, action: &str, name: &str, options: &[&str], value:
     }
 }
 
+/// Styles for this component; included in [`crate::stylesheet`].
 pub const CSS: &str = r#"
 .wo-combobox form { display: flex; gap: var(--wo-space); }
 .wo-combobox input { flex: 1; }

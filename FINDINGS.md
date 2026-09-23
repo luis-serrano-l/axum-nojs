@@ -41,6 +41,8 @@ from `webonsive::spec` into `spec/components.json` and README.
 
 - Filtering results as you type against server data. `<datalist>` covers static suggestions;
   results update per submit.
+- Mirroring a slider or colour picker while it moves. The `<output>` and the swatch show the
+  value the server last saved; they update on submit.
 - Infinite scroll. Cumulative pages with one click per page is the ceiling.
 - A modal opened on page load. `<dialog open>` is visible but not modal; only `showModal()`
   gives a backdrop and focus trap. `#id` + `:target` fakes the overlay.
@@ -137,6 +139,23 @@ engine, so passing there is proof the page needs none.
 The DSD gap is pinned by a test (`blitz_has_no_declarative_shadow_dom`) that fails the day
 Blitz gains it, so the exception in the screenshot loop gets removed then. Blitz's `svg`
 feature is off: `usvg 0.48` wants `base64 ^0.23`, which the local index did not resolve.
+
+### M6 · Polish
+
+**Customisable `<select>` is a real detection, not a proxy.** `@supports
+selector(::picker(select))` is exactly the feature `<selectedcontent>` ships with (Chrome 135,
+Safari 27; Firefox behind two flags), so `Cap::BaseSelect` has no error band. Older parsers
+drop a `<button>` inside `<select>`, which is why the enhanced markup is only sent to browsers
+that asked for it. Neither Firefox 155 nor Chrome 109 on this machine has it, so both got the
+plain select; the markup branch is covered by the unit tests.
+
+**Blitz and form controls.** Blitz 0.3.0-beta.2 paints `<select>` and `<input type=color>` as
+empty boxes and `<input type=range>` as an inert box ([#456](https://github.com/DioxusLabs/blitz/issues/456);
+all three under the form-controls tracking issue [#258](https://github.com/DioxusLabs/blitz/issues/258)).
+The `/inputs` screenshot therefore shows the layout, not the controls.
+
+**Publishing.** `cargo publish --dry-run -p webonsive` packages and builds cleanly. A real
+publish still needs a `license` field, which is a decision for the owner (see `BLOCKED.md`).
 
 ### M5 · Machine-readable spec
 

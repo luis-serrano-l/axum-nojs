@@ -50,6 +50,7 @@ pub fn popover_menu(caps: &Caps, id: &str, label: &str, items: &[(&str, &str)]) 
     }
 }
 
+/// Styles for this component; included in [`crate::stylesheet`].
 pub const CSS: &str = r#"
 .wo-popover { display: inline-block; position: relative; }
 .wo-popover nav {

@@ -14,3 +14,14 @@ maud.workspace = true
 axum = { workspace = true, optional = true }
 futures-util = { version = "0.3", optional = true, default-features = false, features = ["std"] }
 bytes = { version = "1", optional = true }
+
+[dev-dependencies]
+axum.workspace = true
+tokio.workspace = true
+
+[[example]]
+name = "axum_server"
+required-features = ["axum"]
+
+[package.metadata.docs.rs]
+all-features = true

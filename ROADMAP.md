@@ -43,7 +43,7 @@ matrix and findings are updated, and the work is committed. Unknowns become entr
 - [x] Doc comment headers in every component checked against the spec by a test
 
 ## M6 · Polish for release
-- [ ] `<select>` with `<selectedcontent>` component, `<input type=range>` and colour with server round trip
-- [ ] Crate docs on docs.rs style: every pub item documented, `#![warn(missing_docs)]`
-- [ ] Examples in `webonsive/examples/`
-- [ ] Publish dry run: `cargo publish --dry-run -p webonsive`
+- [x] `<select>` with `<selectedcontent>` component, `<input type=range>` and colour with server round trip
+- [x] Crate docs on docs.rs style: every pub item documented, `#![warn(missing_docs)]`
+- [x] Examples in `webonsive/examples/`
+- [x] Publish dry run: `cargo publish --dry-run -p webonsive`

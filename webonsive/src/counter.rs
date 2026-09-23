@@ -34,6 +34,7 @@ pub fn counter(caps: &Caps, action: &str, value: i64) -> Markup {
     }
 }
 
+/// Styles for this component; included in [`crate::stylesheet`].
 pub const CSS: &str = r#"
 .wo-counter { display: inline-flex; align-items: center; gap: var(--wo-space); }
 .wo-counter output { min-width: 3ch; text-align: center; font-size: 1.5rem; font-variant-numeric: tabular-nums; }

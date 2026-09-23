@@ -162,6 +162,7 @@ impl IntoResponse for Streamed {
     }
 }
 
+/// Styles for this component; included in [`crate::stylesheet`].
 pub const CSS: &str = r#"
 .wo-stream-pending { color: var(--wo-muted); font-style: italic; }
 .wo-stream-section { border: 1px solid var(--wo-line); border-radius: var(--wo-radius); padding: 1rem; margin-bottom: var(--wo-space); background: var(--wo-surface); }

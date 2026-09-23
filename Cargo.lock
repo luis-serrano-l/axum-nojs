@@ -2558,6 +2558,7 @@ dependencies = [
  "bytes",
  "futures-util",
  "maud",
+ "tokio",
 ]
 
 [[package]]

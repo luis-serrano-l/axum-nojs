@@ -25,8 +25,11 @@
 //! assert!(!page.into_string().contains("<script"));
 //! ```
 
+#![warn(missing_docs)]
+
 pub mod accordion;
 pub mod caps;
+pub mod color;
 pub mod combobox;
 pub mod counter;
 pub mod dialog;
@@ -35,6 +38,8 @@ pub mod form;
 pub mod layout;
 pub mod pager;
 pub mod popover;
+pub mod range;
+pub mod select;
 pub mod spec;
 pub mod state;
 #[cfg(feature = "axum")]
@@ -44,6 +49,7 @@ pub mod theme;
 
 pub use accordion::accordion;
 pub use caps::{Cap, Caps};
+pub use color::color;
 pub use combobox::combobox;
 pub use counter::counter;
 pub use dialog::dialog;
@@ -52,6 +58,8 @@ pub use form::{Field, FieldKind, form};
 pub use layout::layout;
 pub use pager::pager;
 pub use popover::popover_menu;
+pub use range::range;
+pub use select::select;
 #[cfg(feature = "axum")]
 pub use state::prg;
 pub use state::UiState;
@@ -75,6 +83,9 @@ pub fn stylesheet() -> String {
         counter::CSS,
         theme::CSS,
         flash::CSS,
+        select::CSS,
+        range::CSS,
+        color::CSS,
         #[cfg(feature = "axum")]
         stream::CSS,
         beacons.as_str(),

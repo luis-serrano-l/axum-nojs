@@ -48,6 +48,7 @@ pub fn dialog(caps: &Caps, id: &str, trigger: &str, body: Markup, open: bool) ->
     }
 }
 
+/// Styles for this component; included in [`crate::stylesheet`].
 pub const CSS: &str = r#"
 .wo-dialog { display: inline-flex; gap: var(--wo-space); align-items: center; }
 .wo-dialog dialog {

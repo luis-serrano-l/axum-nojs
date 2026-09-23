@@ -18,8 +18,11 @@
 /// First version of each engine that supports a feature; `"no"` when unshipped.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Baseline {
+    /// First Chrome version, or `"no"`.
     pub chrome: &'static str,
+    /// First Firefox version, or `"no"`.
     pub firefox: &'static str,
+    /// First Safari version, or `"no"`.
     pub safari: &'static str,
 }
 
@@ -27,7 +30,9 @@ pub struct Baseline {
 /// component's `//!` doc header (a test checks it).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Feature {
+    /// The feature as written in the component's doc header.
     pub name: &'static str,
+    /// Where it shipped.
     pub baseline: Baseline,
 }
 
@@ -47,9 +52,11 @@ pub struct ComponentSpec {
     pub name: &'static str,
     /// File name under `webonsive/src/` without `.rs`.
     pub module: &'static str,
+    /// Platform features it relies on, in the order the header lists them.
     pub features: &'static [Feature],
     /// What happens in a browser missing any of the features.
     pub fallback: &'static str,
+    /// The verdict.
     pub needs_js: NeedsJs,
 }
 
@@ -184,6 +191,30 @@ pub const SPECS: &[ComponentSpec] = &[
         needs_js: NeedsJs::No,
     },
     ComponentSpec {
+        name: "Select",
+        module: "select",
+        features: &[
+            f("<selectedcontent>", b("135", "no", "27")),
+            f("appearance: base-select", b("135", "no", "27")),
+        ],
+        fallback: "plain <select>, chosen server-side",
+        needs_js: NeedsJs::No,
+    },
+    ComponentSpec {
+        name: "Range",
+        module: "range",
+        features: &[f("<input type=\"range\">", b("4", "23", "3.1")), f("<datalist>", b("20", "110", "12.1"))],
+        fallback: "ticks not drawn",
+        needs_js: NeedsJs::Partial("value shown after submit; live mirroring needs script"),
+    },
+    ComponentSpec {
+        name: "Color",
+        module: "color",
+        features: &[f("<input type=\"color\">", b("20", "29", "12.1"))],
+        fallback: "text field accepting #rrggbb",
+        needs_js: NeedsJs::No,
+    },
+    ComponentSpec {
         name: "Streaming",
         module: "stream",
         features: &[
@@ -279,6 +310,9 @@ mod tests {
         ("theme", include_str!("theme.rs")),
         ("flash", include_str!("flash.rs")),
         ("state", include_str!("state.rs")),
+        ("select", include_str!("select.rs")),
+        ("range", include_str!("range.rs")),
+        ("color", include_str!("color.rs")),
         ("stream", include_str!("stream.rs")),
     ];
 

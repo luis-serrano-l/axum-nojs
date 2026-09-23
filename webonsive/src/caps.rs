@@ -6,8 +6,8 @@
 //! request on, the server knows what the browser can do and every component emits only the
 //! markup that browser needs.
 //!
-//! **Platform features:** `@supports` (baseline 2015), `@supports selector()` (baseline 2022),
-//! CSS background images, cookies. Nothing else.
+//! **Platform features:** `@supports` (Chrome 28, Firefox 22, Safari 9), `@supports
+//! selector()` (Chrome 83, Firefox 69, Safari 14.1), CSS background images, cookies.
 //!
 //! **Fallback:** an unknown browser has no cookie and gets the fallback markup everywhere. The
 //! first page view always renders as a fallback: the beacons fire while it loads, and the second
@@ -57,11 +57,13 @@ pub enum Cap {
     LightDark,
     /// Declarative shadow DOM, `<template shadowrootmode>` (Chrome 111, Firefox 123, Safari 16.4).
     StreamingDsd,
+    /// Customisable `<select>`: `appearance: base-select`, `<selectedcontent>` (Chrome 135, Safari 27).
+    BaseSelect,
 }
 
 impl Cap {
     /// Every capability, in display order.
-    pub const ALL: [Cap; 8] = [
+    pub const ALL: [Cap; 9] = [
         Cap::Probed,
         Cap::Invokers,
         Cap::Anchor,
@@ -70,6 +72,7 @@ impl Cap {
         Cap::Popover,
         Cap::LightDark,
         Cap::StreamingDsd,
+        Cap::BaseSelect,
     ];
 
     /// Flag name used in cookies, beacon URLs and CSS class names.
@@ -83,6 +86,7 @@ impl Cap {
             Cap::Popover => "popover",
             Cap::LightDark => "light_dark",
             Cap::StreamingDsd => "streaming_dsd",
+            Cap::BaseSelect => "base_select",
         }
     }
 
@@ -108,6 +112,7 @@ impl Cap {
             Cap::LightDark => Some("(color: light-dark(#000, #fff))"),
             // Proxy: `:popover-open` shipped after declarative shadow DOM in every engine.
             Cap::StreamingDsd => Some("selector(:popover-open)"),
+            Cap::BaseSelect => Some("selector(::picker(select))"),
         }
     }
 
@@ -132,6 +137,7 @@ impl Cap {
                 "light-dark() is understood (informational; theming uses media queries)"
             }
             Cap::StreamingDsd => "out-of-order streaming via declarative shadow DOM slots",
+            Cap::BaseSelect => "<select> shows rich option content via <selectedcontent>",
         }
     }
 

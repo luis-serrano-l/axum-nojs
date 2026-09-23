@@ -11,15 +11,16 @@ use axum_extra::extract::cookie::{Cookie, CookieJar};
 use maud::{Markup, html};
 use serde::Deserialize;
 use webonsive::{
-    Cap, Caps, Field, FieldKind, Streamed, Theme, UiState, accordion, caps, combobox, counter,
-    dialog, flash, form, layout, pager, popover_menu, prg, slot, tabs, theme_toggle,
+    Cap, Caps, Field, FieldKind, Streamed, Theme, UiState, accordion, caps, color, combobox,
+    counter, dialog, flash, form, layout, pager, popover_menu, prg, range, select, slot, tabs,
+    theme_toggle,
 };
 use std::time::Duration;
 
 /// Every demo path the no-script test and the screenshot test visit.
-pub const PATHS: [&str; 12] = [
+pub const PATHS: [&str; 13] = [
     "/", "/caps", "/stream", "/settings", "/dialog?dialog=confirm", "/popover", "/tabs?tab.demo=1",
-    "/accordion?open.faq=1", "/combobox?q=r", "/list?page=2", "/form", "/counter",
+    "/accordion?open.faq=1", "/combobox?q=r", "/list?page=2", "/form", "/counter", "/inputs",
 ];
 
 /// The whole demo app.
@@ -37,6 +38,7 @@ pub fn router() -> Router {
         .route("/counter", get(counter_page).post(counter_submit))
         .route("/stream", get(stream_page))
         .route("/settings", get(settings_page).post(settings_submit))
+        .route("/inputs", get(inputs_page).post(inputs_submit))
         .route("/theme", post(theme_submit))
         .merge(caps::router())
 }
@@ -73,6 +75,7 @@ async fn index(caps: Caps, jar: CookieJar) -> Markup {
         ("/caps", "Capabilities", "@supports beacons + cookie"),
         ("/stream", "Streaming", "declarative shadow DOM slots"),
         ("/settings", "Settings", "UiState, PRG + flash"),
+        ("/inputs", "Select, range, colour", "<selectedcontent>, type=range, type=color"),
     ];
     page(&caps, &jar, "Components", html! {
         p { "Every page here ships zero " code { "<script>" } " tags." }
@@ -237,6 +240,39 @@ async fn settings_submit(jar: CookieJar, Form(f): Form<SettingsForm>) -> (Cookie
     let value = format!("{}|{}", f.name.replace('|', ""), u8::from(f.notify));
     let to = format!("/settings?tab.settings={}", f.tab);
     (jar.add(Cookie::new("settings", value)), prg(&to, Some("Settings saved.")))
+}
+
+#[derive(Deserialize)]
+struct Inputs { size: String, volume: i64, accent: String }
+
+const SIZES: [(&str, &str); 3] = [("s", "Small"), ("m", "Medium"), ("l", "Large")];
+
+/// Select, range and colour in one form; the chosen values live in an `inputs` cookie.
+async fn inputs_page(caps: Caps, jar: CookieJar, state: UiState) -> (UiState, Markup) {
+    let saved = jar.get("inputs").map(|c| c.value().to_string()).unwrap_or_default();
+    let mut parts = saved.split('|');
+    let (size, volume, accent) = (parts.next().unwrap_or("m"), parts.next().unwrap_or("40"), parts.next().unwrap_or("#2f5bea"));
+    let options: Vec<(&str, Markup)> = SIZES.iter()
+        .map(|(v, l)| (*v, html! { span class="wo-swatch" style={ "background: " (accent) } {} (l) }))
+        .collect();
+    let body = page(&caps, &jar, "Select, range, colour", html! {
+        (flash(&caps, state.flash()))
+        form class="wo-form" method="post" action="/inputs" {
+            div class="wo-field" { label for="size" { "Size" } (select(&caps, "size", &options, size)) }
+            div class="wo-field" { label for="f-volume" { "Volume" } (range(&caps, "volume", 0, 100, 5, volume.parse().unwrap_or(40))) }
+            div class="wo-field" { label for="f-accent" { "Accent" } (color(&caps, "accent", accent)) }
+            button type="submit" class="wo-primary" { "Save" }
+        }
+        p class="wo-note" { "The output and the swatch show the last saved values; they update on submit, not while dragging." }
+    });
+    (state, body)
+}
+
+async fn inputs_submit(jar: CookieJar, Form(f): Form<Inputs>) -> (CookieJar, axum::response::Response) {
+    let size = SIZES.iter().find(|(v, _)| *v == f.size).map(|(v, _)| *v).unwrap_or("m");
+    let accent = if f.accent.len() == 7 && f.accent.starts_with('#') { f.accent.as_str() } else { "#2f5bea" };
+    let value = format!("{size}|{}|{accent}", f.volume.clamp(0, 100));
+    (jar.add(Cookie::new("inputs", value)), prg("/inputs", Some("Inputs saved.")))
 }
 
 /// Three sections declared slowest first, so out-of-order arrival is visible.

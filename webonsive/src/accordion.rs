@@ -45,6 +45,7 @@ pub fn accordion(_caps: &Caps, group: &str, items: &[(&str, Markup)], state: Opt
     }
 }
 
+/// Styles for this component; included in [`crate::stylesheet`].
 pub const CSS: &str = r#"
 .wo-accordion { border: 1px solid var(--wo-line); border-radius: var(--wo-radius); overflow: hidden; }
 .wo-accordion details + details { border-top: 1px solid var(--wo-line); }

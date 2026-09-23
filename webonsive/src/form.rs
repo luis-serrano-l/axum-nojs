@@ -29,22 +29,40 @@ use crate::Caps;
 /// Input type for a [`Field`].
 #[derive(Clone, Copy, Debug)]
 pub enum FieldKind {
+    /// Single-line text.
     Text,
+    /// `type="email"`: the browser checks the shape.
     Email,
-    /// Positive integer.
-    Number { min: i64, max: i64 },
-    /// Free text with a regex `pattern` and a human hint.
-    Pattern { pattern: &'static str, hint: &'static str },
+    /// Integer between `min` and `max`, inclusive.
+    Number {
+        /// Smallest accepted value.
+        min: i64,
+        /// Largest accepted value.
+        max: i64,
+    },
+    /// Free text that must match `pattern`; `hint` explains the rule to people.
+    Pattern {
+        /// HTML `pattern` attribute (a regular expression matched against the whole value).
+        pattern: &'static str,
+        /// Shown under the field and as the input's `title`.
+        hint: &'static str,
+    },
 }
 
 /// One form field with its current value and server-side error.
 #[derive(Clone, Debug)]
 pub struct Field<'a> {
+    /// Form field name, also used for the input id (`f-<name>`).
     pub name: &'a str,
+    /// Visible label.
     pub label: &'a str,
+    /// Input type and its constraints.
     pub kind: FieldKind,
+    /// Current value, re-rendered after a failed submit.
     pub value: &'a str,
+    /// Server-side error message for this field.
     pub error: Option<&'a str>,
+    /// Adds the `required` attribute and a `*` to the label.
     pub required: bool,
 }
 
@@ -86,6 +104,7 @@ pub fn form(_caps: &Caps, action: &str, fields: &[Field<'_>], submit: &str) -> M
     }
 }
 
+/// Styles for this component; included in [`crate::stylesheet`].
 pub const CSS: &str = r#"
 .wo-form { display: grid; gap: calc(var(--wo-space) * 2); max-width: 24rem; }
 .wo-field { display: grid; gap: 4px; }

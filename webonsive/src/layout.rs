@@ -57,6 +57,7 @@ pub fn header() -> Markup {
     }
 }
 
+/// Styles for this component; included in [`crate::stylesheet`].
 pub const CSS: &str = r#"
 @view-transition { navigation: auto; }
 
