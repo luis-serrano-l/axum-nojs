@@ -13,6 +13,9 @@
 //!
 //! **Fallback:** none needed; `Caps` is accepted for uniformity and unused.
 //!
+//! **Enhanced:** the form is a swap root, so with the [`crate::enhance`] script a submit
+//! replaces only the form (errors included) and a successful redirect swaps in the result.
+//!
 //! **Finding:** custom cross-field rules (password confirmation, async uniqueness) only run
 //! on the server round trip.
 //!
@@ -24,7 +27,7 @@
 
 use maud::{Markup, html};
 
-use crate::Caps;
+use crate::{Caps, enhance};
 
 /// Input type for a [`Field`].
 #[derive(Clone, Copy, Debug)]
@@ -69,7 +72,7 @@ pub struct Field<'a> {
 /// Render `fields` as a POST form to `action` with a submit button labelled `submit`.
 pub fn form(_caps: &Caps, action: &str, fields: &[Field<'_>], submit: &str) -> Markup {
     html! {
-        form class="wo-form" method="post" action=(action) {
+        form id=(enhance::swap_id("wo-form", action)) data-wo="swap" class="wo-form" method="post" action=(action) {
             @for f in fields {
                 @let id = format!("f-{}", f.name);
                 @let err_id = format!("f-{}-error", f.name);

@@ -40,6 +40,9 @@ from `webonsive::spec` into `spec/components.json` and README.
 
 ## 3. What is impossible without script
 
+Each of these is now covered by the optional enhancement script (`webonsive::enhance`,
+section 4). The list stays true for a browser with script disabled.
+
 - Filtering results as you type against server data. `<datalist>` covers static suggestions;
   results update per submit.
 - Mirroring a slider or colour picker while it moves. The `<output>` and the swatch show the
@@ -61,6 +64,27 @@ from `webonsive::spec` into `spec/components.json` and README.
 
 **Verdict:** content sites, admin panels, forms, settings pages and dashboards that refresh per
 action need no script. Editors, real-time collaboration and per-keystroke reactions do.
+
+## 4. What the optional script adds
+
+One 5 KB file, no framework, no build step, `script-src 'self'` compatible. It never changes
+what the server sends; it changes what the browser does with it.
+
+- **Swap roots.** A root with `id` and `data-wo="swap"` has its forms and links fetched in the
+  background; the response document is parsed and only the root (plus flash, title, theme and
+  URL) is replaced, inside `document.startViewTransition` when available. Requests on one root
+  are queued, so five fast counter clicks count five.
+- **Search as you type** in a combobox inside a swap root, debounced, focus and caret kept.
+- **Live mirroring** of range output and colour swatch while the control moves.
+- **Real modal** for the `:target` dialog fallback; light dismiss for the `<details>` popover
+  fallback.
+- **History.** Link swaps push a history entry; back and forward re-fetch and re-swap.
+
+Proven by `scripts/browser-check.mjs`: headless Firefox 155 through geckodriver, asserting
+`performance.getEntriesByType("navigation").length` stays at 1 across every action.
+
+What stays impossible even with it: offline behaviour, optimistic updates (the script waits for
+the server), and anything that needs client-side state the server does not own.
 
 ## Notes by milestone
 

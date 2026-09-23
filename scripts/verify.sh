@@ -1,6 +1,7 @@
 #!/usr/bin/env sh
-# Full verification pass: build, clippy (zero warnings), tests (incl. the no-script test and
-# the Blitz screenshots under tests/shots), plus a source grep for stray <script> tags.
+# Full verification pass: build, clippy (zero warnings), tests (incl. the only-one-script test
+# and the Blitz screenshots under tests/shots), a source grep for stray <script> tags, and,
+# when geckodriver and node are installed, the headless Firefox check of the enhancement script.
 # Usage: scripts/verify.sh
 set -eu
 cd "$(dirname "$0")/.."
@@ -11,16 +12,24 @@ cargo build --workspace --all-targets
 echo "== clippy (deny warnings)"
 cargo clippy --workspace --all-targets -- -D warnings
 
-echo "== tests (unit, doc, no-script, Blitz layout + screenshots)"
+echo "== tests (unit, doc, only-one-script, Blitz layout + screenshots)"
 cargo test --workspace
 
-echo "== no <script> in anything the crates emit"
-# The only allowed mentions are the assertions in tests and docs that say there is none.
+echo "== no <script> outside enhance.rs"
+# The enhancement tag is built in webonsive/src/enhance.rs; nothing else may write one.
 if grep -rn '<script' webonsive/src demo/src webonsive-test/src \
-     | grep -v 'contains("<script")' \
+     | grep -v '^webonsive/src/enhance.rs:' \
+     | grep -v 'matches("<script")' \
      | grep -v '^\S*:\s*//' \
      | grep -v 'code { "<script>" }'; then
-  echo "found a <script> mention outside the enforcement test"; exit 1
+  echo "found a <script> mention outside enhance.rs and its test"; exit 1
+fi
+
+echo "== enhancement script in headless Firefox"
+if command -v geckodriver >/dev/null && command -v node >/dev/null; then
+  node scripts/browser-check.mjs
+else
+  echo "skipped: geckodriver or node not installed"
 fi
 
 echo "== screenshots"

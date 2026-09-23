@@ -1,7 +1,8 @@
 //! # Layout
 //!
-//! The HTML shell every demo page uses: doctype, head, inline stylesheet, `<main>`, and the
-//! capability beacons that teach the server what this browser supports.
+//! The HTML shell every demo page uses: doctype, head, inline stylesheet, `<main>`, the
+//! capability beacons that teach the server what this browser supports, and the optional
+//! [`crate::enhance`] script tag (the page works the same without it).
 //!
 //! **Platform features:** `@view-transition { navigation: auto }` (Chrome 126+, Safari 18.2+,
 //! not Firefox) lets elements with a `view-transition-name` morph across full-page navigations.
@@ -20,7 +21,7 @@
 
 use maud::{DOCTYPE, Markup, PreEscaped, html};
 
-use crate::{Caps, Theme, caps, stylesheet};
+use crate::{Caps, Theme, caps, enhance, stylesheet};
 
 /// Wrap `body` in a full page. Beacons are added while the browser is still unknown.
 pub fn layout(caps: &Caps, title: &str, theme: Theme, body: Markup) -> Markup {
@@ -32,6 +33,7 @@ pub fn layout(caps: &Caps, title: &str, theme: Theme, body: Markup) -> Markup {
                 (header())
                 main id="main" { (body) }
                 (caps::beacons(caps))
+                (enhance::script_tag())
             }
         }
     }

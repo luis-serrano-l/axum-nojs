@@ -77,6 +77,17 @@ const PREFERS_COLOR_SCHEME: Feature = f("prefers-color-scheme", b("76", "67", "1
 /// Every component, in README order.
 pub const SPECS: &[ComponentSpec] = &[
     ComponentSpec {
+        name: "Enhancement script",
+        module: "enhance",
+        features: &[
+            f("fetch", b("42", "39", "10.1")),
+            f("history.pushState", b("5", "4", "5")),
+            f("document.startViewTransition", b("111", "144", "18")),
+        ],
+        fallback: "none needed: without the script every form and link is a normal navigation",
+        needs_js: NeedsJs::No,
+    },
+    ComponentSpec {
         name: "Layout",
         module: "layout",
         features: &[
@@ -297,6 +308,7 @@ mod tests {
 
     /// `(module, source)` for every component file, so the header check needs no I/O.
     const SOURCES: &[(&str, &str)] = &[
+        ("enhance", include_str!("enhance.rs")),
         ("layout", include_str!("layout.rs")),
         ("caps", include_str!("caps.rs")),
         ("dialog", include_str!("dialog.rs")),

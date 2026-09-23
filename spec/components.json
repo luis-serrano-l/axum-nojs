@@ -1,6 +1,17 @@
 {
   "components": [
     {
+      "name": "Enhancement script",
+      "module": "enhance",
+      "features": [
+        { "name": "fetch", "baseline": { "chrome": "42", "firefox": "39", "safari": "10.1" } },
+        { "name": "history.pushState", "baseline": { "chrome": "5", "firefox": "4", "safari": "5" } },
+        { "name": "document.startViewTransition", "baseline": { "chrome": "111", "firefox": "144", "safari": "18" } }
+      ],
+      "fallback": "none needed: without the script every form and link is a normal navigation",
+      "needs_js": "no"
+    },
+    {
       "name": "Layout",
       "module": "layout",
       "features": [

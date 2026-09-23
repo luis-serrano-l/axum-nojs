@@ -47,3 +47,10 @@ matrix and findings are updated, and the work is committed. Unknowns become entr
 - [x] Crate docs on docs.rs style: every pub item documented, `#![warn(missing_docs)]`
 - [x] Examples in `webonsive/examples/`
 - [x] Publish dry run: `cargo publish --dry-run -p webonsive`
+
+## M7 · Optional enhancement script
+- [x] `webonsive::enhance`: one small script (`/wo/enhance.js`, content-hashed, immutable) that upgrades swap roots (`id` + `data-wo="swap"`) to fetch + replace, queued per root, with focus, flash, title, theme and URL synced
+- [x] Counter, form, tabs, accordion, pager, theme toggle are swap roots; combobox searches as you type; range and colour mirror live; `:target` dialog fallback opens as a real modal; `<details>` popover fallback light-dismisses
+- [x] Enforcement: exactly one `<script>` per page and it is the enhancement tag; no inline handlers; Blitz suite (no script engine) proves every route works without it
+- [x] Headless Firefox check through geckodriver (`scripts/browser-check.mjs`, run by `scripts/verify.sh` when available)
+- [x] Docs: README, CLAUDE.md, FINDINGS "with the script" section, spec entry

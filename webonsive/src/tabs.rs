@@ -14,7 +14,8 @@
 //! **Server persistence:** with a `UiState`, `active` comes from `state.tab(name)` and each
 //! title is a link to `?tab.<name>=i`, so the choice survives navigation (query first, cookie
 //! after). The link fills the summary, so every click is a round trip: a native toggle would
-//! be undone by the next render.
+//! be undone by the next render. With a state the strip is a swap root, so the
+//! [`crate::enhance`] script replaces just the strip instead of the page.
 //!
 //! ```rust
 //! use maud::html;
@@ -34,7 +35,8 @@ pub fn tabs(caps: &Caps, name: &str, panels: &[(&str, Markup)], state: Option<&U
     let active = state.map(|s| s.tab(name)).unwrap_or(0);
     let key = format!("tab.{name}");
     html! {
-        div class=(if strip { "wo-tabs" } else { "wo-tabs wo-accordion" }) {
+        div id=[state.map(|_| format!("wo-tabs-{name}"))] data-wo=[state.map(|_| "swap")]
+            class=(if strip { "wo-tabs" } else { "wo-tabs wo-accordion" }) {
             @for (i, (title, body)) in panels.iter().enumerate() {
                 details name=(name) open[i == active] {
                     summary {

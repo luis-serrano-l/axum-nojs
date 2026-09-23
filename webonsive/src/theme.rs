@@ -8,7 +8,8 @@
 //!
 //! **Fallback:** none needed. Without a cookie the OS preference wins. Colours are switched by
 //! a media query and `data-theme`, so `light-dark()` support (`Caps::LightDark`) is only
-//! reported, never required.
+//! reported, never required. The form is a swap root: the [`crate::enhance`] script applies
+//! the new `data-theme` without a reload.
 //!
 //! ```rust
 //! use webonsive::{Caps, Theme, theme_toggle};
@@ -55,7 +56,7 @@ impl Theme {
 pub fn theme_toggle(_caps: &Caps, action: &str, current: Theme) -> Markup {
     let choices = [Theme::Auto, Theme::Light, Theme::Dark];
     html! {
-        form class="wo-theme" method="post" action=(action) {
+        form id="wo-theme" data-wo="swap" class="wo-theme" method="post" action=(action) {
             @for choice in choices {
                 button type="submit" name="theme" value=(choice.as_str())
                     aria-pressed=(if choice == current { "true" } else { "false" }) {

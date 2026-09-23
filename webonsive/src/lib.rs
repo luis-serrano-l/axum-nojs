@@ -1,11 +1,12 @@
 //! # webonsive
 //!
-//! Zero-JavaScript interactive HTML components for Rust servers.
+//! Interactive HTML components for Rust servers that need no JavaScript.
 //!
 //! Every component is a plain function that returns [`maud::Markup`]. Interactivity comes from
 //! the HTML and CSS platform (dialog, popover, invokers, `<details name>`, datalist, view
 //! transitions) and from ordinary form round trips. No page produced by this crate needs a
-//! `<script>` tag.
+//! `<script>` tag; the one optional script in [`enhance`] only makes the same markup update
+//! in place.
 //!
 //! Every component takes `&Caps` first and emits only the markup that browser needs: the
 //! modern variant or the fallback, never both. See [`caps`] for how the server learns it.
@@ -22,7 +23,8 @@
 //! let page = layout(&caps, "Hello", Theme::Auto, html! {
 //!     (dialog(&caps, "hi", "Say hi", html! { p { "Hello from a <dialog>." } }, false))
 //! });
-//! assert!(!page.into_string().contains("<script"));
+//! // The only script is the optional enhancement tag; the page works without it.
+//! assert_eq!(page.into_string().matches("<script").count(), 1);
 //! ```
 
 #![warn(missing_docs)]
@@ -33,6 +35,7 @@ pub mod color;
 pub mod combobox;
 pub mod counter;
 pub mod dialog;
+pub mod enhance;
 pub mod flash;
 pub mod form;
 pub mod layout;

@@ -42,7 +42,7 @@ use bytes::Bytes;
 use futures_util::stream::{self, FuturesUnordered, StreamExt};
 use maud::{DOCTYPE, Markup, PreEscaped, html};
 
-use crate::{Cap, Caps, Theme, caps, layout, stylesheet};
+use crate::{Cap, Caps, Theme, caps, enhance, layout, stylesheet};
 
 type Fill = Pin<Box<dyn Future<Output = Markup> + Send + 'static>>;
 
@@ -94,7 +94,8 @@ impl Streamed {
         } else {
             format!("{open}<body>{}", inner.into_string())
         };
-        Streamed { dsd, prefix, suffix: "</body></html>".into(), fills: Vec::new() }
+        let suffix = format!("{}</body></html>", enhance::script_tag().into_string());
+        Streamed { dsd, prefix, suffix, fills: Vec::new() }
     }
 
     /// Register the content for slot `id`. It is awaited while the response streams.

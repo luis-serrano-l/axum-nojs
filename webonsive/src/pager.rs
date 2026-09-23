@@ -24,7 +24,7 @@
 
 use maud::{Markup, html};
 
-use crate::{Cap, Caps};
+use crate::{Cap, Caps, enhance};
 
 /// `items` are the rows for pages 1..=page. `total` is the full row count.
 pub fn pager(caps: &Caps, href: &str, items: &[Markup], page: usize, per_page: usize, total: usize) -> Markup {
@@ -32,7 +32,7 @@ pub fn pager(caps: &Caps, href: &str, items: &[Markup], page: usize, per_page: u
     let shown = items.len();
     let has_more = page * per_page < total;
     html! {
-        div class="wo-pager" {
+        div id=(enhance::swap_id("wo-pager", href)) data-wo="swap" class="wo-pager" {
             ol class="wo-pager-list" style=[vt.then_some("view-transition-name: wo-pager-list")] {
                 @for (i, item) in items.iter().enumerate() {
                     @if i + 1 == (page - 1) * per_page + 1 && page > 1 {

@@ -42,6 +42,7 @@ pub fn router() -> Router {
         .route("/inputs", get(inputs_page).post(inputs_submit))
         .route("/theme", post(theme_submit))
         .merge(caps::router())
+        .merge(webonsive::enhance::router())
 }
 
 // ---------- helpers ----------
@@ -140,9 +141,12 @@ async fn combobox_page(caps: Caps, jar: CookieJar, Query(s): Query<SearchQuery>)
     let hits: Vec<&str> = LANGS.iter().copied()
         .filter(|l| l.to_lowercase().contains(&q.to_lowercase())).collect();
     page(&caps, &jar, "Combobox", html! {
-        (combobox(&caps, "/combobox", "q", &LANGS, &q))
-        ul { @for h in &hits { li { (h) } } }
-        @if hits.is_empty() { p class="wo-note" { "No matches." } }
+        // One swap root around the form and its results: the script searches as you type.
+        div id="langs" data-wo="swap" {
+            (combobox(&caps, "/combobox", "q", &LANGS, &q))
+            ul { @for h in &hits { li { (h) } } }
+            @if hits.is_empty() { p class="wo-note" { "No matches." } }
+        }
     })
 }
 
@@ -258,13 +262,13 @@ async fn inputs_page(caps: Caps, jar: CookieJar, state: UiState) -> (UiState, Ma
         .collect();
     let body = page(&caps, &jar, "Select, range, colour", html! {
         (flash(&caps, state.flash()))
-        form class="wo-form" method="post" action="/inputs" {
+        form id="inputs" data-wo="swap" class="wo-form" method="post" action="/inputs" {
             div class="wo-field" { label for="size" { "Size" } (select(&caps, "size", &options, size)) }
             div class="wo-field" { label for="f-volume" { "Volume" } (range(&caps, "volume", 0, 100, 5, volume.parse().unwrap_or(40))) }
             div class="wo-field" { label for="f-accent" { "Accent" } (color(&caps, "accent", accent)) }
             button type="submit" class="wo-primary" { "Save" }
         }
-        p class="wo-note" { "The output and the swatch show the last saved values; they update on submit, not while dragging." }
+        p class="wo-note" { "Without the enhancement script the output and the swatch show the last saved values and update on submit." }
     });
     (state, body)
 }
@@ -342,8 +346,12 @@ mod tests {
     use axum::http::Request;
     use tower::ServiceExt;
 
+    /// The only script on any page is the one optional enhancement tag: no inline script,
+    /// no handlers, no `javascript:` URLs. Blitz (no script engine) proves the pages work
+    /// without it.
     #[tokio::test]
-    async fn no_page_ships_script() {
+    async fn pages_ship_only_the_enhancement_script() {
+        let tag = webonsive::enhance::script_tag().into_string();
         for path in PATHS {
             let modern = Cap::ALL.map(|c| format!("wo-cap-{}=1", c.name())).join("; ");
             for cookie in ["", modern.as_str()] {
@@ -352,9 +360,24 @@ mod tests {
                 assert_eq!(res.status(), 200, "{path}");
                 let body = axum::body::to_bytes(res.into_body(), usize::MAX).await.unwrap();
                 let html = String::from_utf8(body.to_vec()).unwrap();
-                assert!(!html.contains("<script"), "{path} contains a script tag");
+                assert_eq!(html.matches("<script").count(), 1, "{path}: exactly one script tag");
+                assert!(html.contains(&tag), "{path}: the tag is the enhancement script");
+                assert!(!html.contains("javascript:"), "{path}");
+                let inline_handler = html.split('<').any(|tag| tag.split_whitespace().any(|a| a.starts_with("on") && a.contains('=')));
+                assert!(!inline_handler, "{path}: inline event handler");
             }
         }
+    }
+
+    #[tokio::test]
+    async fn enhancement_script_is_served_immutable() {
+        let req = Request::get(webonsive::enhance::script_url()).body(Body::empty()).unwrap();
+        let res = router().oneshot(req).await.unwrap();
+        assert_eq!(res.status(), 200);
+        assert_eq!(res.headers()["content-type"], "text/javascript; charset=utf-8");
+        assert!(res.headers()["cache-control"].to_str().unwrap().contains("immutable"));
+        let body = axum::body::to_bytes(res.into_body(), usize::MAX).await.unwrap();
+        assert_eq!(body, webonsive::enhance::JS.as_bytes());
     }
 
     #[tokio::test]
@@ -391,7 +414,7 @@ mod tests {
         assert!(chunks[0].contains("<slot name=\"slow\">"));
         let order: Vec<&str> = chunks[1..4].iter().map(|c| c.split("slot=\"").nth(1).unwrap().split('"').next().unwrap()).collect();
         assert_eq!(order, ["fast", "medium", "slow"]);
-        assert_eq!(chunks.last().unwrap(), "</body></html>");
+        assert!(chunks.last().unwrap().ends_with("</script></body></html>"), "suffix carries the enhancement tag");
     }
 
     #[tokio::test]

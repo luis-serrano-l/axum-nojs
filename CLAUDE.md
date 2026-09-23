@@ -4,23 +4,28 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-`webonsive` is a zero-JavaScript component library for Rust servers (Axum + Maud). Every
-component is a plain `fn name(id, ...) -> Markup`; interactivity comes from the HTML/CSS platform
-(`<dialog>`, `popover`, invoker commands, `<details name>`, `<datalist>`, view transitions) and
-ordinary form round trips. **No page may ever contain a `<script>` tag.** A test enforces this
-(`demo/src/main.rs::tests::no_page_ships_script`). When something cannot be done without script,
-the answer is a documented finding in README, not a script tag.
+`webonsive` is a no-JavaScript-required component library for Rust servers (Axum + Maud).
+Every component is a plain `fn name(caps, ...) -> Markup`; interactivity comes from the HTML/CSS
+platform (`<dialog>`, `popover`, invoker commands, `<details name>`, `<datalist>`, view
+transitions) and ordinary form round trips. **Every page must work with script disabled.** One
+optional script, `webonsive/src/enhance.rs`, served at `/wo/enhance.js`, upgrades swap roots
+(`id` + `data-wo="swap"`) to fetch-and-replace in place. It is the only `<script>` allowed: a
+test enforces that (`demo/src/lib.rs::tests::pages_ship_only_the_enhancement_script`), Blitz
+(no script engine) proves every route works without it, and `scripts/browser-check.mjs` drives
+headless Firefox to prove the script does its job. Never add inline script, handlers or a
+second file; when something needs more, extend `enhance.rs` and keep the no-script path intact.
 
 ## Commands
 
 ```sh
 cargo run -p demo                  # demo server at http://127.0.0.1:3000
-cargo test                         # all tests, including the no-script test and doctests
-cargo test -p demo no_page_ships_script   # the single enforcement test
+cargo test                         # all tests, including the only-one-script test and doctests
+cargo test -p demo pages_ship_only_the_enhancement_script   # the single enforcement test
+node scripts/browser-check.mjs     # headless Firefox via geckodriver: the script works (needs a built demo)
 cargo test -p webonsive --doc      # component doc examples
 cargo clippy --all-targets         # must be clean before a roadmap milestone counts as done
 cargo test -p webonsive-test       # Blitz layout assertions + screenshots into tests/shots/
-scripts/verify.sh                  # everything above plus a <script> grep; run before committing
+scripts/verify.sh                  # everything above plus a <script> grep and the browser check; run before committing
 ```
 
 ## Workspace layout
@@ -28,7 +33,7 @@ scripts/verify.sh                  # everything above plus a <script> grep; run 
 - `webonsive/` – the library crate. Depends only on `maud`; the optional `axum` feature adds the
   `Caps` extractor and the `/wo/caps` beacon route. No serde.
 - `demo/` – Axum lib + binary, one route per component. Handlers only parse input (query, form,
-  cookie) and call `webonsive`; keep each route around 15 lines. The no-script test lives here
+  cookie) and call `webonsive`; keep each route around 15 lines. The only-one-script test lives here
   and hits every route via `tower::oneshot`, so **add new demo routes to `PATHS`** (the
   screenshot test in `webonsive-test` uses the same list).
 - `webonsive-test/` – Blitz-based test harness: `Page::render(router, path, cookie)` then
@@ -48,6 +53,8 @@ scripts/verify.sh                  # everything above plus a <script> grep; run 
    Output should be readable via `curl`.
 5. No macros beyond `html!`. Signature order: `caps: &Caps` first, then `id`, required args,
    then options. Branch on `caps.has(Cap::X)` and emit only one variant, never both.
+   A root that should update in place gets `id=(enhance::swap_id(prefix, key))` and
+   `data-wo="swap"`; the markup must behave identically without the script.
 6. Server-held state (theme, counter, active tab) travels via cookie or `?query=`; mutations use
    `<form method="post">` + redirect (Post/Redirect/Get), never GET side effects.
 7. Update the README feature matrix and Findings when a component or its fallback changes.

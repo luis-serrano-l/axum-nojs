@@ -12,7 +12,8 @@
 //!
 //! **Server persistence:** with a `UiState`, the open section is `state.open(group)` and each
 //! title links to `?open.<group>=i` (the open one links to `open.<group>=`, which closes it),
-//! so the choice survives navigation.
+//! so the choice survives navigation. The group is then a swap root for the
+//! [`crate::enhance`] script.
 //!
 //! ```rust
 //! use maud::html;
@@ -29,7 +30,8 @@ pub fn accordion(_caps: &Caps, group: &str, items: &[(&str, Markup)], state: Opt
     let open = state.and_then(|s| s.open(group));
     let key = format!("open.{group}");
     html! {
-        div class="wo-accordion" {
+        @let swap = state.is_some() && !group.is_empty();
+        div id=[swap.then(|| format!("wo-accordion-{group}"))] data-wo=[swap.then_some("swap")] class="wo-accordion" {
             @for (i, (title, body)) in items.iter().enumerate() {
                 @let target = if open == Some(i) { String::new() } else { i.to_string() };
                 details name=[(!group.is_empty()).then_some(group)] open[open == Some(i)] {

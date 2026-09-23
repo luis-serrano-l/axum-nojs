@@ -1,9 +1,13 @@
 # webonsive
 
-Zero-JavaScript interactive HTML components for Rust servers. Axum + Maud.
+Interactive HTML components for Rust servers that need no JavaScript. Axum + Maud.
 
 Every component is a plain function returning `Markup`. Interactivity comes from the HTML/CSS
-platform and ordinary form round trips. No page ships a `<script>` tag, and a test enforces it.
+platform and ordinary form round trips. One optional 5 KB script (`/wo/enhance.js`) makes the
+same markup update in place: forms and links inside a swap root (`id` + `data-wo="swap"`) are
+fetched and only that root is replaced, so a counter clicked five times counts five without a
+reload. Every page works identically with the script blocked; that is the only `<script>` tag
+allowed, and a test enforces it.
 
 ```rust
 use maud::html;
@@ -20,13 +24,16 @@ let page = layout(&caps, "Hello", Theme::Auto, html! {
 
 ```sh
 cargo run -p demo      # http://127.0.0.1:3000
-cargo test             # includes: no route may contain "<script", and Blitz layout tests
-scripts/verify.sh      # build + clippy -D warnings + tests + screenshots + <script> grep
+cargo test             # includes: only the enhancement <script> on any route, and Blitz layout tests
+scripts/verify.sh      # build + clippy -D warnings + tests + screenshots + <script> grep + Firefox check
 ```
 
 `webonsive-test` renders every route through [Blitz](https://github.com/DioxusLabs/blitz)
 (Stylo + Taffy + vello_cpu, no script engine) and writes a PNG per route and capability level
-to `tests/shots/`. What Blitz cannot render is listed with issue links in `FINDINGS.md`.
+to `tests/shots/`, which is also the proof that every route works with no script. What Blitz
+cannot render is listed with issue links in `FINDINGS.md`. `scripts/browser-check.mjs` drives
+headless Firefox through geckodriver to check the enhancement script (in-place counter, tabs,
+search as you type, live range output, theme).
 
 ## How to read this crate
 
@@ -47,6 +54,7 @@ browser-compat-data; `no` means unshipped, so that browser gets the fallback.
 <!-- matrix:start -->
 | Component | Platform features | Chrome / Firefox / Safari | Fallback | Needs JS? |
 |---|---|---|---|---|
+| Enhancement script | `fetch`, `history.pushState`, `document.startViewTransition` | 42 / 39 / 10.1; 5 / 4 / 5; 111 / 144 / 18 | none needed: without the script every form and link is a normal navigation | No |
 | Layout | `@view-transition`, `prefers-color-scheme`, `custom properties` | 126 / no / 18.2; 76 / 67 / 12.1; 49 / 31 / 9.1 | plain navigations (root never cross-fades); colours still switch by media query and data-theme | No |
 | Capability beacons | `@supports`, `selector()`, `background images`, `cookies` | 28 / 22 / 9; 83 / 69 / 14.1; 1 / 1 / 1; 1 / 1 / 1 | unknown browser gets every fallback; the first view always does | No |
 | Dialog | `<dialog>`, `command="show-modal"`, `<form method="dialog">` | 37 / 98 / 15.4; 135 / 144 / 26.2; 37 / 98 / 15.4 | link to #id opens it through a :target rule, chosen server-side | No |

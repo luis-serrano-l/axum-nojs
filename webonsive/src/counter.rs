@@ -9,8 +9,11 @@
 //!
 //! **Fallback:** without view transitions the page simply reloads.
 //!
-//! **Finding:** every click is a full navigation. It is fast on localhost and fine on a good
-//! connection, but there is no optimistic update and no offline behaviour.
+//! **Enhanced:** the form is a swap root (`data-wo="swap"`), so with the [`crate::enhance`]
+//! script each click is a background POST and only the form is replaced; rapid clicks queue.
+//!
+//! **Finding:** without the script every click is a full navigation, and a click that lands
+//! while the page unloads is dropped. There is no optimistic update and no offline behaviour.
 //!
 //! ```rust
 //! use webonsive::{Caps, counter};
@@ -19,13 +22,13 @@
 
 use maud::{Markup, html};
 
-use crate::{Cap, Caps};
+use crate::{Cap, Caps, enhance};
 
 /// Increment / decrement / reset buttons posting `op` to `action`.
 pub fn counter(caps: &Caps, action: &str, value: i64) -> Markup {
     let vt = caps.has(Cap::ViewTransitions).then_some("view-transition-name: wo-counter");
     html! {
-        form class="wo-counter" method="post" action=(action) {
+        form id=(enhance::swap_id("wo-counter", action)) data-wo="swap" class="wo-counter" method="post" action=(action) {
             button type="submit" name="op" value="dec" aria-label="decrement" { "−" }
             output style=[vt] { (value) }
             button type="submit" name="op" value="inc" aria-label="increment" { "+" }
