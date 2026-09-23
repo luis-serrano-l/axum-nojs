@@ -16,6 +16,12 @@
 //! form or following a same-origin link inside it fetches the response, parses it, and
 //! replaces the root with the element of the same `id` from the new document. The flash
 //! message, `<title>` and `data-theme` are synced too, and the URL follows the response.
+//! A form or link anywhere may name its root instead with `data-wo-target="#id"`, and
+//! `data-wo-swap="outer|inner|append|prepend"` (default `outer`) says how the new element
+//! lands: replace the root, replace its children, or add them at the end or the start. The
+//! request is the same either way, so the server may answer an enhanced request (header
+//! `Wo-Enhance: 1`) with only the fragment it needs to; without the script it is a full
+//! navigation to the same URL.
 //! Rapid actions on one root are queued, so a counter clicked five times counts five. The
 //! script also mirrors `<input type=range>` and `type=color` values while they move, opens
 //! the `:target` dialog fallback as a real modal, and searches a combobox as you type.
@@ -34,7 +40,7 @@ use maud::{Markup, html};
 /// Path the script is served from. [`script_url`] appends a content hash.
 pub const SCRIPT_PATH: &str = "/wo/enhance.js";
 
-/// The whole enhancement script. Plain ES2020, no build step, under 6 KB.
+/// The whole enhancement script. Plain ES2020, no build step, under 8 KB.
 pub const JS: &str = r##"(function () {
 "use strict";
 var roots = "[data-wo=swap]", queue = {};
@@ -54,17 +60,21 @@ function restoreFocus(f) {
   if (f.pos != null && el.setSelectionRange) try { el.setSelectionRange(f.pos, f.pos); } catch (e) {}
 }
 
-function apply(doc, id, url, push) {
+function apply(doc, id, url, push, mode) {
   var root = document.getElementById(id), fresh = doc.getElementById(id);
   if (!root || !fresh) { if (url !== location.href) location.href = url; else location.reload(); return; }
   var f = focusState();
   var swap = function () {
-    root.replaceWith(fresh);
+    var kids = Array.prototype.slice.call(fresh.childNodes), anchor = root;
+    if (mode === "inner") root.replaceChildren.apply(root, kids);
+    else if (mode === "append") root.append.apply(root, kids);
+    else if (mode === "prepend") root.prepend.apply(root, kids);
+    else { root.replaceWith(fresh); anchor = fresh; }
     var oldFlash = document.querySelector(".wo-flash"), newFlash = doc.querySelector(".wo-flash");
     if (oldFlash && newFlash) oldFlash.replaceWith(newFlash);
     else if (oldFlash) oldFlash.remove();
-    else if (newFlash) fresh.before(newFlash);
-    document.title = doc.title;
+    else if (newFlash) anchor.before(newFlash);
+    if (doc.title) document.title = doc.title;
     var theme = doc.documentElement.getAttribute("data-theme");
     if (theme) document.documentElement.setAttribute("data-theme", theme);
     restoreFocus(f);
@@ -73,10 +83,20 @@ function apply(doc, id, url, push) {
   if (document.startViewTransition && !reduced) document.startViewTransition(swap); else swap();
 }
 
-function request(id, url, init, push) {
-  var run = function () {
+// The root an element acts on: the one named by data-wo-target on it or an ancestor, else
+// the closest swap root. data-wo-swap on the same element picks the mode.
+function target(el) {
+  var t = el.closest("[data-wo-target]");
+  var root = t ? document.querySelector(t.getAttribute("data-wo-target")) : el.closest(roots);
+  if (!root || !root.id) return null;
+  var m = el.closest("[data-wo-swap]");
+  return { id: root.id, mode: m ? m.getAttribute("data-wo-swap") : "outer" };
+}
+
+function request(t, url, init, push) {
+  var id = t.id, run = function () {
     return fetch(url, init).then(function (res) {
-      return res.text().then(function (html) { apply(parse(html), id, res.url, push); });
+      return res.text().then(function (html) { apply(parse(html), id, res.url, push, t.mode); });
     }).catch(function () { location.reload(); });
   };
   queue[id] = (queue[id] || Promise.resolve()).then(run, run);
@@ -84,8 +104,8 @@ function request(id, url, init, push) {
 }
 
 function submit(form, submitter) {
-  var root = form.closest(roots);
-  if (!root) return false;
+  var t = target(form);
+  if (!t) return false;
   var data = new FormData(form);
   if (submitter && submitter.name) data.append(submitter.name, submitter.value);
   var url = new URL(form.getAttribute("action") || location.href, location.href);
@@ -93,7 +113,7 @@ function submit(form, submitter) {
   var params = new URLSearchParams(data);
   if ((form.method || "get").toLowerCase() === "post") { init.method = "POST"; init.body = params; }
   else url.search = params.toString();
-  request(root.id, url.href, init, false);
+  request(t, url.href, init, false);
   return true;
 }
 
@@ -114,10 +134,10 @@ document.addEventListener("click", function (e) {
   if (d && a.getAttribute("href") === "#" && d.querySelector("dialog[open]")) {
     e.preventDefault(); d.querySelector("dialog").close(); return;
   }
-  var root = a.closest(roots);
-  if (!root || a.origin !== location.origin) return;
+  var t = target(a);
+  if (!t || a.origin !== location.origin) return;
   e.preventDefault();
-  request(root.id, a.href, { credentials: "same-origin", headers: { "Wo-Enhance": "1" } }, true);
+  request(t, a.href, { credentials: "same-origin", headers: { "Wo-Enhance": "1" } }, true);
 });
 
 var typing;
@@ -150,7 +170,7 @@ addEventListener("popstate", function () {
     .then(function (r) { return r.text(); })
     .then(function (html) {
       var doc = parse(html);
-      document.querySelectorAll(roots).forEach(function (r) { apply(doc, r.id, location.href, false); });
+      document.querySelectorAll(roots).forEach(function (r) { apply(doc, r.id, location.href, false, "outer"); });
     });
 });
 })();
@@ -206,7 +226,7 @@ mod tests {
 
     #[test]
     fn script_is_small_and_plain() {
-        assert!(JS.len() < 6144, "enhance.js is {} bytes", JS.len());
+        assert!(JS.len() < 8192, "enhance.js is {} bytes", JS.len());
         assert!(!JS.contains("eval(") && !JS.contains("innerHTML"));
         assert!(script_url().starts_with("/wo/enhance.js?v="));
         assert_eq!(swap_id("wo-form", "/sign-up"), "wo-form--sign-up");

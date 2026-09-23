@@ -20,10 +20,10 @@ use webonsive::{
 use std::time::Duration;
 
 /// Every demo path the no-script test and the screenshot test visit.
-pub const PATHS: [&str; 15] = [
+pub const PATHS: [&str; 16] = [
     "/", "/caps", "/stream", "/settings", "/dialog?dialog=confirm", "/popover", "/tabs?tab.demo=1",
     "/accordion?open.faq=1", "/combobox?q=r", "/list?page=2", "/form", "/counter", "/inputs",
-    "/table?sort=size&dir=desc&q=a&per=5&page=2", "/wizard?step.signup=1",
+    "/table?sort=size&dir=desc&q=a&per=5&page=2", "/wizard?step.signup=1", "/swap?n=3",
 ];
 
 /// The whole demo app.
@@ -45,6 +45,7 @@ pub fn router() -> Router {
         .route("/settings", get(settings_page).post(settings_submit))
         .route("/inputs", get(inputs_page).post(inputs_submit))
         .route("/theme", post(theme_submit))
+        .route("/swap", get(swap_page).post(swap_submit))
         .merge(caps::router())
         .merge(webonsive::enhance::router())
 }
@@ -57,7 +58,7 @@ fn theme_of(jar: &CookieJar) -> Theme {
 
 /// Every component in the index: path, title (what each route passes to `page`), group, and
 /// the platform features it is built on.
-const COMPONENTS: [(&str, &str, &str, &str); 14] = [
+const COMPONENTS: [(&str, &str, &str, &str); 15] = [
     ("/dialog", "Dialog", "Overlays", "<dialog>, invoker commands"),
     ("/popover", "Popover menu", "Overlays", "popover, anchor positioning"),
     ("/tabs", "Tabs", "Disclosure", "<details name>, ::details-content"),
@@ -72,6 +73,7 @@ const COMPONENTS: [(&str, &str, &str, &str); 14] = [
     ("/table", "Table", "Server state", "sort links, <search> filter, sticky header, ?page=n"),
     ("/caps", "Capabilities", "Server state", "@supports beacons + cookie"),
     ("/stream", "Streaming", "Server state", "declarative shadow DOM slots"),
+    ("/swap", "Swap targets", "Server state", "data-wo-target, data-wo-swap, Wo-Enhance header"),
 ];
 const GROUPS: [&str; 4] = ["Overlays", "Disclosure", "Input", "Server state"];
 
@@ -333,6 +335,45 @@ async fn counter_submit(jar: CookieJar, Form(f): Form<CounterOp>) -> (CookieJar,
     let n: i64 = jar.get("count").and_then(|c| c.value().parse().ok()).unwrap_or(0);
     let n = match f.op.as_str() { "inc" => n + 1, "dec" => n - 1, _ => 0 };
     (jar.add(Cookie::new("count", n.to_string())), Redirect::to("/counter"))
+}
+
+#[derive(Deserialize)]
+struct SwapQuery { n: Option<u32> }
+
+fn notes_of(jar: &CookieJar) -> Vec<String> {
+    jar.get("notes").map(|c| c.value().split('|').filter(|s| !s.is_empty()).map(str::to_string).collect()).unwrap_or_default()
+}
+
+/// Two controls outside any swap root that name their target: the link swaps one `<span>`,
+/// the form appends to a list. The same requests are plain navigations without the script.
+async fn swap_page(caps: Caps, jar: CookieJar, Query(q): Query<SwapQuery>) -> Markup {
+    let n = q.n.unwrap_or(1);
+    page(&caps, &jar, "Swap targets", html! {
+        (flash(&caps, jar.get("wo-flash").map(|c| c.value().to_string()).as_deref()))
+        p class="wo-note" { "Neither control sits inside a swap root. " code { "data-wo-target" } " names the root to update and " code { "data-wo-swap" } " how; without the script both are ordinary navigations to the same URL." }
+        p { "Count: " span id="count" data-wo="swap" { (n) } " " a href={ "/swap?n=" (n + 1) } data-wo-target="#count" { "Add one" } }
+        form method="post" action="/swap" data-wo-target="#log" data-wo-swap="append" {
+            input name="note" required placeholder="A note" aria-label="Note" autocomplete="off";
+            button type="submit" class="wo-primary" { "Add note" }
+        }
+        ol id="log" data-wo="swap" { @for note in notes_of(&jar) { li { (note) } } }
+    })
+}
+
+#[derive(Deserialize)]
+struct SwapForm { note: String }
+
+/// An enhanced request (`Wo-Enhance: 1`) gets only the new `<li>` inside an `#log` to append;
+/// a plain one gets Post/Redirect/Get to the full page.
+async fn swap_submit(jar: CookieJar, headers: HeaderMap, Form(f): Form<SwapForm>) -> axum::response::Response {
+    let note = f.note.replace('|', " ");
+    let mut notes = notes_of(&jar);
+    notes.push(note.clone());
+    let jar = jar.add(Cookie::new("notes", notes.join("|")));
+    if headers.contains_key("wo-enhance") {
+        return (jar, html! { ol id="log" { li { (note) } } }).into_response();
+    }
+    (jar, prg::<axum::body::Body>("/swap", Some("Note added"))).into_response()
 }
 
 #[derive(Deserialize, Default)]

@@ -3,10 +3,11 @@
 Interactive HTML components for Rust servers that need no JavaScript. Axum + Maud.
 
 Every component is a plain function returning `Markup`. Interactivity comes from the HTML/CSS
-platform and ordinary form round trips. One optional 5 KB script (`/wo/enhance.js`) makes the
+platform and ordinary form round trips. One optional 6 KB script (`/wo/enhance.js`) makes the
 same markup update in place: forms and links inside a swap root (`id` + `data-wo="swap"`) are
 fetched and only that root is replaced, so a counter clicked five times counts five without a
-reload. Every page works identically with the script blocked; that is the only `<script>` tag
+reload. A control anywhere can name its root with `data-wo-target="#id"` and how the new
+markup lands with `data-wo-swap="outer|inner|append|prepend"`. Every page works identically with the script blocked; that is the only `<script>` tag
 allowed, and a test enforces it.
 
 ```rust

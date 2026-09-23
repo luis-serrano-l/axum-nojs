@@ -81,6 +81,18 @@ try {
   await click(".wo-wizard-back");
   await until(async () => (await js("return document.querySelector('input[name=name]')?.value")) === "Ada", "wizard back keeps the name");
 
+  // Swap targets: a link outside any root updates only #count; a form appends to #log.
+  await go("/swap");
+  await click("a[data-wo-target='#count']");
+  await until(async () => (await text("#count")) === "2", "count swapped by target");
+  assert(await js("return location.search") === "?n=2", "swap: URL follows the targeted link");
+  const before = await js("return document.querySelectorAll('#log li').length");
+  await type("input[name=note]", "hello");
+  await click("form[data-wo-target='#log'] button");
+  await until(async () => (await js("return document.querySelectorAll('#log li').length")) === before + 1, "note appended");
+  assert(await js("return document.querySelector('#log li:last-child').textContent") === "hello", "swap: appended the fragment only");
+  assert(await navigations() === 1, "swap: target and append without a reload");
+
   // Range: output mirrors while moving, before any submit.
   await go("/inputs");
   await type("input[type=range]", ""); // ArrowRight

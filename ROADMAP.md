@@ -101,7 +101,7 @@ matrix and findings are updated, and the work is committed. Unknowns become entr
 Every item must keep the no-script path intact: the markup is the same, the script only reads
 attributes. Blitz proves each route works without it; `scripts/browser-check.mjs` proves the
 script does its job.
-- [ ] Partial swaps with explicit targets: `data-wo-target="#id"` on a form or link swaps that
+- [x] Partial swaps with explicit targets: `data-wo-target="#id"` on a form or link swaps that
   root instead of the closest one; `data-wo-swap="inner|outer|append|prepend"` chooses how.
   Without the script the same request is a full navigation to the same page.
 - [ ] Out-of-band updates: a response may carry extra swap roots marked `data-wo-oob`; the

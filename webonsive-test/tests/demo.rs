@@ -144,6 +144,18 @@ async fn table_sort_links_and_pages() {
     assert!(page.exists(".wo-table thead th"));
 }
 
+/// `/swap`: the controls that name a target sit outside every swap root, and the page is
+/// still complete without the script (count shown, list rendered from the cookie).
+#[tokio::test]
+async fn swap_targets_render_without_script() {
+    let page = Page::render(demo::router(), "/swap?n=3", "wo-cap-probed=1; notes=one|two").await;
+    assert_eq!(page.text("#count").as_deref(), Some("3"));
+    assert_eq!(page.count("#log li"), 2);
+    assert!(page.exists("a[data-wo-target='#count']"));
+    assert!(page.exists("form[data-wo-target='#log'][data-wo-swap='append']"));
+    assert!(!page.exists("form [data-wo=swap]"), "the form is not inside a root");
+}
+
 #[tokio::test]
 async fn wizard_marks_steps() {
     let page = Page::render(demo::router(), "/wizard?step.signup=1", MODERN).await;
