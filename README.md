@@ -43,6 +43,8 @@ search as you type, live range output, theme).
 - Signatures are uniform: `fn name(&caps, id, ...required, ...) -> Markup`. No macros beyond `html!`.
 - `Caps` is server-side feature detection with no script: `@supports` beacons set one cookie per
   capability, and each component emits only the variant that browser needs (see `/caps`).
+  `?caps=popover,anchor` on any URL forces a set. The protocol is three plain functions
+  (`Caps::from_cookie_header`, `Caps::from_query`, `caps::beacon_cookie`); Axum only wraps them.
 - Output HTML is semantic with one `wo-<component>` class per root. `curl` any page and read it.
 - CSS lives beside its component as `const CSS`. Theming is via `--wo-*` custom properties only
   (`bg`, `surface`, `fg`, `muted`, `line`, `accent`, `on-accent`, `danger`, `ok`, `radius`, `space`,

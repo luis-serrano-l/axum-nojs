@@ -332,6 +332,7 @@ async fn caps_page(caps: Caps, jar: CookieJar) -> Markup {
             } }
         }
         p class="wo-note" { "Cookies: " @for n in caps.names() { code { "wo-cap-" (n) } " " } }
+        p class="wo-note" { "To view any page as another browser, add " code { "?caps=popover,anchor" } " to its URL: the query wins over the cookies." }
     })
 }
 

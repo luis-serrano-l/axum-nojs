@@ -57,7 +57,7 @@ matrix and findings are updated, and the work is committed. Unknowns become entr
 - [x] Docs: README, CLAUDE.md, FINDINGS "with the script" section, spec entry
 
 ## M8 · Framework independence
-- [ ] `Caps::from_cookie_header(&str)` and `Caps::from_query(&str)` as the only entry points; the Axum extractor becomes a thin wrapper behind the `axum` feature
+- [x] `Caps::from_cookie_header(&str)` and `Caps::from_query(&str)` as the only entry points; the Axum extractor becomes a thin wrapper behind the `axum` feature
 - [ ] Every component returns `Markup` that also implements `Render`; a `string` feature (or `.into_string()` docs) shows use without Maud templates
 - [ ] `state::prg`, `flash` and `stream` compile without Axum: an `http` feature exposes `http::Response` builders, the `axum` feature wraps them
 - [ ] Example `webonsive/examples/actix_server.rs` (or `hyper_server.rs`) rendering three components with the beacon route wired by hand

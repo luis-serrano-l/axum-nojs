@@ -19,12 +19,24 @@
 //! One cookie per flag (`wo-cap-<name>=1`) rather than one cookie holding a list: the beacons
 //! fire in parallel, and parallel `Set-Cookie` headers on one name would overwrite each other.
 //!
+//! **Any server.** Three plain functions are the whole protocol, and none needs Axum:
+//! [`Caps::from_cookie_header`] reads the flags out of a `Cookie:` header,
+//! [`Caps::from_query`] lets `?caps=popover,anchor` force a set (tests, `curl`, clients
+//! without cookies), and [`beacon_cookie`] turns the beacon route's query string into the
+//! `Set-Cookie` value to answer with (status 204, `Cache-Control: no-store`). The `axum`
+//! feature only wraps them: a `Caps` extractor and [`router`] for the beacon route.
+//!
 //! ```rust
-//! use webonsive::caps::{Cap, Caps};
+//! use webonsive::caps::{self, Cap, Caps};
 //! let caps = Caps::from_cookie_header("wo-cap-probed=1; wo-cap-popover=1; theme=dark");
 //! assert!(caps.has(Cap::Popover));
 //! assert!(!caps.has(Cap::Invokers));
 //! assert_eq!(Caps::all().names().len(), Cap::ALL.len());
+//! // A query string overrides the cookies, so any URL can be viewed as any browser.
+//! assert!(Caps::from_query("caps=invokers,anchor").unwrap().has(Cap::Invokers));
+//! // The beacon route, by hand: `GET /wo/caps?flag=popover` answers 204 with this cookie.
+//! assert!(caps::beacon_cookie("flag=popover").unwrap().starts_with("wo-cap-popover=1"));
+//! assert_eq!(caps::beacon_cookie("flag=nope"), None);
 //! ```
 
 use maud::{Markup, html};
@@ -197,6 +209,37 @@ impl Caps {
             .fold(Caps::NONE, Caps::with);
         if caps.has(Cap::Probed) { caps } else { Caps::ASSUMED }
     }
+
+    /// Read a forced set out of a raw query string: `caps=popover,anchor` (names from
+    /// [`Cap::name`], unknown ones ignored). `None` when there is no `caps` parameter, so the
+    /// caller falls back to the cookies. A forced set counts as probed, since the point is to
+    /// see exactly that variant: `?caps=` alone is an old browser with nothing.
+    pub fn from_query(query: &str) -> Option<Caps> {
+        let list = query_param(query, "caps")?;
+        Some(
+            list.split(',')
+                .filter_map(|n| Cap::parse(n.trim()))
+                .fold(Caps::NONE.with(Cap::Probed), Caps::with),
+        )
+    }
+}
+
+/// Value of `name` in a raw query string (`a=1&b=2`), without percent-decoding: flag and
+/// capability names are plain ASCII words.
+fn query_param<'a>(query: &'a str, name: &str) -> Option<&'a str> {
+    query
+        .split('&')
+        .filter_map(|pair| pair.split_once('=').or(Some((pair, ""))))
+        .find(|(k, _)| *k == name)
+        .map(|(_, v)| v)
+}
+
+/// The beacon route without a framework: given the raw query string of
+/// `GET /wo/caps?flag=<name>`, the `Set-Cookie` value to answer with, or `None` for an unknown
+/// flag (answer 404). Either way answer without a body and with `Cache-Control: no-store`, so
+/// every page view re-fires the beacons until the cookie exists.
+pub fn beacon_cookie(query: &str) -> Option<String> {
+    query_param(query, "flag").and_then(Cap::parse).map(cookie_for)
 }
 
 /// The `@supports` rules. Each one gives a beacon element a background image whose URL is the
@@ -245,19 +288,22 @@ pub fn cookie_for(cap: Cap) -> String {
 
 #[cfg(feature = "axum")]
 mod axum_glue {
-    use super::{BEACON_PATH, Cap, Caps, cookie_for};
+    use super::{BEACON_PATH, Caps, beacon_cookie};
     use axum::{
         Router,
-        extract::{FromRequestParts, Query},
-        http::{HeaderMap, StatusCode, header, request::Parts},
+        extract::FromRequestParts,
+        http::{HeaderMap, StatusCode, Uri, header, request::Parts},
         routing::get,
     };
-    use std::collections::HashMap;
 
+    /// `?caps=` first, then the cookies: a thin wrapper over the two plain parsers.
     impl<S: Send + Sync> FromRequestParts<S> for Caps {
         type Rejection = std::convert::Infallible;
 
         async fn from_request_parts(parts: &mut Parts, _: &S) -> Result<Caps, Self::Rejection> {
+            if let Some(forced) = parts.uri.query().and_then(Caps::from_query) {
+                return Ok(forced);
+            }
             // Join every Cookie header first: `from_cookie_header` decides between the
             // parsed flags and `Caps::ASSUMED` from the whole set.
             let header = parts
@@ -277,12 +323,12 @@ mod axum_glue {
         Router::new().route(BEACON_PATH, get(beacon))
     }
 
-    async fn beacon(Query(q): Query<HashMap<String, String>>) -> (StatusCode, HeaderMap) {
+    async fn beacon(uri: Uri) -> (StatusCode, HeaderMap) {
         let mut headers = HeaderMap::new();
         headers.insert(header::CACHE_CONTROL, "no-store".parse().unwrap());
-        match q.get("flag").and_then(|f| Cap::parse(f)) {
-            Some(cap) => {
-                headers.insert(header::SET_COOKIE, cookie_for(cap).parse().unwrap());
+        match beacon_cookie(uri.query().unwrap_or("")) {
+            Some(cookie) => {
+                headers.insert(header::SET_COOKIE, cookie.parse().unwrap());
                 (StatusCode::NO_CONTENT, headers)
             }
             None => (StatusCode::NOT_FOUND, headers),
@@ -314,6 +360,20 @@ mod tests {
             Caps::from_cookie_header("wo-cap-probed=1; wo-cap-popover=0"),
             Caps::NONE.with(Cap::Probed)
         );
+    }
+
+    #[test]
+    fn query_forces_a_set_and_the_beacon_answers_by_hand() {
+        assert_eq!(Caps::from_query("page=2"), None);
+        assert_eq!(Caps::from_query(""), None);
+        assert_eq!(
+            Caps::from_query("page=2&caps=popover,anchor,bogus"),
+            Some(Caps::NONE.with(Cap::Probed).with(Cap::Popover).with(Cap::Anchor))
+        );
+        assert_eq!(Caps::from_query("caps="), Some(Caps::NONE.with(Cap::Probed)));
+        assert_eq!(beacon_cookie("flag=anchor"), Some(cookie_for(Cap::Anchor)));
+        assert_eq!(beacon_cookie("flag=nope"), None);
+        assert_eq!(beacon_cookie(""), None);
     }
 
     #[test]
