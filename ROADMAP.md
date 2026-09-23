@@ -93,3 +93,23 @@ matrix and findings are updated, and the work is committed. Unknowns become entr
 - [ ] `CHANGELOG.md` with 0.1.0; version bump; `cargo publish --dry-run` for `wo-caps` then `webonsive`
 - [ ] docs.rs metadata (`all-features`), crate-level README rendered on docs.rs checked with `cargo doc --no-deps`
 - [ ] The publish itself is an outward action: ask the owner, do not run `cargo publish` without a yes
+
+## M14 · What htmx has that the enhancement script does not
+Every item must keep the no-script path intact: the markup is the same, the script only reads
+attributes. Blitz proves each route works without it; `scripts/browser-check.mjs` proves the
+script does its job.
+- [ ] Partial swaps with explicit targets: `data-wo-target="#id"` on a form or link swaps that
+  root instead of the closest one; `data-wo-swap="inner|outer|append|prepend"` chooses how.
+  Without the script the same request is a full navigation to the same page.
+- [ ] Out-of-band updates: a response may carry extra swap roots marked `data-wo-oob`; the
+  script replaces each matching `id` anywhere in the page (flash banner, counter in the header)
+  and drops them from the main swap. Without the script the full page already shows them.
+- [ ] Request lifecycle feedback: `data-wo-busy` class on the root while a request is in flight,
+  `aria-busy="true"`, submit buttons disabled, a `--wo-busy` CSS hook; optional
+  `data-wo-indicator="#id"` element shown while pending. Failed requests fall back to a normal
+  navigation so the user always sees the server's answer.
+- [ ] History and URL control: `data-wo-push="false"` keeps the URL, `data-wo-replace` uses
+  `replaceState`, and Back/Forward restore the swapped roots from a cached copy instead of a
+  reload; a `wo:swap` custom event fires after every swap for anything that must react.
+- [ ] Spec entry for the enhancement script updated, README "How the script works" section,
+  Firefox checks for each attribute, FINDINGS on what the platform still cannot do.
