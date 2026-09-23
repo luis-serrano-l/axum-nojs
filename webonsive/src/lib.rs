@@ -69,6 +69,7 @@ pub mod stream;
 pub mod table;
 pub mod tabs;
 pub mod theme;
+pub mod wizard;
 
 /// Server-side feature detection: the [`wo_caps`] crate, re-exported so `webonsive::caps`
 /// keeps working.
@@ -96,6 +97,7 @@ pub use stream::{Streamed, slot};
 pub use table::table;
 pub use tabs::tabs;
 pub use theme::{Theme, theme_toggle};
+pub use wizard::wizard;
 
 /// All component stylesheets, concatenated. `layout` inlines this once per page.
 pub fn stylesheet() -> String {
@@ -119,6 +121,7 @@ pub fn stylesheet() -> String {
         stream::CSS,
         table::CSS,
         paged_table::CSS,
+        wizard::CSS,
         beacons.as_str(),
     ]
     .join("\n")

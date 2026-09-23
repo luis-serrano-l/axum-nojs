@@ -124,6 +124,17 @@
       "needs_js": "no"
     },
     {
+      "name": "Wizard",
+      "module": "wizard",
+      "features": [
+        { "name": "<form method=\"post\">", "baseline": { "chrome": "1", "firefox": "1", "safari": "1" } },
+        { "name": "aria-current=\"step\"", "baseline": { "chrome": "1", "firefox": "1", "safari": "1" } },
+        { "name": "<fieldset>", "baseline": { "chrome": "1", "firefox": "1", "safari": "1" } }
+      ],
+      "fallback": "none needed: one form per step, PRG between them",
+      "needs_js": "no"
+    },
+    {
       "name": "Validated form",
       "module": "form",
       "features": [

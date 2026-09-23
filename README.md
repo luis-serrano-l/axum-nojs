@@ -88,6 +88,7 @@ browser-compat-data; `no` means unshipped, so that browser gets the fallback.
 | Load-more list | `view-transition-name`, `scroll-margin` | 111 / 144 / 18; 69 / 90 / 14.1 | plain navigation to ?page=n#more | Partly: click-to-load; scroll-to-load needs script |
 | Table | `?sort=<col>&dir=asc|desc`, `<search>`, `aria-sort`, `position: sticky`, `view-transition-name` | 1 / 1 / 1; 118 / 118 / 17; 1 / 1 / 1; 56 / 32 / 13; 111 / 144 / 18 | none needed: sorting and filtering are plain navigations | No |
 | Paged table | `?page=n`, `<select name="per">`, `<output>` | 1 / 1 / 1; 1 / 1 / 1; 10 / 4 / 7 | none needed: every control is a link or a form | No |
+| Wizard | `<form method="post">`, `aria-current="step"`, `<fieldset>` | 1 / 1 / 1; 1 / 1 / 1; 1 / 1 / 1 | none needed: one form per step, PRG between them | No |
 | Validated form | `required`, `pattern`, `:user-invalid` | 4 / 4 / 5; 4 / 4 / 5; 119 / 88 / 16.5 | server re-renders with messages; no early styling | No |
 | Counter | `<form method="post">`, `<button name value>`, `cookie` | 1 / 1 / 1; 1 / 1 / 1; 1 / 1 / 1 | none needed | No |
 | Theme toggle | `prefers-color-scheme`, `color-scheme`, `cookie` | 76 / 67 / 12.1; 81 / 96 / 13; 1 / 1 / 1 | OS preference | No |
@@ -138,7 +139,7 @@ webonsive/examples/         render_page (no server), axum_server (--features axu
 spec/components.json        generated from SPECS (cargo run -p demo -- spec write)
 docs/state.md               how state works with no script
 docs/caps.md                how the beacons work, cookie format, the first view, adding a flag
-webonsive/src/<name>.rs     one component each: dialog, popover, tabs, accordion, table, paged_table,
+webonsive/src/<name>.rs     one component each: dialog, popover, tabs, accordion, table, paged_table, wizard,
                             combobox, pager, form, counter, theme
 demo/src/lib.rs             Axum routes, ≤15 lines each, plus the no-script test
 webonsive-test/src/lib.rs   Page: render a route through Blitz, assert layout, screenshot

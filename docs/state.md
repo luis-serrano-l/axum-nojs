@@ -12,6 +12,7 @@ query string with a fixed vocabulary:
 |---|---|---|
 | `tab.<name>` | index of the open panel in the tab group `<name>` | `?tab.settings=1` |
 | `open.<group>` | index of the open section in the accordion `<group>`; empty closes all | `?open.faq=2` |
+| `step.<wizard>` | current step (0-based) of the wizard `<wizard>` | `?step.signup=2` |
 | `dialog` | id of a dialog rendered open | `?dialog=confirm` |
 
 Every tab title and accordion title is a link that changes *one* key and keeps the others, so

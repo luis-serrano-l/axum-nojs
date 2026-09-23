@@ -2,8 +2,9 @@
 //!
 //! Where UI state lives when there is no script: in the URL and in a cookie.
 //!
-//! [`UiState`] is a small string map with three kinds of keys: `tab.<name>` (open tab index),
-//! `open.<group>` (open accordion index) and `dialog` (id of a dialog to render open). It is
+//! [`UiState`] is a small string map with four kinds of keys: `tab.<name>` (open tab index),
+//! `open.<group>` (open accordion index), `step.<wizard>` (current wizard step) and `dialog`
+//! (id of a dialog to render open). It is
 //! read from the query string first and a `wo-ui` cookie second, so a link can change one key
 //! while everything else is remembered. In Axum it is an extractor, and returning it as part
 //! of the response writes the cookie back when the query changed something.
@@ -58,7 +59,7 @@ pub struct UiState {
 }
 
 fn is_state_key(key: &str) -> bool {
-    key == "dialog" || key.starts_with("tab.") || key.starts_with("open.")
+    key == "dialog" || key.starts_with("tab.") || key.starts_with("open.") || key.starts_with("step.")
 }
 
 /// Parse `a=b&c=d` pairs, keeping only state keys. Understands `%XX` and `+`.
@@ -167,6 +168,11 @@ impl UiState {
     /// Open section index for the accordion `group`; `None` when unknown or explicitly closed.
     pub fn open(&self, group: &str) -> Option<usize> {
         self.get(&format!("open.{group}")).and_then(|v| v.parse().ok())
+    }
+
+    /// Current step (0-based) of the wizard `id`; `0` when unknown.
+    pub fn step(&self, id: &str) -> usize {
+        self.get(&format!("step.{id}")).and_then(|v| v.parse().ok()).unwrap_or(0)
     }
 
     /// Id of the dialog to render open, if any.

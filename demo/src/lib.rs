@@ -14,15 +14,15 @@ use serde::Deserialize;
 use webonsive::{
     Cap, Caps, Field, FieldKind, Streamed, Theme, UiState, accordion, caps, color, combobox,
     counter, dialog, flash, form, layout, paged_table, pager, popover_menu, prg, range, select, slot,
-    table::{Column, sort_from_query}, tabs, theme_toggle,
+    table::{Column, sort_from_query}, tabs, theme_toggle, wizard, wizard::Step,
 };
 use std::time::Duration;
 
 /// Every demo path the no-script test and the screenshot test visit.
-pub const PATHS: [&str; 14] = [
+pub const PATHS: [&str; 15] = [
     "/", "/caps", "/stream", "/settings", "/dialog?dialog=confirm", "/popover", "/tabs?tab.demo=1",
     "/accordion?open.faq=1", "/combobox?q=r", "/list?page=2", "/form", "/counter", "/inputs",
-    "/table?sort=size&dir=desc&q=a&per=5&page=2",
+    "/table?sort=size&dir=desc&q=a&per=5&page=2", "/wizard?step.signup=1",
 ];
 
 /// The whole demo app.
@@ -37,6 +37,7 @@ pub fn router() -> Router {
         .route("/combobox", get(combobox_page))
         .route("/list", get(list_page))
         .route("/table", get(table_page))
+        .route("/wizard", get(wizard_page).post(wizard_submit))
         .route("/form", get(form_page).post(form_submit))
         .route("/counter", get(counter_page).post(counter_submit))
         .route("/stream", get(stream_page))
@@ -55,13 +56,14 @@ fn theme_of(jar: &CookieJar) -> Theme {
 
 /// Every component in the index: path, title (what each route passes to `page`), group, and
 /// the platform features it is built on.
-const COMPONENTS: [(&str, &str, &str, &str); 13] = [
+const COMPONENTS: [(&str, &str, &str, &str); 14] = [
     ("/dialog", "Dialog", "Overlays", "<dialog>, invoker commands"),
     ("/popover", "Popover menu", "Overlays", "popover, anchor positioning"),
     ("/tabs", "Tabs", "Disclosure", "<details name>, ::details-content"),
     ("/accordion", "Accordion", "Disclosure", "<details name>"),
     ("/combobox", "Combobox", "Input", "<datalist>, <search>"),
     ("/form", "Validated form", "Input", ":user-invalid, PRG"),
+    ("/wizard", "Wizard", "Input", "one form per step, PRG, UiState"),
     ("/inputs", "Select, range, colour", "Input", "<selectedcontent>, type=range, type=color"),
     ("/counter", "Counter", "Server state", "form POST + cookie"),
     ("/settings", "Settings", "Server state", "UiState, PRG + flash"),
@@ -208,6 +210,55 @@ async fn table_page(caps: Caps, jar: CookieJar, Query(t): Query<TableQuery>) -> 
         p { "Click a header to sort, again to flip. Type to filter. Page through. Every state is a URL." }
         (paged_table(&caps, "files", "/table", &cols, &rows, sort, &q, pg, per, total))
     })
+}
+
+/// What the wizard has collected so far, kept in one `wizard` cookie as `k=v&k=v`.
+fn wizard_data(jar: &CookieJar) -> Vec<(String, String)> {
+    let raw = jar.get("wizard").map(|c| c.value().to_string()).unwrap_or_default();
+    raw.split('&').filter_map(|p| p.split_once('=')).map(|(k, v)| (k.to_string(), v.replace('+', " "))).collect()
+}
+
+fn wizard_steps(data: &[(String, String)]) -> [Step; 3] {
+    let get = |k: &str| data.iter().find(|(n, _)| n == k).map(|(_, v)| v.as_str()).unwrap_or("");
+    [
+        Step { title: "Account", body: html! {
+            label { "Name" input type="text" name="name" value=(get("name")) required; }
+            label { "Email" input type="email" name="email" value=(get("email")) required; }
+        } },
+        Step { title: "Preferences", body: html! {
+            label { "Digest" select name="digest" { @for d in ["daily", "weekly", "never"] { option value=(d) selected[get("digest") == d] { (d) } } } }
+            label { input type="checkbox" name="news" value="1" checked[get("news") == "1"]; " Product news" }
+        } },
+        Step { title: "Review", body: html! { dl class="wo-wizard-review" {
+            @for (k, v) in data { dt { (k) } dd { @if v.is_empty() { span class="wo-note" { "(empty)" } } @else { (v) } } }
+        } } },
+    ]
+}
+
+async fn wizard_page(caps: Caps, jar: CookieJar, state: UiState) -> (UiState, Markup) {
+    let steps = wizard_steps(&wizard_data(&jar));
+    let body = page(&caps, &jar, "Wizard", html! {
+        (flash(&caps, state.flash()))
+        p { "Three steps, one form each. Back is a link; what you typed is kept on the server." }
+        (wizard(&caps, "signup", "/wizard", &steps, &state, "Create account"))
+    });
+    (state, body)
+}
+
+/// Merge this step's fields into the cookie, then redirect to the next step (or finish).
+async fn wizard_submit(jar: CookieJar, headers: HeaderMap, Form(fields): Form<Vec<(String, String)>>) -> (CookieJar, axum::response::Response) {
+    let step = fields.iter().find(|(k, _)| k == "step").and_then(|(_, v)| v.parse().ok()).unwrap_or(0);
+    let mut data = wizard_data(&jar);
+    for (k, v) in fields.into_iter().filter(|(k, _)| k != "step") {
+        data.retain(|(n, _)| *n != k);
+        data.push((k, v));
+    }
+    let state = UiState::from_request("/wizard", "", headers.get("cookie").and_then(|v| v.to_str().ok()).unwrap_or(""));
+    if step + 1 >= 3 {
+        return (jar.remove(Cookie::from("wizard")), prg(&state.link("step.signup", "0"), Some("Account created (well, the cookie was cleared).")));
+    }
+    let value: String = data.iter().map(|(k, v)| format!("{k}={}", v.replace(' ', "+"))).collect::<Vec<_>>().join("&");
+    (jar.add(Cookie::new("wizard", value)), prg(&state.link("step.signup", &(step + 1).to_string()), None))
 }
 
 #[derive(Deserialize, Default)]

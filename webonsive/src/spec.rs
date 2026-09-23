@@ -187,6 +187,17 @@ pub const SPECS: &[ComponentSpec] = &[
         needs_js: NeedsJs::No,
     },
     ComponentSpec {
+        name: "Wizard",
+        module: "wizard",
+        features: &[
+            f("<form method=\"post\">", b("1", "1", "1")),
+            f("aria-current=\"step\"", b("1", "1", "1")),
+            f("<fieldset>", b("1", "1", "1")),
+        ],
+        fallback: "none needed: one form per step, PRG between them",
+        needs_js: NeedsJs::No,
+    },
+    ComponentSpec {
         name: "Validated form",
         module: "form",
         features: &[
@@ -343,6 +354,7 @@ mod tests {
         ("pager", include_str!("pager.rs")),
         ("table", include_str!("table.rs")),
         ("paged_table", include_str!("paged_table.rs")),
+        ("wizard", include_str!("wizard.rs")),
         ("form", include_str!("form.rs")),
         ("counter", include_str!("counter.rs")),
         ("theme", include_str!("theme.rs")),
