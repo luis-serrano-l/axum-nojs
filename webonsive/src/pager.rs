@@ -4,9 +4,11 @@
 //!
 //! **Platform features:**
 //! - Ordinary links to `?page=n`.
-//! - `view-transition-name` on the list and on the button, together with the layout's
-//!   `@view-transition { navigation: auto }`, so the new page cross-fades in place
-//!   (Chrome 126+, Safari 18.2+).
+//! - `view-transition-name` on the list, together with the layout's
+//!   `@view-transition { navigation: auto }` (Chrome 126+, Safari 18.2+) or the enhancement
+//!   script's `startViewTransition`, so the new rows fade in under the old ones. The button
+//!   has no name on purpose: a named button morphs from its old spot to its new one, which
+//!   reads as a green block sliding down over the fresh rows.
 //! - `scroll-margin` + fragment `#more` keeps the viewport on the new rows after navigation.
 //!
 //! **Fallback:** without `Caps::ViewTransitions` the transition names are omitted and the page
@@ -44,8 +46,7 @@ pub fn pager(caps: &Caps, href: &str, items: &[Markup], page: usize, per_page: u
             }
             p class="wo-note" { "Showing " (shown) " of " (total) }
             @if has_more {
-                a class="wo-pager-more" style=[vt.then_some("view-transition-name: wo-pager-more")]
-                    href={ (href) "?page=" (page + 1) "#more" } { "Load more" }
+                a class="wo-pager-more" href={ (href) "?page=" (page + 1) "#more" } { "Load more" }
             }
         }
     }

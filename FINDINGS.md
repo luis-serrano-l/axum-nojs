@@ -209,6 +209,12 @@ holds the transition until `<main>` is parsed; streamed pages omit it because th
 with the last slot. Firefox has no cross-document transitions at all (MDN: unshipped), so it
 always did a plain reload.
 
+**A named button is a moving block.** The pager's "Load more" link carried its own
+`view-transition-name`. On every load the old snapshot of the button morphed from its old spot
+to its new one, 8 rows lower, sliding over the freshly added rows (seen frame by frame in
+Firefox 155 with the animation slowed to 4 s). Only the list keeps a name now: the new rows
+fade in under the old ones and the button simply re-renders where it belongs.
+
 **Two behaviours on one summary.** The tab and accordion titles were links inside a padded
 summary: clicking the text navigated, clicking the padding toggled `<details>` natively and the
 next server render snapped it back. The link now fills the summary. The accordion draws its own
