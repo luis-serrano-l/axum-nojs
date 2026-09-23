@@ -170,7 +170,14 @@ engine, so passing there is proof the page needs none.
 | Header reads "webonsive· zero": leading space of a span after an inline is trimmed | [#857](https://github.com/DioxusLabs/blitz/pull/857) (open PR, whitespace collapsing across spans) |
 
 The DSD gap is pinned by a test (`blitz_has_no_declarative_shadow_dom`) that fails the day
-Blitz gains it, so the exception in the screenshot loop gets removed then. Blitz's `svg`
+Blitz gains it, so the exception in the screenshot loop gets removed then. Do not expect that
+soon: the published beta.2 has no shadow DOM at all (every shadow hook in its Stylo glue
+returns `None`), shadow roots and slots arrive in the open PR #892, and the declarative
+`<template shadowrootmode>` step is explicitly out of that PR's scope. Once #892 merges the
+remaining work is one `TreeSink::attach_declarative_shadow` implementation in `html_sink.rs`
+(html5ever 0.39 already routes the template's children through `get_template_contents`),
+so the fix will reach a crates.io release only after both land. Until then `/stream` stays
+tested through Firefox screenshots, not Blitz. Blitz's `svg`
 feature is off: `usvg 0.48` wants `base64 ^0.23`, which the local index did not resolve.
 
 ### M6 · Polish
