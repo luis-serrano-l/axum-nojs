@@ -13,22 +13,122 @@
 //! **Fallback:** browsers without view transitions navigate normally. Theme colours are plain
 //! custom properties switched by a media query and `data-theme`, so no `light-dark()` needed.
 //!
+//! **Theming:** every colour, radius and spacing the components use is a `--wo-*` custom
+//! property. [`Tokens`] holds them for light and dark; [`layout_with`] emits them once per page
+//! as a `<style>` after the stylesheet, so a different palette is a struct, not a CSS file.
+//! `docs/theming.md` lists each token and what it affects.
+//!
 //! ```rust
 //! use maud::html;
-//! use webonsive::{Caps, layout, Theme};
+//! use webonsive::{Caps, layout, Theme, layout::{Palette, Tokens, layout_with}};
 //! let page = layout(&Caps::all(), "Title", Theme::Auto, html! { p { "body" } });
+//! let tokens = Tokens { light: Palette { accent: "#7a3b1e", ..Tokens::default().light }, ..Default::default() };
+//! let page = layout_with(&Caps::all(), "Title", Theme::Auto, &tokens, html! { p { "body" } });
+//! assert!(page.into_string().contains("--wo-accent: #7a3b1e"));
 //! ```
 
 use maud::{DOCTYPE, Markup, PreEscaped, html};
 
 use crate::{Caps, Theme, caps, enhance, stylesheet};
 
-/// Wrap `body` in a full page. Beacons are added while the browser is still unknown.
+/// One colour scheme's worth of tokens, as CSS colour values.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Palette {
+    /// Page background (`--wo-bg`).
+    pub bg: &'static str,
+    /// Text on the page background (`--wo-fg`).
+    pub fg: &'static str,
+    /// Secondary text: notes, labels, table headers (`--wo-muted`).
+    pub muted: &'static str,
+    /// Borders and rules (`--wo-line`).
+    pub line: &'static str,
+    /// Raised surfaces: inputs, buttons, dialogs, code (`--wo-surface`).
+    pub surface: &'static str,
+    /// Links, primary buttons, the open tab, the focus ring (`--wo-accent`).
+    pub accent: &'static str,
+    /// Text on the accent (`--wo-on-accent`).
+    pub on_accent: &'static str,
+    /// Errors and "no" (`--wo-danger`).
+    pub danger: &'static str,
+    /// Success and "yes" (`--wo-ok`).
+    pub ok: &'static str,
+}
+
+impl Palette {
+    /// The custom property declarations for this palette, one per line.
+    fn declarations(&self) -> String {
+        format!(
+            "  --wo-bg: {}; --wo-fg: {}; --wo-muted: {}; --wo-line: {};\n  --wo-surface: {}; --wo-accent: {}; --wo-on-accent: {};\n  --wo-danger: {}; --wo-ok: {};\n",
+            self.bg, self.fg, self.muted, self.line, self.surface, self.accent, self.on_accent, self.danger, self.ok
+        )
+    }
+}
+
+/// Every `--wo-*` token: a light and a dark palette plus the two shape tokens.
+/// `Default` is the crate's own look ("ink and moss": pale sage paper, green-black ink, moss
+/// accent; mint on near-black in the dark scheme).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Tokens {
+    /// Colours for the light scheme and for `data-theme="light"`.
+    pub light: Palette,
+    /// Colours for `prefers-color-scheme: dark` and for `data-theme="dark"`.
+    pub dark: Palette,
+    /// Corner radius of buttons, inputs, dialogs, chips (`--wo-radius`).
+    pub radius: &'static str,
+    /// The spacing unit every gap and padding is a multiple of (`--wo-space`).
+    pub space: &'static str,
+}
+
+impl Default for Tokens {
+    fn default() -> Self {
+        Tokens {
+            light: Palette {
+                bg: "#eef1ec", fg: "#14201a", muted: "#566158", line: "#c9d2cb", surface: "#ffffff",
+                accent: "#1f6f5f", on_accent: "#ffffff", danger: "#b3261e", ok: "#2f7a3a",
+            },
+            dark: Palette {
+                bg: "#0f1512", fg: "#e4ebe6", muted: "#97a59c", line: "#2b3630", surface: "#171f1b",
+                accent: "#62c9a8", on_accent: "#08110d", danger: "#ff8a80", ok: "#7bd389",
+            },
+            radius: "6px",
+            space: "8px",
+        }
+    }
+}
+
+impl Tokens {
+    /// The CSS that sets these tokens: `:root` for light, the dark palette under
+    /// `prefers-color-scheme: dark` unless `data-theme="light"`, and again under
+    /// `data-theme="dark"`. [`crate::stylesheet`] starts with `Tokens::default().css()`.
+    pub fn css(&self) -> String {
+        let (light, dark) = (self.light.declarations(), self.dark.declarations());
+        format!(
+            ":root {{\n  color-scheme: light dark;\n{light}  --wo-radius: {}; --wo-space: {};\n}}\n\
+             @media (prefers-color-scheme: dark) {{\n  :root:not([data-theme=\"light\"]) {{\n{dark}  }}\n}}\n\
+             :root[data-theme=\"dark\"] {{\n  color-scheme: dark;\n{dark}}}\n\
+             :root[data-theme=\"light\"] {{ color-scheme: light; }}\n",
+            self.radius, self.space
+        )
+    }
+}
+
+/// Wrap `body` in a full page with the default [`Tokens`]. Beacons are added while the
+/// browser is still unknown.
 pub fn layout(caps: &Caps, title: &str, theme: Theme, body: Markup) -> Markup {
+    page(caps, title, theme, None, body)
+}
+
+/// [`layout`] under a different set of [`Tokens`]: the overrides are emitted once, in a
+/// `<style>` right after the stylesheet, so every component on the page picks them up.
+pub fn layout_with(caps: &Caps, title: &str, theme: Theme, tokens: &Tokens, body: Markup) -> Markup {
+    page(caps, title, theme, Some(tokens), body)
+}
+
+fn page(caps: &Caps, title: &str, theme: Theme, tokens: Option<&Tokens>, body: Markup) -> Markup {
     html! {
         (DOCTYPE)
         html lang="en" data-theme=(theme.as_str()) {
-            (head_blocking(title))
+            (head_blocking(title, tokens))
             body {
                 (header())
                 main id="main" { (body) }
@@ -54,7 +154,7 @@ pub fn head(title: &str) -> Markup {
 /// `<head>` plus `<link rel="expect" blocking="render">` on `#main`, so a cross-document view
 /// transition starts only once the whole page is parsed. `layout` uses it; streamed pages must
 /// not, because their parse ends only when the last slot has filled.
-fn head_blocking(title: &str) -> Markup {
+fn head_blocking(title: &str, tokens: Option<&Tokens>) -> Markup {
     html! {
         head {
             meta charset="utf-8";
@@ -62,6 +162,7 @@ fn head_blocking(title: &str) -> Markup {
             title { (title) }
             link rel="expect" href="#main" blocking="render";
             style { (PreEscaped(stylesheet())) }
+            @if let Some(t) = tokens { style class="wo-tokens" { (PreEscaped(t.css())) } }
         }
     }
 }
@@ -88,28 +189,7 @@ pub const CSS: &str = r#"
    second tap while the first one is still morphing. */
 ::view-transition { pointer-events: none; }
 
-:root {
-  color-scheme: light dark;
-  --wo-bg: #eef1ec; --wo-fg: #14201a; --wo-muted: #566158; --wo-line: #c9d2cb;
-  --wo-surface: #ffffff; --wo-accent: #1f6f5f; --wo-on-accent: #ffffff;
-  --wo-danger: #b3261e; --wo-ok: #2f7a3a;
-  --wo-radius: 6px;
-  --wo-space: 8px;
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --wo-bg: #0f1512; --wo-fg: #e4ebe6; --wo-muted: #97a59c; --wo-line: #2b3630;
-    --wo-surface: #171f1b; --wo-accent: #62c9a8; --wo-on-accent: #08110d;
-    --wo-danger: #ff8a80; --wo-ok: #7bd389;
-  }
-}
-:root[data-theme="dark"] {
-  color-scheme: dark;
-  --wo-bg: #0f1512; --wo-fg: #e4ebe6; --wo-muted: #97a59c; --wo-line: #2b3630;
-  --wo-surface: #171f1b; --wo-accent: #62c9a8; --wo-on-accent: #08110d;
-  --wo-danger: #ff8a80; --wo-ok: #7bd389;
-}
-:root[data-theme="light"] { color-scheme: light; }
+/* The --wo-* tokens come first in stylesheet(), from Tokens::default().css(). */
 
 * { box-sizing: border-box; }
 html {

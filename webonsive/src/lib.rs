@@ -83,7 +83,7 @@ pub use counter::counter;
 pub use dialog::{DialogOptions, dialog};
 pub use flash::flash;
 pub use form::{Field, FieldKind, form};
-pub use layout::layout;
+pub use layout::{Tokens, layout, layout_with};
 pub use paged_table::{PagedTableOptions, paged_table};
 pub use pager::{PagerOptions, pager};
 pub use popover::popover_menu;
@@ -102,7 +102,9 @@ pub use wizard::{WizardOptions, wizard};
 /// All component stylesheets, concatenated. `layout` inlines this once per page.
 pub fn stylesheet() -> String {
     let beacons = caps::beacon_css();
+    let tokens = layout::Tokens::default().css();
     [
+        tokens.as_str(),
         layout::CSS,
         dialog::CSS,
         popover::CSS,
