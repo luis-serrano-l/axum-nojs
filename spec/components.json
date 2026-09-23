@@ -63,9 +63,10 @@
       "features": [
         { "name": "<details name", "baseline": { "chrome": "120", "firefox": "130", "safari": "17.2" } },
         { "name": "display: contents", "baseline": { "chrome": "65", "firefox": "37", "safari": "11.1" } },
-        { "name": "::details-content", "baseline": { "chrome": "131", "firefox": "143", "safari": "18.4" } }
+        { "name": "::details-content", "baseline": { "chrome": "131", "firefox": "143", "safari": "18.4" } },
+        { "name": "view-transition-name", "baseline": { "chrome": "111", "firefox": "144", "safari": "18" } }
       ],
-      "fallback": "accordion markup, chosen server-side",
+      "fallback": "accordion markup, chosen server-side; the narrow-screen select has a Go button",
       "needs_js": "no"
     },
     {

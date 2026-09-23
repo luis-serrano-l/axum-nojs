@@ -155,6 +155,11 @@ impl UiState {
         self.flash.as_deref()
     }
 
+    /// The request path the links are built on.
+    pub fn path(&self) -> &str {
+        &self.path
+    }
+
     /// Merged value for `key`: query wins over cookie.
     pub fn get(&self, key: &str) -> Option<&str> {
         self.from_query.get(key).or_else(|| self.from_cookie.get(key)).map(String::as_str)

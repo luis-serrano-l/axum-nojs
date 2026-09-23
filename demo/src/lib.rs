@@ -14,7 +14,7 @@ use serde::Deserialize;
 use webonsive::{
     Cap, Caps, Field, FieldKind, Streamed, Theme, UiState, accordion, caps, color, combobox,
     counter, dialog, dialog::{DialogOptions, DialogSize}, flash, form, layout, layout::{Palette, Tokens, layout_with}, paged_table, paged_table::PagedTableOptions,
-    pager, pager::PagerOptions, popover::{MenuItem, Placement, PopoverOptions}, popover_menu, prg, range, range::RangeOptions, select, slot,
+    pager, pager::PagerOptions, popover::{MenuItem, Placement, PopoverOptions}, popover_menu, prg, range, range::RangeOptions, select, slot, tabs::{Tab, TabsOptions},
     table::{Column, sort_from_query}, tabs, theme_toggle, wizard, wizard::{Step, WizardOptions},
 };
 use std::time::Duration;
@@ -63,7 +63,7 @@ fn theme_of(jar: &CookieJar) -> Theme {
 const COMPONENTS: [(&str, &str, &str, &str); 15] = [
     ("/dialog", "Dialog", "Overlays", "<dialog>, closedby, invoker commands, form footer"),
     ("/popover", "Popover menu", "Overlays", "popover, anchor positioning, nested popover, form actions"),
-    ("/tabs", "Tabs", "Disclosure", "<details name>, ::details-content"),
+    ("/tabs", "Tabs", "Disclosure", "<details name>, ::details-content, view-transition-name, grid"),
     ("/accordion", "Accordion", "Disclosure", "<details name>"),
     ("/combobox", "Combobox", "Input", "<datalist>, <search>"),
     ("/form", "Validated form", "Input", ":user-invalid, PRG"),
@@ -195,13 +195,21 @@ async fn popover_signout() -> axum::response::Response {
 }
 
 async fn tabs_page(caps: Caps, jar: CookieJar, state: UiState) -> (UiState, Markup) {
+    let open = state.tab("demo");
     let body = page(&caps, &jar, "Tabs", html! {
         (tabs(&caps, "demo", &[
-            ("Install", html! { p { code { "cargo add webonsive maud axum" } } }),
-            ("Use", html! { p { "Call a function, get " code { "Markup" } ", send it." } }),
-            ("Why", html! { p { "Because the platform can do this without script now." } }),
-        ], Some(&state)))
-        p class="wo-note" { "Deep link: " a href="/tabs?tab.demo=2" { "?tab.demo=2" } ". Leave and come back: the tab is remembered." }
+            Tab::new("Install", html! { p { code { "cargo add webonsive maud axum" } } }),
+            Tab::new("Use", html! { p { "Call a function, get " code { "Markup" } ", send it." } }).badge(3),
+            // Lazy: the body is rendered only by the request that opens the tab.
+            if open == 2 { Tab::new("Why", html! { p { "Because the platform can do this without script now. (Rendered on demand.)" } }) } else { Tab::lazy("Why") },
+        ], TabsOptions::default().state(&state).select_below(true)))
+        p class="wo-note" { "Deep link: " a href="/tabs?tab.demo=2" { "?tab.demo=2" } ". Leave and come back: the tab is remembered. The third tab is lazy; under 40rem the strip becomes a select." }
+        h2 { "Vertical" }
+        (tabs(&caps, "side", &[
+            Tab::new("General", html! { p { "Titles stack on the left; the open panel sits beside them." } }),
+            Tab::new("Members", html! { p { "Twelve members." } }).badge(12),
+            Tab::new("Danger zone", html! { p { "Nothing here is destructive." } }),
+        ], TabsOptions::default().state(&state).vertical(true)))
     });
     (state, body)
 }
@@ -434,14 +442,14 @@ async fn settings_page(caps: Caps, jar: CookieJar, state: UiState) -> (UiState, 
     let body = page(&caps, &jar, "Settings", html! {
         (flash(&caps, state.flash()))
         (tabs(&caps, "settings", &[
-            ("Profile", html! { form class="wo-form" method="post" action="/settings" { (hidden)
+            Tab::new("Profile", html! { form class="wo-form" method="post" action="/settings" { (hidden)
                 div class="wo-field" { label for="name" { "Display name" } input id="name" name="name" value=(current.name) required; }
                 button type="submit" class="wo-primary" { "Save" } } }),
-            ("Notifications", html! { form class="wo-form" method="post" action="/settings" { (hidden)
+            Tab::new("Notifications", html! { form class="wo-form" method="post" action="/settings" { (hidden)
                 input type="hidden" name="name" value=(current.name);
                 label { input type="checkbox" name="notify" value="true" checked[current.notify]; " Email me about releases" }
                 button type="submit" class="wo-primary" { "Save" } } }),
-        ], Some(&state)))
+        ], TabsOptions::default().state(&state)))
         p class="wo-note" { "Go to " a href="/" { "the index" } " and come back: the open tab and the values are remembered." }
     });
     (state, body)
@@ -664,7 +672,7 @@ mod tests {
         let res = router().oneshot(req).await.unwrap();
         assert!(res.headers().get("set-cookie").is_none());
         let html = String::from_utf8(axum::body::to_bytes(res.into_body(), usize::MAX).await.unwrap().to_vec()).unwrap();
-        assert!(html.contains("<details name=\"settings\" open><summary><a href=\"/settings?tab.settings=1\">Notifications"));
+        assert!(html.contains("<details name=\"settings\" open><summary style=\"view-transition-name: wo-tabs-settings\"><a href=\"/settings?tab.settings=1\">Notifications"));
     }
 
     #[tokio::test]

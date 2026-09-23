@@ -113,7 +113,7 @@ browser-compat-data; `no` means unshipped, so that browser gets the fallback.
 | Capability beacons | `@supports`, `selector()`, `background images`, `cookies` | 28 / 22 / 9; 83 / 69 / 14.1; 1 / 1 / 1; 1 / 1 / 1 | unknown browser gets every fallback; the first view always does | No |
 | Dialog | `<dialog>`, `command="show-modal"`, `<form method="dialog">`, `closedby` | 37 / 98 / 15.4; 135 / 144 / 26.2; 37 / 98 / 15.4; 134 / 141 / 26 | link to #id opens it through a :target rule, chosen server-side; the confirm footer is a plain form either way | No |
 | Popover menu | `popover`, `anchor-name` | 114 / 125 / 17; 125 / 147 / 26 | no anchor: UA-centred popover; no popover: <details> dropdown (submenus nested); actions are plain post forms either way | No |
-| Tabs | `<details name`, `display: contents`, `::details-content` | 120 / 130 / 17.2; 65 / 37 / 11.1; 131 / 143 / 18.4 | accordion markup, chosen server-side | No |
+| Tabs | `<details name`, `display: contents`, `::details-content`, `view-transition-name` | 120 / 130 / 17.2; 65 / 37 / 11.1; 131 / 143 / 18.4; 111 / 144 / 18 | accordion markup, chosen server-side; the narrow-screen select has a Go button | No |
 | Accordion | `<details name`, `::details-content`, `interpolate-size` | 120 / 130 / 17.2; 131 / 143 / 18.4; 129 / no / no | plain <details>: no exclusivity, no animation | No |
 | Combobox | `<datalist>`, `<search>` | 20 / 4 / 12.1; 118 / 118 / 17 | none needed | Partly: static suggestions and per-submit results; live filtering needs script |
 | Load-more list | `view-transition-name`, `scroll-margin` | 111 / 144 / 18; 69 / 90 / 14.1 | plain navigation to ?page=n#more | Partly: click-to-load; scroll-to-load needs script |

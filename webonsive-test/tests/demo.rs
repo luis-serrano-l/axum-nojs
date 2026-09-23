@@ -67,17 +67,28 @@ async fn tabs_strip_versus_accordion() {
     let modern = Page::render(demo::router(), "/tabs?tab.demo=1", MODERN).await;
     assert_eq!(modern.display(".wo-tabs details").as_deref(), Some("contents"));
     let first = modern.bbox(".wo-tabs summary").unwrap();
-    let second = modern.bbox(".wo-tabs details:nth-child(2) summary").unwrap();
+    let second = modern.bbox(".wo-tabs details:nth-of-type(2) summary").unwrap();
     assert!((first.y - second.y).abs() < 1.0, "tab titles share a row: {first:?} {second:?}");
     assert!(second.x > first.x + first.width - 1.0);
     let panel = modern.bbox(".wo-tabs details[open] .wo-tabs-panel").unwrap();
     assert!(panel.y >= first.y + first.height - 2.0, "open panel sits below the strip: {panel:?} vs {first:?}");
-    assert!(!modern.is_visible(".wo-tabs details:nth-child(1) .wo-tabs-panel"), "closed panel hidden");
+    assert!(!modern.is_visible(".wo-tabs details:nth-of-type(1) .wo-tabs-panel"), "closed panel hidden");
+    assert_eq!(modern.text("#wo-tabs-demo details[open] .wo-tabs-badge").as_deref(), Some("3"));
+    assert!(modern.exists("#wo-tabs-demo details:nth-of-type(3) .wo-tabs-lazy"), "lazy tab has no body until opened");
+    assert!(modern.exists("#wo-tabs-demo details[open] summary[style*='view-transition-name: wo-tabs-demo']"));
+    assert!(modern.exists("#wo-tabs-demo form.wo-tabs-select select[name='tab.demo'] option[value='1'][selected]") && !modern.is_visible(".wo-tabs-select"), "select is there but hidden on a wide screen");
+    let lazy = Page::render(demo::router(), "/tabs?tab.demo=2", MODERN).await;
+    assert!(lazy.is_visible("#wo-tabs-demo details:nth-of-type(3) .wo-tabs-panel p"), "lazy tab rendered once open");
+    let side_first = modern.bbox("#wo-tabs-side summary").unwrap();
+    let side_second = modern.bbox("#wo-tabs-side details:nth-of-type(2) summary").unwrap();
+    let side_panel = modern.bbox("#wo-tabs-side details[open] .wo-tabs-panel").unwrap();
+    assert!(side_second.y > side_first.y + side_first.height - 1.0, "vertical titles stack");
+    assert!(side_panel.x >= side_first.x + side_first.width - 1.0 && (side_panel.y - side_first.y).abs() < 2.0, "vertical panel sits beside the titles: {side_panel:?} {side_first:?}");
 
     let old = Page::render(demo::router(), "/tabs?tab.demo=1", OLD).await;
     assert_eq!(old.display(".wo-tabs details").as_deref(), Some("block/flow"));
     let first = old.bbox(".wo-tabs summary").unwrap();
-    let second = old.bbox(".wo-tabs details:nth-child(2) summary").unwrap();
+    let second = old.bbox(".wo-tabs details:nth-of-type(2) summary").unwrap();
     assert!(second.y > first.y + first.height - 1.0, "accordion titles stack");
 }
 

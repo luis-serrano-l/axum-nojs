@@ -20,6 +20,10 @@ follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); the project us
   separators, nested submenus, icons, shortcut labels, disabled and danger items,
   `Placement::BottomStart|BottomEnd|Right`. The enhancement script walks an open menu with the
   arrow keys. **Breaking:** the `(text, href)` tuple form is gone.
+- `tabs` takes `&[Tab]` and `TabsOptions` (`state`, `vertical`, `select_below`): badges,
+  lazy tabs (`Tab::lazy`), a vertical strip, a `<select>` under 40rem, the open tab carries
+  `view-transition-name`. `UiState::path()`. **Breaking:** the `(title, body)` tuple form and
+  the `Option<&UiState>` argument are gone.
 
 ## [0.1.0] - 2026-09-23
 

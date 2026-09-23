@@ -132,7 +132,7 @@ involved) a Firefox check.
   headings, disabled and destructive items, a submenu that is another popover, items that are
   `<form method="post">` buttons for actions (not just links), placement options
   (`bottom-start|bottom-end|right`) via `anchor-name`, arrow keys move between items.
-- [ ] Tabs: lazy panels (a tab that is a link to `?tab.x=n` fetches only when opened), a badge
+- [x] Tabs: lazy panels (a tab that is a link to `?tab.x=n` fetches only when opened), a badge
   count per tab, vertical orientation option, overflow to a `<select>` on narrow screens, the
   active tab underlined with a morphing `view-transition-name`.
 - [ ] Accordion: a "expand all / collapse all" pair of links, an item can carry a summary line

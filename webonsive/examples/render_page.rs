@@ -4,7 +4,7 @@
 //! browser gets instead. Pipe into a file and open it, or `curl`-read it: no script anywhere.
 
 use maud::html;
-use webonsive::{Caps, MenuItem, Theme, accordion, dialog, layout, popover_menu, tabs};
+use webonsive::{Caps, MenuItem, Tab, Theme, accordion, dialog, layout, popover_menu, tabs};
 
 fn main() {
     let fallback = std::env::args().any(|a| a == "--fallback");
@@ -15,7 +15,7 @@ fn main() {
         " "
         (popover_menu(&caps, "menu", "Menu", &[MenuItem::link("Docs", "/docs"), MenuItem::link("Source", "/src")], Default::default()))
         h2 { "Tabs" }
-        (tabs(&caps, "t", &[("One", html! { p { "First panel." } }), ("Two", html! { p { "Second panel." } })], None))
+        (tabs(&caps, "t", &[Tab::new("One", html! { p { "First panel." } }), Tab::new("Two", html! { p { "Second panel." } })], Default::default()))
         h2 { "Accordion" }
         (accordion(&caps, "faq", &[("Why?", html! { p { "Because the platform can." } })], None))
     });

@@ -136,8 +136,8 @@ pub const SPECS: &[ComponentSpec] = &[
     ComponentSpec {
         name: "Tabs",
         module: "tabs",
-        features: &[DETAILS_NAME, f("display: contents", b("65", "37", "11.1")), DETAILS_CONTENT],
-        fallback: "accordion markup, chosen server-side",
+        features: &[DETAILS_NAME, f("display: contents", b("65", "37", "11.1")), DETAILS_CONTENT, f("view-transition-name", b("111", "144", "18"))],
+        fallback: "accordion markup, chosen server-side; the narrow-screen select has a Go button",
         needs_js: NeedsJs::No,
     },
     ComponentSpec {

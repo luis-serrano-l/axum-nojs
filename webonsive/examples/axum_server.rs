@@ -5,14 +5,14 @@
 
 use axum::{Router, routing::get};
 use maud::{Markup, html};
-use webonsive::{Caps, Theme, UiState, caps, dialog, dialog::DialogOptions, layout, tabs};
+use webonsive::{Caps, Theme, UiState, caps, dialog, dialog::DialogOptions, layout, tabs, tabs::{Tab, TabsOptions}};
 
 async fn index(caps: Caps, state: UiState) -> (UiState, Markup) {
     let page = layout(&caps, "webonsive", Theme::Auto, html! {
         h1 { "webonsive on Axum" }
         p { "This browser supports: " @for n in caps.names() { code { (n) } " " } }
-        (tabs(&caps, "demo", &[("First", html! { p { "Tab state lives in the URL and a cookie." } }),
-                              ("Second", html! { p { "Reload, leave, come back: still here." } })], Some(&state)))
+        (tabs(&caps, "demo", &[Tab::new("First", html! { p { "Tab state lives in the URL and a cookie." } }),
+                              Tab::new("Second", html! { p { "Reload, leave, come back: still here." } })], TabsOptions::default().state(&state)))
         (dialog(&caps, "d", "Open dialog", html! { p { "Hello." } }, DialogOptions::default().open(state.dialog() == Some("d"))))
     });
     (state, page)

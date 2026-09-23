@@ -204,6 +204,11 @@ document.addEventListener("click", function (e) {
   request(t, a, a.href, { credentials: "same-origin", headers: { "Wo-Enhance": "1" } }, function () { location.href = a.href; });
 });
 
+// The narrow-screen tab select submits on change (its Go button stays for everyone else).
+document.addEventListener("change", function (e) {
+  if (e.target.matches(".wo-tabs-select select") && e.target.form) submit(e.target.form, null);
+});
+
 var typing;
 document.addEventListener("input", function (e) {
   var t = e.target;

@@ -53,9 +53,20 @@ try {
   // Tabs: click a title, panel switches, URL updated, no reload.
   await go("/tabs");
   await click(".wo-tabs summary a[href*='tab.demo=1']");
-  await until(async () => (await text(".wo-tabs details[open] summary")) === "Use", "tab switch");
+  await until(async () => (await text(".wo-tabs details[open] summary")).startsWith("Use"), "tab switch");
   assert(await js("return location.search") === "?tab.demo=1", "tabs: URL follows the swap");
   assert(await navigations() === 1, "tabs: switched without a reload");
+  assert(await js("return getComputedStyle(document.querySelector('.wo-tabs details[open] summary')).viewTransitionName") === "wo-tabs-demo", "tabs: open tab carries the view-transition-name");
+  await click(".wo-tabs summary a[href*='tab.demo=2']");
+  await until(async () => await js("return !!document.querySelector('#wo-tabs-demo details[open] .wo-tabs-panel p')"), "lazy tab filled");
+  assert(!(await js("return document.querySelector('#wo-tabs-demo details[open] .wo-tabs-lazy')")), "tabs: lazy panel rendered by the request that opened it");
+  await wd("POST", S + "/window/rect", { width: 500, height: 800 });
+  await until(async () => await js("return document.querySelector('#wo-tabs-demo .wo-tabs-select').offsetParent !== null"), "select shown on a narrow screen");
+  assert(await js("return document.querySelector('#wo-tabs-demo summary').offsetParent === null"), "tabs: titles hidden when the select shows");
+  await js("var s = document.querySelector('#wo-tabs-demo select'); s.value = '0'; s.dispatchEvent(new Event('change', { bubbles: true }))");
+  await until(async () => (await js("return document.querySelector('#wo-tabs-demo select').value")) === "0" && (await text("#wo-tabs-demo details[open] summary")) === "Install", "select switched the tab");
+  assert(await navigations() === 1 && await js("return location.search") === "?tab.demo=0", "tabs: select change swapped in place");
+  await wd("POST", S + "/window/rect", { width: 1000, height: 700 });
 
   // Combobox: results as you type, focus kept.
   await go("/combobox");
