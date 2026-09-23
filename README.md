@@ -107,7 +107,8 @@ issues.
 
 - **Works with no script:** dialog, popover, tabs, accordion, server-side feature detection,
   out-of-order streaming, URL + cookie state with Post/Redirect/Get, cross-navigation view
-  transitions, constraint validation with `:user-invalid`, headless layout tests through Blitz.
+  transitions, constraint validation with `:user-invalid`, sortable/filterable/paged tables,
+  multi-step wizards, headless layout tests through Blitz.
 - **Needs a fallback today:** invoker commands, anchor positioning, `popover`,
   `::details-content`, `<details name>`, cross-document view transitions in Firefox,
   declarative shadow DOM, and the first page view of every browser (beacons not fired yet).
@@ -115,7 +116,7 @@ issues.
 - **Impossible without script:** filtering as you type against server data, infinite scroll,
   mirroring a slider's value while it moves,
   a modal opened on load, persisting client-side `<details>` toggles, optimistic UI, offline,
-  undo, drag and drop, canvas, and feature-detecting HTML attributes from CSS.
+  undo, drag and drop, inline cell editing, canvas, and feature-detecting HTML attributes from CSS.
 
 **Verdict:** for content sites, admin panels, forms, settings pages and dashboards that refresh
 per action, the platform is enough. For editors, real-time collaboration, and anything that

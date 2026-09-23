@@ -23,6 +23,9 @@ from `webonsive::spec` into `spec/components.json` and README.
   interaction. The server re-checks and re-renders with messages.
 - **Testing without a browser:** Blitz renders every route headless with real layout, so
   "it has a box and sits below the strip" is a unit test, and every route has a PNG.
+- **Admin tables and multi-step forms:** sort, filter and page are links and GET forms, every
+  state is a URL; a wizard is one POST per step with the entered values on the server and
+  the current step in `UiState`. Verified in Firefox with and without the script.
 
 ## 2. What needs a fallback today
 
@@ -235,3 +238,31 @@ are generated from it (`cargo run -p demo -- spec write`) and tests fail when th
 test also reads every component's `//!` header and requires each spec feature name to appear
 in it verbatim, so the header and the spec cannot disagree about which features a component
 uses.
+
+### M10 · Components admin panels need
+
+**Everything the table does is a URL.** Sort (`?sort=size&dir=desc`), filter (`?q=a`), page
+(`?page=2`) and page size (`?per=5`) are all query keys, so a view can be bookmarked or sent
+to a colleague, and the browser's Back button is the undo. The component never sorts or
+filters: it renders rows it is given and emits links that ask for others. That keeps it usable
+from `curl` and keeps the data path (a database query) in the handler where it belongs.
+The `<search>` form keeps the sort in hidden inputs and the sort links keep the filter in the
+query, so no action forgets the others; `paged_table` threads `per` through both.
+
+**Sticky headers are one line of CSS and one Blitz gap.** `position: sticky; top: 0` on
+`thead th` keeps the columns labelled while a long table scrolls. `stylo_taffy` maps
+`sticky` to `relative` with a `TODO` and Blitz then paints the cells at the viewport top,
+leaving an empty row in the table (screenshot `table-*.png`; tracked under
+[#389](https://github.com/DioxusLabs/blitz/issues/389)). Firefox renders it correctly.
+
+**A wizard is three forms, not one.** Each step is its own `<form method="post">` carrying
+`step=<n>`; the handler merges the fields into stored data and answers with PRG to the next
+step's URL. Refresh never re-submits, the browser's Back returns to the previous step with
+its values, and the "Back" link is the same URL. The current step is a `step.<id>` key in
+`UiState`, so it travels in the query and the `wo-ui` cookie like a tab; the entered values
+are application data and live in the app's store (a cookie in the demo). Putting them in
+the URL would leak names and emails into history and logs.
+
+**Not possible without script, still:** inline cell editing, drag to reorder columns, row
+selection that survives paging without a form round trip, and "unsaved changes" warnings
+when leaving a wizard step.

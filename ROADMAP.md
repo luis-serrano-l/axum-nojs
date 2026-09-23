@@ -74,7 +74,7 @@ matrix and findings are updated, and the work is committed. Unknowns become entr
 - [x] `paged_table`: the table plus page links (`?page=n`) and a per-page `<select>`; total and range shown; keyboard-reachable
 - [x] `wizard`: multi-step form with PRG state in `UiState`, step list with the current step marked, back link that keeps entered values, review step
 - [x] Demo routes `/table`, `/wizard` added to `PATHS` and `COMPONENTS`; Blitz assertions for sort links and step markers; Firefox check for in-place sort
-- [ ] Spec entries, README matrix regenerated, FINDINGS updated
+- [x] Spec entries, README matrix regenerated, FINDINGS updated
 
 ## M11 · Options structs instead of positional arguments
 - [ ] Each component with more than three arguments after `id` takes an `Options` struct with `Default` (`DialogOptions { open, close_label, .. }`)
