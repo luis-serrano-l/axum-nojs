@@ -3,6 +3,7 @@ name = "wo-caps"
 version = "0.1.0"
 edition = "2024"
 description = "Server-side browser feature detection with no JavaScript: @supports beacons set one cookie per capability"
+readme = "README.md"
 
 [features]
 default = []

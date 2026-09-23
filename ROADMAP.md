@@ -67,7 +67,7 @@ matrix and findings are updated, and the work is committed. Unknowns become entr
 - [x] Move `caps.rs` (bitset, `@supports` beacons, cookie parsing, beacon route) into `wo-caps/` in the workspace; `webonsive` depends on it and re-exports `Caps`, `Cap`
 - [x] Spec page `docs/caps.md`: how the beacons work, the first-view problem, what each flag tests, cookie format, how to add a flag
 - [x] Standalone example: a raw `hyper` handler that reads `Caps` and prints one line per flag
-- [ ] `cargo publish --dry-run -p wo-caps` passes; README of the sub-crate written for a reader who has never seen webonsive
+- [x] `cargo publish --dry-run -p wo-caps` passes; README of the sub-crate written for a reader who has never seen webonsive
 
 ## M10 · Components admin panels need
 - [ ] `table`: server-side sort (`?sort=col&dir=asc` links in `<th>`), column filter (`<form method=get>` with `<search>`), sticky header, `aria-sort`; swap root
