@@ -1,4 +1,5 @@
-//! `cargo run -p demo` serves the component demo on http://127.0.0.1:3000.
+//! `cargo run -p demo` serves the component demo on http://127.0.0.1:3000 (`PORT` overrides
+//! the port; the checks use 3001 so they never kill a server you are looking at).
 //! `cargo run -p demo -- spec` prints `spec/components.json`; `-- spec write` regenerates
 //! that file and the README feature matrix from `webonsive::spec::SPECS`.
 
@@ -16,8 +17,9 @@ async fn main() {
 }
 
 async fn serve() {
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:3000").await.unwrap();
-    println!("http://127.0.0.1:3000");
+    let port = std::env::var("PORT").ok().and_then(|p| p.parse::<u16>().ok()).unwrap_or(3000);
+    let listener = tokio::net::TcpListener::bind(("127.0.0.1", port)).await.unwrap();
+    println!("http://127.0.0.1:{port}");
     axum::serve(listener, demo::router()).await.unwrap();
 }
 

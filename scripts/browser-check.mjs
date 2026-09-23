@@ -5,10 +5,11 @@
 import { spawn } from "node:child_process";
 import { setTimeout as sleep } from "node:timers/promises";
 
-const DEMO = "http://127.0.0.1:3000";
-const DRIVER = "http://127.0.0.1:4444";
-const server = spawn("target/debug/demo", { stdio: "ignore" });
-const driver = spawn("geckodriver", ["--port", "4444"], { stdio: "ignore" });
+// Own ports, so a demo you are looking at on 3000 is left alone.
+const DEMO = "http://127.0.0.1:3001";
+const DRIVER = "http://127.0.0.1:4445";
+const server = spawn("target/debug/demo", { stdio: "ignore", env: { ...process.env, PORT: "3001" } });
+const driver = spawn("geckodriver", ["--port", "4445"], { stdio: "ignore" });
 const quit = (code) => { server.kill(); driver.kill(); process.exit(code); };
 
 async function wd(method, path, body) {
