@@ -113,3 +113,52 @@ script does its job.
   reload; a `wo:swap` custom event fires after every swap for anything that must react.
 - [ ] Spec entry for the enhancement script updated, README "How the script works" section,
   Firefox checks for each attribute, FINDINGS on what the platform still cannot do.
+
+## M15 · Components worth using
+The components are too basic: each proves a platform feature but stops short of what an app
+needs from it. Make each one something a real page would reach for, without giving up what
+makes them simple: one function, one options struct, plain HTML you can `curl`, no script
+beyond `/wo/enhance.js`, every state a URL or a form. One box per component; each box ends
+with a demo route that shows the new behaviour, a Blitz assertion and (where the script is
+involved) a Firefox check.
+- [ ] Dialog: sizes (`sm|md|lg`), a header with title and close, a footer slot for real actions
+  (confirm form posting to a URL, cancel), `danger` variant, focus lands on the first field,
+  `Escape` and backdrop close honour `closedby`; an optional `returns_to` so the server can
+  redirect back to the page that opened it.
+- [ ] Popover menu: items with icons and keyboard shortcuts shown, separators and section
+  headings, disabled and destructive items, a submenu that is another popover, items that are
+  `<form method="post">` buttons for actions (not just links), placement options
+  (`bottom-start|bottom-end|right`) via `anchor-name`, arrow keys move between items.
+- [ ] Tabs: lazy panels (a tab that is a link to `?tab.x=n` fetches only when opened), a badge
+  count per tab, vertical orientation option, overflow to a `<select>` on narrow screens, the
+  active tab underlined with a morphing `view-transition-name`.
+- [ ] Accordion: a "expand all / collapse all" pair of links, an item can carry a summary line
+  and an icon, nested accordions, `open.<group>` accepts a list so several items can be open.
+- [ ] Combobox: multi-select with removable chips, grouped options (`<optgroup>` in the
+  datalist), a "create new" row when nothing matches, keyboard navigation of server results,
+  the current selection kept across a re-filter, async results marked with `aria-live`.
+- [ ] Table: row selection with checkboxes and a bulk-action form, column visibility toggles
+  (`?cols=`), a per-row action menu (the popover), expandable detail rows (`<details>` in a
+  cell), numeric alignment and column widths, empty and loading states, CSV link for the
+  current filter.
+- [ ] Paged table: jump-to-page form, first/last links, ellipsis for long ranges, page size
+  remembered per table in `UiState`, total row count formatted with separators.
+- [ ] Wizard: per-step server validation with messages beside the field and the step marked
+  in error in the step list, optional steps that can be skipped, a progress bar, a summary
+  that links each field back to its step, resume from the cookie after closing the tab.
+- [ ] Form: field groups with legends, help text and character counters (`<output>`),
+  file inputs with accepted types, date/time/number inputs with min/max, textarea autosize via
+  `field-sizing: content`, inline and stacked layouts, a "dirty" warning link-back is not
+  possible without script and is recorded in FINDINGS.
+- [ ] Counter, range, color, select: stepper with min/max/step and a typed value, range with
+  two thumbs (min/max pair as two inputs), colour with a preset swatch row and alpha, select
+  with option groups, icons in options and a search box when it has more than ~15 options.
+- [ ] Flash and status: variants (`info|ok|warn|danger`), dismiss is a link that clears the
+  cookie, multiple flashes stack, a `role="alert"` variant for errors, auto-hide via CSS
+  animation with reduced-motion respected.
+- [ ] New: toast list, breadcrumbs, skeleton placeholders for streamed slots, empty states, a
+  stat card, a sidebar/drawer navigation (`<dialog>` non-modal or popover), a command palette
+  (search + datalist + popover) as the flagship "no script needed" demo.
+- [ ] Every options struct grows only setters that map to real HTML/CSS; the doc header of each
+  component gains a "What it does not do without script" paragraph; README matrix, spec and
+  FINDINGS updated as each box lands.
