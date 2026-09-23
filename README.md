@@ -123,6 +123,7 @@ reacts per keystroke, it is not.
 ```
 webonsive/src/lib.rs        crate docs, re-exports, stylesheet()
 wo-caps/src/lib.rs          Caps bitset, @supports beacons, cookie parsing, /wo/caps route (own crate)
+wo-caps/examples/hyper.rs   the beacons on raw hyper, one line per flag
 webonsive/src/layout.rs     page shell + base CSS + beacons
 webonsive/src/stream.rs     Streamed response: DSD slots out of order, in-order fallback (http feature)
 webonsive/src/state.rs      UiState (query + cookie), prg_parts()/prg() redirect with flash
