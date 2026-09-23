@@ -26,6 +26,24 @@
 //! // The only script is the optional enhancement tag; the page works without it.
 //! assert_eq!(page.into_string().matches("<script").count(), 1);
 //! ```
+//!
+//! ## Without Maud templates
+//!
+//! [`maud::Markup`] is `PreEscaped<String>`: it implements [`maud::Render`] for nesting in
+//! `html!`, and `.into_string()` (or `.0`) hands the HTML to anything else: another template
+//! engine, a plain `String` body in any server, a file. [`stylesheet`] is a `String` too, so a
+//! page can be assembled by concatenation with no `html!` anywhere.
+//!
+//! ```rust
+//! use webonsive::{Caps, Theme, flash, stylesheet, theme_toggle};
+//!
+//! let caps = Caps::all();
+//! let body: String = flash(&caps, Some("Saved.")).into_string()
+//!     + &theme_toggle(&caps, "/theme", Theme::Auto).into_string();
+//! let page = format!("<!DOCTYPE html><style>{}</style><main>{body}</main>", stylesheet());
+//! assert!(page.contains("class=\"wo-theme\""));
+//! assert!(!page.contains("<script"));
+//! ```
 
 #![warn(missing_docs)]
 
@@ -94,4 +112,25 @@ pub fn stylesheet() -> String {
         beacons.as_str(),
     ]
     .join("\n")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Every component's return type nests in `html!` and converts to a plain `String`.
+    #[test]
+    fn components_render_and_stringify() {
+        fn renders<T: maud::Render>(_: &T) {}
+        let caps = Caps::all();
+        let parts = [
+            flash(&caps, Some("hi")),
+            counter(&caps, "/counter", 3),
+            theme_toggle(&caps, "/theme", Theme::Auto),
+        ];
+        for part in &parts {
+            renders(part);
+            assert!(part.clone().into_string().starts_with('<'));
+        }
+    }
 }
