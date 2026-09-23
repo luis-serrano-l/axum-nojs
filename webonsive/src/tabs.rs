@@ -11,27 +11,37 @@
 //! **Fallback:** without `Caps::DetailsContent` the same `<details>` render as a stacked
 //! accordion, reusing the accordion styles. Without `name` support exclusivity is lost.
 //!
-//! **Server persistence:** pass the active index from `?tab=n` to restore a tab after a
-//! navigation. Clicking a summary toggles without a round trip.
+//! **Server persistence:** with a `UiState`, `active` comes from `state.tab(name)` and each
+//! title is a link to `?tab.<name>=i`, so the choice survives navigation (query first, cookie
+//! after). Clicking the summary beside the title still toggles instantly without a round trip.
 //!
 //! ```rust
 //! use maud::html;
-//! use webonsive::{Caps, tabs};
-//! let m = tabs(&Caps::all(), "docs", 0, &[("Install", html!{ p{"cargo add"} }), ("Use", html!{ p{"html!"} })]);
+//! use webonsive::{Caps, UiState, tabs};
+//! let state = UiState::parse("/docs", "tab.docs=1", "");
+//! let m = tabs(&Caps::all(), "docs", &[("Install", html!{ p{"cargo add"} }), ("Use", html!{ p{"html!"} })], Some(&state));
+//! assert!(m.into_string().contains("href=\"/docs?tab.docs=0\""));
 //! ```
 
 use maud::{Markup, html};
 
-use crate::{Cap, Caps};
+use crate::{Cap, Caps, UiState};
 
-/// `active` is the zero-based index of the open panel.
-pub fn tabs(caps: &Caps, name: &str, active: usize, panels: &[(&str, Markup)]) -> Markup {
+/// Tab strip `name`. The open panel is `state.tab(name)`, or the first one without state.
+pub fn tabs(caps: &Caps, name: &str, panels: &[(&str, Markup)], state: Option<&UiState>) -> Markup {
     let strip = caps.has(Cap::DetailsContent);
+    let active = state.map(|s| s.tab(name)).unwrap_or(0);
+    let key = format!("tab.{name}");
     html! {
         div class=(if strip { "wo-tabs" } else { "wo-tabs wo-accordion" }) {
             @for (i, (title, body)) in panels.iter().enumerate() {
                 details name=(name) open[i == active] {
-                    summary { (title) }
+                    summary {
+                        @match state {
+                            Some(s) => a href=(s.link(&key, &i.to_string())) { (title) },
+                            None => (title),
+                        }
+                    }
                     div class=(if strip { "wo-tabs-panel" } else { "wo-accordion-body" }) { (body) }
                 }
             }
@@ -46,6 +56,7 @@ pub const CSS: &str = r#"
   border-bottom: 2px solid transparent; margin-bottom: -1px; color: var(--wo-muted);
 }
 .wo-tabs summary::-webkit-details-marker { display: none; }
+.wo-tabs summary a { color: inherit; text-decoration: none; }
 .wo-tabs:not(.wo-accordion) details[open] summary { color: var(--wo-fg); border-bottom-color: var(--wo-accent); }
 /* Push every panel to a full-width row under the strip. */
 .wo-tabs details::details-content { order: 1; flex-basis: 100%; }

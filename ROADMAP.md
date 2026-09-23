@@ -22,12 +22,12 @@ matrix and findings are updated, and the work is committed. Unknowns become entr
 - [x] Test: response body is chunked and slots arrive in completion order
 
 ## M3 · State model for scriptless apps
-- [ ] `webonsive::state`: `UiState` extractor merging query + cookie (open tab, open details, dialog)
-- [ ] `prg(redirect_to, flash)` helper: Post/Redirect/Get with a one-shot flash cookie
-- [ ] `flash()` component rendering and clearing the flash
-- [ ] `details` and `tabs` persist open state via `?open=` links generated from `UiState`
-- [ ] Demo: settings page with tabs + form + flash that survives a full navigation
-- [ ] Docs: one page "how state works with no script"
+- [x] `webonsive::state`: `UiState` extractor merging query + cookie (open tab, open details, dialog)
+- [x] `prg(redirect_to, flash)` helper: Post/Redirect/Get with a one-shot flash cookie
+- [x] `flash()` component rendering and clearing the flash
+- [x] `details` and `tabs` persist open state via `?open=` links generated from `UiState`
+- [x] Demo: settings page with tabs + form + flash that survives a full navigation
+- [x] Docs: one page "how state works with no script"
 
 ## M4 · Blitz as the test engine
 - [ ] `webonsive-test` crate: render a route via `tower::oneshot`, load HTML into `blitz-dom`, resolve layout

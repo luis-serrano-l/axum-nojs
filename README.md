@@ -47,6 +47,8 @@ cargo test             # includes: no route may contain "<script"
 | Validated form | `required`/`pattern`/`min`, `:user-invalid`, Post/Redirect/Get | 2015 / 2023 | none needed | No |
 | Counter | `<form method=post>`, `<button name value>`, cookie | forever | none needed | No |
 | Theme toggle | `prefers-color-scheme`, cookie + `data-theme` | 2020 | OS preference | No |
+| UI state | query string + `wo-ui` cookie via `UiState`; tab and accordion titles are links | 1997 | none needed | No |
+| Flash + PRG | `303 See Other` + one-shot `wo-flash` cookie | 1997 | none needed | No |
 | Streaming | `<template shadowrootmode>` on `<body>`, named `<slot>`s, chunked response | Chrome 111 / Firefox 123 / Safari 16.4 | in-order streaming with in-place splicing | No |
 
 ## Findings
@@ -76,7 +78,8 @@ cargo test             # includes: no route may contain "<script"
 - Infinite scroll. Cumulative pages with one click per page is the ceiling.
 - Optimistic UI, offline behaviour, undo without a round trip.
 - Drag and drop, resizable panes, canvas or charts drawn from data.
-- Keeping `<details>` state across navigations without a `?tab=` round trip.
+- Keeping `<details>` state across navigations without a round trip. `UiState` makes the round
+  trip one link click and remembers it in a cookie; see `docs/state.md`.
 
 **Verdict:** for content sites, admin panels, forms, settings pages and dashboards that refresh
 per action, the platform is enough. For editors, real-time collaboration, and anything that
@@ -89,6 +92,9 @@ webonsive/src/lib.rs        crate docs, re-exports, stylesheet()
 webonsive/src/caps.rs       Caps bitset, @supports beacons, cookie parsing, /wo/caps route
 webonsive/src/layout.rs     page shell + base CSS + beacons
 webonsive/src/stream.rs     Streamed response: DSD slots out of order, in-order fallback
+webonsive/src/state.rs      UiState (query + cookie), prg() redirect with flash
+webonsive/src/flash.rs      one-shot status banner
+docs/state.md               how state works with no script
 webonsive/src/<name>.rs     one component each: dialog, popover, tabs, accordion,
                             combobox, pager, form, counter, theme
 demo/src/main.rs            Axum routes, ≤15 lines each, plus the no-script test

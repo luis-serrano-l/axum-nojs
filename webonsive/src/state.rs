@@ -1,0 +1,256 @@
+//! # State
+//!
+//! Where UI state lives when there is no script: in the URL and in a cookie.
+//!
+//! [`UiState`] is a small string map with three kinds of keys: `tab.<name>` (open tab index),
+//! `open.<group>` (open accordion index) and `dialog` (id of a dialog to render open). It is
+//! read from the query string first and a `wo-ui` cookie second, so a link can change one key
+//! while everything else is remembered. In Axum it is an extractor, and returning it as part
+//! of the response writes the cookie back when the query changed something.
+//!
+//! **Platform features:** links, cookies, `303 See Other`. Nothing newer than 1997.
+//!
+//! **Fallback:** none needed. Without cookies, state still travels in links on the same page.
+//!
+//! **Post/Redirect/Get:** [`prg`] answers a form POST with a redirect and a one-shot
+//! `wo-flash` cookie; the next page renders it with the `flash` component and, by returning
+//! its `UiState`, clears it.
+//!
+//! ```rust
+//! use webonsive::UiState;
+//! let state = UiState::parse("/settings", "tab.settings=1&page=3", "open.faq=2");
+//! assert_eq!(state.tab("settings"), 1);
+//! assert_eq!(state.open("faq"), Some(2));
+//! assert_eq!(state.link("tab.settings", "0"), "/settings?open.faq=2&tab.settings=0");
+//! ```
+
+use std::collections::BTreeMap;
+
+/// Name of the cookie that remembers UI state between page views.
+pub const UI_COOKIE: &str = "wo-ui";
+
+/// Name of the one-shot cookie carrying a flash message across a redirect.
+pub const FLASH_COOKIE: &str = "wo-flash";
+
+/// UI state for one request: query string merged over the `wo-ui` cookie.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct UiState {
+    path: String,
+    from_query: BTreeMap<String, String>,
+    from_cookie: BTreeMap<String, String>,
+    flash: Option<String>,
+}
+
+fn is_state_key(key: &str) -> bool {
+    key == "dialog" || key.starts_with("tab.") || key.starts_with("open.")
+}
+
+/// Parse `a=b&c=d` pairs, keeping only state keys. Understands `%XX` and `+`.
+fn parse_pairs(input: &str) -> BTreeMap<String, String> {
+    input
+        .split('&')
+        .filter_map(|pair| pair.split_once('=').or(Some((pair, ""))))
+        .map(|(k, v)| (decode(k), decode(v)))
+        .filter(|(k, _)| is_state_key(k))
+        .collect()
+}
+
+fn decode(s: &str) -> String {
+    let bytes = s.as_bytes();
+    let mut out = Vec::with_capacity(bytes.len());
+    let mut i = 0;
+    while i < bytes.len() {
+        match bytes[i] {
+            b'+' => out.push(b' '),
+            b'%' if i + 2 < bytes.len() => {
+                match u8::from_str_radix(&s[i + 1..i + 3], 16) {
+                    Ok(b) => {
+                        out.push(b);
+                        i += 2;
+                    }
+                    Err(_) => out.push(b'%'),
+                }
+            }
+            b => out.push(b),
+        }
+        i += 1;
+    }
+    String::from_utf8_lossy(&out).into_owned()
+}
+
+fn encode(s: &str) -> String {
+    let mut out = String::new();
+    for b in s.bytes() {
+        match b {
+            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'_' | b'.' | b'~' => out.push(b as char),
+            _ => out.push_str(&format!("%{b:02X}")),
+        }
+    }
+    out
+}
+
+impl UiState {
+    /// Build from the request path, its raw query string and the raw `wo-ui` cookie value.
+    pub fn parse(path: &str, query: &str, cookie: &str) -> UiState {
+        UiState {
+            path: path.to_string(),
+            from_query: parse_pairs(query),
+            from_cookie: parse_pairs(cookie),
+            flash: None,
+        }
+    }
+
+    /// Attach the flash message read from the `wo-flash` cookie.
+    pub fn with_flash(mut self, flash: Option<String>) -> UiState {
+        self.flash = flash.filter(|f| !f.is_empty());
+        self
+    }
+
+    /// The pending flash message, if any.
+    pub fn flash(&self) -> Option<&str> {
+        self.flash.as_deref()
+    }
+
+    /// Merged value for `key`: query wins over cookie.
+    pub fn get(&self, key: &str) -> Option<&str> {
+        self.from_query.get(key).or_else(|| self.from_cookie.get(key)).map(String::as_str)
+    }
+
+    /// Open tab index for the tab group `name`; `0` when unknown.
+    pub fn tab(&self, name: &str) -> usize {
+        self.get(&format!("tab.{name}")).and_then(|v| v.parse().ok()).unwrap_or(0)
+    }
+
+    /// Open section index for the accordion `group`; `None` when unknown or explicitly closed.
+    pub fn open(&self, group: &str) -> Option<usize> {
+        self.get(&format!("open.{group}")).and_then(|v| v.parse().ok())
+    }
+
+    /// Id of the dialog to render open, if any.
+    pub fn dialog(&self) -> Option<&str> {
+        self.get("dialog").filter(|d| !d.is_empty())
+    }
+
+    /// Merged state as key/value pairs.
+    pub fn entries(&self) -> BTreeMap<&str, &str> {
+        self.from_cookie
+            .iter()
+            .chain(self.from_query.iter())
+            .map(|(k, v)| (k.as_str(), v.as_str()))
+            .collect()
+    }
+
+    /// A link to the current path with `key` set to `value` and every other state key kept.
+    /// An empty `value` removes the key.
+    pub fn link(&self, key: &str, value: &str) -> String {
+        let mut entries = self.entries();
+        if value.is_empty() {
+            entries.remove(key);
+        } else {
+            entries.insert(key, value);
+        }
+        let query: Vec<String> = entries.iter().map(|(k, v)| format!("{}={}", encode(k), encode(v))).collect();
+        if query.is_empty() { self.path.clone() } else { format!("{}?{}", self.path, query.join("&")) }
+    }
+
+    /// Whether the query changed something the cookie should now remember.
+    pub fn changed(&self) -> bool {
+        self.from_query.iter().any(|(k, v)| self.from_cookie.get(k) != Some(v))
+    }
+
+    /// Value for the `wo-ui` cookie: the merged state, or `None` when nothing changed.
+    pub fn cookie_value(&self) -> Option<String> {
+        self.changed().then(|| {
+            self.entries().iter().map(|(k, v)| format!("{}={}", encode(k), encode(v))).collect::<Vec<_>>().join("&")
+        })
+    }
+}
+
+#[cfg(feature = "axum")]
+mod axum_glue {
+    use super::{FLASH_COOKIE, UI_COOKIE, UiState};
+    use axum::{
+        extract::FromRequestParts,
+        http::{HeaderValue, StatusCode, header, request::Parts},
+        response::{IntoResponse, IntoResponseParts, Response, ResponseParts},
+    };
+
+    fn cookie<'a>(parts: &'a Parts, name: &str) -> Option<&'a str> {
+        parts
+            .headers
+            .get_all(header::COOKIE)
+            .iter()
+            .filter_map(|v| v.to_str().ok())
+            .flat_map(|v| v.split(';'))
+            .filter_map(|pair| pair.trim().split_once('='))
+            .find(|(k, _)| *k == name)
+            .map(|(_, v)| v)
+    }
+
+    impl<S: Send + Sync> FromRequestParts<S> for UiState {
+        type Rejection = std::convert::Infallible;
+
+        async fn from_request_parts(parts: &mut Parts, _: &S) -> Result<UiState, Self::Rejection> {
+            let path = parts.uri.path().to_string();
+            let query = parts.uri.query().unwrap_or("");
+            let ui = cookie(parts, UI_COOKIE).unwrap_or("");
+            let flash = cookie(parts, FLASH_COOKIE).map(super::decode);
+            Ok(UiState::parse(&path, query, ui).with_flash(flash))
+        }
+    }
+
+    /// Returning `(state, markup)` from a handler persists changed state and clears the flash.
+    impl IntoResponseParts for UiState {
+        type Error = std::convert::Infallible;
+
+        fn into_response_parts(self, mut res: ResponseParts) -> Result<ResponseParts, Self::Error> {
+            if let Some(value) = self.cookie_value() {
+                let c = format!("{UI_COOKIE}={value}; Path=/; Max-Age=2592000; SameSite=Lax");
+                res.headers_mut().append(header::SET_COOKIE, HeaderValue::from_str(&c).unwrap());
+            }
+            if self.flash.is_some() {
+                let c = format!("{FLASH_COOKIE}=; Path=/; Max-Age=0; SameSite=Lax");
+                res.headers_mut().append(header::SET_COOKIE, HeaderValue::from_str(&c).unwrap());
+            }
+            Ok(res)
+        }
+    }
+
+    /// Post/Redirect/Get: `303 See Other` to `to`, carrying `flash` in a one-shot cookie.
+    pub fn prg(to: &str, flash: Option<&str>) -> Response {
+        let mut res = (StatusCode::SEE_OTHER, [(header::LOCATION, to.to_string())]).into_response();
+        if let Some(msg) = flash {
+            let c = format!("{FLASH_COOKIE}={}; Path=/; Max-Age=60; SameSite=Lax", super::encode(msg));
+            res.headers_mut().append(header::SET_COOKIE, HeaderValue::from_str(&c).unwrap());
+        }
+        res
+    }
+}
+
+#[cfg(feature = "axum")]
+pub use axum_glue::prg;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn query_wins_over_cookie_and_links_keep_the_rest() {
+        let s = UiState::parse("/p", "tab.a=2&q=x", "tab.a=1&open.faq=0&dialog=confirm");
+        assert_eq!(s.tab("a"), 2);
+        assert_eq!(s.open("faq"), Some(0));
+        assert_eq!(s.dialog(), Some("confirm"));
+        assert_eq!(s.link("open.faq", ""), "/p?dialog=confirm&tab.a=2");
+        assert!(s.changed());
+        assert_eq!(s.cookie_value().as_deref(), Some("dialog=confirm&open.faq=0&tab.a=2"));
+        let same = UiState::parse("/p", "tab.a=1", "tab.a=1");
+        assert!(!same.changed() && same.cookie_value().is_none());
+    }
+
+    #[test]
+    fn encoding_round_trips() {
+        let s = UiState::parse("/p", "dialog=a%20b+c", "");
+        assert_eq!(s.dialog(), Some("a b c"));
+        assert_eq!(s.link("dialog", "a b"), "/p?dialog=a%20b");
+    }
+}

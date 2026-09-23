@@ -67,6 +67,30 @@ response is spliced in document order: the bytes before the first marker leave i
 each section as soon as it and its predecessors resolve. A slow first section delays the rest.
 That is the classic progressive-render trade-off, and every browser since 1995 handles it.
 
+## M3 · State model
+
+**Works.** Query string over cookie, links that change one key, PRG with a one-shot cookie.
+Verified in Firefox 155: `/settings?tab.settings=1`, then `/settings` with no query, showed the
+Notifications tab both times. Chrome 109 renders the same page as an accordion with the same
+persistence.
+
+**The cookie is written on GET.** Preference state has no other trigger without script: the
+tab link is a GET. It is idempotent and never touches application data, which stays POST-only.
+`UiState` only emits `Set-Cookie` when the query actually changed something, so a plain
+navigation costs no header.
+
+**Title links versus summary toggles.** A `<summary>` toggles on click without a round trip;
+a link inside it navigates. Both live side by side: the title is the persisted link, the
+padding around it is the instant toggle. A link in the open accordion title points to
+`open.<group>=` (close), so the link always toggles too.
+
+**`<dialog open>` is not modal.** Only `showModal()` gives a backdrop and focus trapping, and
+that is script. A dialog opened from server state is visible but inline; the `:target`
+fallback gives an overlay look when you redirect to `#id` instead.
+
+**The cookie crate percent-encodes.** `axum-extra`'s `CookieJar` writes `Ada|1` as `Ada%7C1`
+and decodes it on the way back. Tests that look at raw `Set-Cookie` headers must expect that.
+
 ## Impossible without script (from the prototype)
 
 - Filtering results as you type against server data. `<datalist>` covers static suggestions.

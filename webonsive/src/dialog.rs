@@ -11,10 +11,13 @@
 //! rule shows the dialog as a fixed overlay; a link to `#` closes it. Only one variant is ever
 //! in the markup.
 //!
+//! **Server state:** `open` renders the dialog already open (non-modal, no backdrop), for
+//! example from `UiState::dialog()` after a redirect to `?dialog=<id>`.
+//!
 //! ```rust
 //! use maud::html;
 //! use webonsive::{Caps, dialog};
-//! let m = dialog(&Caps::all(), "confirm", "Delete", html! { p { "Are you sure?" } });
+//! let m = dialog(&Caps::all(), "confirm", "Delete", html! { p { "Are you sure?" } }, false);
 //! ```
 
 use maud::{Markup, html};
@@ -22,7 +25,7 @@ use maud::{Markup, html};
 use crate::{Cap, Caps};
 
 /// A modal dialog. `id` must be unique on the page; `trigger` is the opening button's label.
-pub fn dialog(caps: &Caps, id: &str, trigger: &str, body: Markup) -> Markup {
+pub fn dialog(caps: &Caps, id: &str, trigger: &str, body: Markup, open: bool) -> Markup {
     let invokers = caps.has(Cap::Invokers);
     html! {
         div class="wo-dialog" {
@@ -31,7 +34,7 @@ pub fn dialog(caps: &Caps, id: &str, trigger: &str, body: Markup) -> Markup {
             } @else {
                 a class="wo-dialog-open" role="button" href={ "#" (id) } { (trigger) }
             }
-            dialog id=(id) closedby="any" {
+            dialog id=(id) closedby="any" open[open] {
                 div class="wo-dialog-body" { (body) }
                 @if invokers {
                     form method="dialog" class="wo-dialog-actions" {

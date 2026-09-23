@@ -10,8 +10,8 @@ use axum_extra::extract::cookie::{Cookie, CookieJar};
 use maud::{Markup, html};
 use serde::Deserialize;
 use webonsive::{
-    Cap, Caps, Field, FieldKind, Streamed, Theme, accordion, caps, combobox, counter, dialog, form,
-    layout, pager, popover_menu, slot, tabs, theme_toggle,
+    Cap, Caps, Field, FieldKind, Streamed, Theme, UiState, accordion, caps, combobox, counter,
+    dialog, flash, form, layout, pager, popover_menu, prg, slot, tabs, theme_toggle,
 };
 use std::time::Duration;
 
@@ -36,6 +36,7 @@ fn router() -> Router {
         .route("/form", get(form_page).post(form_submit))
         .route("/counter", get(counter_page).post(counter_submit))
         .route("/stream", get(stream_page))
+        .route("/settings", get(settings_page).post(settings_submit))
         .route("/theme", post(theme_submit))
         .merge(caps::router())
 }
@@ -71,6 +72,7 @@ async fn index(caps: Caps, jar: CookieJar) -> Markup {
         ("/counter", "Counter", "form POST + cookie"),
         ("/caps", "Capabilities", "@supports beacons + cookie"),
         ("/stream", "Streaming", "declarative shadow DOM slots"),
+        ("/settings", "Settings", "UiState, PRG + flash"),
     ];
     page(&caps, &jar, "Components", html! {
         p { "Every page here ships zero " code { "<script>" } " tags." }
@@ -84,12 +86,13 @@ async fn index(caps: Caps, jar: CookieJar) -> Markup {
     })
 }
 
-async fn dialog_page(caps: Caps, jar: CookieJar) -> Markup {
+async fn dialog_page(caps: Caps, jar: CookieJar, state: UiState) -> Markup {
     page(&caps, &jar, "Dialog", html! {
         (dialog(&caps, "confirm", "Delete account", html! {
             h2 style="margin-top:0" { "Delete account?" }
             p { "This cannot be undone. The dialog is opened by an invoker button and closed by a " code { "method=dialog" } " form." }
-        }))
+        }, state.dialog() == Some("confirm")))
+        p class="wo-note" { "Server-opened: " a href="/dialog?dialog=confirm" { "?dialog=confirm" } }
     })
 }
 
@@ -100,29 +103,27 @@ async fn popover_page(caps: Caps, jar: CookieJar) -> Markup {
     })
 }
 
-#[derive(Deserialize)]
-struct TabQuery { tab: Option<usize> }
-
-async fn tabs_page(caps: Caps, jar: CookieJar, Query(q): Query<TabQuery>) -> Markup {
-    let active = q.tab.unwrap_or(0);
-    page(&caps, &jar, "Tabs", html! {
-        (tabs(&caps, "demo", active, &[
+async fn tabs_page(caps: Caps, jar: CookieJar, state: UiState) -> (UiState, Markup) {
+    let body = page(&caps, &jar, "Tabs", html! {
+        (tabs(&caps, "demo", &[
             ("Install", html! { p { code { "cargo add webonsive maud axum" } } }),
             ("Use", html! { p { "Call a function, get " code { "Markup" } ", send it." } }),
             ("Why", html! { p { "Because the platform can do this without script now." } }),
-        ]))
-        p class="wo-note" { "Deep link: " a href="/tabs?tab=2" { "?tab=2" } }
-    })
+        ], Some(&state)))
+        p class="wo-note" { "Deep link: " a href="/tabs?tab.demo=2" { "?tab.demo=2" } ". Leave and come back: the tab is remembered." }
+    });
+    (state, body)
 }
 
-async fn accordion_page(caps: Caps, jar: CookieJar) -> Markup {
-    page(&caps, &jar, "Accordion", html! {
+async fn accordion_page(caps: Caps, jar: CookieJar, state: UiState) -> (UiState, Markup) {
+    let body = page(&caps, &jar, "Accordion", html! {
         (accordion(&caps, "faq", &[
             ("Is this really no JavaScript?", html! { p { "Yes. View source." } }),
             ("Does it animate?", html! { p { "Yes, via ::details-content transitions where supported." } }),
             ("Can several be open?", html! { p { "Pass an empty group name." } }),
-        ]))
-    })
+        ], Some(&state)))
+    });
+    (state, body)
 }
 
 #[derive(Deserialize)]
@@ -199,6 +200,45 @@ async fn counter_submit(jar: CookieJar, Form(f): Form<CounterOp>) -> (CookieJar,
     (jar.add(Cookie::new("count", n.to_string())), Redirect::to("/counter"))
 }
 
+#[derive(Deserialize, Default)]
+struct Settings { name: String, #[serde(default)] notify: bool }
+
+fn settings_of(jar: &CookieJar) -> Settings {
+    jar.get("settings").and_then(|c| c.value().split_once('|'))
+        .map(|(name, notify)| Settings { name: name.to_string(), notify: notify == "1" })
+        .unwrap_or_default()
+}
+
+/// Tabs + form + flash. Everything survives a full navigation: tab in the `wo-ui` cookie,
+/// values in a `settings` cookie, flash in a one-shot cookie set by `prg`.
+async fn settings_page(caps: Caps, jar: CookieJar, state: UiState) -> (UiState, Markup) {
+    let current = settings_of(&jar);
+    let hidden = html! { input type="hidden" name="tab" value=(state.tab("settings")); };
+    let body = page(&caps, &jar, "Settings", html! {
+        (flash(&caps, state.flash()))
+        (tabs(&caps, "settings", &[
+            ("Profile", html! { form class="wo-form" method="post" action="/settings" { (hidden)
+                div class="wo-field" { label for="name" { "Display name" } input id="name" name="name" value=(current.name) required; }
+                button type="submit" class="wo-primary" { "Save" } } }),
+            ("Notifications", html! { form class="wo-form" method="post" action="/settings" { (hidden)
+                input type="hidden" name="name" value=(current.name);
+                label { input type="checkbox" name="notify" value="true" checked[current.notify]; " Email me about releases" }
+                button type="submit" class="wo-primary" { "Save" } } }),
+        ], Some(&state)))
+        p class="wo-note" { "Go to " a href="/" { "the index" } " and come back: the open tab and the values are remembered." }
+    });
+    (state, body)
+}
+
+#[derive(Deserialize)]
+struct SettingsForm { name: String, #[serde(default)] notify: bool, tab: usize }
+
+async fn settings_submit(jar: CookieJar, Form(f): Form<SettingsForm>) -> (CookieJar, axum::response::Response) {
+    let value = format!("{}|{}", f.name.replace('|', ""), u8::from(f.notify));
+    let to = format!("/settings?tab.settings={}", f.tab);
+    (jar.add(Cookie::new("settings", value)), prg(&to, Some("Settings saved.")))
+}
+
 /// Three sections declared slowest first, so out-of-order arrival is visible.
 async fn stream_page(caps: Caps, jar: CookieJar) -> Streamed {
     let sections = [("slow", 2000), ("medium", 800), ("fast", 100)];
@@ -256,7 +296,7 @@ mod tests {
 
     #[tokio::test]
     async fn no_page_ships_script() {
-        for path in ["/", "/caps", "/stream", "/dialog", "/popover", "/tabs?tab=1", "/accordion", "/combobox?q=r", "/list?page=2", "/form", "/counter"] {
+        for path in ["/", "/caps", "/stream", "/settings", "/dialog?dialog=confirm", "/popover", "/tabs?tab=1", "/accordion", "/combobox?q=r", "/list?page=2", "/form", "/counter"] {
             let modern = Cap::ALL.map(|c| format!("wo-cap-{}=1", c.name())).join("; ");
             for cookie in ["", modern.as_str()] {
                 let req = Request::get(path).header("cookie", cookie).body(Body::empty()).unwrap();
@@ -314,6 +354,34 @@ mod tests {
         let pos = |s: &str| html.find(s).unwrap();
         assert!(pos("slow</strong>") < pos("medium</strong>") && pos("medium</strong>") < pos("fast</strong>"));
         assert!(chunks.len() >= 4, "streamed in pieces, got {}", chunks.len());
+    }
+
+    #[tokio::test]
+    async fn state_round_trip_through_prg_and_cookies() {
+        // POST → 303 with a flash cookie and the tab in the redirect.
+        let req = Request::post("/settings").header("content-type", "application/x-www-form-urlencoded")
+            .body(Body::from("name=Ada&notify=true&tab=1")).unwrap();
+        let res = router().oneshot(req).await.unwrap();
+        assert_eq!(res.status(), 303);
+        assert_eq!(res.headers().get("location").unwrap(), "/settings?tab.settings=1");
+        let cookies: Vec<String> = res.headers().get_all("set-cookie").iter().map(|v| v.to_str().unwrap().to_string()).collect();
+        assert!(cookies.iter().any(|c| c.starts_with("wo-flash=Settings%20saved.")), "{cookies:?}");
+        assert!(cookies.iter().any(|c| c.starts_with("settings=Ada")), "{cookies:?}");
+        // GET the redirect target: flash shown and cleared, tab persisted to wo-ui, values filled in.
+        let req = Request::get("/settings?tab.settings=1").header("cookie", "wo-flash=Settings%20saved.; settings=Ada|1").body(Body::empty()).unwrap();
+        let res = router().oneshot(req).await.unwrap();
+        let cookies: Vec<String> = res.headers().get_all("set-cookie").iter().map(|v| v.to_str().unwrap().to_string()).collect();
+        assert!(cookies.iter().any(|c| c.starts_with("wo-ui=tab.settings=1;")), "{cookies:?}");
+        assert!(cookies.iter().any(|c| c.starts_with("wo-flash=; Path=/; Max-Age=0")), "{cookies:?}");
+        let html = String::from_utf8(axum::body::to_bytes(res.into_body(), usize::MAX).await.unwrap().to_vec()).unwrap();
+        assert!(html.contains("Settings saved.") && html.contains("value=\"Ada\"") && html.contains("checked"));
+        assert!(html.contains("<details name=\"settings\" open>") && html.contains("href=\"/settings?tab.settings=0\""));
+        // Coming back with only the cookie: the tab is still open, nothing is rewritten.
+        let req = Request::get("/settings").header("cookie", "wo-ui=tab.settings=1").body(Body::empty()).unwrap();
+        let res = router().oneshot(req).await.unwrap();
+        assert!(res.headers().get("set-cookie").is_none());
+        let html = String::from_utf8(axum::body::to_bytes(res.into_body(), usize::MAX).await.unwrap().to_vec()).unwrap();
+        assert!(html.contains("<details name=\"settings\" open><summary><a href=\"/settings?tab.settings=1\">Notifications"));
     }
 
     #[tokio::test]

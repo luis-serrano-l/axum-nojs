@@ -20,7 +20,7 @@
 //! // `Caps` says what the browser supports; the demo reads it from a cookie set by beacons.
 //! let caps = Caps::all();
 //! let page = layout(&caps, "Hello", Theme::Auto, html! {
-//!     (dialog(&caps, "hi", "Say hi", html! { p { "Hello from a <dialog>." } }))
+//!     (dialog(&caps, "hi", "Say hi", html! { p { "Hello from a <dialog>." } }, false))
 //! });
 //! assert!(!page.into_string().contains("<script"));
 //! ```
@@ -30,10 +30,12 @@ pub mod caps;
 pub mod combobox;
 pub mod counter;
 pub mod dialog;
+pub mod flash;
 pub mod form;
 pub mod layout;
 pub mod pager;
 pub mod popover;
+pub mod state;
 #[cfg(feature = "axum")]
 pub mod stream;
 pub mod tabs;
@@ -44,10 +46,14 @@ pub use caps::{Cap, Caps};
 pub use combobox::combobox;
 pub use counter::counter;
 pub use dialog::dialog;
+pub use flash::flash;
 pub use form::{Field, FieldKind, form};
 pub use layout::layout;
 pub use pager::pager;
 pub use popover::popover_menu;
+#[cfg(feature = "axum")]
+pub use state::prg;
+pub use state::UiState;
 #[cfg(feature = "axum")]
 pub use stream::{Streamed, slot};
 pub use tabs::tabs;
@@ -67,6 +73,7 @@ pub fn stylesheet() -> String {
         form::CSS,
         counter::CSS,
         theme::CSS,
+        flash::CSS,
         #[cfg(feature = "axum")]
         stream::CSS,
         beacons.as_str(),
