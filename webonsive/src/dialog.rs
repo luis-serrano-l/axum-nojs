@@ -102,6 +102,6 @@ pub const CSS: &str = r#"
 /* :target fallback: a dialog that is the URL fragment renders as a fixed overlay. */
 .wo-dialog dialog:target {
   display: block; position: fixed; inset: 0; margin: auto; height: fit-content; z-index: 10;
-  box-shadow: 0 0 0 100vmax rgb(0 0 0 / 0.45);
+  box-shadow: 0 0 0 100vmax color-mix(in srgb, var(--wo-fg) 45%, transparent);
 }
 "#;

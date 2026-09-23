@@ -71,6 +71,7 @@ component gives the HTML to another template engine.
   `layout::Tokens` holds them for light and dark, `layout_with` applies another set once per
   page, and `docs/theming.md` says what each one affects and which pairs must keep contrast.
   `/?palette=linen` in the demo is the same index under a second palette.
+  A test fails if any component CSS names a colour instead of a token.
 
 ## Feature matrix
 

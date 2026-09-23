@@ -103,35 +103,57 @@ pub use wizard::{WizardOptions, wizard};
 pub fn stylesheet() -> String {
     let beacons = caps::beacon_css();
     let tokens = layout::Tokens::default().css();
-    [
-        tokens.as_str(),
-        layout::CSS,
-        dialog::CSS,
-        popover::CSS,
-        tabs::CSS,
-        accordion::CSS,
-        combobox::CSS,
-        pager::CSS,
-        form::CSS,
-        counter::CSS,
-        theme::CSS,
-        flash::CSS,
-        select::CSS,
-        range::CSS,
-        color::CSS,
-        #[cfg(feature = "http")]
-        stream::CSS,
-        table::CSS,
-        paged_table::CSS,
-        wizard::CSS,
-        beacons.as_str(),
-    ]
-    .join("\n")
+    let mut parts = vec![tokens.as_str()];
+    parts.extend(COMPONENT_CSS);
+    parts.push(beacons.as_str());
+    parts.join("\n")
 }
+
+/// Every component's `CSS`, in the order the stylesheet includes them. Colours in here are
+/// `var(--wo-*)` only; a test below checks that no literal slips in.
+pub const COMPONENT_CSS: &[&str] = &[
+    layout::CSS,
+    dialog::CSS,
+    popover::CSS,
+    tabs::CSS,
+    accordion::CSS,
+    combobox::CSS,
+    pager::CSS,
+    form::CSS,
+    counter::CSS,
+    theme::CSS,
+    flash::CSS,
+    select::CSS,
+    range::CSS,
+    color::CSS,
+    #[cfg(feature = "http")]
+    stream::CSS,
+    table::CSS,
+    paged_table::CSS,
+    wizard::CSS,
+];
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// Theming is tokens only: every colour in component CSS is a `var(--wo-*)`, so a palette
+    /// passed to `layout_with` reaches everything. Literals live in `layout::Tokens` alone.
+    #[test]
+    fn no_colour_literal_outside_tokens() {
+        for css in COMPONENT_CSS {
+            for line in css.lines() {
+                let hex = line.char_indices().any(|(i, c)| {
+                    c == '#' && line[i + 1..].chars().take_while(|c| c.is_ascii_hexdigit()).count() >= 3
+                });
+                let func = ["rgb(", "rgba(", "hsl(", "hsla(", "oklch(", "light-dark("].iter().any(|f| line.contains(f));
+                let named = line
+                    .split(|c: char| !c.is_ascii_alphabetic())
+                    .any(|w| ["white", "black", "gray", "grey", "red", "blue", "green"].contains(&w));
+                assert!(!hex && !func && !named, "colour literal in component CSS: {line}");
+            }
+        }
+    }
 
     /// Every component's return type nests in `html!` and converts to a plain `String`.
     #[test]
