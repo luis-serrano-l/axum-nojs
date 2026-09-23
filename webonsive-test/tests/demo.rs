@@ -75,7 +75,10 @@ async fn tabs_strip_versus_accordion() {
     assert!(!modern.is_visible(".wo-tabs details:nth-of-type(1) .wo-tabs-panel"), "closed panel hidden");
     assert_eq!(modern.text("#wo-tabs-demo details[open] .wo-tabs-badge").as_deref(), Some("3"));
     assert!(modern.exists("#wo-tabs-demo details:nth-of-type(3) .wo-tabs-lazy"), "lazy tab has no body until opened");
-    assert!(modern.exists("#wo-tabs-demo details[open] summary[style*='view-transition-name: wo-tabs-demo']"));
+    assert!(modern.exists("#wo-tabs-demo details[open] summary .wo-tabs-mark[style*='view-transition-name: wo-tabs-demo']"), "only the underline carries the name");
+    let mark = modern.bbox("#wo-tabs-demo details[open] .wo-tabs-mark").unwrap();
+    let open_title = modern.bbox("#wo-tabs-demo details[open] summary").unwrap();
+    assert!((mark.height - 2.0).abs() < 0.5 && (mark.width - open_title.width).abs() < 1.0, "underline spans the open title: {mark:?} {open_title:?}");
     assert!(modern.exists("#wo-tabs-demo form.wo-tabs-select select[name='tab.demo'] option[value='1'][selected]") && !modern.is_visible(".wo-tabs-select"), "select is there but hidden on a wide screen");
     let lazy = Page::render(demo::router(), "/tabs?tab.demo=2", MODERN).await;
     assert!(lazy.is_visible("#wo-tabs-demo details:nth-of-type(3) .wo-tabs-panel p"), "lazy tab rendered once open");

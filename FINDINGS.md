@@ -187,6 +187,7 @@ engine, so passing there is proof the page needs none.
 | Tables with `border-collapse: collapse` get a 2 px black grid on every edge | [#386](https://github.com/DioxusLabs/blitz/issues/386), [#504](https://github.com/DioxusLabs/blitz/issues/504) |
 | `<dialog open>` is 114 px wide: absolutely positioned box sized by its DOM parent | [#764](https://github.com/DioxusLabs/blitz/issues/764) |
 | Header reads "webonsive· zero": leading space of a span after an inline is trimmed | [#857](https://github.com/DioxusLabs/blitz/pull/857) (open PR, whitespace collapsing across spans) |
+| `/tabs` vertical strip: the panel's left rule spans one row, not the column: Blitz builds boxes only for `::before`/`::after` (`blitz-dom/src/layout/construct.rs`), so `::details-content` never gets one; the panel's own padding is what keeps the shot readable | tracked under [#119](https://github.com/DioxusLabs/blitz/issues/119) (roadmap: pseudo-elements); no dedicated issue |
 | `/table`: the sticky header cells paint at the top of the viewport, leaving an empty row in the table | `stylo_taffy::convert::position` maps `sticky` to `relative` with a `TODO`; tracked under [#389](https://github.com/DioxusLabs/blitz/issues/389) ("position sticky") |
 
 The DSD gap is pinned by a test (`blitz_has_no_declarative_shadow_dom`) that fails the day
@@ -234,6 +235,12 @@ always did a plain reload.
 to its new one, 8 rows lower, sliding over the freshly added rows (seen frame by frame in
 Firefox 155 with the animation slowed to 4 s). Only the list keeps a name now: the new rows
 fade in under the old ones and the button simply re-renders where it belongs.
+
+**A named tab title is the same block, sideways.** The first tabs morph put the name on the
+open `<summary>`; every switch slid the old title's snapshot, text included, across the strip
+and cross-faded it into the new one: a flicker and a bounce to the left. The name now sits on an
+empty `.wo-tabs-mark`, the 2px underline, so the bar glides and the titles stay still. Rule of
+thumb: name the highlight, never the thing that holds text.
 
 **Two behaviours on one summary.** The tab and accordion titles were links inside a padded
 summary: clicking the text navigated, clicking the padding toggled `<details>` natively and the

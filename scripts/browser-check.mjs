@@ -56,7 +56,7 @@ try {
   await until(async () => (await text(".wo-tabs details[open] summary")).startsWith("Use"), "tab switch");
   assert(await js("return location.search") === "?tab.demo=1", "tabs: URL follows the swap");
   assert(await navigations() === 1, "tabs: switched without a reload");
-  assert(await js("return getComputedStyle(document.querySelector('.wo-tabs details[open] summary')).viewTransitionName") === "wo-tabs-demo", "tabs: open tab carries the view-transition-name");
+  assert(await js("return getComputedStyle(document.querySelector('.wo-tabs details[open] .wo-tabs-mark')).viewTransitionName") === "wo-tabs-demo", "tabs: the underline, not the title, carries the view-transition-name");
   await click(".wo-tabs summary a[href*='tab.demo=2']");
   await until(async () => await js("return !!document.querySelector('#wo-tabs-demo details[open] .wo-tabs-panel p')"), "lazy tab filled");
   assert(!(await js("return document.querySelector('#wo-tabs-demo details[open] .wo-tabs-lazy')")), "tabs: lazy panel rendered by the request that opened it");

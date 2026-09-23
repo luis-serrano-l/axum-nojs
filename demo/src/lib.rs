@@ -672,7 +672,7 @@ mod tests {
         let res = router().oneshot(req).await.unwrap();
         assert!(res.headers().get("set-cookie").is_none());
         let html = String::from_utf8(axum::body::to_bytes(res.into_body(), usize::MAX).await.unwrap().to_vec()).unwrap();
-        assert!(html.contains("<details name=\"settings\" open><summary style=\"view-transition-name: wo-tabs-settings\"><a href=\"/settings?tab.settings=1\">Notifications"));
+        assert!(html.contains("<details name=\"settings\" open><summary><a href=\"/settings?tab.settings=1\">Notifications"));
     }
 
     #[tokio::test]
