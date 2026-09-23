@@ -144,7 +144,7 @@ pub const SPECS: &[ComponentSpec] = &[
         name: "Accordion",
         module: "accordion",
         features: &[DETAILS_NAME, DETAILS_CONTENT, f("interpolate-size", b("129", "no", "no"))],
-        fallback: "plain <details>: no exclusivity, no animation",
+        fallback: "plain <details>: no exclusivity, no animation; expand/collapse and every toggle are links either way",
         needs_js: NeedsJs::No,
     },
     ComponentSpec {

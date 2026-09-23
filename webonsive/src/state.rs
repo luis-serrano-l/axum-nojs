@@ -3,7 +3,7 @@
 //! Where UI state lives when there is no script: in the URL and in a cookie.
 //!
 //! [`UiState`] is a small string map with four kinds of keys: `tab.<name>` (open tab index),
-//! `open.<group>` (open accordion index), `step.<wizard>` (current wizard step) and `dialog`
+//! `open.<group>` (open accordion indexes, a comma list), `step.<wizard>` (current wizard step) and `dialog`
 //! (id of a dialog to render open). It is
 //! read from the query string first and a `wo-ui` cookie second, so a link can change one key
 //! while everything else is remembered. In Axum it is an extractor, and returning it as part
@@ -170,9 +170,17 @@ impl UiState {
         self.get(&format!("tab.{name}")).and_then(|v| v.parse().ok()).unwrap_or(0)
     }
 
-    /// Open section index for the accordion `group`; `None` when unknown or explicitly closed.
+    /// First open section index for the accordion `group`; `None` when unknown or closed.
     pub fn open(&self, group: &str) -> Option<usize> {
-        self.get(&format!("open.{group}")).and_then(|v| v.parse().ok())
+        self.opens(group).first().copied()
+    }
+
+    /// Every open section index for the accordion `group`: `open.<group>` is a comma list
+    /// (`0,2`), so a `multi` accordion can keep several sections open. Empty when unknown.
+    pub fn opens(&self, group: &str) -> Vec<usize> {
+        self.get(&format!("open.{group}"))
+            .map(|v| v.split(',').filter_map(|i| i.trim().parse().ok()).collect())
+            .unwrap_or_default()
     }
 
     /// Current step (0-based) of the wizard `id`; `0` when unknown.
@@ -288,6 +296,8 @@ mod tests {
         let s = UiState::parse("/p", "tab.a=2&q=x", "tab.a=1&open.faq=0&dialog=confirm");
         assert_eq!(s.tab("a"), 2);
         assert_eq!(s.open("faq"), Some(0));
+        assert_eq!(UiState::parse("/p", "open.faq=2,0", "").opens("faq"), vec![2, 0]);
+        assert_eq!(UiState::parse("/p", "open.faq=", "").opens("faq"), Vec::<usize>::new());
         assert_eq!(s.dialog(), Some("confirm"));
         assert_eq!(s.link("open.faq", ""), "/p?dialog=confirm&tab.a=2");
         assert!(s.changed());

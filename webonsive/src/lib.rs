@@ -78,7 +78,7 @@ pub mod wizard;
 /// keeps working.
 pub use wo_caps as caps;
 
-pub use accordion::accordion;
+pub use accordion::{AccordionItem, AccordionOptions, accordion};
 pub use wo_caps::{Cap, Caps};
 pub use color::color;
 pub use combobox::combobox;

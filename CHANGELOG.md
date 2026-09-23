@@ -24,6 +24,11 @@ follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); the project us
   lazy tabs (`Tab::lazy`), a vertical strip, a `<select>` under 40rem, the open tab's underline carries
   `view-transition-name` (only the bar morphs, the title never moves). `UiState::path()`. **Breaking:** the `(title, body)` tuple form and
   the `Option<&UiState>` argument are gone.
+- `accordion` takes `&[AccordionItem]` (`icon`, `summary` line) and `AccordionOptions`
+  (`state`, `multi`, `controls`): several sections open at once through `?open.<group>=0,2`,
+  "Expand all" / "Collapse all" links, nested accordions with their own key.
+  `UiState::opens()` returns the list. **Breaking:** the `(title, body)` tuple form and the
+  `Option<&UiState>` argument are gone.
 
 ## [0.1.0] - 2026-09-23
 

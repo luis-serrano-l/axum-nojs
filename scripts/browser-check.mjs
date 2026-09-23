@@ -69,6 +69,18 @@ try {
   assert(await navigations() === 1 && await js("return location.search") === "?tab.demo=0", "tabs: select change swapped in place");
   await wd("POST", S + "/window/rect", { width: 1000, height: 700 });
 
+  // Accordion: expand all, then one title, in place; several stay open.
+  await go("/accordion");
+  await click(".wo-accordion-controls a");
+  await until(async () => (await js("return document.querySelectorAll('#wo-accordion-faq > details[open]').length")) === 3, "expand all");
+  assert(await js("return location.search").then(q => q.includes("open.faq=0%2C1%2C2")), "accordion: expand all swapped in place with the list in the URL");
+  await click("#wo-accordion-faq > details:nth-of-type(2) > summary a");
+  await until(async () => (await js("return [...document.querySelectorAll('#wo-accordion-faq > details')].map(d => d.open ? 1 : 0).join('')")) === "101", "toggle one of three");
+  await click("#wo-accordion-faq-more > details:nth-of-type(2) > summary a");
+  await until(async () => (await js("return [...document.querySelectorAll('#wo-accordion-faq-more > details')].map(d => d.open ? 1 : 0).join('')")) === "01", "nested group toggles on its own key");
+  assert(await js("return [...document.querySelectorAll('#wo-accordion-faq > details')].map(d => d.open ? 1 : 0).join('')") === "101", "accordion: nested toggle kept the outer sections");
+  assert(await navigations() === 1, "accordion: every toggle swapped without a reload");
+
   // Combobox: results as you type, focus kept.
   await go("/combobox");
   await type("input[type=search]", "ru");

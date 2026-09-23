@@ -135,7 +135,7 @@ involved) a Firefox check.
 - [x] Tabs: lazy panels (a tab that is a link to `?tab.x=n` fetches only when opened), a badge
   count per tab, vertical orientation option, overflow to a `<select>` on narrow screens, the
   active tab underlined with a morphing `view-transition-name`.
-- [ ] Accordion: a "expand all / collapse all" pair of links, an item can carry a summary line
+- [x] Accordion: a "expand all / collapse all" pair of links, an item can carry a summary line
   and an icon, nested accordions, `open.<group>` accepts a list so several items can be open.
 - [ ] Combobox: multi-select with removable chips, grouped options (`<optgroup>` in the
   datalist), a "create new" row when nothing matches, keyboard navigation of server results,

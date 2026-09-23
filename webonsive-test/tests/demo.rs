@@ -96,6 +96,26 @@ async fn tabs_strip_versus_accordion() {
 }
 
 #[tokio::test]
+async fn accordion_multi_open_with_controls_and_nesting() {
+    let page = Page::render(demo::router(), "/accordion?open.faq=0,2&open.faq-more=0", MODERN).await;
+    assert_eq!(page.count("#wo-accordion-faq > details[open]"), 2, "two sections open at once");
+    assert!(page.exists("#wo-accordion-faq > details:not([name])"), "multi group has no name attribute");
+    assert!(page.exists("#wo-accordion-faq-more > details[name='faq-more'][open]"), "nested group is exclusive and open");
+    assert!(page.is_visible("#wo-accordion-faq-more"), "nested accordion sits inside the open third section");
+    assert_eq!(page.text(".wo-accordion-controls a:first-child").as_deref(), Some("Expand all"));
+    assert!(page.exists(".wo-accordion-controls a[href='/accordion?open.faq=0%2C1%2C2&open.faq-more=0']"), "expand all links to every index and keeps the nested key");
+    assert!(page.exists(".wo-accordion-controls a[href='/accordion?open.faq-more=0']"), "collapse all drops the key");
+    assert!(page.exists("#wo-accordion-faq > details:nth-of-type(2) summary a[href='/accordion?open.faq=0%2C1%2C2&open.faq-more=0']"), "a closed title adds itself to the list");
+    assert!(page.exists("#wo-accordion-faq > details:nth-of-type(1) summary a[href='/accordion?open.faq=2&open.faq-more=0']"), "an open title removes itself");
+    assert!(page.is_visible("#wo-accordion-faq > details:nth-of-type(2) .wo-accordion-summary"), "summary line shows on a closed section");
+    assert!(!page.is_visible("#wo-accordion-faq > details:nth-of-type(1) > summary .wo-accordion-summary"), "summary line hidden once open");
+    assert!(page.is_visible("#wo-accordion-faq > details:nth-of-type(1) .wo-accordion-icon"));
+    let outer = page.bbox("#wo-accordion-faq > details:nth-of-type(3) > summary").unwrap();
+    let inner = page.bbox("#wo-accordion-faq-more > details:nth-of-type(1) > summary").unwrap();
+    assert!(inner.x > outer.x + 8.0 && inner.y > outer.y + outer.height, "nested titles are indented below the outer title: {inner:?} {outer:?}");
+}
+
+#[tokio::test]
 async fn popover_variants() {
     let modern = Page::render(demo::router(), "/popover", MODERN).await;
     assert!(modern.is_visible("button[popovertarget]"));

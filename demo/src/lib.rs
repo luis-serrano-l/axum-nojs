@@ -12,7 +12,7 @@ use axum_extra::extract::cookie::{Cookie, CookieJar};
 use maud::{Markup, html};
 use serde::Deserialize;
 use webonsive::{
-    Cap, Caps, Field, FieldKind, Streamed, Theme, UiState, accordion, caps, color, combobox,
+    Cap, Caps, Field, FieldKind, Streamed, Theme, UiState, accordion, accordion::{AccordionItem, AccordionOptions}, caps, color, combobox,
     counter, dialog, dialog::{DialogOptions, DialogSize}, flash, form, layout, layout::{Palette, Tokens, layout_with}, paged_table, paged_table::PagedTableOptions,
     pager, pager::PagerOptions, popover::{MenuItem, Placement, PopoverOptions}, popover_menu, prg, range, range::RangeOptions, select, slot, tabs::{Tab, TabsOptions},
     table::{Column, sort_from_query}, tabs, theme_toggle, wizard, wizard::{Step, WizardOptions},
@@ -22,7 +22,7 @@ use std::time::Duration;
 /// Every demo path the no-script test and the screenshot test visit.
 pub const PATHS: [&str; 16] = [
     "/", "/caps", "/stream", "/settings", "/dialog?dialog=confirm", "/popover", "/tabs?tab.demo=1",
-    "/accordion?open.faq=1", "/combobox?q=r", "/list?page=2", "/form", "/counter", "/inputs",
+    "/accordion?open.faq=0,2&open.faq-more=0", "/combobox?q=r", "/list?page=2", "/form", "/counter", "/inputs",
     "/table?sort=size&dir=desc&q=a&per=5&page=2", "/wizard?step.signup=1", "/swap?n=3",
 ];
 
@@ -64,7 +64,7 @@ const COMPONENTS: [(&str, &str, &str, &str); 15] = [
     ("/dialog", "Dialog", "Overlays", "<dialog>, closedby, invoker commands, form footer"),
     ("/popover", "Popover menu", "Overlays", "popover, anchor positioning, nested popover, form actions"),
     ("/tabs", "Tabs", "Disclosure", "<details name>, ::details-content, view-transition-name, grid"),
-    ("/accordion", "Accordion", "Disclosure", "<details name>"),
+    ("/accordion", "Accordion", "Disclosure", "<details name>, ::details-content, interpolate-size"),
     ("/combobox", "Combobox", "Input", "<datalist>, <search>"),
     ("/form", "Validated form", "Input", ":user-invalid, PRG"),
     ("/wizard", "Wizard", "Input", "one form per step, PRG, UiState"),
@@ -217,10 +217,19 @@ async fn tabs_page(caps: Caps, jar: CookieJar, state: UiState) -> (UiState, Mark
 async fn accordion_page(caps: Caps, jar: CookieJar, state: UiState) -> (UiState, Markup) {
     let body = page(&caps, &jar, "Accordion", html! {
         (accordion(&caps, "faq", &[
-            ("Is this really no JavaScript?", html! { p { "Yes. View source." } }),
-            ("Does it animate?", html! { p { "Yes, via ::details-content transitions where supported." } }),
-            ("Can several be open?", html! { p { "Pass an empty group name." } }),
-        ], Some(&state)))
+            AccordionItem::new("Is this really no JavaScript?", html! { p { "Yes. View source." } })
+                .icon("\u{1F50D}").summary("Every open and close is a link the server answers."),
+            AccordionItem::new("Does it animate?", html! { p { "Yes, via ::details-content transitions where supported." } })
+                .icon("\u{1F3AC}").summary("Height animates to auto in Chrome; elsewhere it snaps."),
+            AccordionItem::new("Can several be open?", html! {
+                p { "Yes: this group is " code { "multi" } ", so " code { "?open.faq=0,2" } " keeps two open. A body can hold another group:" }
+                (accordion(&caps, "faq-more", &[
+                    AccordionItem::new("Nested", html! { p { "Its own key, " code { "open.faq-more" } "." } }),
+                    AccordionItem::new("Exclusive", html! { p { "This inner group opens one at a time." } }),
+                ], AccordionOptions::default().state(&state)))
+            }).icon("\u{1F4DA}").summary("Lists, links and a nested accordion."),
+        ], AccordionOptions::default().state(&state).multi(true).controls(true)))
+        p class="wo-note" { "Deep link: " a href="/accordion?open.faq=0,2" { "?open.faq=0,2" } ". Leave and come back: the open sections are remembered." }
     });
     (state, body)
 }
