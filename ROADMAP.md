@@ -37,10 +37,10 @@ matrix and findings are updated, and the work is committed. Unknowns become entr
 - [x] File Blitz issues for anything it cannot render; link them from FINDINGS.md
 
 ## M5 · Machine-readable component spec
-- [ ] `spec/` JSON: per component, features used, baseline per browser, fallback, needs_js verdict
-- [ ] `cargo run -p demo -- spec` prints the JSON; README feature matrix is generated from it
-- [ ] `FINDINGS.md` consolidated: what works, what needs fallback, what is impossible without JS
-- [ ] Doc comment headers in every component checked against the spec by a test
+- [x] `spec/` JSON: per component, features used, baseline per browser, fallback, needs_js verdict
+- [x] `cargo run -p demo -- spec` prints the JSON; README feature matrix is generated from it
+- [x] `FINDINGS.md` consolidated: what works, what needs fallback, what is impossible without JS
+- [x] Doc comment headers in every component checked against the spec by a test
 
 ## M6 · Polish for release
 - [ ] `<select>` with `<selectedcontent>` component, `<input type=range>` and colour with server round trip

@@ -40,51 +40,44 @@ to `tests/shots/`. What Blitz cannot render is listed with issue links in `FINDI
 
 ## Feature matrix
 
-| Component | Platform feature | Baseline | Fallback | Needs JS? |
+Generated from `webonsive::spec::SPECS` by `cargo run -p demo -- spec write` (a test fails if it
+drifts). Versions are the first release of each engine with the feature, from MDN
+browser-compat-data; `no` means unshipped, so that browser gets the fallback.
+
+<!-- matrix:start -->
+| Component | Platform features | Chrome / Firefox / Safari | Fallback | Needs JS? |
 |---|---|---|---|---|
-| Capability beacons | `@supports` + background-image beacons + cookies | 2015 (`selector()` 2022) | unknown browser gets every fallback | No |
-| Dialog | `<dialog>`, `command`/`commandfor` invokers, `closedby`, `<form method=dialog>` | dialog 2022; invokers Chrome 135 / Firefox 144 / Safari 26.2 | `:target` overlay via `href="#id"` link, chosen server-side | No |
-| Popover menu | `popover` + `popovertarget`, anchor positioning | popover 2024; anchors Chrome 125 / Firefox 147 / Safari 26 | no anchor: UA-centred popover; no popover: `<details>` dropdown | No |
-| Tabs | `<details name>`, `display: contents`, `::details-content` + `order` | details name 2024; ::details-content Chrome 131 / Firefox 143 / Safari 18.4 | accordion markup, chosen server-side | No |
-| Accordion | `<details name>`, `::details-content` transition | 2024 | non-exclusive `<details>` | No |
-| Combobox | `<input list>` + `<datalist>`, `<search>` | 2020 / 2023 | none needed | Suggestions no; live results **yes** |
-| Load-more list | links + `@view-transition { navigation: auto }` + `scroll-margin` | Chrome 126 / Safari 18.2, Firefox flag | plain navigation | Click-to-load no; scroll-to-load **yes** |
-| Validated form | `required`/`pattern`/`min`, `:user-invalid`, Post/Redirect/Get | 2015 / 2023 | none needed | No |
-| Counter | `<form method=post>`, `<button name value>`, cookie | forever | none needed | No |
-| Theme toggle | `prefers-color-scheme`, cookie + `data-theme` | 2020 | OS preference | No |
-| UI state | query string + `wo-ui` cookie via `UiState`; tab and accordion titles are links | 1997 | none needed | No |
-| Flash + PRG | `303 See Other` + one-shot `wo-flash` cookie | 1997 | none needed | No |
-| Streaming | `<template shadowrootmode>` on `<body>`, named `<slot>`s, chunked response | Chrome 111 / Firefox 123 / Safari 16.4 | in-order streaming with in-place splicing | No |
+| Layout | `@view-transition`, `prefers-color-scheme`, `custom properties` | 126 / no / 18.2; 76 / 67 / 12.1; 49 / 31 / 9.1 | plain navigations; colours still switch by media query and data-theme | No |
+| Capability beacons | `@supports`, `selector()`, `background images`, `cookies` | 28 / 22 / 9; 83 / 69 / 14.1; 1 / 1 / 1; 1 / 1 / 1 | unknown browser gets every fallback; the first view always does | No |
+| Dialog | `<dialog>`, `command="show-modal"`, `<form method="dialog">` | 37 / 98 / 15.4; 135 / 144 / 26.2; 37 / 98 / 15.4 | link to #id opens it through a :target rule, chosen server-side | No |
+| Popover menu | `popover`, `anchor-name` | 114 / 125 / 17; 125 / 147 / 26 | no anchor: UA-centred popover; no popover: <details> dropdown | No |
+| Tabs | `<details name`, `display: contents`, `::details-content` | 120 / 130 / 17.2; 65 / 37 / 11.1; 131 / 143 / 18.4 | accordion markup, chosen server-side | No |
+| Accordion | `<details name`, `::details-content` | 120 / 130 / 17.2; 131 / 143 / 18.4 | plain <details>: no exclusivity, no animation | No |
+| Combobox | `<datalist>`, `<search>` | 20 / 4 / 12.1; 118 / 118 / 17 | none needed | Partly: static suggestions and per-submit results; live filtering needs script |
+| Load-more list | `view-transition-name`, `scroll-margin` | 111 / 144 / 18; 69 / 90 / 14.1 | plain navigation to ?page=n#more | Partly: click-to-load; scroll-to-load needs script |
+| Validated form | `required`, `pattern`, `:user-invalid` | 4 / 4 / 5; 4 / 4 / 5; 119 / 88 / 16.5 | server re-renders with messages; no early styling | No |
+| Counter | `<form method="post">`, `<button name value>`, `cookie` | 1 / 1 / 1; 1 / 1 / 1; 1 / 1 / 1 | none needed | No |
+| Theme toggle | `prefers-color-scheme`, `color-scheme`, `cookie` | 76 / 67 / 12.1; 81 / 96 / 13; 1 / 1 / 1 | OS preference | No |
+| Flash | `cookie`, `role="status"` | 1 / 1 / 1; 1 / 1 / 1 | none needed | No |
+| UI state | `links`, `cookies`, `303 See Other` | 1 / 1 / 1; 1 / 1 / 1; 1 / 1 / 1 | without cookies, state still travels in links on one page | No |
+| Streaming | `<template shadowrootmode="open">`, `<slot name`, `Chunked transfer` | 111 / 123 / 16.4; 53 / 63 / 10; 1 / 1 / 1 | in-order streaming with in-place splicing | No |
+<!-- matrix:end -->
 
 ## Findings
 
-**What works better than expected**
-- Dialog, popover, tabs, accordion: fully interactive with zero round trips. Light dismiss,
-  Escape, focus trapping, top layer, exclusivity: all free from the platform.
-- View transitions make server round trips feel like in-place updates. The counter number
-  morphs; the list grows without a flash.
-- Out-of-order streaming works with no script: the page ships with `<slot>` placeholders inside
-  a declarative shadow root on `<body>`, and each slow section is appended whenever it is ready.
-  The parser slots it into place. Older browsers get in-order progressive rendering instead.
-- `:user-invalid` gives validation UX that used to need a library.
+The short version. `FINDINGS.md` has the reasons, the proxies, the error bands and the Blitz
+issues.
 
-**What needs a fallback today**
-- Invoker commands need Chrome 135 / Firefox 144 / Safari 26.2. The server picks the `:target`
-  dialog for anything older, so a page never carries both variants.
-- CSS cannot feature-detect HTML attributes. `invokers` and `streaming_dsd` are detected through
-  CSS features that shipped in the same releases; the proxies and their error bands are listed in
-  `FINDINGS.md`.
-- The first page view of a new browser is always the fallback variant: the beacons fire during
-  that load, the cookie lands, and the second view is tailored. A `curl` client stays on
-  fallbacks forever, which is what you want.
-
-**What is impossible without script**
-- Filtering results as you type against server data. Datalist covers static suggestions only.
-- Infinite scroll. Cumulative pages with one click per page is the ceiling.
-- Optimistic UI, offline behaviour, undo without a round trip.
-- Drag and drop, resizable panes, canvas or charts drawn from data.
-- Keeping `<details>` state across navigations without a round trip. `UiState` makes the round
-  trip one link click and remembers it in a cookie; see `docs/state.md`.
+- **Works with no script:** dialog, popover, tabs, accordion, server-side feature detection,
+  out-of-order streaming, URL + cookie state with Post/Redirect/Get, cross-navigation view
+  transitions, constraint validation with `:user-invalid`, headless layout tests through Blitz.
+- **Needs a fallback today:** invoker commands, anchor positioning, `popover`,
+  `::details-content`, `<details name>`, cross-document view transitions in Firefox,
+  declarative shadow DOM, and the first page view of every browser (beacons not fired yet).
+  All fallbacks are chosen server-side from `Caps`; a page never carries both variants.
+- **Impossible without script:** filtering as you type against server data, infinite scroll,
+  a modal opened on load, persisting client-side `<details>` toggles, optimistic UI, offline,
+  undo, drag and drop, canvas, and feature-detecting HTML attributes from CSS.
 
 **Verdict:** for content sites, admin panels, forms, settings pages and dashboards that refresh
 per action, the platform is enough. For editors, real-time collaboration, and anything that
@@ -99,6 +92,8 @@ webonsive/src/layout.rs     page shell + base CSS + beacons
 webonsive/src/stream.rs     Streamed response: DSD slots out of order, in-order fallback
 webonsive/src/state.rs      UiState (query + cookie), prg() redirect with flash
 webonsive/src/flash.rs      one-shot status banner
+webonsive/src/spec.rs       SPECS: features, per-browser baselines, fallback, needs_js
+spec/components.json        generated from SPECS (cargo run -p demo -- spec write)
 docs/state.md               how state works with no script
 webonsive/src/<name>.rs     one component each: dialog, popover, tabs, accordion,
                             combobox, pager, form, counter, theme

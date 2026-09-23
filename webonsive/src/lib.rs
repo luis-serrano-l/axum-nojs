@@ -35,6 +35,7 @@ pub mod form;
 pub mod layout;
 pub mod pager;
 pub mod popover;
+pub mod spec;
 pub mod state;
 #[cfg(feature = "axum")]
 pub mod stream;

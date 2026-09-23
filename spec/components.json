@@ -1,0 +1,156 @@
+{
+  "components": [
+    {
+      "name": "Layout",
+      "module": "layout",
+      "features": [
+        { "name": "@view-transition", "baseline": { "chrome": "126", "firefox": "no", "safari": "18.2" } },
+        { "name": "prefers-color-scheme", "baseline": { "chrome": "76", "firefox": "67", "safari": "12.1" } },
+        { "name": "custom properties", "baseline": { "chrome": "49", "firefox": "31", "safari": "9.1" } }
+      ],
+      "fallback": "plain navigations; colours still switch by media query and data-theme",
+      "needs_js": "no"
+    },
+    {
+      "name": "Capability beacons",
+      "module": "caps",
+      "features": [
+        { "name": "@supports", "baseline": { "chrome": "28", "firefox": "22", "safari": "9" } },
+        { "name": "selector()", "baseline": { "chrome": "83", "firefox": "69", "safari": "14.1" } },
+        { "name": "background images", "baseline": { "chrome": "1", "firefox": "1", "safari": "1" } },
+        { "name": "cookies", "baseline": { "chrome": "1", "firefox": "1", "safari": "1" } }
+      ],
+      "fallback": "unknown browser gets every fallback; the first view always does",
+      "needs_js": "no"
+    },
+    {
+      "name": "Dialog",
+      "module": "dialog",
+      "features": [
+        { "name": "<dialog>", "baseline": { "chrome": "37", "firefox": "98", "safari": "15.4" } },
+        { "name": "command=\"show-modal\"", "baseline": { "chrome": "135", "firefox": "144", "safari": "26.2" } },
+        { "name": "<form method=\"dialog\">", "baseline": { "chrome": "37", "firefox": "98", "safari": "15.4" } }
+      ],
+      "fallback": "link to #id opens it through a :target rule, chosen server-side",
+      "needs_js": "no"
+    },
+    {
+      "name": "Popover menu",
+      "module": "popover",
+      "features": [
+        { "name": "popover", "baseline": { "chrome": "114", "firefox": "125", "safari": "17" } },
+        { "name": "anchor-name", "baseline": { "chrome": "125", "firefox": "147", "safari": "26" } }
+      ],
+      "fallback": "no anchor: UA-centred popover; no popover: <details> dropdown",
+      "needs_js": "no"
+    },
+    {
+      "name": "Tabs",
+      "module": "tabs",
+      "features": [
+        { "name": "<details name", "baseline": { "chrome": "120", "firefox": "130", "safari": "17.2" } },
+        { "name": "display: contents", "baseline": { "chrome": "65", "firefox": "37", "safari": "11.1" } },
+        { "name": "::details-content", "baseline": { "chrome": "131", "firefox": "143", "safari": "18.4" } }
+      ],
+      "fallback": "accordion markup, chosen server-side",
+      "needs_js": "no"
+    },
+    {
+      "name": "Accordion",
+      "module": "accordion",
+      "features": [
+        { "name": "<details name", "baseline": { "chrome": "120", "firefox": "130", "safari": "17.2" } },
+        { "name": "::details-content", "baseline": { "chrome": "131", "firefox": "143", "safari": "18.4" } }
+      ],
+      "fallback": "plain <details>: no exclusivity, no animation",
+      "needs_js": "no"
+    },
+    {
+      "name": "Combobox",
+      "module": "combobox",
+      "features": [
+        { "name": "<datalist>", "baseline": { "chrome": "20", "firefox": "4", "safari": "12.1" } },
+        { "name": "<search>", "baseline": { "chrome": "118", "firefox": "118", "safari": "17" } }
+      ],
+      "fallback": "none needed",
+      "needs_js": "partial",
+      "needs_js_note": "static suggestions and per-submit results; live filtering needs script"
+    },
+    {
+      "name": "Load-more list",
+      "module": "pager",
+      "features": [
+        { "name": "view-transition-name", "baseline": { "chrome": "111", "firefox": "144", "safari": "18" } },
+        { "name": "scroll-margin", "baseline": { "chrome": "69", "firefox": "90", "safari": "14.1" } }
+      ],
+      "fallback": "plain navigation to ?page=n#more",
+      "needs_js": "partial",
+      "needs_js_note": "click-to-load; scroll-to-load needs script"
+    },
+    {
+      "name": "Validated form",
+      "module": "form",
+      "features": [
+        { "name": "required", "baseline": { "chrome": "4", "firefox": "4", "safari": "5" } },
+        { "name": "pattern", "baseline": { "chrome": "4", "firefox": "4", "safari": "5" } },
+        { "name": ":user-invalid", "baseline": { "chrome": "119", "firefox": "88", "safari": "16.5" } }
+      ],
+      "fallback": "server re-renders with messages; no early styling",
+      "needs_js": "no"
+    },
+    {
+      "name": "Counter",
+      "module": "counter",
+      "features": [
+        { "name": "<form method=\"post\">", "baseline": { "chrome": "1", "firefox": "1", "safari": "1" } },
+        { "name": "<button name value>", "baseline": { "chrome": "1", "firefox": "1", "safari": "1" } },
+        { "name": "cookie", "baseline": { "chrome": "1", "firefox": "1", "safari": "1" } }
+      ],
+      "fallback": "none needed",
+      "needs_js": "no"
+    },
+    {
+      "name": "Theme toggle",
+      "module": "theme",
+      "features": [
+        { "name": "prefers-color-scheme", "baseline": { "chrome": "76", "firefox": "67", "safari": "12.1" } },
+        { "name": "color-scheme", "baseline": { "chrome": "81", "firefox": "96", "safari": "13" } },
+        { "name": "cookie", "baseline": { "chrome": "1", "firefox": "1", "safari": "1" } }
+      ],
+      "fallback": "OS preference",
+      "needs_js": "no"
+    },
+    {
+      "name": "Flash",
+      "module": "flash",
+      "features": [
+        { "name": "cookie", "baseline": { "chrome": "1", "firefox": "1", "safari": "1" } },
+        { "name": "role=\"status\"", "baseline": { "chrome": "1", "firefox": "1", "safari": "1" } }
+      ],
+      "fallback": "none needed",
+      "needs_js": "no"
+    },
+    {
+      "name": "UI state",
+      "module": "state",
+      "features": [
+        { "name": "links", "baseline": { "chrome": "1", "firefox": "1", "safari": "1" } },
+        { "name": "cookies", "baseline": { "chrome": "1", "firefox": "1", "safari": "1" } },
+        { "name": "303 See Other", "baseline": { "chrome": "1", "firefox": "1", "safari": "1" } }
+      ],
+      "fallback": "without cookies, state still travels in links on one page",
+      "needs_js": "no"
+    },
+    {
+      "name": "Streaming",
+      "module": "stream",
+      "features": [
+        { "name": "<template shadowrootmode=\"open\">", "baseline": { "chrome": "111", "firefox": "123", "safari": "16.4" } },
+        { "name": "<slot name", "baseline": { "chrome": "53", "firefox": "63", "safari": "10" } },
+        { "name": "Chunked transfer", "baseline": { "chrome": "1", "firefox": "1", "safari": "1" } }
+      ],
+      "fallback": "in-order streaming with in-place splicing",
+      "needs_js": "no"
+    }
+  ]
+}
