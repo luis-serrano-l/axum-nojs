@@ -27,6 +27,12 @@ readme = "../README.md"   # webonsive only
 M13 also needs a `LICENSE-MIT` and `LICENSE-APACHE` file at the workspace root with your
 name as the copyright holder; say the word and they will be written.
 
+## The publish itself (M13, box 4)
+
+Never run on your behalf. Once `license` and `repository` are in, the order is
+`cargo publish -p wo-caps`, wait for the index, then `cargo publish -p webonsive`. Say "publish"
+and both will be run with the output shown.
+
 ## Reply to Blitz issue #923
 
 Posted on 2026-09-23 after the owner's approval:
