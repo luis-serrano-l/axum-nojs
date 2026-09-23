@@ -13,7 +13,7 @@ use maud::{Markup, html};
 use serde::Deserialize;
 use webonsive::{
     Cap, Caps, Field, FieldKind, Streamed, Theme, UiState, accordion, caps, color, combobox,
-    counter, dialog, flash, form, layout, pager, popover_menu, prg, range, select, slot, table,
+    counter, dialog, flash, form, layout, paged_table, pager, popover_menu, prg, range, select, slot,
     table::{Column, sort_from_query}, tabs, theme_toggle,
 };
 use std::time::Duration;
@@ -22,7 +22,7 @@ use std::time::Duration;
 pub const PATHS: [&str; 14] = [
     "/", "/caps", "/stream", "/settings", "/dialog?dialog=confirm", "/popover", "/tabs?tab.demo=1",
     "/accordion?open.faq=1", "/combobox?q=r", "/list?page=2", "/form", "/counter", "/inputs",
-    "/table?sort=size&dir=desc&q=a",
+    "/table?sort=size&dir=desc&q=a&per=5&page=2",
 ];
 
 /// The whole demo app.
@@ -66,7 +66,7 @@ const COMPONENTS: [(&str, &str, &str, &str); 13] = [
     ("/counter", "Counter", "Server state", "form POST + cookie"),
     ("/settings", "Settings", "Server state", "UiState, PRG + flash"),
     ("/list", "Load-more list", "Server state", "links + view transitions"),
-    ("/table", "Table", "Server state", "sort links, <search> filter, sticky header"),
+    ("/table", "Table", "Server state", "sort links, <search> filter, sticky header, ?page=n"),
     ("/caps", "Capabilities", "Server state", "@supports beacons + cookie"),
     ("/stream", "Streaming", "Server state", "declarative shadow DOM slots"),
 ];
@@ -180,9 +180,9 @@ async fn list_page(caps: Caps, jar: CookieJar, Query(p): Query<PageQuery>) -> Ma
 }
 
 #[derive(Deserialize, Default)]
-struct TableQuery { sort: Option<String>, dir: Option<String>, q: Option<String> }
+struct TableQuery { sort: Option<String>, dir: Option<String>, q: Option<String>, page: Option<usize>, per: Option<usize> }
 
-/// Twelve files sorted and filtered on the server; the table only renders and links.
+/// Thirty-six files sorted, filtered and paged on the server; the table only renders and links.
 async fn table_page(caps: Caps, jar: CookieJar, Query(t): Query<TableQuery>) -> Markup {
     const FILES: [(&str, u32, &str); 12] = [
         ("archive.tar", 40960, "backup"), ("build.rs", 1200, "script"), ("cargo.lock", 8800, "generated"),
@@ -193,15 +193,20 @@ async fn table_page(caps: Caps, jar: CookieJar, Query(t): Query<TableQuery>) -> 
     let cols = [Column::sortable("name", "Name"), Column::sortable("size", "Size"), Column::sortable("kind", "Kind")];
     let sort = sort_from_query(&cols, t.sort.as_deref(), t.dir.as_deref());
     let q = t.q.unwrap_or_default().to_lowercase();
-    let mut files: Vec<_> = FILES.iter().filter(|f| q.is_empty() || f.0.contains(&q) || f.2.contains(&q)).collect();
+    let (per, pg) = (t.per.unwrap_or(10).clamp(1, 50), t.page.unwrap_or(1).max(1));
+    let mut files: Vec<(String, u32, &str)> = ["src", "docs", "old"].iter()
+        .flat_map(|dir| FILES.iter().map(move |f| (format!("{dir}/{}", f.0), f.1 * (dir.len() as u32), f.2)))
+        .filter(|f| q.is_empty() || f.0.contains(&q) || f.2.contains(&q)).collect();
     if let Some((key, desc)) = sort {
-        files.sort_by(|a, b| match key { "size" => a.1.cmp(&b.1), "kind" => a.2.cmp(b.2), _ => a.0.cmp(b.0) });
+        files.sort_by(|a, b| match key { "size" => a.1.cmp(&b.1), "kind" => a.2.cmp(b.2), _ => a.0.cmp(&b.0) });
         if desc { files.reverse(); }
     }
-    let rows: Vec<Vec<Markup>> = files.iter().map(|f| vec![html! { code { (f.0) } }, html! { (f.1 / 1024) " KB" }, html! { (f.2) }]).collect();
+    let total = files.len();
+    let rows: Vec<Vec<Markup>> = files.iter().skip((pg - 1) * per).take(per)
+        .map(|f| vec![html! { code { (f.0) } }, html! { (f.1 / 1024) " KB" }, html! { (f.2) }]).collect();
     page(&caps, &jar, "Table", html! {
-        p { "Click a header to sort, again to flip. Type to filter. Every state is a URL." }
-        (table(&caps, "files", "/table", &cols, &rows, sort, &q))
+        p { "Click a header to sort, again to flip. Type to filter. Page through. Every state is a URL." }
+        (paged_table(&caps, "files", "/table", &cols, &rows, sort, &q, pg, per, total))
     })
 }
 

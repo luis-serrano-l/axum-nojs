@@ -176,6 +176,17 @@ pub const SPECS: &[ComponentSpec] = &[
         needs_js: NeedsJs::No,
     },
     ComponentSpec {
+        name: "Paged table",
+        module: "paged_table",
+        features: &[
+            f("?page=n", b("1", "1", "1")),
+            f("<select name=\"per\">", b("1", "1", "1")),
+            f("<output>", b("10", "4", "7")),
+        ],
+        fallback: "none needed: every control is a link or a form",
+        needs_js: NeedsJs::No,
+    },
+    ComponentSpec {
         name: "Validated form",
         module: "form",
         features: &[
@@ -331,6 +342,7 @@ mod tests {
         ("combobox", include_str!("combobox.rs")),
         ("pager", include_str!("pager.rs")),
         ("table", include_str!("table.rs")),
+        ("paged_table", include_str!("paged_table.rs")),
         ("form", include_str!("form.rs")),
         ("counter", include_str!("counter.rs")),
         ("theme", include_str!("theme.rs")),

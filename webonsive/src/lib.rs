@@ -57,6 +57,7 @@ pub mod enhance;
 pub mod flash;
 pub mod form;
 pub mod layout;
+pub mod paged_table;
 pub mod pager;
 pub mod popover;
 pub mod range;
@@ -82,6 +83,7 @@ pub use dialog::dialog;
 pub use flash::flash;
 pub use form::{Field, FieldKind, form};
 pub use layout::layout;
+pub use paged_table::paged_table;
 pub use pager::pager;
 pub use popover::popover_menu;
 pub use range::range;
@@ -116,6 +118,7 @@ pub fn stylesheet() -> String {
         #[cfg(feature = "http")]
         stream::CSS,
         table::CSS,
+        paged_table::CSS,
         beacons.as_str(),
     ]
     .join("\n")

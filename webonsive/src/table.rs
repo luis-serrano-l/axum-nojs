@@ -23,7 +23,7 @@
 //! use webonsive::{Caps, table, table::Column};
 //! let cols = [Column::sortable("name", "Name"), Column::sortable("size", "Size"), Column::plain("note", "Note")];
 //! let rows = vec![vec![html!{"a.txt"}, html!{"1 KB"}, html!{"—"}]];
-//! let m = table(&Caps::all(), "files", "/table", &cols, &rows, Some(("name", false)), "");
+//! let m = table(&Caps::all(), "files", "/table", &cols, &rows, Some(("name", false)), "", &[]);
 //! assert!(m.into_string().contains("aria-sort=\"ascending\""));
 //! ```
 
@@ -64,6 +64,8 @@ pub fn sort_from_query<'a>(columns: &[Column<'a>], sort: Option<&str>, dir: Opti
 
 /// `rows` are already sorted and filtered by the caller. `sort` is `(key, descending)`;
 /// `filter` is the current search text, echoed into the box and kept in the sort links.
+/// `keep` are extra query pairs (a page size, say) carried by every link and the filter form.
+#[allow(clippy::too_many_arguments)]
 pub fn table(
     caps: &Caps,
     id: &str,
@@ -72,9 +74,13 @@ pub fn table(
     rows: &[Vec<Markup>],
     sort: Option<(&str, bool)>,
     filter: &str,
+    keep: &[(&str, &str)],
 ) -> Markup {
     let vt = caps.has(Cap::ViewTransitions).then(|| format!("view-transition-name: wo-table-{id}"));
-    let q = if filter.is_empty() { String::new() } else { format!("&q={}", encode(filter)) };
+    let mut q = if filter.is_empty() { String::new() } else { format!("&q={}", encode(filter)) };
+    for (k, v) in keep {
+        q.push_str(&format!("&{}={}", encode(k), encode(v)));
+    }
     html! {
         div id=(enhance::swap_id("wo-table", id)) data-wo="swap" class="wo-table" {
             search class="wo-table-filter" {
@@ -83,9 +89,10 @@ pub fn table(
                         input type="hidden" name="sort" value=(key);
                         input type="hidden" name="dir" value=(if desc { "desc" } else { "asc" });
                     }
+                    @for (k, v) in keep { input type="hidden" name=(k) value=(v); }
                     input type="search" name="q" value=(filter) placeholder="Filter rows…" aria-label="Filter rows" autocomplete="off";
                     button type="submit" { "Filter" }
-                    @if !filter.is_empty() { a class="wo-table-clear" href=(clear_href(href, sort)) { "Clear" } }
+                    @if !filter.is_empty() { a class="wo-table-clear" href=(clear_href(href, sort, keep)) { "Clear" } }
                 }
             }
             table {
@@ -111,15 +118,17 @@ pub fn table(
     }
 }
 
-fn clear_href(href: &str, sort: Option<(&str, bool)>) -> String {
-    match sort {
-        Some((k, d)) => format!("{href}?sort={k}&dir={}", if d { "desc" } else { "asc" }),
-        None => href.to_string(),
+fn clear_href(href: &str, sort: Option<(&str, bool)>, keep: &[(&str, &str)]) -> String {
+    let mut pairs: Vec<String> = Vec::new();
+    if let Some((k, d)) = sort {
+        pairs.push(format!("sort={k}&dir={}", if d { "desc" } else { "asc" }));
     }
+    pairs.extend(keep.iter().map(|(k, v)| format!("{}={}", encode(k), encode(v))));
+    if pairs.is_empty() { href.to_string() } else { format!("{href}?{}", pairs.join("&")) }
 }
 
 /// Percent-encode a query value: everything but unreserved characters.
-fn encode(s: &str) -> String {
+pub(crate) fn encode(s: &str) -> String {
     let mut out = String::new();
     for b in s.bytes() {
         match b {
@@ -151,8 +160,10 @@ mod tests {
     #[test]
     fn links_flip_direction_and_keep_the_filter() {
         let cols = [Column::sortable("name", "Name"), Column::plain("note", "Note")];
-        let m = table(&Caps::NONE, "t", "/t", &cols, &[], Some(("name", false)), "a b").into_string();
-        assert!(m.contains("href=\"/t?sort=name&amp;dir=desc&amp;q=a+b\""), "{m}");
+        let m = table(&Caps::NONE, "t", "/t", &cols, &[], Some(("name", false)), "a b", &[("per", "5")]).into_string();
+        assert!(m.contains("href=\"/t?sort=name&amp;dir=desc&amp;q=a+b&amp;per=5\""), "{m}");
+        assert!(m.contains("name=\"per\" value=\"5\""));
+        assert!(m.contains("href=\"/t?sort=name&amp;dir=asc&amp;per=5\""), "clear link");
         assert!(m.contains("aria-sort=\"ascending\""));
         assert!(m.contains("No rows match."));
         assert!(!m.contains("view-transition-name"));

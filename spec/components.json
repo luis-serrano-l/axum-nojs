@@ -113,6 +113,17 @@
       "needs_js": "no"
     },
     {
+      "name": "Paged table",
+      "module": "paged_table",
+      "features": [
+        { "name": "?page=n", "baseline": { "chrome": "1", "firefox": "1", "safari": "1" } },
+        { "name": "<select name=\"per\">", "baseline": { "chrome": "1", "firefox": "1", "safari": "1" } },
+        { "name": "<output>", "baseline": { "chrome": "10", "firefox": "4", "safari": "7" } }
+      ],
+      "fallback": "none needed: every control is a link or a form",
+      "needs_js": "no"
+    },
+    {
       "name": "Validated form",
       "module": "form",
       "features": [
