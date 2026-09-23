@@ -1,0 +1,22 @@
+[package]
+name = "webonsive-test"
+version = "0.1.0"
+edition = "2024"
+description = "Render Axum routes through Blitz: layout assertions and headless screenshots"
+publish = false
+
+[dependencies]
+axum.workspace = true
+tower = { version = "0.5", features = ["util"] }
+http-body-util = "0.1"
+blitz-dom = { version = "=0.3.0-beta.2", default-features = false, features = ["system-fonts", "woff"] }
+blitz-html = "=0.3.0-beta.2"
+blitz-paint = { version = "=0.3.0-beta.2", default-features = false }
+blitz-traits = "=0.3.0-beta.2"
+anyrender = "0.13.0"
+anyrender_vello_cpu = "0.17.0"
+png = "0.18"
+
+[dev-dependencies]
+demo = { path = "../demo" }
+tokio.workspace = true

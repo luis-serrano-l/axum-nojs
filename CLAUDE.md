@@ -19,15 +19,21 @@ cargo test                         # all tests, including the no-script test and
 cargo test -p demo no_page_ships_script   # the single enforcement test
 cargo test -p webonsive --doc      # component doc examples
 cargo clippy --all-targets         # must be clean before a roadmap milestone counts as done
+cargo test -p webonsive-test       # Blitz layout assertions + screenshots into tests/shots/
+scripts/verify.sh                  # everything above plus a <script> grep; run before committing
 ```
 
 ## Workspace layout
 
 - `webonsive/` – the library crate. Depends only on `maud`; the optional `axum` feature adds the
   `Caps` extractor and the `/wo/caps` beacon route. No serde.
-- `demo/` – Axum binary, one route per component. Handlers only parse input (query, form,
+- `demo/` – Axum lib + binary, one route per component. Handlers only parse input (query, form,
   cookie) and call `webonsive`; keep each route around 15 lines. The no-script test lives here
-  and hits every route via `tower::oneshot`, so **add new demo routes to its path list**.
+  and hits every route via `tower::oneshot`, so **add new demo routes to `PATHS`** (the
+  screenshot test in `webonsive-test` uses the same list).
+- `webonsive-test/` – Blitz-based test harness: `Page::render(router, path, cookie)` then
+  `exists / is_visible / bbox / text / display / screenshot`. Blitz gaps go in `FINDINGS.md`
+  with an issue link, never as skipped assertions without a comment.
 
 ## Component conventions (follow exactly when adding one)
 

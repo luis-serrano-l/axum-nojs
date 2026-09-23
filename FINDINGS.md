@@ -91,6 +91,32 @@ fallback gives an overlay look when you redirect to `#id` instead.
 **The cookie crate percent-encodes.** `axum-extra`'s `CookieJar` writes `Ada|1` as `Ada%7C1`
 and decodes it on the way back. Tests that look at raw `Set-Cookie` headers must expect that.
 
+## M4 · Blitz as the test engine
+
+**Works.** `webonsive-test` renders any demo route through `tower::oneshot`, parses it with
+`blitz-html`, resolves Stylo styles and Taffy layout, and paints it with `vello_cpu`. Every
+route is screenshotted twice (modern and no-capability cookies) into `tests/shots/`. Layout
+assertions cover things `curl` cannot see: tab titles share a row, the open panel sits below
+the strip, a closed `<details>` hides its menu, a closed `<dialog>` has no box, the flash sits
+above the tabs. Blitz has no script engine, so passing here is proof the page needs none.
+
+**What Blitz 0.3.0-beta.2 cannot render, with issues:**
+
+| Symptom here | Blitz issue |
+|---|---|
+| `/stream` in DSD mode renders nothing: `<template shadowrootmode>` is inert | [#923](https://github.com/DioxusLabs/blitz/issues/923) (filed), related [#889](https://github.com/DioxusLabs/blitz/issues/889), [#892](https://github.com/DioxusLabs/blitz/pull/892) |
+| Theme toggle buttons stay lowercase: `text-transform: capitalize` ignored | [#924](https://github.com/DioxusLabs/blitz/issues/924) (filed) |
+| The form's `type=number` field is an 18 px strip | [#925](https://github.com/DioxusLabs/blitz/issues/925) (filed) |
+| Tables with `border-collapse: collapse` get a 2 px black grid on every edge | [#386](https://github.com/DioxusLabs/blitz/issues/386), [#504](https://github.com/DioxusLabs/blitz/issues/504) |
+| `<dialog open>` is 114 px wide: absolutely positioned box sized by its DOM parent | [#764](https://github.com/DioxusLabs/blitz/issues/764) |
+| Header reads "webonsive· zero": leading space of a span after an inline is trimmed | [#857](https://github.com/DioxusLabs/blitz/pull/857) (open PR, whitespace collapsing across spans) |
+
+The DSD gap is pinned by a test (`blitz_has_no_declarative_shadow_dom`) that will fail the
+day Blitz gains it, so the exception in the screenshot loop gets removed then.
+
+**Blitz's `svg` feature is off.** `usvg 0.48` wants `base64 ^0.23`, which the local index
+did not resolve; nothing here uses SVG.
+
 ## Impossible without script (from the prototype)
 
 - Filtering results as you type against server data. `<datalist>` covers static suggestions.

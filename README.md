@@ -20,8 +20,13 @@ let page = layout(&caps, "Hello", Theme::Auto, html! {
 
 ```sh
 cargo run -p demo      # http://127.0.0.1:3000
-cargo test             # includes: no route may contain "<script"
+cargo test             # includes: no route may contain "<script", and Blitz layout tests
+scripts/verify.sh      # build + clippy -D warnings + tests + screenshots + <script> grep
 ```
+
+`webonsive-test` renders every route through [Blitz](https://github.com/DioxusLabs/blitz)
+(Stylo + Taffy + vello_cpu, no script engine) and writes a PNG per route and capability level
+to `tests/shots/`. What Blitz cannot render is listed with issue links in `FINDINGS.md`.
 
 ## How to read this crate
 
@@ -97,6 +102,11 @@ webonsive/src/flash.rs      one-shot status banner
 docs/state.md               how state works with no script
 webonsive/src/<name>.rs     one component each: dialog, popover, tabs, accordion,
                             combobox, pager, form, counter, theme
-demo/src/main.rs            Axum routes, ≤15 lines each, plus the no-script test
+demo/src/lib.rs             Axum routes, ≤15 lines each, plus the no-script test
+webonsive-test/src/lib.rs   Page: render a route through Blitz, assert layout, screenshot
+webonsive-test/tests/       every route rendered and captured; layout assertions
+webonsive-test/examples/probe.rs   render any HTML file through Blitz, print boxes
+tests/shots/                PNG per route and capability level, from Blitz
+scripts/verify.sh           the full verification pass
 FINDINGS.md                 what works, what needs a fallback, what is impossible without JS
 ```

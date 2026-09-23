@@ -114,13 +114,23 @@ impl Cap {
     /// One line for humans and the `/caps` page.
     pub fn description(self) -> &'static str {
         match self {
-            Cap::Probed => "beacons loaded at all (set on every visual browser after the first view)",
-            Cap::Invokers => "dialog opens with <button command=show-modal> instead of a :target link",
+            Cap::Probed => {
+                "beacons loaded at all (set on every visual browser after the first view)"
+            }
+            Cap::Invokers => {
+                "dialog opens with <button command=show-modal> instead of a :target link"
+            }
             Cap::Anchor => "popover menus sit under their button via anchor positioning",
-            Cap::DetailsContent => "tabs lay out as a strip via ::details-content; otherwise an accordion",
-            Cap::ViewTransitions => "counter and list get view-transition-name for morphing navigations",
+            Cap::DetailsContent => {
+                "tabs lay out as a strip via ::details-content; otherwise an accordion"
+            }
+            Cap::ViewTransitions => {
+                "counter and list get view-transition-name for morphing navigations"
+            }
             Cap::Popover => "menus use the popover attribute; otherwise a <details> dropdown",
-            Cap::LightDark => "light-dark() is understood (informational; theming uses media queries)",
+            Cap::LightDark => {
+                "light-dark() is understood (informational; theming uses media queries)"
+            }
             Cap::StreamingDsd => "out-of-order streaming via declarative shadow DOM slots",
         }
     }
@@ -158,7 +168,11 @@ impl Caps {
 
     /// Names of every supported capability, in `Cap::ALL` order.
     pub fn names(self) -> Vec<&'static str> {
-        Cap::ALL.into_iter().filter(|c| self.has(*c)).map(Cap::name).collect()
+        Cap::ALL
+            .into_iter()
+            .filter(|c| self.has(*c))
+            .map(Cap::name)
+            .collect()
     }
 
     /// Read the flags out of a raw `Cookie:` header value.
@@ -211,7 +225,10 @@ pub fn beacons(caps: &Caps) -> Markup {
 
 /// `Set-Cookie` value that records `cap` for 30 days.
 pub fn cookie_for(cap: Cap) -> String {
-    format!("{COOKIE_PREFIX}{}=1; Path=/; Max-Age={COOKIE_MAX_AGE}; SameSite=Lax", cap.name())
+    format!(
+        "{COOKIE_PREFIX}{}=1; Path=/; Max-Age={COOKIE_MAX_AGE}; SameSite=Lax",
+        cap.name()
+    )
 }
 
 #[cfg(feature = "axum")]
@@ -268,14 +285,23 @@ mod tests {
 
     #[test]
     fn cookie_round_trip() {
-        let header = Cap::ALL.map(|c| cookie_for(c).split(';').next().unwrap().to_string()).join("; ");
+        let header = Cap::ALL
+            .map(|c| cookie_for(c).split(';').next().unwrap().to_string())
+            .join("; ");
         assert_eq!(Caps::from_cookie_header(&header), Caps::all());
-        assert_eq!(Caps::from_cookie_header("wo-cap-bogus=1; wo-cap-popover=0"), Caps::NONE);
+        assert_eq!(
+            Caps::from_cookie_header("wo-cap-bogus=1; wo-cap-popover=0"),
+            Caps::NONE
+        );
     }
 
     #[test]
     fn beacons_disappear_once_probed() {
-        assert!(beacons(&Caps::NONE).into_string().contains("wo-cap-invokers"));
+        assert!(
+            beacons(&Caps::NONE)
+                .into_string()
+                .contains("wo-cap-invokers")
+        );
         assert_eq!(beacons(&Caps::NONE.with(Cap::Probed)).into_string(), "");
     }
 
@@ -283,7 +309,11 @@ mod tests {
     fn css_has_one_rule_per_cap() {
         let css = beacon_css();
         for cap in Cap::ALL {
-            assert!(css.contains(&format!("?flag={}", cap.name())), "{}", cap.name());
+            assert!(
+                css.contains(&format!("?flag={}", cap.name())),
+                "{}",
+                cap.name()
+            );
         }
     }
 }

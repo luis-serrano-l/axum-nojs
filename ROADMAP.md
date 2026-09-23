@@ -30,11 +30,11 @@ matrix and findings are updated, and the work is committed. Unknowns become entr
 - [x] Docs: one page "how state works with no script"
 
 ## M4 · Blitz as the test engine
-- [ ] `webonsive-test` crate: render a route via `tower::oneshot`, load HTML into `blitz-dom`, resolve layout
-- [ ] Assertions: element exists, is visible, bounding box, computed style
-- [ ] Screenshot every demo route through Blitz's painter; store PNGs under `tests/shots`
-- [ ] CI-style script `just verify` (or `scripts/verify.sh`): build, clippy, tests, screenshots, no-script grep
-- [ ] File Blitz issues for anything it cannot render; link them from FINDINGS.md
+- [x] `webonsive-test` crate: render a route via `tower::oneshot`, load HTML into `blitz-dom`, resolve layout
+- [x] Assertions: element exists, is visible, bounding box, computed style
+- [x] Screenshot every demo route through Blitz's painter; store PNGs under `tests/shots`
+- [x] CI-style script `just verify` (or `scripts/verify.sh`): build, clippy, tests, screenshots, no-script grep
+- [x] File Blitz issues for anything it cannot render; link them from FINDINGS.md
 
 ## M5 · Machine-readable component spec
 - [ ] `spec/` JSON: per component, features used, baseline per browser, fallback, needs_js verdict
