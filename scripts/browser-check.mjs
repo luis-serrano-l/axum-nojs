@@ -91,6 +91,8 @@ try {
   await click("form[data-wo-target='#log'] button");
   await until(async () => (await js("return document.querySelectorAll('#log li').length")) === before + 1, "note appended");
   assert(await js("return document.querySelector('#log li:last-child').textContent") === "hello", "swap: appended the fragment only");
+  assert((await text("#note-count")) === String(before + 1), "swap: out-of-band count updated outside the target");
+  assert(!(await js("return document.querySelector('[data-wo-oob]')")), "swap: oob element not left in the page");
   assert(await navigations() === 1, "swap: target and append without a reload");
 
   // Range: output mirrors while moving, before any submit.

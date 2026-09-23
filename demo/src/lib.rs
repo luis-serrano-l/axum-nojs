@@ -73,7 +73,7 @@ const COMPONENTS: [(&str, &str, &str, &str); 15] = [
     ("/table", "Table", "Server state", "sort links, <search> filter, sticky header, ?page=n"),
     ("/caps", "Capabilities", "Server state", "@supports beacons + cookie"),
     ("/stream", "Streaming", "Server state", "declarative shadow DOM slots"),
-    ("/swap", "Swap targets", "Server state", "data-wo-target, data-wo-swap, Wo-Enhance header"),
+    ("/swap", "Swap targets", "Server state", "data-wo-target, data-wo-swap, data-wo-oob, Wo-Enhance header"),
 ];
 const GROUPS: [&str; 4] = ["Overlays", "Disclosure", "Input", "Server state"];
 
@@ -352,6 +352,7 @@ async fn swap_page(caps: Caps, jar: CookieJar, Query(q): Query<SwapQuery>) -> Ma
         (flash(&caps, jar.get("wo-flash").map(|c| c.value().to_string()).as_deref()))
         p class="wo-note" { "Neither control sits inside a swap root. " code { "data-wo-target" } " names the root to update and " code { "data-wo-swap" } " how; without the script both are ordinary navigations to the same URL." }
         p { "Count: " span id="count" data-wo="swap" { (n) } " " a href={ "/swap?n=" (n + 1) } data-wo-target="#count" { "Add one" } }
+        p { "Notes so far: " span id="note-count" { (notes_of(&jar).len()) } }
         form method="post" action="/swap" data-wo-target="#log" data-wo-swap="append" {
             input name="note" required placeholder="A note" aria-label="Note" autocomplete="off";
             button type="submit" class="wo-primary" { "Add note" }
@@ -363,15 +364,16 @@ async fn swap_page(caps: Caps, jar: CookieJar, Query(q): Query<SwapQuery>) -> Ma
 #[derive(Deserialize)]
 struct SwapForm { note: String }
 
-/// An enhanced request (`Wo-Enhance: 1`) gets only the new `<li>` inside an `#log` to append;
-/// a plain one gets Post/Redirect/Get to the full page.
+/// An enhanced request (`Wo-Enhance: 1`) gets only the new `<li>` inside an `#log` to append,
+/// plus the note count marked `data-wo-oob` so it updates wherever it is on the page; a plain
+/// one gets Post/Redirect/Get to the full page, which shows both anyway.
 async fn swap_submit(jar: CookieJar, headers: HeaderMap, Form(f): Form<SwapForm>) -> axum::response::Response {
     let note = f.note.replace('|', " ");
     let mut notes = notes_of(&jar);
     notes.push(note.clone());
     let jar = jar.add(Cookie::new("notes", notes.join("|")));
     if headers.contains_key("wo-enhance") {
-        return (jar, html! { ol id="log" { li { (note) } } }).into_response();
+        return (jar, html! { ol id="log" { li { (note) } } span id="note-count" data-wo-oob { (notes.len()) } }).into_response();
     }
     (jar, prg::<axum::body::Body>("/swap", Some("Note added"))).into_response()
 }

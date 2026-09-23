@@ -21,7 +21,10 @@
 //! lands: replace the root, replace its children, or add them at the end or the start. The
 //! request is the same either way, so the server may answer an enhanced request (header
 //! `Wo-Enhance: 1`) with only the fragment it needs to; without the script it is a full
-//! navigation to the same URL.
+//! navigation to the same URL. A response may also carry elements marked `data-wo-oob`
+//! (out of band): each replaces the element of the same `id` anywhere in the page, in the
+//! mode the attribute names (`outer` by default), and is dropped from the main swap; the
+//! full page without the script already shows them in place.
 //! Rapid actions on one root are queued, so a counter clicked five times counts five. The
 //! script also mirrors `<input type=range>` and `type=color` values while they move, opens
 //! the `:target` dialog fallback as a real modal, and searches a combobox as you type.
@@ -60,16 +63,26 @@ function restoreFocus(f) {
   if (f.pos != null && el.setSelectionRange) try { el.setSelectionRange(f.pos, f.pos); } catch (e) {}
 }
 
+function place(root, fresh, mode) {
+  var kids = Array.prototype.slice.call(fresh.childNodes);
+  if (mode === "inner") root.replaceChildren.apply(root, kids);
+  else if (mode === "append") root.append.apply(root, kids);
+  else if (mode === "prepend") root.prepend.apply(root, kids);
+  else { root.replaceWith(fresh); return fresh; }
+  return root;
+}
+
 function apply(doc, id, url, push, mode) {
   var root = document.getElementById(id), fresh = doc.getElementById(id);
   if (!root || !fresh) { if (url !== location.href) location.href = url; else location.reload(); return; }
   var f = focusState();
   var swap = function () {
-    var kids = Array.prototype.slice.call(fresh.childNodes), anchor = root;
-    if (mode === "inner") root.replaceChildren.apply(root, kids);
-    else if (mode === "append") root.append.apply(root, kids);
-    else if (mode === "prepend") root.prepend.apply(root, kids);
-    else { root.replaceWith(fresh); anchor = fresh; }
+    doc.querySelectorAll("[data-wo-oob]").forEach(function (el) {
+      var here = el.id && el !== fresh && document.getElementById(el.id), how = el.getAttribute("data-wo-oob");
+      el.remove(); el.removeAttribute("data-wo-oob");
+      if (here) place(here, el, how || "outer");
+    });
+    var anchor = place(root, fresh, mode);
     var oldFlash = document.querySelector(".wo-flash"), newFlash = doc.querySelector(".wo-flash");
     if (oldFlash && newFlash) oldFlash.replaceWith(newFlash);
     else if (oldFlash) oldFlash.remove();

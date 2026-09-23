@@ -104,7 +104,7 @@ script does its job.
 - [x] Partial swaps with explicit targets: `data-wo-target="#id"` on a form or link swaps that
   root instead of the closest one; `data-wo-swap="inner|outer|append|prepend"` chooses how.
   Without the script the same request is a full navigation to the same page.
-- [ ] Out-of-band updates: a response may carry extra swap roots marked `data-wo-oob`; the
+- [x] Out-of-band updates: a response may carry extra swap roots marked `data-wo-oob`; the
   script replaces each matching `id` anywhere in the page (flash banner, counter in the header)
   and drops them from the main swap. Without the script the full page already shows them.
 - [ ] Request lifecycle feedback: `data-wo-busy` class on the root while a request is in flight,
