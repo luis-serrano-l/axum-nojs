@@ -79,7 +79,11 @@ try {
   await click("#wo-accordion-faq-more > details:nth-of-type(2) > summary a");
   await until(async () => (await js("return [...document.querySelectorAll('#wo-accordion-faq-more > details')].map(d => d.open ? 1 : 0).join('')")) === "01", "nested group toggles on its own key");
   assert(await js("return [...document.querySelectorAll('#wo-accordion-faq > details')].map(d => d.open ? 1 : 0).join('')") === "101", "accordion: nested toggle kept the outer sections");
+  await click(".wo-accordion-controls a:last-child");
+  await until(async () => (await js("return document.querySelectorAll('#wo-accordion-faq > details[open]').length")) === 0, "collapse all");
   assert(await navigations() === 1, "accordion: every toggle swapped without a reload");
+  await go("/accordion");
+  assert(await js("return document.querySelectorAll('#wo-accordion-faq > details[open]').length") === 0, "accordion: collapse all beat the cookie's memory on the next visit");
 
   // Combobox: results as you type, focus kept.
   await go("/combobox");

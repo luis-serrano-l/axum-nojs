@@ -203,14 +203,11 @@ impl UiState {
     }
 
     /// A link to the current path with `key` set to `value` and every other state key kept.
-    /// An empty `value` removes the key.
+    /// An empty `value` stays in the link as `key=`: an explicit "nothing" that beats the
+    /// cookie's memory, which is how "Collapse all" and closing the open section work.
     pub fn link(&self, key: &str, value: &str) -> String {
         let mut entries = self.entries();
-        if value.is_empty() {
-            entries.remove(key);
-        } else {
-            entries.insert(key, value);
-        }
+        entries.insert(key, value);
         let query: Vec<String> = entries.iter().map(|(k, v)| format!("{}={}", encode(k), encode(v))).collect();
         if query.is_empty() { self.path.clone() } else { format!("{}?{}", self.path, query.join("&")) }
     }
@@ -299,7 +296,9 @@ mod tests {
         assert_eq!(UiState::parse("/p", "open.faq=2,0", "").opens("faq"), vec![2, 0]);
         assert_eq!(UiState::parse("/p", "open.faq=", "").opens("faq"), Vec::<usize>::new());
         assert_eq!(s.dialog(), Some("confirm"));
-        assert_eq!(s.link("open.faq", ""), "/p?dialog=confirm&tab.a=2");
+        assert_eq!(s.link("open.faq", ""), "/p?dialog=confirm&open.faq=&tab.a=2", "an empty value stays explicit so it beats the cookie");
+        let closed = UiState::parse("/p", "open.faq=", "open.faq=0,2");
+        assert!(closed.opens("faq").is_empty() && closed.changed(), "the explicit empty wins and is remembered");
         assert!(s.changed());
         assert_eq!(s.cookie_value().as_deref(), Some("dialog=confirm&open.faq=0&tab.a=2"));
         let same = UiState::parse("/p", "tab.a=1", "tab.a=1");

@@ -167,6 +167,11 @@ POST-only. `UiState` only emits `Set-Cookie` when the query actually changed som
 link inside it navigates. The title is the persisted link, the padding around it the instant
 toggle. The open accordion title links to `open.<group>=` (close), so it always toggles too.
 
+**"Collapse all" that did nothing.** `UiState::link(key, "")` used to drop the key from the
+URL; with the key gone the cookie's memory (`open.faq=0,2`) won and every section stayed open.
+Closing the open section in an exclusive accordion had the same hole. The empty value now stays
+in the link as `open.faq=`: an explicit nothing beats the cookie and is remembered as such.
+
 **The cookie crate percent-encodes.** `axum-extra`'s `CookieJar` writes `Ada|1` as `Ada%7C1`
 and decodes it on the way back. Tests that look at raw `Set-Cookie` headers must expect that.
 
