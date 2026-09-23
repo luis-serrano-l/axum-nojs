@@ -6,11 +6,14 @@ description = "Zero-JavaScript interactive HTML components for Rust servers"
 
 [features]
 default = []
-# Axum glue: `Caps` extractor, the `/wo/caps` beacon route, streaming responses.
-axum = ["dep:axum", "dep:futures-util", "dep:bytes"]
+# Framework-neutral responses: `prg` as an `http::Response`, `Streamed` as a chunk stream.
+http = ["dep:http", "dep:futures-util"]
+# Axum glue on top of `http`: extractors, the `/wo/caps` beacon route, `IntoResponse` impls.
+axum = ["http", "dep:axum", "dep:bytes"]
 
 [dependencies]
 maud.workspace = true
+http = { version = "1", optional = true }
 axum = { workspace = true, optional = true }
 futures-util = { version = "0.3", optional = true, default-features = false, features = ["std"] }
 bytes = { version = "1", optional = true }

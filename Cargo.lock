@@ -2557,6 +2557,7 @@ dependencies = [
  "axum",
  "bytes",
  "futures-util",
+ "http",
  "maud",
  "tokio",
 ]

@@ -106,8 +106,8 @@ reacts per keystroke, it is not.
 webonsive/src/lib.rs        crate docs, re-exports, stylesheet()
 webonsive/src/caps.rs       Caps bitset, @supports beacons, cookie parsing, /wo/caps route
 webonsive/src/layout.rs     page shell + base CSS + beacons
-webonsive/src/stream.rs     Streamed response: DSD slots out of order, in-order fallback
-webonsive/src/state.rs      UiState (query + cookie), prg() redirect with flash
+webonsive/src/stream.rs     Streamed response: DSD slots out of order, in-order fallback (http feature)
+webonsive/src/state.rs      UiState (query + cookie), prg_parts()/prg() redirect with flash
 webonsive/src/flash.rs      one-shot status banner
 webonsive/src/select.rs     <select> with <selectedcontent> where supported
 webonsive/src/range.rs      <input type=range> with ticks and a server-rendered <output>

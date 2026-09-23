@@ -63,7 +63,7 @@ pub mod range;
 pub mod select;
 pub mod spec;
 pub mod state;
-#[cfg(feature = "axum")]
+#[cfg(feature = "http")]
 pub mod stream;
 pub mod tabs;
 pub mod theme;
@@ -81,10 +81,10 @@ pub use pager::pager;
 pub use popover::popover_menu;
 pub use range::range;
 pub use select::select;
-#[cfg(feature = "axum")]
+#[cfg(feature = "http")]
 pub use state::prg;
 pub use state::UiState;
-#[cfg(feature = "axum")]
+#[cfg(feature = "http")]
 pub use stream::{Streamed, slot};
 pub use tabs::tabs;
 pub use theme::{Theme, theme_toggle};
@@ -107,7 +107,7 @@ pub fn stylesheet() -> String {
         select::CSS,
         range::CSS,
         color::CSS,
-        #[cfg(feature = "axum")]
+        #[cfg(feature = "http")]
         stream::CSS,
         beacons.as_str(),
     ]

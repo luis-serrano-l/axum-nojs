@@ -31,8 +31,11 @@ scripts/verify.sh                  # everything above plus a <script> grep and t
 
 ## Workspace layout
 
-- `webonsive/` – the library crate. Depends only on `maud`; the optional `axum` feature adds the
-  `Caps` extractor and the `/wo/caps` beacon route. No serde.
+- `webonsive/` – the library crate. Depends only on `maud`. Feature `http` adds `prg` as an
+  `http::Response` and `Streamed` (a chunk stream); feature `axum` adds the `Caps`/`UiState`
+  extractors, `IntoResponse` impls and the `/wo/caps` beacon route on top. Everything else is
+  plain functions over strings (`Caps::from_cookie_header`, `UiState::from_request`,
+  `prg_parts`, `caps::beacon_cookie`). No serde.
 - `demo/` – Axum lib + binary, one route per component. Handlers only parse input (query, form,
   cookie) and call `webonsive`; keep each route around 15 lines. The only-one-script test lives here
   and hits every route via `tower::oneshot`, so **add new demo routes to `PATHS`** (the

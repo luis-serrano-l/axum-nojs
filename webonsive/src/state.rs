@@ -16,12 +16,28 @@
 //! `wo-flash` cookie; the next page renders it with the `flash` component and, by returning
 //! its `UiState`, clears it.
 //!
+//! **Any server.** The protocol is plain strings: [`UiState::from_request`] reads path, query
+//! and the `Cookie:` header; [`UiState::set_cookies`] gives the `Set-Cookie` values to send
+//! back; [`prg_parts`] gives the redirect's status, `Location` and `Set-Cookie`. The `http`
+//! feature adds [`prg`] as an `http::Response`; the `axum` feature adds the extractor and the
+//! `IntoResponseParts` impl on top.
+//!
 //! ```rust
 //! use webonsive::UiState;
 //! let state = UiState::parse("/settings", "tab.settings=1&page=3", "open.faq=2");
 //! assert_eq!(state.tab("settings"), 1);
 //! assert_eq!(state.open("faq"), Some(2));
 //! assert_eq!(state.link("tab.settings", "0"), "/settings?open.faq=2&tab.settings=0");
+//!
+//! // By hand, from a raw request: the cookie header carries both state and flash.
+//! let state = UiState::from_request("/settings", "tab.settings=1", "wo-ui=open.faq=2; wo-flash=Saved.");
+//! assert_eq!(state.flash(), Some("Saved."));
+//! assert_eq!(state.set_cookies().len(), 2); // remember tab.settings, clear the flash
+//!
+//! // A form POST answered with Post/Redirect/Get, for any server.
+//! let (status, location, cookie) = webonsive::state::prg_parts("/settings", Some("Saved."));
+//! assert_eq!((status, location), (303, "/settings"));
+//! assert!(cookie.unwrap().starts_with("wo-flash=Saved."));
 //! ```
 
 use std::collections::BTreeMap;
@@ -100,6 +116,33 @@ impl UiState {
         }
     }
 
+    /// Build from a raw request: path, query string and the whole `Cookie:` header value
+    /// (several headers joined with `; `). Reads both the `wo-ui` and the `wo-flash` cookie.
+    pub fn from_request(path: &str, query: &str, cookie_header: &str) -> UiState {
+        let cookie = |name: &str| {
+            cookie_header
+                .split(';')
+                .filter_map(|pair| pair.trim().split_once('='))
+                .find(|(k, _)| *k == name)
+                .map(|(_, v)| v)
+        };
+        UiState::parse(path, query, cookie(UI_COOKIE).unwrap_or(""))
+            .with_flash(cookie(FLASH_COOKIE).map(decode))
+    }
+
+    /// The `Set-Cookie` values a response should carry: the merged state when the query
+    /// changed something, and a deletion of the flash cookie once it has been read.
+    pub fn set_cookies(&self) -> Vec<String> {
+        let mut out = Vec::new();
+        if let Some(value) = self.cookie_value() {
+            out.push(format!("{UI_COOKIE}={value}; Path=/; Max-Age=2592000; SameSite=Lax"));
+        }
+        if self.flash.is_some() {
+            out.push(format!("{FLASH_COOKIE}=; Path=/; Max-Age=0; SameSite=Lax"));
+        }
+        out
+    }
+
     /// Attach the flash message read from the `wo-flash` cookie.
     pub fn with_flash(mut self, flash: Option<String>) -> UiState {
         self.flash = flash.filter(|f| !f.is_empty());
@@ -166,36 +209,49 @@ impl UiState {
     }
 }
 
+/// Post/Redirect/Get for any server: the status (`303`), the `Location` value, and the
+/// `Set-Cookie` value carrying `flash` for one minute, if there is a message.
+pub fn prg_parts<'a>(to: &'a str, flash: Option<&str>) -> (u16, &'a str, Option<String>) {
+    let cookie =
+        flash.map(|msg| format!("{FLASH_COOKIE}={}; Path=/; Max-Age=60; SameSite=Lax", encode(msg)));
+    (303, to, cookie)
+}
+
+/// Post/Redirect/Get: `303 See Other` to `to`, carrying `flash` in a one-shot cookie. The
+/// body is empty and generic over anything built from a `String`, so an Axum handler can
+/// return it as `axum::response::Response` and a hyper one as `Response<Full<Bytes>>`.
+#[cfg(feature = "http")]
+pub fn prg<B: From<String>>(to: &str, flash: Option<&str>) -> http::Response<B> {
+    let (status, location, cookie) = prg_parts(to, flash);
+    let mut res = http::Response::builder().status(status).header(http::header::LOCATION, location);
+    if let Some(c) = cookie {
+        res = res.header(http::header::SET_COOKIE, c);
+    }
+    res.body(B::from(String::new())).expect("valid redirect headers")
+}
+
 #[cfg(feature = "axum")]
 mod axum_glue {
-    use super::{FLASH_COOKIE, UI_COOKIE, UiState};
+    use super::UiState;
     use axum::{
         extract::FromRequestParts,
-        http::{HeaderValue, StatusCode, header, request::Parts},
-        response::{IntoResponse, IntoResponseParts, Response, ResponseParts},
+        http::{HeaderValue, header, request::Parts},
+        response::{IntoResponseParts, ResponseParts},
     };
 
-    fn cookie<'a>(parts: &'a Parts, name: &str) -> Option<&'a str> {
-        parts
-            .headers
-            .get_all(header::COOKIE)
-            .iter()
-            .filter_map(|v| v.to_str().ok())
-            .flat_map(|v| v.split(';'))
-            .filter_map(|pair| pair.trim().split_once('='))
-            .find(|(k, _)| *k == name)
-            .map(|(_, v)| v)
-    }
-
+    /// A thin wrapper over [`UiState::from_request`].
     impl<S: Send + Sync> FromRequestParts<S> for UiState {
         type Rejection = std::convert::Infallible;
 
         async fn from_request_parts(parts: &mut Parts, _: &S) -> Result<UiState, Self::Rejection> {
-            let path = parts.uri.path().to_string();
-            let query = parts.uri.query().unwrap_or("");
-            let ui = cookie(parts, UI_COOKIE).unwrap_or("");
-            let flash = cookie(parts, FLASH_COOKIE).map(super::decode);
-            Ok(UiState::parse(&path, query, ui).with_flash(flash))
+            let cookies = parts
+                .headers
+                .get_all(header::COOKIE)
+                .iter()
+                .filter_map(|v| v.to_str().ok())
+                .collect::<Vec<_>>()
+                .join("; ");
+            Ok(UiState::from_request(parts.uri.path(), parts.uri.query().unwrap_or(""), &cookies))
         }
     }
 
@@ -204,31 +260,13 @@ mod axum_glue {
         type Error = std::convert::Infallible;
 
         fn into_response_parts(self, mut res: ResponseParts) -> Result<ResponseParts, Self::Error> {
-            if let Some(value) = self.cookie_value() {
-                let c = format!("{UI_COOKIE}={value}; Path=/; Max-Age=2592000; SameSite=Lax");
-                res.headers_mut().append(header::SET_COOKIE, HeaderValue::from_str(&c).unwrap());
-            }
-            if self.flash.is_some() {
-                let c = format!("{FLASH_COOKIE}=; Path=/; Max-Age=0; SameSite=Lax");
+            for c in self.set_cookies() {
                 res.headers_mut().append(header::SET_COOKIE, HeaderValue::from_str(&c).unwrap());
             }
             Ok(res)
         }
     }
-
-    /// Post/Redirect/Get: `303 See Other` to `to`, carrying `flash` in a one-shot cookie.
-    pub fn prg(to: &str, flash: Option<&str>) -> Response {
-        let mut res = (StatusCode::SEE_OTHER, [(header::LOCATION, to.to_string())]).into_response();
-        if let Some(msg) = flash {
-            let c = format!("{FLASH_COOKIE}={}; Path=/; Max-Age=60; SameSite=Lax", super::encode(msg));
-            res.headers_mut().append(header::SET_COOKIE, HeaderValue::from_str(&c).unwrap());
-        }
-        res
-    }
 }
-
-#[cfg(feature = "axum")]
-pub use axum_glue::prg;
 
 #[cfg(test)]
 mod tests {
@@ -245,6 +283,17 @@ mod tests {
         assert_eq!(s.cookie_value().as_deref(), Some("dialog=confirm&open.faq=0&tab.a=2"));
         let same = UiState::parse("/p", "tab.a=1", "tab.a=1");
         assert!(!same.changed() && same.cookie_value().is_none());
+    }
+
+    #[test]
+    fn request_and_response_by_hand() {
+        let s = UiState::from_request("/p", "tab.a=2", "theme=dark; wo-ui=tab.a=1; wo-flash=Saved%20it");
+        assert_eq!(s.flash(), Some("Saved it"));
+        let cookies = s.set_cookies();
+        assert_eq!(cookies[0], "wo-ui=tab.a=2; Path=/; Max-Age=2592000; SameSite=Lax");
+        assert!(cookies[1].starts_with("wo-flash=; ") && cookies[1].contains("Max-Age=0"));
+        assert!(UiState::from_request("/p", "", "wo-ui=tab.a=1").set_cookies().is_empty());
+        assert_eq!(prg_parts("/p", None), (303, "/p", None));
     }
 
     #[test]

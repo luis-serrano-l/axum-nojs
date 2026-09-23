@@ -10,7 +10,9 @@
 //!   `<slot name="id">placeholder</slot>` per section.
 //! - Named slots: a light-DOM child `<div slot="id">` of `<body>` replaces the placeholder the
 //!   moment the parser sees it, wherever it arrives in the byte stream.
-//! - Chunked transfer: `axum::body::Body::from_stream`.
+//! - Chunked transfer: the response body is a stream of HTML chunks. [`Streamed::into_stream`]
+//!   is that stream for any server (`http` feature); the `axum` feature turns it into a
+//!   response with `IntoResponse`.
 //!
 //! **Fallback:** without `Caps::StreamingDsd`, `slot` leaves an HTML comment marker and the
 //! response is streamed *in document order*: the bytes up to the first marker go out at once,
@@ -35,11 +37,7 @@ use std::collections::HashMap;
 use std::future::Future;
 use std::pin::Pin;
 
-use axum::body::Body;
-use axum::http::header;
-use axum::response::{IntoResponse, Response};
-use bytes::Bytes;
-use futures_util::stream::{self, FuturesUnordered, StreamExt};
+use futures_util::stream::{self, FuturesUnordered, Stream, StreamExt};
 use maud::{DOCTYPE, Markup, PreEscaped, html};
 
 use crate::{Cap, Caps, Theme, caps, enhance, layout, stylesheet};
@@ -61,7 +59,8 @@ fn marker(id: &str) -> String {
 }
 
 /// A page whose slow sections arrive later. Build with [`Streamed::page`], add sections with
-/// [`Streamed::fill`], return it from an Axum handler.
+/// [`Streamed::fill`], then return it from an Axum handler or send [`Streamed::into_stream`]
+/// as a chunked `text/html; charset=utf-8` body from any server.
 pub struct Streamed {
     dsd: bool,
     /// Whole page in fallback mode; everything up to `</template>` in DSD mode.
@@ -112,8 +111,9 @@ impl Streamed {
         self.dsd
     }
 
-    fn into_body(self) -> Body {
-        let ok = |s: String| Ok::<Bytes, std::convert::Infallible>(Bytes::from(s));
+    /// The response body as HTML chunks, each ready to send as soon as it is yielded. Send them
+    /// with `Content-Type: text/html; charset=utf-8` and chunked transfer.
+    pub fn into_stream(self) -> Pin<Box<dyn Stream<Item = String> + Send + 'static>> {
         if self.dsd {
             let fills: FuturesUnordered<_> = self
                 .fills
@@ -122,9 +122,8 @@ impl Streamed {
                 .collect();
             let chunks = stream::once(async { self.prefix })
                 .chain(fills)
-                .chain(stream::once(async { self.suffix }))
-                .map(ok);
-            return Body::from_stream(chunks);
+                .chain(stream::once(async { self.suffix }));
+            return Box::pin(chunks);
         }
         // Fallback: walk the page in order, splicing each fill at its marker.
         let mut fills: HashMap<String, Fill> = self.fills.into_iter().collect();
@@ -140,15 +139,13 @@ impl Streamed {
             rest = &rest[end..];
         }
         pieces.push(Piece::Text(format!("{rest}{}", self.suffix)));
-        let chunks = stream::iter(pieces)
-            .then(|piece| async move {
-                match piece {
-                    Piece::Text(s) => s,
-                    Piece::Fill(fut) => fut.await.into_string(),
-                }
-            })
-            .map(ok);
-        Body::from_stream(chunks)
+        let chunks = stream::iter(pieces).then(|piece| async move {
+            match piece {
+                Piece::Text(s) => s,
+                Piece::Fill(fut) => fut.await.into_string(),
+            }
+        });
+        Box::pin(chunks)
     }
 }
 
@@ -157,9 +154,15 @@ enum Piece {
     Fill(Fill),
 }
 
-impl IntoResponse for Streamed {
-    fn into_response(self) -> Response {
-        ([(header::CONTENT_TYPE, "text/html; charset=utf-8")], self.into_body()).into_response()
+#[cfg(feature = "axum")]
+impl axum::response::IntoResponse for Streamed {
+    fn into_response(self) -> axum::response::Response {
+        let chunks = self.into_stream().map(|s| Ok::<bytes::Bytes, std::convert::Infallible>(s.into()));
+        (
+            [(http::header::CONTENT_TYPE, "text/html; charset=utf-8")],
+            axum::body::Body::from_stream(chunks),
+        )
+            .into_response()
     }
 }
 
