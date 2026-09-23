@@ -83,8 +83,9 @@ pub const SPECS: &[ComponentSpec] = &[
             f("fetch", b("42", "39", "10.1")),
             f("history.pushState", b("5", "4", "5")),
             f("document.startViewTransition", b("111", "144", "18")),
+            f("CustomEvent", b("15", "11", "6")),
         ],
-        fallback: "none needed: without the script every form and link is a normal navigation",
+        fallback: "none needed: without the script every form and link is a normal navigation and every data-wo-* attribute is inert",
         needs_js: NeedsJs::No,
     },
     ComponentSpec {

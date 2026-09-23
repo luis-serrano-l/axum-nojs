@@ -7,7 +7,8 @@
 //! **Platform features:** `<script defer>` (baseline 2010), `fetch` (Chrome 42, Firefox 39,
 //! Safari 10.1), `DOMParser` (baseline 2010), `history.pushState` (Chrome 5, Firefox 4,
 //! Safari 5), `document.startViewTransition` where present (Chrome 111, Firefox 144,
-//! Safari 18) so swapped parts morph.
+//! Safari 18) so swapped parts morph, `CustomEvent` (Chrome 15, Firefox 11, Safari 6) for
+//! `wo:swap`.
 //!
 //! **Fallback:** none needed. Without the script every form and link is a normal navigation;
 //! the Blitz test suite renders every route with no script engine at all.

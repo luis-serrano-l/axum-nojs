@@ -77,17 +77,33 @@ what the server sends; it changes what the browser does with it.
   background; the response document is parsed and only the root (plus flash, title, theme and
   URL) is replaced, inside `document.startViewTransition` when available. Requests on one root
   are queued, so five fast counter clicks count five.
+- **Targets and modes.** `data-wo-target="#id"` lets a control anywhere name its root;
+  `data-wo-swap` picks outer, inner, append or prepend; `data-wo-oob` elements in the answer
+  update their twin anywhere on the page. The `Wo-Enhance: 1` header lets a handler answer
+  with a fragment. Without the script the same request is the full page, which shows all of it.
+- **Lifecycle.** `data-wo-busy` and `aria-busy` on the root and form while a request runs,
+  submit buttons disabled, a `data-wo-indicator` element shown, `--wo-busy` for the fade. A
+  failed request becomes the navigation the browser would have made.
+- **History.** Links push an entry, forms replace it, `data-wo-push="false"` keeps the URL and
+  `data-wo-replace` rewrites the entry. Every swap stores a copy of the roots in the entry, so
+  Back and Forward restore in place with no request. `wo:swap` fires after every swap.
 - **Search as you type** in a combobox inside a swap root, debounced, focus and caret kept.
 - **Live mirroring** of range output and colour swatch while the control moves.
 - **Real modal** for the `:target` dialog fallback; light dismiss for the `<details>` popover
   fallback.
-- **History.** Link swaps push a history entry; back and forward re-fetch and re-swap.
 
 Proven by `scripts/browser-check.mjs`: headless Firefox 155 through geckodriver, asserting
 `performance.getEntriesByType("navigation").length` stays at 1 across every action.
 
-What stays impossible even with it: offline behaviour, optimistic updates (the script waits for
-the server), and anything that needs client-side state the server does not own.
+What stays impossible even with it, because the script owns no state and never runs before
+the server answers: offline behaviour and retry queues; optimistic updates (the counter shows
+the new value when the server says so, not on click); client-side validation beyond what
+`required`, `pattern` and `:user-invalid` give; polling or server push (`data-wo-oob` only
+rides on a request the user made; a `<meta http-equiv="refresh">` or a streamed page is the
+no-script answer); drag and drop, keyboard shortcuts and anything driven by pointer position;
+a "dirty form" warning before leaving; and restoring scroll position or form input inside a
+root that Back and Forward replaced from the cached copy (the copy is the markup as swapped,
+not what the user typed since).
 
 ## Notes by milestone
 

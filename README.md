@@ -4,16 +4,8 @@ Interactive HTML components for Rust servers that need no JavaScript. Axum + Mau
 
 Every component is a plain function returning `Markup`. Interactivity comes from the HTML/CSS
 platform and ordinary form round trips. One optional 9 KB script (`/wo/enhance.js`) makes the
-same markup update in place: forms and links inside a swap root (`id` + `data-wo="swap"`) are
-fetched and only that root is replaced, so a counter clicked five times counts five without a
-reload. A control anywhere can name its root with `data-wo-target="#id"` and how the new
-markup lands with `data-wo-swap="outer|inner|append|prepend"`; elements marked `data-wo-oob`
-in a response update their twin anywhere on the page. While a request runs the root and form
-carry `data-wo-busy` and `aria-busy`, submit buttons are disabled and a `data-wo-indicator`
-element shows; a failed request becomes the plain navigation. `data-wo-push="false"` keeps
-the URL, `data-wo-replace` rewrites the entry, Back and Forward restore roots from a cached
-copy, and a `wo:swap` event fires after every swap. Every page works identically with the script blocked; that is the only `<script>` tag
-allowed, and a test enforces it.
+same markup update in place; see "How the script works" below. Every page works identically
+with the script blocked; that is the only `<script>` tag allowed, and a test enforces it.
 
 ```rust
 use maud::html;
@@ -79,6 +71,34 @@ component gives the HTML to another template engine.
   `/?palette=linen` in the demo is the same index under a second palette.
   A test fails if any component CSS names a colour instead of a token.
 
+## How the script works
+
+`/wo/enhance.js` is one file, plain ES2020, served with a content hash so it caches forever
+and compatible with `script-src 'self'`. It never changes what the server sends: it reads a
+few `data-wo-*` attributes and does in place what the browser would have done as a full
+navigation. Without it every attribute is inert and every control is a normal form or link.
+
+| Attribute | On | What the script does | Without the script |
+|---|---|---|---|
+| `id` + `data-wo="swap"` | a root element | Forms and links inside it are fetched; the element of the same `id` in the answer replaces the root. Flash, `<title>`, `data-theme` and the URL follow. Requests on one root are queued. | Normal navigation to the same URL. |
+| `data-wo-target="#id"` | a form or link, or an ancestor | Swaps that root instead of the closest one, so a control can sit anywhere. | Same navigation. |
+| `data-wo-swap="outer\|inner\|append\|prepend"` | with `data-wo-target` | How the answer lands: replace the root, replace its children, add at the end or the start. | Same navigation; the full page already shows the result. |
+| `data-wo-oob="outer\|inner\|…"` | an element in the answer | Replaces the element of the same `id` anywhere in the page and is dropped from the main swap. | The full page shows it in place. |
+| `Wo-Enhance: 1` | the request header | Sent on every enhanced request, so a handler may answer with only the fragment it needs to (`/swap` does). | Not sent; the handler returns the page. |
+| `data-wo-busy` + `aria-busy="true"` | set by the script on the root and the form | Present while a request is in flight; submit buttons are disabled meanwhile; `[data-wo-busy]` fades to `--wo-busy` (0.6). | Never set. |
+| `data-wo-indicator="#id"` | a form or link | The named element (authored with `hidden`) is shown while the request runs. | Stays hidden. |
+| `data-wo-push="false"` | a form or link | The URL does not change. Links push a history entry by default, forms replace it. | Normal navigation. |
+| `data-wo-replace` | a form or link | `replaceState` instead of `pushState`. | Normal navigation. |
+| Back and Forward | | Each swap stores a copy of every root in the history entry; Back and Forward restore from it with no request. Entries without a copy are re-fetched. | Normal history. |
+| `wo:swap` | a bubbling `CustomEvent` on the swapped root | `detail` is `{ id, url, mode }`, for anything that must react; no listener ships with the crate. | Never fires. |
+
+A request that fails (network down, the answer has no element of that `id`) becomes the
+navigation the browser would have made, so the server's answer is always seen. The script also
+mirrors `<input type=range>` and `type=color` values while they move, opens the `:target`
+dialog fallback as a real modal, closes the `<details>` popover fallback on outside click, and
+searches a combobox as you type. `scripts/browser-check.mjs` proves each of these in headless
+Firefox; the Blitz suite proves every route with no script engine at all.
+
 ## Feature matrix
 
 Generated from `webonsive::spec::SPECS` by `cargo run -p demo -- spec write` (a test fails if it
@@ -88,7 +108,7 @@ browser-compat-data; `no` means unshipped, so that browser gets the fallback.
 <!-- matrix:start -->
 | Component | Platform features | Chrome / Firefox / Safari | Fallback | Needs JS? |
 |---|---|---|---|---|
-| Enhancement script | `fetch`, `history.pushState`, `document.startViewTransition` | 42 / 39 / 10.1; 5 / 4 / 5; 111 / 144 / 18 | none needed: without the script every form and link is a normal navigation | No |
+| Enhancement script | `fetch`, `history.pushState`, `document.startViewTransition`, `CustomEvent` | 42 / 39 / 10.1; 5 / 4 / 5; 111 / 144 / 18; 15 / 11 / 6 | none needed: without the script every form and link is a normal navigation and every data-wo-* attribute is inert | No |
 | Layout | `@view-transition`, `prefers-color-scheme`, `custom properties` | 126 / no / 18.2; 76 / 67 / 12.1; 49 / 31 / 9.1 | plain navigations (root never cross-fades); colours still switch by media query and data-theme | No |
 | Capability beacons | `@supports`, `selector()`, `background images`, `cookies` | 28 / 22 / 9; 83 / 69 / 14.1; 1 / 1 / 1; 1 / 1 / 1 | unknown browser gets every fallback; the first view always does | No |
 | Dialog | `<dialog>`, `command="show-modal"`, `<form method="dialog">` | 37 / 98 / 15.4; 135 / 144 / 26.2; 37 / 98 / 15.4 | link to #id opens it through a :target rule, chosen server-side | No |

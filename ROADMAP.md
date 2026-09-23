@@ -114,7 +114,7 @@ script does its job.
 - [x] History and URL control: `data-wo-push="false"` keeps the URL, `data-wo-replace` uses
   `replaceState`, and Back/Forward restore the swapped roots from a cached copy instead of a
   reload; a `wo:swap` custom event fires after every swap for anything that must react.
-- [ ] Spec entry for the enhancement script updated, README "How the script works" section,
+- [x] Spec entry for the enhancement script updated, README "How the script works" section,
   Firefox checks for each attribute, FINDINGS on what the platform still cannot do.
 
 ## M15 · Components worth using
