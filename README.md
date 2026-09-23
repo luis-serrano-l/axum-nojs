@@ -134,6 +134,7 @@ webonsive/src/spec.rs       SPECS: features, per-browser baselines, fallback, ne
 webonsive/examples/         render_page (no server), axum_server (--features axum), hyper_server (--features http)
 spec/components.json        generated from SPECS (cargo run -p demo -- spec write)
 docs/state.md               how state works with no script
+docs/caps.md                how the beacons work, cookie format, the first view, adding a flag
 webonsive/src/<name>.rs     one component each: dialog, popover, tabs, accordion,
                             combobox, pager, form, counter, theme
 demo/src/lib.rs             Axum routes, ≤15 lines each, plus the no-script test
