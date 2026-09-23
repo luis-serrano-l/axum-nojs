@@ -7,8 +7,10 @@ Questions only the owner can answer. Everything else in ROADMAP.md is done.
 Done without you: `readme`, `keywords` and `categories` are set in both crates. Still open,
 and the reason box 1 stays unticked: `license` and `repository`.
 
-`cargo publish --dry-run` succeeds for both `wo-caps` and `webonsive` (M6 and M9 boxes
-ticked). A real publish to crates.io is rejected without a `license` (or `license-file`),
+`cargo publish --dry-run -p wo-caps` succeeds; `webonsive` cannot dry-run alone until `wo-caps`
+is on crates.io (its path dependency is looked up in the index), so
+`cargo package --workspace --exclude demo --exclude webonsive-test` is what verifies both.
+`CHANGELOG.md` has 0.1.0; its compare links need the repository URL too. A real publish to crates.io is rejected without a `license` (or `license-file`),
 and `repository` is expected too. Nothing was chosen on your behalf. Also: is `wo-caps` the
 name you want on crates.io (it is short and free as of 2026-09-23), or `webonsive-caps`?
 

@@ -90,7 +90,10 @@ matrix and findings are updated, and the work is committed. Unknowns become entr
 
 ## M13 · Publish
 - [ ] `license`, `repository`, `readme`, `keywords`, `categories` in every publishable `Cargo.toml` (needs the owner's answer in BLOCKED.md)
-- [ ] `CHANGELOG.md` with 0.1.0; version bump; `cargo publish --dry-run` for `wo-caps` then `webonsive`
+- [x] `CHANGELOG.md` with 0.1.0; version bump; `cargo publish --dry-run` for `wo-caps` then `webonsive`
+      (both crates are 0.1.0; `wo-caps` dry-runs clean; `webonsive` alone cannot until `wo-caps`
+      is on crates.io, so `cargo package --workspace --exclude demo --exclude webonsive-test`
+      verifies both together)
 - [ ] docs.rs metadata (`all-features`), crate-level README rendered on docs.rs checked with `cargo doc --no-deps`
 - [ ] The publish itself is an outward action: ask the owner, do not run `cargo publish` without a yes
 

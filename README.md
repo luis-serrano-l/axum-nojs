@@ -155,4 +155,5 @@ webonsive-test/examples/probe.rs   render any HTML file through Blitz, print box
 tests/shots/                PNG per route and capability level, from Blitz
 scripts/verify.sh           the full verification pass
 FINDINGS.md                 what works, what needs a fallback, what is impossible without JS
+CHANGELOG.md                what each version added; both crates share the version
 ```
