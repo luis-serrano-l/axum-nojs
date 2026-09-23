@@ -34,6 +34,8 @@ pub mod form;
 pub mod layout;
 pub mod pager;
 pub mod popover;
+#[cfg(feature = "axum")]
+pub mod stream;
 pub mod tabs;
 pub mod theme;
 
@@ -46,6 +48,8 @@ pub use form::{Field, FieldKind, form};
 pub use layout::layout;
 pub use pager::pager;
 pub use popover::popover_menu;
+#[cfg(feature = "axum")]
+pub use stream::{Streamed, slot};
 pub use tabs::tabs;
 pub use theme::{Theme, theme_toggle};
 
@@ -63,6 +67,8 @@ pub fn stylesheet() -> String {
         form::CSS,
         counter::CSS,
         theme::CSS,
+        #[cfg(feature = "axum")]
+        stream::CSS,
         beacons.as_str(),
     ]
     .join("\n")

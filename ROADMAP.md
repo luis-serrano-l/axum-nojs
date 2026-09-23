@@ -14,12 +14,12 @@ matrix and findings are updated, and the work is committed. Unknowns become entr
 - [x] Screenshot verification in Firefox headless; old-Chrome-109 check confirms fallbacks render
 
 ## M2 · Out-of-order streaming without script
-- [ ] `webonsive::stream`: `Streamed` response type built on `axum::body::Body::from_stream`
-- [ ] `slot(id, placeholder)` renders `<wo-slot><template shadowrootmode=open><slot name=id>…`
-- [ ] `fill(id, future)` appends the resolved chunk with `slot=id` later in the stream, any order
-- [ ] Demo `/stream` with three slow sections (100ms, 800ms, 2s) arriving out of order
-- [ ] Fallback when DSD unsupported (per `Caps`): render sequentially at the end
-- [ ] Test: response body is chunked and slots arrive in completion order
+- [x] `webonsive::stream`: `Streamed` response type built on `axum::body::Body::from_stream`
+- [x] `slot(id, placeholder)` renders `<wo-slot><template shadowrootmode=open><slot name=id>…`
+- [x] `fill(id, future)` appends the resolved chunk with `slot=id` later in the stream, any order
+- [x] Demo `/stream` with three slow sections (100ms, 800ms, 2s) arriving out of order
+- [x] Fallback when DSD unsupported (per `Caps`): render sequentially at the end
+- [x] Test: response body is chunked and slots arrive in completion order
 
 ## M3 · State model for scriptless apps
 - [ ] `webonsive::state`: `UiState` extractor merging query + cookie (open tab, open details, dialog)

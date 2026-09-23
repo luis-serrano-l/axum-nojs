@@ -47,6 +47,7 @@ cargo test             # includes: no route may contain "<script"
 | Validated form | `required`/`pattern`/`min`, `:user-invalid`, Post/Redirect/Get | 2015 / 2023 | none needed | No |
 | Counter | `<form method=post>`, `<button name value>`, cookie | forever | none needed | No |
 | Theme toggle | `prefers-color-scheme`, cookie + `data-theme` | 2020 | OS preference | No |
+| Streaming | `<template shadowrootmode>` on `<body>`, named `<slot>`s, chunked response | Chrome 111 / Firefox 123 / Safari 16.4 | in-order streaming with in-place splicing | No |
 
 ## Findings
 
@@ -55,6 +56,9 @@ cargo test             # includes: no route may contain "<script"
   Escape, focus trapping, top layer, exclusivity: all free from the platform.
 - View transitions make server round trips feel like in-place updates. The counter number
   morphs; the list grows without a flash.
+- Out-of-order streaming works with no script: the page ships with `<slot>` placeholders inside
+  a declarative shadow root on `<body>`, and each slow section is appended whenever it is ready.
+  The parser slots it into place. Older browsers get in-order progressive rendering instead.
 - `:user-invalid` gives validation UX that used to need a library.
 
 **What needs a fallback today**
@@ -84,6 +88,7 @@ reacts per keystroke, it is not.
 webonsive/src/lib.rs        crate docs, re-exports, stylesheet()
 webonsive/src/caps.rs       Caps bitset, @supports beacons, cookie parsing, /wo/caps route
 webonsive/src/layout.rs     page shell + base CSS + beacons
+webonsive/src/stream.rs     Streamed response: DSD slots out of order, in-order fallback
 webonsive/src/<name>.rs     one component each: dialog, popover, tabs, accordion,
                             combobox, pager, form, counter, theme
 demo/src/main.rs            Axum routes, ≤15 lines each, plus the no-script test

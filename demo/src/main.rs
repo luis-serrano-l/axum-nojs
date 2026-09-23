@@ -10,9 +10,10 @@ use axum_extra::extract::cookie::{Cookie, CookieJar};
 use maud::{Markup, html};
 use serde::Deserialize;
 use webonsive::{
-    Cap, Caps, Field, FieldKind, Theme, accordion, caps, combobox, counter, dialog, form, layout,
-    pager, popover_menu, tabs, theme_toggle,
+    Cap, Caps, Field, FieldKind, Streamed, Theme, accordion, caps, combobox, counter, dialog, form,
+    layout, pager, popover_menu, slot, tabs, theme_toggle,
 };
+use std::time::Duration;
 
 #[tokio::main]
 async fn main() {
@@ -34,6 +35,7 @@ fn router() -> Router {
         .route("/list", get(list_page))
         .route("/form", get(form_page).post(form_submit))
         .route("/counter", get(counter_page).post(counter_submit))
+        .route("/stream", get(stream_page))
         .route("/theme", post(theme_submit))
         .merge(caps::router())
 }
@@ -68,6 +70,7 @@ async fn index(caps: Caps, jar: CookieJar) -> Markup {
         ("/form", "Validated form", ":user-invalid, PRG"),
         ("/counter", "Counter", "form POST + cookie"),
         ("/caps", "Capabilities", "@supports beacons + cookie"),
+        ("/stream", "Streaming", "declarative shadow DOM slots"),
     ];
     page(&caps, &jar, "Components", html! {
         p { "Every page here ships zero " code { "<script>" } " tags." }
@@ -196,6 +199,25 @@ async fn counter_submit(jar: CookieJar, Form(f): Form<CounterOp>) -> (CookieJar,
     (jar.add(Cookie::new("count", n.to_string())), Redirect::to("/counter"))
 }
 
+/// Three sections declared slowest first, so out-of-order arrival is visible.
+async fn stream_page(caps: Caps, jar: CookieJar) -> Streamed {
+    let sections = [("slow", 2000), ("medium", 800), ("fast", 100)];
+    let page = Streamed::page(&caps, "Streaming", theme_of(&jar), html! {
+        h1 { "Streaming" }
+        p { @if caps.has(Cap::StreamingDsd) { "Sections arrive out of order into named slots." }
+            @else { "This browser has no declarative shadow DOM: sections stream in document order." } }
+        @for (id, ms) in sections {
+            (slot(&caps, id, html! { section class="wo-stream-section wo-stream-pending" { "Loading " (id) " (" (ms) " ms)…" } }))
+        }
+    });
+    sections.into_iter().fold(page, |page, (id, ms)| page.fill(id, section(id, ms)))
+}
+
+async fn section(id: &'static str, ms: u64) -> Markup {
+    tokio::time::sleep(Duration::from_millis(ms)).await;
+    html! { section class="wo-stream-section" { strong { (id) } " arrived after " (ms) " ms." } }
+}
+
 /// What the server believes about this browser, one row per capability.
 async fn caps_page(caps: Caps, jar: CookieJar) -> Markup {
     let probed = caps.has(Cap::Probed);
@@ -234,7 +256,7 @@ mod tests {
 
     #[tokio::test]
     async fn no_page_ships_script() {
-        for path in ["/", "/caps", "/dialog", "/popover", "/tabs?tab=1", "/accordion", "/combobox?q=r", "/list?page=2", "/form", "/counter"] {
+        for path in ["/", "/caps", "/stream", "/dialog", "/popover", "/tabs?tab=1", "/accordion", "/combobox?q=r", "/list?page=2", "/form", "/counter"] {
             let modern = Cap::ALL.map(|c| format!("wo-cap-{}=1", c.name())).join("; ");
             for cookie in ["", modern.as_str()] {
                 let req = Request::get(path).header("cookie", cookie).body(Body::empty()).unwrap();
@@ -256,6 +278,42 @@ mod tests {
         assert!(cookie.starts_with("wo-cap-popover=1;"), "{cookie}");
         let req = Request::get("/wo/caps?flag=nope").body(Body::empty()).unwrap();
         assert_eq!(router().oneshot(req).await.unwrap().status(), 404);
+    }
+
+    /// Collect the body frames of `path` as they arrive.
+    async fn frames(path: &str, cookie: &str) -> Vec<String> {
+        use http_body_util::BodyExt;
+        let req = Request::get(path).header("cookie", cookie).body(Body::empty()).unwrap();
+        let mut body = router().oneshot(req).await.unwrap().into_body();
+        let mut out = Vec::new();
+        while let Some(frame) = body.frame().await {
+            let frame = frame.unwrap();
+            if let Some(data) = frame.data_ref() {
+                out.push(String::from_utf8(data.to_vec()).unwrap());
+            }
+        }
+        out
+    }
+
+    #[tokio::test]
+    async fn stream_is_chunked_in_completion_order() {
+        let chunks = frames("/stream", "wo-cap-probed=1; wo-cap-streaming_dsd=1").await;
+        assert!(chunks.len() >= 5, "expected prefix + 3 fills + suffix, got {}", chunks.len());
+        assert!(chunks[0].contains("<template shadowrootmode=\"open\">"));
+        assert!(chunks[0].contains("<slot name=\"slow\">"));
+        let order: Vec<&str> = chunks[1..4].iter().map(|c| c.split("slot=\"").nth(1).unwrap().split('"').next().unwrap()).collect();
+        assert_eq!(order, ["fast", "medium", "slow"]);
+        assert_eq!(chunks.last().unwrap(), "</body></html>");
+    }
+
+    #[tokio::test]
+    async fn stream_fallback_is_in_document_order() {
+        let chunks = frames("/stream", "wo-cap-probed=1").await;
+        let html = chunks.concat();
+        assert!(!html.contains("<template") && !html.contains("<slot"));
+        let pos = |s: &str| html.find(s).unwrap();
+        assert!(pos("slow</strong>") < pos("medium</strong>") && pos("medium</strong>") < pos("fast</strong>"));
+        assert!(chunks.len() >= 4, "streamed in pieces, got {}", chunks.len());
     }
 
     #[tokio::test]

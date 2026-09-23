@@ -118,6 +118,7 @@ version = "0.1.0"
 dependencies = [
  "axum",
  "axum-extra",
+ "http-body-util",
  "maud",
  "serde",
  "tokio",
@@ -708,6 +709,8 @@ name = "webonsive"
 version = "0.1.0"
 dependencies = [
  "axum",
+ "bytes",
+ "futures-util",
  "maud",
 ]
 

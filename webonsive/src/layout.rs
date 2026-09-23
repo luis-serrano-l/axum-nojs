@@ -25,20 +25,34 @@ pub fn layout(caps: &Caps, title: &str, theme: Theme, body: Markup) -> Markup {
     html! {
         (DOCTYPE)
         html lang="en" data-theme=(theme.as_str()) {
-            head {
-                meta charset="utf-8";
-                meta name="viewport" content="width=device-width, initial-scale=1";
-                title { (title) }
-                style { (PreEscaped(stylesheet())) }
-            }
+            (head(title))
             body {
-                header class="wo-header" {
-                    a href="/" { strong { "webonsive" } }
-                    span { " · zero JavaScript" }
-                }
+                (header())
                 main { (body) }
                 (caps::beacons(caps))
             }
+        }
+    }
+}
+
+/// `<head>`: charset, viewport, title and the inline stylesheet. `stream` reuses it.
+pub fn head(title: &str) -> Markup {
+    html! {
+        head {
+            meta charset="utf-8";
+            meta name="viewport" content="width=device-width, initial-scale=1";
+            title { (title) }
+            style { (PreEscaped(stylesheet())) }
+        }
+    }
+}
+
+/// The site header shown on every page.
+pub fn header() -> Markup {
+    html! {
+        header class="wo-header" {
+            a href="/" { strong { "webonsive" } }
+            span { " · zero JavaScript" }
         }
     }
 }

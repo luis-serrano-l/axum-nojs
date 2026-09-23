@@ -43,6 +43,30 @@ would double the first-load cost for `curl` and crawlers too, so it is not done.
 is no negative cache: an unsupported feature simply has no cookie, and `probed` says the beacons
 ran. Once `probed` is set the beacon elements are no longer emitted.
 
+## M2 · Out-of-order streaming
+
+**Works.** `<body><template shadowrootmode="open">…<slot name="x">placeholder</slot>…</template>`
+followed by `<div slot="x">` chunks appended later in the byte stream. The parser slots each
+chunk in as it arrives, in any order. Verified in Firefox 155: `curl -N` shows chunks leaving
+at 0.1 s, 0.8 s and 2.0 s (declared slowest first) and the screenshot shows them in document
+order. Chrome 109 has no DSD and got the in-order fallback.
+
+**The host must be an ancestor of the late chunks.** Slots only match direct light-DOM
+children of the host. A per-section `<wo-slot>` host cannot receive a chunk appended at the end
+of the document, so the roadmap's per-slot host became one host: `<body>`. `slot()` emits a
+plain `<slot name>` inside it.
+
+**Shadow trees do not see document stylesheets.** The page inside the shadow root needs its
+own `<style>`; the slotted chunks are light DOM and need the document one. The stylesheet is
+therefore inlined twice in DSD mode (about 12 KB extra). A `<link>` to a cached `/wo.css` in
+both places would cost one fetch instead; not done because the layout's contract is one inline
+stylesheet per page.
+
+**Fallback is still streaming.** Without DSD `slot()` leaves `<!--wo-slot:id-->` and the
+response is spliced in document order: the bytes before the first marker leave immediately,
+each section as soon as it and its predecessors resolve. A slow first section delays the rest.
+That is the classic progressive-render trade-off, and every browser since 1995 handles it.
+
 ## Impossible without script (from the prototype)
 
 - Filtering results as you type against server data. `<datalist>` covers static suggestions.
