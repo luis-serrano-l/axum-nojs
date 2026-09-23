@@ -13,8 +13,9 @@ use maud::{Markup, html};
 use serde::Deserialize;
 use webonsive::{
     Cap, Caps, Field, FieldKind, Streamed, Theme, UiState, accordion, caps, color, combobox,
-    counter, dialog, flash, form, layout, paged_table, pager, popover_menu, prg, range, select, slot,
-    table::{Column, sort_from_query}, tabs, theme_toggle, wizard, wizard::Step,
+    counter, dialog, dialog::DialogOptions, flash, form, layout, paged_table, paged_table::PagedTableOptions,
+    pager, pager::PagerOptions, popover_menu, prg, range, range::RangeOptions, select, slot,
+    table::{Column, sort_from_query}, tabs, theme_toggle, wizard, wizard::{Step, WizardOptions},
 };
 use std::time::Duration;
 
@@ -114,7 +115,7 @@ async fn dialog_page(caps: Caps, jar: CookieJar, state: UiState) -> Markup {
         (dialog(&caps, "confirm", "Delete account", html! {
             h2 { "Delete account?" }
             p { "This cannot be undone. The dialog is opened by an invoker button and closed by a " code { "method=dialog" } " form." }
-        }, state.dialog() == Some("confirm")))
+        }, DialogOptions::default().open(state.dialog() == Some("confirm"))))
         p class="wo-note" { "Server-opened: " a href="/dialog?dialog=confirm" { "?dialog=confirm" } }
     })
 }
@@ -178,7 +179,7 @@ async fn list_page(caps: Caps, jar: CookieJar, Query(p): Query<PageQuery>) -> Ma
     let rows: Vec<Markup> = (1..=(current * PER).min(TOTAL))
         .map(|n| html! { "Row " (n) })
         .collect();
-    page(&caps, &jar, "Load-more list", html! { (pager(&caps, "/list", &rows, current, PER, TOTAL)) })
+    page(&caps, &jar, "Load-more list", html! { (pager(&caps, "/list", &rows, TOTAL, PagerOptions::default().page(current).per_page(PER))) })
 }
 
 #[derive(Deserialize, Default)]
@@ -208,7 +209,7 @@ async fn table_page(caps: Caps, jar: CookieJar, Query(t): Query<TableQuery>) -> 
         .map(|f| vec![html! { code { (f.0) } }, html! { (f.1 / 1024) " KB" }, html! { (f.2) }]).collect();
     page(&caps, &jar, "Table", html! {
         p { "Click a header to sort, again to flip. Type to filter. Page through. Every state is a URL." }
-        (paged_table(&caps, "files", "/table", &cols, &rows, sort, &q, pg, per, total))
+        (paged_table(&caps, "files", "/table", &cols, &rows, total, PagedTableOptions::default().sort(sort).filter(&q).page(pg).per_page(per)))
     })
 }
 
@@ -240,7 +241,7 @@ async fn wizard_page(caps: Caps, jar: CookieJar, state: UiState) -> (UiState, Ma
     let body = page(&caps, &jar, "Wizard", html! {
         (flash(&caps, state.flash()))
         p { "Three steps, one form each. Back is a link; what you typed is kept on the server." }
-        (wizard(&caps, "signup", "/wizard", &steps, &state, "Create account"))
+        (wizard(&caps, "signup", "/wizard", &steps, &state, WizardOptions::default().finish("Create account")))
     });
     (state, body)
 }
@@ -362,7 +363,7 @@ async fn inputs_page(caps: Caps, jar: CookieJar, state: UiState) -> (UiState, Ma
         (flash(&caps, state.flash()))
         form id="inputs" data-wo="swap" class="wo-form" method="post" action="/inputs" {
             div class="wo-field" { label for="size" { "Size" } (select(&caps, "size", &options, size)) }
-            div class="wo-field" { label for="f-volume" { "Volume" } (range(&caps, "volume", 0, 100, 5, volume.parse().unwrap_or(40))) }
+            div class="wo-field" { label for="f-volume" { "Volume" } (range(&caps, "volume", volume.parse().unwrap_or(40), RangeOptions::default().step(5))) }
             div class="wo-field" { label for="f-accent" { "Accent" } (color(&caps, "accent", accent)) }
             button type="submit" class="wo-primary" { "Save" }
         }

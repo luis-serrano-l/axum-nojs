@@ -11,7 +11,7 @@ fn main() {
     let caps = if fallback { Caps::NONE } else { Caps::all() };
     let page = layout(&caps, "webonsive example", Theme::Auto, html! {
         h1 { "Hello from webonsive" }
-        (dialog(&caps, "hi", "Open a dialog", html! { p { "Closed by the platform, not by script." } }, false))
+        (dialog(&caps, "hi", "Open a dialog", html! { p { "Closed by the platform, not by script." } }, Default::default()))
         " "
         (popover_menu(&caps, "menu", "Menu", &[("Docs", "/docs"), ("Source", "/src")]))
         h2 { "Tabs" }

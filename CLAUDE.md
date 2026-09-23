@@ -59,7 +59,10 @@ scripts/verify.sh                  # everything above plus a <script> grep and t
 4. Root element carries a single `wo-<component>` class; sub-parts use `wo-<component>-<part>`.
    Output should be readable via `curl`.
 5. No macros beyond `html!`. Signature order: `caps: &Caps` first, then `id`, required args,
-   then options. Branch on `caps.has(Cap::X)` and emit only one variant, never both.
+   then options. More than three arguments after `id` means the rest go in a `<Name>Options`
+   struct in the same file: `Default` impl, one builder setter per field, re-exported from
+   `lib.rs` beside the function, and the doc header shows both `Default::default()` and one
+   full form. Branch on `caps.has(Cap::X)` and emit only one variant, never both.
    A root that should update in place gets `id=(enhance::swap_id(prefix, key))` and
    `data-wo="swap"`; the markup must behave identically without the script.
 6. Server-held state (theme, counter, active tab) travels via cookie or `?query=`; mutations use

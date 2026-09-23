@@ -22,7 +22,7 @@
 //! // `Caps` says what the browser supports; the demo reads it from a cookie set by beacons.
 //! let caps = Caps::all();
 //! let page = layout(&caps, "Hello", Theme::Auto, html! {
-//!     (dialog(&caps, "hi", "Say hi", html! { p { "Hello from a <dialog>." } }, false))
+//!     (dialog(&caps, "hi", "Say hi", html! { p { "Hello from a <dialog>." } }, Default::default()))
 //! });
 //! // The only script is the optional enhancement tag; the page works without it.
 //! assert_eq!(page.into_string().matches("<script").count(), 1);
@@ -80,24 +80,24 @@ pub use wo_caps::{Cap, Caps};
 pub use color::color;
 pub use combobox::combobox;
 pub use counter::counter;
-pub use dialog::dialog;
+pub use dialog::{DialogOptions, dialog};
 pub use flash::flash;
 pub use form::{Field, FieldKind, form};
 pub use layout::layout;
-pub use paged_table::paged_table;
-pub use pager::pager;
+pub use paged_table::{PagedTableOptions, paged_table};
+pub use pager::{PagerOptions, pager};
 pub use popover::popover_menu;
-pub use range::range;
+pub use range::{RangeOptions, range};
 pub use select::select;
 #[cfg(feature = "http")]
 pub use state::prg;
 pub use state::UiState;
 #[cfg(feature = "http")]
 pub use stream::{Streamed, slot};
-pub use table::table;
+pub use table::{TableOptions, table};
 pub use tabs::tabs;
 pub use theme::{Theme, theme_toggle};
-pub use wizard::wizard;
+pub use wizard::{WizardOptions, wizard};
 
 /// All component stylesheets, concatenated. `layout` inlines this once per page.
 pub fn stylesheet() -> String {

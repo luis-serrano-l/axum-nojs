@@ -13,8 +13,9 @@
 //! round trip.
 //!
 //! ```rust
-//! use webonsive::{Caps, range};
-//! let m = range(&Caps::all(), "volume", 0, 100, 5, 40);
+//! use webonsive::{Caps, range, range::RangeOptions};
+//! let m = range(&Caps::all(), "volume", 40, Default::default());
+//! let m = range(&Caps::all(), "volume", 40, RangeOptions::default().min(0).max(100).step(5));
 //! assert!(m.into_string().contains("<output"));
 //! ```
 
@@ -22,8 +23,46 @@ use maud::{Markup, html};
 
 use crate::Caps;
 
+/// Options for [`range`]; `Default::default()` is 0 to 100 in steps of 1.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct RangeOptions {
+    /// Lowest value.
+    pub min: i64,
+    /// Highest value.
+    pub max: i64,
+    /// Distance between allowed values.
+    pub step: i64,
+}
+
+impl Default for RangeOptions {
+    fn default() -> Self {
+        RangeOptions { min: 0, max: 100, step: 1 }
+    }
+}
+
+impl RangeOptions {
+    /// Lowest value.
+    pub fn min(mut self, min: i64) -> Self {
+        self.min = min;
+        self
+    }
+
+    /// Highest value.
+    pub fn max(mut self, max: i64) -> Self {
+        self.max = max;
+        self
+    }
+
+    /// Distance between allowed values.
+    pub fn step(mut self, step: i64) -> Self {
+        self.step = step.max(1);
+        self
+    }
+}
+
 /// A range input named `name`, with the server's current `value` shown beside it.
-pub fn range(_caps: &Caps, name: &str, min: i64, max: i64, step: i64, value: i64) -> Markup {
+pub fn range(_caps: &Caps, name: &str, value: i64, options: RangeOptions) -> Markup {
+    let RangeOptions { min, max, step } = options;
     let list = format!("{name}-ticks");
     let id = format!("f-{name}");
     html! {

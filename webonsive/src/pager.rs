@@ -19,17 +19,49 @@
 //!
 //! ```rust
 //! use maud::html;
-//! use webonsive::{Caps, pager};
+//! use webonsive::{Caps, pager, pager::PagerOptions};
 //! let rows = vec![html!{ li{"a"} }, html!{ li{"b"} }];
-//! let m = pager(&Caps::all(), "/list", &rows, 1, 10, 2);
+//! let m = pager(&Caps::all(), "/list", &rows, 2, Default::default());
+//! let m = pager(&Caps::all(), "/list", &rows, 30, PagerOptions::default().page(2).per_page(1));
+//! assert!(m.into_string().contains("?page=3#more"));
 //! ```
 
 use maud::{Markup, html};
 
 use crate::{Cap, Caps, enhance};
 
+/// Options for [`pager`]; `Default::default()` is page 1 of 10 rows per page.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct PagerOptions {
+    /// The page being shown, 1-based; `items` holds the rows of pages 1..=page.
+    pub page: usize,
+    /// Rows per page.
+    pub per_page: usize,
+}
+
+impl Default for PagerOptions {
+    fn default() -> Self {
+        PagerOptions { page: 1, per_page: 10 }
+    }
+}
+
+impl PagerOptions {
+    /// The page being shown, 1-based.
+    pub fn page(mut self, page: usize) -> Self {
+        self.page = page.max(1);
+        self
+    }
+
+    /// Rows per page.
+    pub fn per_page(mut self, per_page: usize) -> Self {
+        self.per_page = per_page.max(1);
+        self
+    }
+}
+
 /// `items` are the rows for pages 1..=page. `total` is the full row count.
-pub fn pager(caps: &Caps, href: &str, items: &[Markup], page: usize, per_page: usize, total: usize) -> Markup {
+pub fn pager(caps: &Caps, href: &str, items: &[Markup], total: usize, options: PagerOptions) -> Markup {
+    let PagerOptions { page, per_page } = options;
     let vt = caps.has(Cap::ViewTransitions);
     let shown = items.len();
     let has_more = page * per_page < total;

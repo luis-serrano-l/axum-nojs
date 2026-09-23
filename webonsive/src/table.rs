@@ -20,10 +20,12 @@
 //!
 //! ```rust
 //! use maud::html;
-//! use webonsive::{Caps, table, table::Column};
+//! use webonsive::{Caps, table, table::{Column, TableOptions}};
 //! let cols = [Column::sortable("name", "Name"), Column::sortable("size", "Size"), Column::plain("note", "Note")];
 //! let rows = vec![vec![html!{"a.txt"}, html!{"1 KB"}, html!{"—"}]];
-//! let m = table(&Caps::all(), "files", "/table", &cols, &rows, Some(("name", false)), "", &[]);
+//! let m = table(&Caps::all(), "files", "/table", &cols, &rows, Default::default());
+//! let m = table(&Caps::all(), "files", "/table", &cols, &rows,
+//!               TableOptions::default().sort(Some(("name", false))).filter("a").keep(&[("per", "5")]));
 //! assert!(m.into_string().contains("aria-sort=\"ascending\""));
 //! ```
 
@@ -62,20 +64,41 @@ pub fn sort_from_query<'a>(columns: &[Column<'a>], sort: Option<&str>, dir: Opti
     Some((col.key, dir == Some("desc")))
 }
 
-/// `rows` are already sorted and filtered by the caller. `sort` is `(key, descending)`;
-/// `filter` is the current search text, echoed into the box and kept in the sort links.
-/// `keep` are extra query pairs (a page size, say) carried by every link and the filter form.
-#[allow(clippy::too_many_arguments)]
-pub fn table(
-    caps: &Caps,
-    id: &str,
-    href: &str,
-    columns: &[Column],
-    rows: &[Vec<Markup>],
-    sort: Option<(&str, bool)>,
-    filter: &str,
-    keep: &[(&str, &str)],
-) -> Markup {
+/// Options for [`table`]; `Default::default()` is unsorted, unfiltered, no extra query pairs.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct TableOptions<'a> {
+    /// The current sort as `(key, descending)`, usually from [`sort_from_query`].
+    pub sort: Option<(&'a str, bool)>,
+    /// The current search text, echoed into the box and kept in the sort links.
+    pub filter: &'a str,
+    /// Extra query pairs (a page size, say) carried by every link and the filter form.
+    pub keep: &'a [(&'a str, &'a str)],
+}
+
+impl<'a> TableOptions<'a> {
+    /// The current sort as `(key, descending)`.
+    pub fn sort(mut self, sort: Option<(&'a str, bool)>) -> Self {
+        self.sort = sort;
+        self
+    }
+
+    /// The current search text.
+    pub fn filter(mut self, filter: &'a str) -> Self {
+        self.filter = filter;
+        self
+    }
+
+    /// Extra query pairs carried by every link and the filter form.
+    pub fn keep(mut self, keep: &'a [(&'a str, &'a str)]) -> Self {
+        self.keep = keep;
+        self
+    }
+}
+
+/// `rows` are already sorted and filtered by the caller; `options` says how, so the links
+/// and the filter box reflect it.
+pub fn table(caps: &Caps, id: &str, href: &str, columns: &[Column], rows: &[Vec<Markup>], options: TableOptions) -> Markup {
+    let TableOptions { sort, filter, keep } = options;
     let vt = caps.has(Cap::ViewTransitions).then(|| format!("view-transition-name: wo-table-{id}"));
     let mut q = if filter.is_empty() { String::new() } else { format!("&q={}", encode(filter)) };
     for (k, v) in keep {
@@ -160,7 +183,8 @@ mod tests {
     #[test]
     fn links_flip_direction_and_keep_the_filter() {
         let cols = [Column::sortable("name", "Name"), Column::plain("note", "Note")];
-        let m = table(&Caps::NONE, "t", "/t", &cols, &[], Some(("name", false)), "a b", &[("per", "5")]).into_string();
+        let opts = TableOptions::default().sort(Some(("name", false))).filter("a b").keep(&[("per", "5")]);
+        let m = table(&Caps::NONE, "t", "/t", &cols, &[], opts).into_string();
         assert!(m.contains("href=\"/t?sort=name&amp;dir=desc&amp;q=a+b&amp;per=5\""), "{m}");
         assert!(m.contains("name=\"per\" value=\"5\""));
         assert!(m.contains("href=\"/t?sort=name&amp;dir=asc&amp;per=5\""), "clear link");

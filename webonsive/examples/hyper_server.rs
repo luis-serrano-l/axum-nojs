@@ -17,7 +17,7 @@ use hyper::{Method, Request, Response, StatusCode, header};
 use hyper_util::rt::TokioIo;
 use maud::html;
 use tokio::net::TcpListener;
-use webonsive::{Caps, Theme, UiState, caps, counter, dialog, enhance, layout, prg, tabs};
+use webonsive::{Caps, Theme, UiState, caps, counter, dialog, dialog::DialogOptions, enhance, layout, prg, tabs};
 
 type Reply = Response<Full<Bytes>>;
 
@@ -56,7 +56,7 @@ async fn handle(req: Request<Incoming>) -> Result<Reply, Infallible> {
             let page = layout(&caps, "webonsive on hyper", Theme::Auto, html! {
                 h1 { "webonsive on hyper" }
                 p { "This browser supports: " @for n in caps.names() { code { (n) } " " } }
-                (dialog(&caps, "d", "Open dialog", html! { p { "Closed by the platform, not by script." } }, state.dialog() == Some("d")))
+                (dialog(&caps, "d", "Open dialog", html! { p { "Closed by the platform, not by script." } }, DialogOptions::default().open(state.dialog() == Some("d"))))
                 h2 { "Tabs" }
                 (tabs(&caps, "demo", &[("First", html! { p { "Tab state lives in the URL and a cookie." } }),
                                       ("Second", html! { p { "Reload, leave, come back: still here." } })], Some(&state)))

@@ -16,7 +16,7 @@ use webonsive::{Caps, layout, dialog, Theme};
 // `Caps` is what the server knows about the browser; in Axum it is an extractor.
 let caps = Caps::all();
 let page = layout(&caps, "Hello", Theme::Auto, html! {
-    (dialog(&caps, "hi", "Say hi", html! { p { "Hello from a <dialog>." } }))
+    (dialog(&caps, "hi", "Say hi", html! { p { "Hello from a <dialog>." } }, Default::default()))
 });
 ```
 
@@ -58,7 +58,9 @@ component gives the HTML to another template engine.
 
 - One component = one file in `webonsive/src/`. Each starts with a `//!` header: what it does,
   the platform features it uses (with browser baseline), the fallback, a usage example.
-- Signatures are uniform: `fn name(&caps, id, ...required, ...) -> Markup`. No macros beyond `html!`.
+- Signatures are uniform: `fn name(&caps, id, ...required, options) -> Markup`. Anything past the
+  required arguments is a plain `XOptions` struct with `Default` and builder setters
+  (`DialogOptions::default().open(true)`), so the short call is `Default::default()`. No macros beyond `html!`.
 - `Caps` is server-side feature detection with no script: `@supports` beacons set one cookie per
   capability, and each component emits only the variant that browser needs (see `/caps`).
   `?caps=popover,anchor` on any URL forces a set. The protocol is three plain functions

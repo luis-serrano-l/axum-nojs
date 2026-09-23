@@ -77,10 +77,10 @@ matrix and findings are updated, and the work is committed. Unknowns become entr
 - [x] Spec entries, README matrix regenerated, FINDINGS updated
 
 ## M11 · Options structs instead of positional arguments
-- [ ] Each component with more than three arguments after `id` takes an `Options` struct with `Default` (`DialogOptions { open, close_label, .. }`)
-- [ ] Builder-style setters (`.open(true)`) on every options struct; no macros
-- [ ] Old signatures removed in the same change, all call sites (demo, examples, doctests, tests) updated
-- [ ] Doc headers show the short form `dialog(&caps, "id", "title", body, Default::default())` and one full form
+- [x] Each component with more than three arguments after `id` takes an `Options` struct with `Default` (`DialogOptions { open, close_label, .. }`)
+- [x] Builder-style setters (`.open(true)`) on every options struct; no macros
+- [x] Old signatures removed in the same change, all call sites (demo, examples, doctests, tests) updated
+- [x] Doc headers show the short form `dialog(&caps, "id", "title", body, Default::default())` and one full form
 
 ## M12 · Theming guide
 - [ ] `layout::Tokens` struct (`accent`, `bg`, `fg`, …, light and dark) with `Default` = ink and moss; `layout_with(&caps, title, theme, &tokens, body)` emits the overrides once per page

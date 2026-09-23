@@ -18,35 +18,72 @@
 //!
 //! ```rust
 //! use maud::html;
-//! use webonsive::{Caps, paged_table, table::Column};
+//! use webonsive::{Caps, paged_table, paged_table::PagedTableOptions, table::Column};
 //! let cols = [Column::sortable("name", "Name"), Column::plain("note", "Note")];
 //! let rows = vec![vec![html!{"a"}, html!{"b"}]];
-//! let m = paged_table(&Caps::all(), "files", "/table", &cols, &rows, None, "", 2, 10, 36);
+//! let m = paged_table(&Caps::all(), "files", "/table", &cols, &rows, 36, Default::default());
+//! let m = paged_table(&Caps::all(), "files", "/table", &cols, &rows, 36,
+//!                     PagedTableOptions::default().sort(Some(("name", true))).filter("a").page(2).per_page(10));
 //! assert!(m.into_string().contains("11–20 of 36"));
 //! ```
 
 use maud::{Markup, html};
 
-use crate::table::{Column, encode, table};
+use crate::table::{Column, TableOptions, encode, table};
 use crate::Caps;
 
 /// Page sizes offered in the select.
 pub const PAGE_SIZES: [usize; 4] = [5, 10, 25, 50];
 
-/// `rows` are the rows of `page` (1-based) only; `per_page` and `total` size the pager.
-#[allow(clippy::too_many_arguments)]
-pub fn paged_table(
-    caps: &Caps,
-    id: &str,
-    href: &str,
-    columns: &[Column],
-    rows: &[Vec<Markup>],
-    sort: Option<(&str, bool)>,
-    filter: &str,
-    page: usize,
-    per_page: usize,
-    total: usize,
-) -> Markup {
+/// Options for [`paged_table`]; `Default::default()` is page 1 of 10, unsorted, unfiltered.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct PagedTableOptions<'a> {
+    /// The current sort as `(key, descending)`, usually from [`crate::table::sort_from_query`].
+    pub sort: Option<(&'a str, bool)>,
+    /// The current search text.
+    pub filter: &'a str,
+    /// The page being shown, 1-based; `rows` holds that page only.
+    pub page: usize,
+    /// Rows per page; one of [`PAGE_SIZES`] is selected in the size control.
+    pub per_page: usize,
+}
+
+impl Default for PagedTableOptions<'_> {
+    fn default() -> Self {
+        PagedTableOptions { sort: None, filter: "", page: 1, per_page: PAGE_SIZES[1] }
+    }
+}
+
+impl<'a> PagedTableOptions<'a> {
+    /// The current sort as `(key, descending)`.
+    pub fn sort(mut self, sort: Option<(&'a str, bool)>) -> Self {
+        self.sort = sort;
+        self
+    }
+
+    /// The current search text.
+    pub fn filter(mut self, filter: &'a str) -> Self {
+        self.filter = filter;
+        self
+    }
+
+    /// The page being shown, 1-based.
+    pub fn page(mut self, page: usize) -> Self {
+        self.page = page;
+        self
+    }
+
+    /// Rows per page.
+    pub fn per_page(mut self, per_page: usize) -> Self {
+        self.per_page = per_page;
+        self
+    }
+}
+
+/// `rows` are the rows of the current page only; `total` is the full row count after
+/// filtering, which sizes the page links.
+pub fn paged_table(caps: &Caps, id: &str, href: &str, columns: &[Column], rows: &[Vec<Markup>], total: usize, options: PagedTableOptions) -> Markup {
+    let PagedTableOptions { sort, filter, page, per_page } = options;
     let per_page = per_page.max(1);
     let pages = total.div_ceil(per_page).max(1);
     let page = page.clamp(1, pages);
@@ -63,7 +100,7 @@ pub fn paged_table(
     let link = |n: usize| format!("{href}?{base}per={per}&page={n}");
     html! {
         div class="wo-paged-table" {
-            (table(caps, id, href, columns, rows, sort, filter, &[("per", &per)]))
+            (table(caps, id, href, columns, rows, TableOptions { sort, filter, keep: &[("per", &per)] }))
             nav class="wo-paged-table-nav" aria-label="Pages" {
                 output class="wo-paged-table-range" { (first) "–" (last) " of " (total) }
                 ul class="wo-paged-table-pages" {
@@ -108,12 +145,13 @@ mod tests {
     #[test]
     fn links_keep_sort_filter_and_size() {
         let cols = [Column::sortable("n", "N")];
-        let m = paged_table(&Caps::NONE, "t", "/t", &cols, &[], Some(("n", true)), "x", 2, 5, 12).into_string();
+        let opts = PagedTableOptions::default().sort(Some(("n", true))).filter("x").page(2).per_page(5);
+        let m = paged_table(&Caps::NONE, "t", "/t", &cols, &[], 12, opts).into_string();
         assert!(m.contains("href=\"/t?sort=n&amp;dir=desc&amp;q=x&amp;per=5&amp;page=3\""), "{m}");
         assert!(m.contains("rel=\"prev\"") && m.contains("rel=\"next\""));
         assert!(m.contains("6–10 of 12"));
         assert!(m.contains("value=\"5\" selected"));
-        let empty = paged_table(&Caps::NONE, "t", "/t", &cols, &[], None, "", 9, 10, 0).into_string();
+        let empty = paged_table(&Caps::NONE, "t", "/t", &cols, &[], 0, PagedTableOptions::default().page(9)).into_string();
         assert!(empty.contains("0–0 of 0") && !empty.contains("rel="));
     }
 }

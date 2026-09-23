@@ -19,11 +19,12 @@
 //!
 //! ```rust
 //! use maud::html;
-//! use webonsive::{Caps, UiState, wizard, wizard::Step};
+//! use webonsive::{Caps, UiState, wizard, wizard::{Step, WizardOptions}};
 //! let steps = [Step { title: "Account", body: html! { input name="email"; } },
 //!              Step { title: "Review", body: html! { p { "email: a@b.c" } } }];
 //! let state = UiState::parse("/wizard", "step.signup=1", "");
-//! let m = wizard(&Caps::all(), "signup", "/wizard", &steps, &state, "Create account");
+//! let m = wizard(&Caps::all(), "signup", "/wizard", &steps, &state, Default::default());
+//! let m = wizard(&Caps::all(), "signup", "/wizard", &steps, &state, WizardOptions::default().finish("Create account"));
 //! assert!(m.into_string().contains("aria-current=\"step\""));
 //! ```
 
@@ -39,10 +40,31 @@ pub struct Step {
     pub body: Markup,
 }
 
+/// Options for [`wizard`]; `Default::default()` labels the last button "Finish".
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct WizardOptions<'a> {
+    /// Label of the last step's submit button.
+    pub finish: &'a str,
+}
+
+impl Default for WizardOptions<'_> {
+    fn default() -> Self {
+        WizardOptions { finish: "Finish" }
+    }
+}
+
+impl<'a> WizardOptions<'a> {
+    /// Label of the last step's submit button.
+    pub fn finish(mut self, finish: &'a str) -> Self {
+        self.finish = finish;
+        self
+    }
+}
+
 /// `steps.last()` is the review step. Each POST to `action` carries `step=<n>` (0-based) and
 /// the step's fields; the handler stores them and redirects to `state.link("step.<id>", n+1)`.
-/// `finish` is the label of the last step's button.
-pub fn wizard(_caps: &Caps, id: &str, action: &str, steps: &[Step], state: &UiState, finish: &str) -> Markup {
+pub fn wizard(_caps: &Caps, id: &str, action: &str, steps: &[Step], state: &UiState, options: WizardOptions) -> Markup {
+    let WizardOptions { finish } = options;
     let key = format!("step.{id}");
     let current = state.step(id).min(steps.len().saturating_sub(1));
     let last = current + 1 == steps.len();
@@ -104,12 +126,12 @@ mod tests {
             Step { title: "C", body: html! {} },
         ];
         let state = UiState::parse("/w", "step.x=1", "");
-        let m = wizard(&Caps::NONE, "x", "/w", &steps, &state, "Done").into_string();
+        let m = wizard(&Caps::NONE, "x", "/w", &steps, &state, WizardOptions::default().finish("Done")).into_string();
         assert!(m.contains("class=\"wo-wizard-done\"><a href=\"/w?step.x=0\">A</a>"), "{m}");
         assert!(m.contains("aria-current=\"step\"><span>B</span>"));
         assert!(m.contains("value=\"1\"") && m.contains(">Next<") && !m.contains(">Done<"));
         let end = UiState::parse("/w", "step.x=9", "");
-        let m = wizard(&Caps::NONE, "x", "/w", &steps, &end, "Done").into_string();
+        let m = wizard(&Caps::NONE, "x", "/w", &steps, &end, WizardOptions::default().finish("Done")).into_string();
         assert!(m.contains(">Done<") && m.contains("href=\"/w?step.x=1\">Back<"));
     }
 }

@@ -16,16 +16,50 @@
 //!
 //! ```rust
 //! use maud::html;
-//! use webonsive::{Caps, dialog};
-//! let m = dialog(&Caps::all(), "confirm", "Delete", html! { p { "Are you sure?" } }, false);
+//! use webonsive::{Caps, dialog, dialog::DialogOptions};
+//! let m = dialog(&Caps::all(), "confirm", "Delete", html! { p { "Are you sure?" } }, Default::default());
+//! let m = dialog(&Caps::all(), "confirm", "Delete", html! { p { "Are you sure?" } },
+//!                DialogOptions::default().open(true).close_label("Keep it"));
+//! assert!(m.into_string().contains("<dialog id=\"confirm\" closedby=\"any\" open>"));
 //! ```
 
 use maud::{Markup, html};
 
 use crate::{Cap, Caps};
 
+/// Options for [`dialog`]; `Default::default()` is a closed dialog with a "Close" button.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct DialogOptions<'a> {
+    /// Render the dialog already open (non-modal, no backdrop), for example after a
+    /// redirect to `?dialog=<id>` read through `UiState::dialog()`.
+    pub open: bool,
+    /// Label of the closing button.
+    pub close_label: &'a str,
+}
+
+impl Default for DialogOptions<'_> {
+    fn default() -> Self {
+        DialogOptions { open: false, close_label: "Close" }
+    }
+}
+
+impl<'a> DialogOptions<'a> {
+    /// Render the dialog already open.
+    pub fn open(mut self, open: bool) -> Self {
+        self.open = open;
+        self
+    }
+
+    /// Label of the closing button.
+    pub fn close_label(mut self, label: &'a str) -> Self {
+        self.close_label = label;
+        self
+    }
+}
+
 /// A modal dialog. `id` must be unique on the page; `trigger` is the opening button's label.
-pub fn dialog(caps: &Caps, id: &str, trigger: &str, body: Markup, open: bool) -> Markup {
+pub fn dialog(caps: &Caps, id: &str, trigger: &str, body: Markup, options: DialogOptions) -> Markup {
+    let DialogOptions { open, close_label } = options;
     let invokers = caps.has(Cap::Invokers);
     html! {
         div class="wo-dialog" {
@@ -38,10 +72,10 @@ pub fn dialog(caps: &Caps, id: &str, trigger: &str, body: Markup, open: bool) ->
                 div class="wo-dialog-body" { (body) }
                 @if invokers {
                     form method="dialog" class="wo-dialog-actions" {
-                        button type="submit" class="wo-primary" { "Close" }
+                        button type="submit" class="wo-primary" { (close_label) }
                     }
                 } @else {
-                    p class="wo-dialog-actions" { a href="#" role="button" { "Close" } }
+                    p class="wo-dialog-actions" { a href="#" role="button" { (close_label) } }
                 }
             }
         }
