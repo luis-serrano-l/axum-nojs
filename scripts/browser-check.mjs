@@ -64,6 +64,23 @@ try {
   assert(await js("return document.activeElement.name") === "q", "combobox: focus stays in the input");
   assert(await navigations() === 1, "combobox: searched without a reload");
 
+  // Table: a sort link re-renders the rows in place, URL follows.
+  await go("/table?per=5");
+  await click(".wo-table th a[href*='sort=size']");
+  await until(async () => (await js("return document.querySelector('.wo-table th[aria-sort]')?.textContent.trim()")) === "Size▲", "sort by size");
+  assert(await js("return location.search") === "?sort=size&dir=asc&per=5", "table: URL follows the sort");
+  assert(await navigations() === 1, "table: sorted without a reload");
+
+  // Wizard: Next posts, PRG lands on step 2 in place, Back keeps the value.
+  await go("/wizard");
+  await type("input[name=name]", "Ada");
+  await type("input[name=email]", "ada@example.org");
+  await click(".wo-wizard button[type=submit]");
+  await until(async () => (await text(".wo-wizard li[aria-current=step]")) === "Preferences", "wizard step 2");
+  assert(await navigations() === 1, "wizard: advanced without a reload");
+  await click(".wo-wizard-back");
+  await until(async () => (await js("return document.querySelector('input[name=name]')?.value")) === "Ada", "wizard back keeps the name");
+
   // Range: output mirrors while moving, before any submit.
   await go("/inputs");
   await type("input[type=range]", ""); // ArrowRight

@@ -34,7 +34,7 @@ scripts/verify.sh      # build + clippy -D warnings + tests + screenshots + <scr
 to `tests/shots/`, which is also the proof that every route works with no script. What Blitz
 cannot render is listed with issue links in `FINDINGS.md`. `scripts/browser-check.mjs` drives
 headless Firefox through geckodriver to check the enhancement script (in-place counter, tabs,
-search as you type, live range output, theme).
+search as you type, in-place table sort, wizard steps, live range output, theme).
 
 ## Use with any server
 

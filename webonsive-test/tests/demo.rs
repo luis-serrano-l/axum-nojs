@@ -114,3 +114,38 @@ async fn blitz_has_no_declarative_shadow_dom() {
     let boxes: Vec<_> = (1..=3).map(|i| fallback.bbox(&format!(".wo-stream-section:nth-of-type({i})")).unwrap()).collect();
     assert!(boxes[0].y < boxes[1].y && boxes[1].y < boxes[2].y, "sections stack in document order");
 }
+
+#[tokio::test]
+async fn table_sort_links_and_pages() {
+    let page = Page::render(demo::router(), "/table?sort=size&dir=desc&q=a&per=5&page=2", MODERN).await;
+    assert_eq!(page.count(".wo-table thead th a"), 3, "every column header is a sort link");
+    assert!(page.exists("th[aria-sort=descending] a[href*='sort=size'][href*='dir=asc']"), "sorted column flips direction");
+    assert!(page.exists("th a[href*='sort=name'][href*='q=a'][href*='per=5']"), "other links keep filter and page size");
+    assert_eq!(page.count(".wo-table tbody tr"), 5, "one page of rows");
+    assert!(page.is_visible("a[aria-current=page]"));
+    assert_eq!(page.text("a[aria-current=page]").as_deref(), Some("2"));
+    assert!(page.exists("a[rel=prev][href*='page=1']") && page.exists("a[rel=next][href*='page=3']"));
+    assert_eq!(page.text(".wo-paged-table-range").as_deref(), Some("6–10 of 21"));
+    assert!(page.exists("select[name=per] option[value='5'][selected]"));
+    let rows = page.bbox(".wo-table tbody").unwrap();
+    let nav = page.bbox(".wo-paged-table-nav").unwrap();
+    assert!(nav.y >= rows.y + rows.height - 1.0, "pager sits under the rows: {nav:?} vs {rows:?}");
+    // Blitz paints sticky header cells at the viewport top (FINDINGS.md); the row still exists.
+    assert!(page.exists(".wo-table thead th"));
+}
+
+#[tokio::test]
+async fn wizard_marks_steps() {
+    let page = Page::render(demo::router(), "/wizard?step.signup=1", MODERN).await;
+    assert_eq!(page.count(".wo-wizard-steps li"), 3);
+    assert_eq!(page.text("li[aria-current=step]").as_deref(), Some("Preferences"));
+    assert!(page.exists(".wo-wizard-done a[href='/wizard?step.signup=0']"), "done step links back");
+    assert!(!page.exists(".wo-wizard-steps li:nth-child(3) a"), "future step is not a link");
+    assert!(page.is_visible("input[type=hidden][name=step][value='1'] ~ fieldset") || page.is_visible(".wo-wizard-form fieldset"));
+    assert!(page.exists("a.wo-wizard-back[href='/wizard?step.signup=0']"));
+    let steps: Vec<_> = (1..=3).map(|i| page.bbox(&format!(".wo-wizard-steps li:nth-child({i})")).unwrap()).collect();
+    assert!(steps[0].x < steps[1].x && steps[1].x < steps[2].x, "steps lay out in a row");
+    let first = Page::render(demo::router(), "/wizard", MODERN).await;
+    assert_eq!(first.text("li[aria-current=step]").as_deref(), Some("Account"));
+    assert!(!first.exists(".wo-wizard-back"), "no Back on the first step");
+}
