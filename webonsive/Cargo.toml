@@ -3,6 +3,9 @@ name = "webonsive"
 version = "0.1.0"
 edition = "2024"
 description = "Zero-JavaScript interactive HTML components for Rust servers"
+readme = "../README.md"
+keywords = ["html", "components", "maud", "axum", "no-js"]
+categories = ["web-programming", "template-engine", "gui"]
 
 [features]
 default = []

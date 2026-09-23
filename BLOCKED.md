@@ -2,7 +2,10 @@
 
 Questions only the owner can answer. Everything else in ROADMAP.md is done.
 
-## License and repository for `cargo publish`
+## License and repository for `cargo publish` (M13, box 1)
+
+Done without you: `readme`, `keywords` and `categories` are set in both crates. Still open,
+and the reason box 1 stays unticked: `license` and `repository`.
 
 `cargo publish --dry-run` succeeds for both `wo-caps` and `webonsive` (M6 and M9 boxes
 ticked). A real publish to crates.io is rejected without a `license` (or `license-file`),
