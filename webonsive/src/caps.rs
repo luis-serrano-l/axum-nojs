@@ -181,15 +181,21 @@ impl Caps {
             .collect()
     }
 
-    /// Read the flags out of a raw `Cookie:` header value.
+    /// What an unprobed browser is assumed to support: features at baseline for over two
+    /// years in every engine. It keeps the first and second page view looking the same.
+    pub const ASSUMED: Caps = Caps(1 << (Cap::Popover as u16));
+
+    /// Read the flags out of a raw `Cookie:` header value. Without a `probed` cookie the
+    /// beacons have not fired yet and [`Caps::ASSUMED`] is returned.
     pub fn from_cookie_header(header: &str) -> Caps {
-        header
+        let caps = header
             .split(';')
             .filter_map(|pair| pair.trim().split_once('='))
             .filter(|(_, value)| value.trim() == "1")
             .filter_map(|(name, _)| name.trim().strip_prefix(COOKIE_PREFIX))
             .filter_map(Cap::parse)
-            .fold(Caps::NONE, Caps::with)
+            .fold(Caps::NONE, Caps::with);
+        if caps.has(Cap::Probed) { caps } else { Caps::ASSUMED }
     }
 }
 
@@ -252,14 +258,16 @@ mod axum_glue {
         type Rejection = std::convert::Infallible;
 
         async fn from_request_parts(parts: &mut Parts, _: &S) -> Result<Caps, Self::Rejection> {
-            let caps = parts
+            // Join every Cookie header first: `from_cookie_header` decides between the
+            // parsed flags and `Caps::ASSUMED` from the whole set.
+            let header = parts
                 .headers
                 .get_all(header::COOKIE)
                 .iter()
                 .filter_map(|v| v.to_str().ok())
-                .map(Caps::from_cookie_header)
-                .fold(Caps::NONE, |acc, c| Caps(acc.0 | c.0));
-            Ok(caps)
+                .collect::<Vec<_>>()
+                .join("; ");
+            Ok(Caps::from_cookie_header(&header))
         }
     }
 
@@ -295,9 +303,16 @@ mod tests {
             .map(|c| cookie_for(c).split(';').next().unwrap().to_string())
             .join("; ");
         assert_eq!(Caps::from_cookie_header(&header), Caps::all());
+        // Not probed yet: the assumed set, whatever else the header says.
         assert_eq!(
             Caps::from_cookie_header("wo-cap-bogus=1; wo-cap-popover=0"),
-            Caps::NONE
+            Caps::ASSUMED
+        );
+        assert_eq!(Caps::from_cookie_header(""), Caps::ASSUMED);
+        // Probed with nothing else: an old browser, no assumptions.
+        assert_eq!(
+            Caps::from_cookie_header("wo-cap-probed=1; wo-cap-popover=0"),
+            Caps::NONE.with(Cap::Probed)
         );
     }
 

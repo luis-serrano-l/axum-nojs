@@ -4,6 +4,7 @@
 use axum::{
     Form, Router,
     extract::Query,
+    http::HeaderMap,
     response::{IntoResponse, Redirect},
     routing::{get, post},
 };
@@ -318,9 +319,20 @@ async fn caps_page(caps: Caps, jar: CookieJar) -> Markup {
 #[derive(Deserialize)]
 struct ThemeForm { theme: String }
 
-async fn theme_submit(jar: CookieJar, Form(f): Form<ThemeForm>) -> (CookieJar, Redirect) {
+async fn theme_submit(jar: CookieJar, headers: HeaderMap, Form(f): Form<ThemeForm>) -> (CookieJar, Redirect) {
     let theme = Theme::parse(&f.theme);
-    (jar.add(Cookie::new("theme", theme.as_str().to_string())), Redirect::to("/"))
+    (jar.add(Cookie::new("theme", theme.as_str().to_string())), Redirect::to(&back_to(&headers)))
+}
+
+/// The path of the page a form was posted from (same-origin `Referer`), or `/`.
+fn back_to(headers: &HeaderMap) -> String {
+    headers
+        .get("referer")
+        .and_then(|v| v.to_str().ok())
+        .and_then(|url| url.splitn(4, '/').nth(3))
+        .map(|path| format!("/{path}"))
+        .filter(|path| !path.starts_with("//"))
+        .unwrap_or_else(|| "/".to_string())
 }
 
 #[cfg(test)]

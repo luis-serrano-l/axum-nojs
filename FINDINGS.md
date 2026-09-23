@@ -17,7 +17,8 @@ from `webonsive::spec` into `spec/components.json` and README.
 - **State without a framework:** the URL holds what you look at, a cookie remembers it, POST
   changes data, `303 See Other` plus a one-shot cookie carries the flash. Reload-safe.
 - **View transitions across navigations:** counters morph and lists grow without a flash in
-  Chrome and Safari; Firefox navigates normally.
+  Chrome and Safari; Firefox navigates normally. The root does not cross-fade (see "Feel"
+  below): the default 0.25 s fade made every click feel slow.
 - **Validation UX:** `required`/`pattern` block bad input; `:user-invalid` styles only after
   interaction. The server re-checks and re-renders with messages.
 - **Testing without a browser:** Blitz renders every route headless with real layout, so
@@ -35,7 +36,7 @@ from `webonsive::spec` into `spec/components.json` and README.
 | `@view-transition` (cross-document) | Firefox (unshipped) | plain navigation |
 | Declarative shadow DOM | Chrome < 111, Firefox < 123, Safari < 16.4 | in-order streaming, spliced in place |
 | `light-dark()` | Chrome < 123, Firefox < 120, Safari < 17.5 | not used: media query + `data-theme` instead |
-| First page view of any browser | everyone | the beacons have not fired yet; fallback markup |
+| First page view of any browser | everyone | the beacons have not fired yet; `Caps::ASSUMED` (popover only) |
 
 ## 3. What is impossible without script
 
@@ -46,8 +47,8 @@ from `webonsive::spec` into `spec/components.json` and README.
 - Infinite scroll. Cumulative pages with one click per page is the ceiling.
 - A modal opened on page load. `<dialog open>` is visible but not modal; only `showModal()`
   gives a backdrop and focus trap. `#id` + `:target` fakes the overlay.
-- Persisting `<details>` toggles made by clicking the summary. Only the title link (a
-  navigation) persists; the instant toggle is client-only.
+- Persisting a native `<details>` toggle. The title link now fills the summary so every
+  click is a navigation; an instant client-only toggle would be undone by the next render.
 - Optimistic UI, offline behaviour, undo without a round trip.
 - Drag and drop, resizable panes, canvas or charts drawn from data.
 - Feature-detecting HTML attributes. CSS can only test CSS; `invokers` and `streaming_dsd`
@@ -83,8 +84,11 @@ the at-rule, which browsers without it ignore.
 Chrome 109 rendered unstyled buttons. A media query plus `data-theme` costs a few lines more
 CSS and works everywhere.
 
-**The first view is always the fallback.** A `<meta http-equiv=refresh>` could force a reload
-but would double the first-load cost for `curl` and crawlers too, so it is not done.
+**The first view used to be all fallbacks.** A `<meta http-equiv=refresh>` could force a reload
+but would double the first-load cost for `curl` and crawlers too, so it is not done. Instead an
+unprobed browser gets `Caps::ASSUMED`: `popover` only, at baseline in every engine since early
+2024. Everything younger (invokers, `::details-content`, anchors) still waits for the cookie,
+so the first and second page view differ only where the fallback is harmless.
 
 **Cookie lifetime is 30 days.** No negative cache: an unsupported feature simply has no cookie,
 and `probed` says the beacons ran. Once `probed` is set the beacon elements are not emitted.
@@ -156,6 +160,30 @@ The `/inputs` screenshot therefore shows the layout, not the controls.
 
 **Publishing.** `cargo publish --dry-run -p webonsive` packages and builds cleanly. A real
 publish still needs a `license` field, which is a decision for the owner (see `BLOCKED.md`).
+
+### Feel · why navigations felt slow
+
+The server answers in under a millisecond; every delay was client-side CSS.
+
+**The root cross-fade was the cost.** `@view-transition { navigation: auto }` with the default
+`::view-transition-old/new(root)` animation freezes the old page, waits for the new one and
+fades for 0.25 s on every click, redirect included. Now the root swaps instantly and only named
+parts (counter, list) morph for 160 ms. `<link rel="expect" href="#main" blocking="render">`
+holds the transition until `<main>` is parsed; streamed pages omit it because their parse ends
+with the last slot. Firefox has no cross-document transitions at all (MDN: unshipped), so it
+always did a plain reload.
+
+**Two behaviours on one summary.** The tab and accordion titles were links inside a padded
+summary: clicking the text navigated, clicking the padding toggled `<details>` natively and the
+next server render snapped it back. The link now fills the summary. The accordion draws its own
+marker with `::before` because a block-level link pushed the native marker onto its own line.
+
+**`height: auto` does not interpolate.** The `::details-content` transition snapped open while
+`content-visibility ... allow-discrete` still delayed the close. `interpolate-size:
+allow-keywords` (Chrome 129) makes both directions animate; elsewhere it snaps symmetrically.
+
+**Theme toggle went home.** The demo redirected to `/` after every theme change. It now
+redirects to the same-origin `Referer` path, `/` when there is none.
 
 ### M5 · Machine-readable spec
 

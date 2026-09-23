@@ -47,12 +47,12 @@ browser-compat-data; `no` means unshipped, so that browser gets the fallback.
 <!-- matrix:start -->
 | Component | Platform features | Chrome / Firefox / Safari | Fallback | Needs JS? |
 |---|---|---|---|---|
-| Layout | `@view-transition`, `prefers-color-scheme`, `custom properties` | 126 / no / 18.2; 76 / 67 / 12.1; 49 / 31 / 9.1 | plain navigations; colours still switch by media query and data-theme | No |
+| Layout | `@view-transition`, `prefers-color-scheme`, `custom properties` | 126 / no / 18.2; 76 / 67 / 12.1; 49 / 31 / 9.1 | plain navigations (root never cross-fades); colours still switch by media query and data-theme | No |
 | Capability beacons | `@supports`, `selector()`, `background images`, `cookies` | 28 / 22 / 9; 83 / 69 / 14.1; 1 / 1 / 1; 1 / 1 / 1 | unknown browser gets every fallback; the first view always does | No |
 | Dialog | `<dialog>`, `command="show-modal"`, `<form method="dialog">` | 37 / 98 / 15.4; 135 / 144 / 26.2; 37 / 98 / 15.4 | link to #id opens it through a :target rule, chosen server-side | No |
 | Popover menu | `popover`, `anchor-name` | 114 / 125 / 17; 125 / 147 / 26 | no anchor: UA-centred popover; no popover: <details> dropdown | No |
 | Tabs | `<details name`, `display: contents`, `::details-content` | 120 / 130 / 17.2; 65 / 37 / 11.1; 131 / 143 / 18.4 | accordion markup, chosen server-side | No |
-| Accordion | `<details name`, `::details-content` | 120 / 130 / 17.2; 131 / 143 / 18.4 | plain <details>: no exclusivity, no animation | No |
+| Accordion | `<details name`, `::details-content`, `interpolate-size` | 120 / 130 / 17.2; 131 / 143 / 18.4; 129 / no / no | plain <details>: no exclusivity, no animation | No |
 | Combobox | `<datalist>`, `<search>` | 20 / 4 / 12.1; 118 / 118 / 17 | none needed | Partly: static suggestions and per-submit results; live filtering needs script |
 | Load-more list | `view-transition-name`, `scroll-margin` | 111 / 144 / 18; 69 / 90 / 14.1 | plain navigation to ?page=n#more | Partly: click-to-load; scroll-to-load needs script |
 | Validated form | `required`, `pattern`, `:user-invalid` | 4 / 4 / 5; 4 / 4 / 5; 119 / 88 / 16.5 | server re-renders with messages; no early styling | No |

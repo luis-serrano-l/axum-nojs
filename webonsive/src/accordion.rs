@@ -4,7 +4,8 @@
 //!
 //! **Platform features:** `<details name="group">` (baseline 2024). Pass an empty group name
 //! to allow several open at once. `::details-content` (Chrome 131, Firefox 143, Safari 18.4)
-//! animates the open transition where present.
+//! plus `interpolate-size: allow-keywords` (Chrome 129 only) animate the height between `0`
+//! and `auto`; without `interpolate-size` the panel snaps.
 //!
 //! **Fallback:** `<details>` alone (baseline 2020) still toggles; only the exclusivity and the
 //! animation are lost. No `Caps` branch is needed; the markup is the same everywhere.
@@ -47,11 +48,16 @@ pub fn accordion(_caps: &Caps, group: &str, items: &[(&str, Markup)], state: Opt
 
 /// Styles for this component; included in [`crate::stylesheet`].
 pub const CSS: &str = r#"
-.wo-accordion { border: 1px solid var(--wo-line); border-radius: var(--wo-radius); overflow: hidden; }
+/* interpolate-size (Chrome 129) lets height animate to auto; elsewhere it snaps. */
+.wo-accordion { border: 1px solid var(--wo-line); border-radius: var(--wo-radius); overflow: hidden; interpolate-size: allow-keywords; }
 .wo-accordion details + details { border-top: 1px solid var(--wo-line); }
-.wo-accordion summary { cursor: pointer; padding: 0.75rem 1rem; font-weight: 600; }
+.wo-accordion summary { display: flex; align-items: center; gap: 0.5rem; list-style: none; cursor: pointer; padding: 0.75rem 1rem; font-weight: 600; }
+.wo-accordion summary::-webkit-details-marker { display: none; }
+.wo-accordion summary::before { content: "\25B8"; color: var(--wo-muted); }
+.wo-accordion details[open] > summary::before { content: "\25BE"; }
 .wo-accordion summary:hover { background: var(--wo-surface); }
-.wo-accordion summary a { color: inherit; text-decoration: none; }
+/* The link fills the rest of the summary so a click never toggles natively without the server. */
+.wo-accordion summary a { flex: 1; margin: -0.75rem -1rem -0.75rem 0; padding: 0.75rem 1rem 0.75rem 0; color: inherit; text-decoration: none; }
 .wo-accordion-body { padding: 0 1rem 1rem; }
 .wo-accordion details::details-content { transition: height 0.2s, content-visibility 0.2s allow-discrete; height: 0; overflow: hidden; }
 .wo-accordion details[open]::details-content { height: auto; }

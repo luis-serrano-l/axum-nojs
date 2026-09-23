@@ -84,7 +84,7 @@ pub const SPECS: &[ComponentSpec] = &[
             PREFERS_COLOR_SCHEME,
             f("custom properties", b("49", "31", "9.1")),
         ],
-        fallback: "plain navigations; colours still switch by media query and data-theme",
+        fallback: "plain navigations (root never cross-fades); colours still switch by media query and data-theme",
         needs_js: NeedsJs::No,
     },
     ComponentSpec {
@@ -130,7 +130,7 @@ pub const SPECS: &[ComponentSpec] = &[
     ComponentSpec {
         name: "Accordion",
         module: "accordion",
-        features: &[DETAILS_NAME, DETAILS_CONTENT],
+        features: &[DETAILS_NAME, DETAILS_CONTENT, f("interpolate-size", b("129", "no", "no"))],
         fallback: "plain <details>: no exclusivity, no animation",
         needs_js: NeedsJs::No,
     },

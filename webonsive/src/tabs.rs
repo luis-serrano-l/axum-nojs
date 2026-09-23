@@ -13,7 +13,8 @@
 //!
 //! **Server persistence:** with a `UiState`, `active` comes from `state.tab(name)` and each
 //! title is a link to `?tab.<name>=i`, so the choice survives navigation (query first, cookie
-//! after). Clicking the summary beside the title still toggles instantly without a round trip.
+//! after). The link fills the summary, so every click is a round trip: a native toggle would
+//! be undone by the next render.
 //!
 //! ```rust
 //! use maud::html;
@@ -57,7 +58,10 @@ pub const CSS: &str = r#"
   border-bottom: 2px solid transparent; margin-bottom: -1px; color: var(--wo-muted);
 }
 .wo-tabs summary::-webkit-details-marker { display: none; }
-.wo-tabs summary a { color: inherit; text-decoration: none; }
+/* The link fills the summary, so every click goes through the server (a click on bare summary
+   padding would toggle natively and be undone by the next render). */
+.wo-tabs summary a { display: block; color: inherit; text-decoration: none; }
+.wo-tabs:not(.wo-accordion) summary a { margin: -0.5rem -1rem; padding: 0.5rem 1rem; }
 .wo-tabs:not(.wo-accordion) details[open] summary { color: var(--wo-fg); border-bottom-color: var(--wo-accent); }
 /* Push every panel to a full-width row under the strip. */
 .wo-tabs details::details-content { order: 1; flex-basis: 100%; }

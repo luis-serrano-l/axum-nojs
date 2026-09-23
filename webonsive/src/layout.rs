@@ -3,9 +3,11 @@
 //! The HTML shell every demo page uses: doctype, head, inline stylesheet, `<main>`, and the
 //! capability beacons that teach the server what this browser supports.
 //!
-//! **Platform features:** `@view-transition { navigation: auto }` (Chrome 126+, Safari 18.2+)
-//! makes full-page navigations cross-fade, so server round trips feel in-place.
-//! `prefers-color-scheme` + custom properties give light/dark with no script.
+//! **Platform features:** `@view-transition { navigation: auto }` (Chrome 126+, Safari 18.2+,
+//! not Firefox) lets elements with a `view-transition-name` morph across full-page navigations.
+//! The root itself swaps instantly: the default 0.25 s cross-fade made every click feel slow.
+//! `<link rel="expect" blocking="render">` (Chrome 124+) holds the transition until `<main>`
+//! is parsed. `prefers-color-scheme` + custom properties give light/dark with no script.
 //!
 //! **Fallback:** browsers without view transitions navigate normally. Theme colours are plain
 //! custom properties switched by a media query and `data-theme`, so no `light-dark()` needed.
@@ -25,10 +27,10 @@ pub fn layout(caps: &Caps, title: &str, theme: Theme, body: Markup) -> Markup {
     html! {
         (DOCTYPE)
         html lang="en" data-theme=(theme.as_str()) {
-            (head(title))
+            (head_blocking(title))
             body {
                 (header())
-                main { (body) }
+                main id="main" { (body) }
                 (caps::beacons(caps))
             }
         }
@@ -47,6 +49,21 @@ pub fn head(title: &str) -> Markup {
     }
 }
 
+/// `<head>` plus `<link rel="expect" blocking="render">` on `#main`, so a cross-document view
+/// transition starts only once the whole page is parsed. `layout` uses it; streamed pages must
+/// not, because their parse ends only when the last slot has filled.
+fn head_blocking(title: &str) -> Markup {
+    html! {
+        head {
+            meta charset="utf-8";
+            meta name="viewport" content="width=device-width, initial-scale=1";
+            title { (title) }
+            link rel="expect" href="#main" blocking="render";
+            style { (PreEscaped(stylesheet())) }
+        }
+    }
+}
+
 /// The site header shown on every page.
 pub fn header() -> Markup {
     html! {
@@ -60,6 +77,11 @@ pub fn header() -> Markup {
 /// Styles for this component; included in [`crate::stylesheet`].
 pub const CSS: &str = r#"
 @view-transition { navigation: auto; }
+/* The root does not cross-fade: the swap is instant and only named parts morph, so a
+   navigation never feels slower than the plain reload it replaces. */
+::view-transition-old(root), ::view-transition-new(root) { animation: none; }
+::view-transition-group(*) { animation-duration: 160ms; animation-timing-function: ease-out; }
+::view-transition-old(*), ::view-transition-new(*) { animation-duration: 160ms; }
 
 :root {
   color-scheme: light dark;

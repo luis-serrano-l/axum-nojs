@@ -8,7 +8,7 @@
         { "name": "prefers-color-scheme", "baseline": { "chrome": "76", "firefox": "67", "safari": "12.1" } },
         { "name": "custom properties", "baseline": { "chrome": "49", "firefox": "31", "safari": "9.1" } }
       ],
-      "fallback": "plain navigations; colours still switch by media query and data-theme",
+      "fallback": "plain navigations (root never cross-fades); colours still switch by media query and data-theme",
       "needs_js": "no"
     },
     {
@@ -60,7 +60,8 @@
       "module": "accordion",
       "features": [
         { "name": "<details name", "baseline": { "chrome": "120", "firefox": "130", "safari": "17.2" } },
-        { "name": "::details-content", "baseline": { "chrome": "131", "firefox": "143", "safari": "18.4" } }
+        { "name": "::details-content", "baseline": { "chrome": "131", "firefox": "143", "safari": "18.4" } },
+        { "name": "interpolate-size", "baseline": { "chrome": "129", "firefox": "no", "safari": "no" } }
       ],
       "fallback": "plain <details>: no exclusivity, no animation",
       "needs_js": "no"
