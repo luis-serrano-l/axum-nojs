@@ -60,7 +60,7 @@ matrix and findings are updated, and the work is committed. Unknowns become entr
 - [x] `Caps::from_cookie_header(&str)` and `Caps::from_query(&str)` as the only entry points; the Axum extractor becomes a thin wrapper behind the `axum` feature
 - [x] Every component returns `Markup` that also implements `Render`; a `string` feature (or `.into_string()` docs) shows use without Maud templates
 - [x] `state::prg`, `flash` and `stream` compile without Axum: an `http` feature exposes `http::Response` builders, the `axum` feature wraps them
-- [ ] Example `webonsive/examples/actix_server.rs` (or `hyper_server.rs`) rendering three components with the beacon route wired by hand
+- [x] Example `webonsive/examples/actix_server.rs` (or `hyper_server.rs`) rendering three components with the beacon route wired by hand
 - [ ] README: "Use with any server" section; CLAUDE.md workspace notes updated
 
 ## M9 · `wo-caps` as its own crate

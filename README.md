@@ -113,7 +113,7 @@ webonsive/src/select.rs     <select> with <selectedcontent> where supported
 webonsive/src/range.rs      <input type=range> with ticks and a server-rendered <output>
 webonsive/src/color.rs      <input type=color> with a swatch of the saved value
 webonsive/src/spec.rs       SPECS: features, per-browser baselines, fallback, needs_js
-webonsive/examples/         render_page (no server), axum_server (--features axum)
+webonsive/examples/         render_page (no server), axum_server (--features axum), hyper_server (--features http)
 spec/components.json        generated from SPECS (cargo run -p demo -- spec write)
 docs/state.md               how state works with no script
 webonsive/src/<name>.rs     one component each: dialog, popover, tabs, accordion,
