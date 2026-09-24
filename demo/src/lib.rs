@@ -29,7 +29,7 @@ use tower_http::compression::{
 };
 
 /// Every demo path the no-script test and the screenshot test visit.
-pub const PATHS: [&str; 32] = [
+pub const PATHS: [&str; 33] = [
     "/",
     "/caps",
     "/button?loading=1",
@@ -40,6 +40,7 @@ pub const PATHS: [&str; 32] = [
     "/upload",
     "/kanban",
     "/pricing?billing=yearly",
+    "/feedback",
     "/app/signin",
     "/app/notes",
     "/stream",
@@ -81,6 +82,7 @@ pub fn router() -> Router {
         .route("/upload/file/{n}", get(upload_file))
         .route("/kanban", get(kanban_page).post(kanban_move))
         .route("/pricing", get(pricing_page))
+        .route("/feedback", get(feedback_page))
         .route("/app/signin", get(signin_page).post(signin_submit))
         .route("/app/signout", post(signout))
         .route("/app/notes", get(notes_page).post(note_add))
@@ -133,7 +135,14 @@ impl Predicate for WholeBody {
 
 /// Every component in the index: path, title (what each route passes to `page`), group, the
 /// platform features it is built on, and what it is for in plain words.
-const COMPONENTS: [(&str, &str, &str, &str, &str); 29] = [
+const COMPONENTS: [(&str, &str, &str, &str, &str); 30] = [
+    (
+        "/feedback",
+        "Alerts, progress and tooltips",
+        "Feedback",
+        "role=alert, <progress>, <meter>, :hover/:focus-within, <hr>",
+        "Callouts, bars and meters, a tooltip on hover or focus, and separators.",
+    ),
     (
         "/app/signin",
         "Sign in",
@@ -1944,6 +1953,32 @@ async fn note_delete(
 ) -> Redirect {
     notes.0.retain(|(id, _)| *id != q.id);
     ui.redirect("/app/notes").warn("Note deleted.").save(&notes)
+}
+
+async fn feedback_page(ui: Ui) -> Page {
+    page(
+        &ui,
+        "Alerts, progress and tooltips",
+        html! {
+            (ui.stack(html! {
+                // code: /feedback
+                (ui.alert("Heads up").description("Deploys pause at 18:00 on Fridays."))
+                (ui.alert("Payment failed").danger().description("The card was declined. Try another one."))
+                (ui.alert("Backups are complete").ok())
+                (ui.progress(62, 100).label("Uploading photos"))
+                (ui.progress(0, 0).label("Waiting for the server"))
+                (ui.meter(83, 0, 100).label("Disk used").low(60).high(80).optimum(0))
+                (ui.cluster(html! {
+                    (ui.tooltip("Copy the link", html! { (ui.button("").icon().label("Copy").content(html! { (Icon::Copy) })) }))
+                    (ui.separator().vertical())
+                    (ui.tooltip("Opens in a new tab", html! { (ui.link_button("Docs", "/")) }).below())
+                }))
+                (ui.separator().label("or"))
+                // end code
+                p class="nojs-note" { "Hover or tab to the buttons for their tooltips. The meter turns amber past 60 and red past 80 because its best value is 0." }
+            }).gap(6))
+        },
+    )
 }
 
 async fn button_page(ui: Ui) -> Page {

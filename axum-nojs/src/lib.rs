@@ -51,6 +51,7 @@
 #![warn(missing_docs)]
 
 pub mod accordion;
+pub mod alert;
 pub mod avatar;
 pub mod badge;
 pub mod breadcrumbs;
@@ -73,14 +74,17 @@ pub mod icon;
 pub mod input;
 pub mod kanban;
 pub mod layout;
+pub mod meter;
 pub mod paged_table;
 pub mod pager;
 pub mod palette;
 pub mod popover;
+pub mod progress;
 pub mod range;
 #[cfg(feature = "axum")]
 pub mod saved;
 pub mod select;
+pub mod separator;
 pub mod skeleton;
 pub mod spec;
 pub mod split;
@@ -93,6 +97,7 @@ pub mod table;
 pub mod tabs;
 pub mod theme;
 pub mod toast;
+pub mod tooltip;
 pub mod ui;
 pub mod upload;
 pub mod wizard;
@@ -259,6 +264,11 @@ pub const COMPONENT_CSS: &[&str] = &[
     date_picker::CSS,
     upload::CSS,
     kanban::CSS,
+    tooltip::CSS,
+    alert::CSS,
+    progress::CSS,
+    meter::CSS,
+    separator::CSS,
     dialog::CSS,
     popover::CSS,
     tabs::CSS,

@@ -689,9 +689,17 @@ script, proven in CI, with server-side flows included.
   sortable, paged table). `Form::password` added. The wizard was already at `/wizard` with its
   Blitz test. Blitz test `a_whole_app_flow_with_no_script` walks it with a cookie jar: bad
   sign-in, good sign-in, add, edit in place, delete, rendering each state.
-- [ ] Close the shadcn must-have gaps M21 does not cover: `tooltip` (popover `hint` /
+- [x] Close the shadcn must-have gaps M21 does not cover: `tooltip` (popover `hint` /
   `title` fallback), `alert`, `progress`/`meter`, `separator`, `textarea` field. Then stop:
   no JS widget shells (editors, grids, maps).
+  Done: `tooltip.rs` (CSS only: shown on `:hover`/`:focus-within`, named by
+  `aria-describedby`, off on touch screens; chosen over `popover="hint"`, which is
+  Chromium-only and needs script to open on hover), `alert.rs` (neutral, danger with
+  `role="alert"`, warn, ok; tone icons), `progress.rs` (styled `<progress>`, indeterminate
+  when `max` is 0), `meter.rs` (`<meter>` whose low/high/optimum pick ok, warn or danger),
+  `separator.rs` (`<hr>`, labelled, vertical). The textarea field already existed
+  (`ui.input(..).textarea(rows)`, `Form::textarea`). Demo `/feedback`; SPECS and README matrix;
+  the browser check focuses a tooltip's trigger and sees it shown. Stopped there.
 - [ ] Audience pages in docs: public-sector / GOV.UK-style services, strict-CSP environments,
   low bandwidth and old devices, Tor Browser "Safest", internal tools, each with the
   guarantee it relies on.

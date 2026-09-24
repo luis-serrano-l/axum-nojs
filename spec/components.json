@@ -410,6 +410,57 @@
       "needs_js_note": "drag and drop and reordering within a column need script"
     },
     {
+      "name": "Alert",
+      "module": "alert",
+      "features": [
+        { "name": "role=\"alert\"", "baseline": { "chrome": "1", "firefox": "1", "safari": "1" } },
+        { "name": "role=\"status\"", "baseline": { "chrome": "1", "firefox": "1", "safari": "1" } }
+      ],
+      "fallback": "none needed",
+      "needs_js": "no"
+    },
+    {
+      "name": "Progress",
+      "module": "progress",
+      "features": [
+        { "name": "<progress>", "baseline": { "chrome": "6", "firefox": "6", "safari": "6" } },
+        { "name": "appearance: none", "baseline": { "chrome": "84", "firefox": "80", "safari": "15.4" } }
+      ],
+      "fallback": "without the pseudo-elements a browser draws its own bar",
+      "needs_js": "partial",
+      "needs_js_note": "moving on its own needs a streamed page or the script"
+    },
+    {
+      "name": "Meter",
+      "module": "meter",
+      "features": [
+        { "name": "<meter>", "baseline": { "chrome": "6", "firefox": "16", "safari": "6" } }
+      ],
+      "fallback": "without the pseudo-elements a browser draws its own meter",
+      "needs_js": "no"
+    },
+    {
+      "name": "Tooltip",
+      "module": "tooltip",
+      "features": [
+        { "name": ":focus-within", "baseline": { "chrome": "60", "firefox": "52", "safari": "10.1" } },
+        { "name": "@media (hover: none)", "baseline": { "chrome": "41", "firefox": "64", "safari": "9" } }
+      ],
+      "fallback": "none needed",
+      "needs_js": "partial",
+      "needs_js_note": "a delay before opening and Escape to close need script"
+    },
+    {
+      "name": "Separator",
+      "module": "separator",
+      "features": [
+        { "name": "<hr>", "baseline": { "chrome": "1", "firefox": "1", "safari": "1" } },
+        { "name": "aria-orientation", "baseline": { "chrome": "1", "firefox": "1", "safari": "1" } }
+      ],
+      "fallback": "none needed",
+      "needs_js": "no"
+    },
+    {
       "name": "Toast",
       "module": "toast",
       "features": [

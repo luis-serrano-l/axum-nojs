@@ -322,6 +322,13 @@ try {
   await until(async () => await js("return !!document.querySelector('.nojs-calendar-picked[href*=\"2026-10-15\"]')"), "calendar: day picked");
   assert(await navigations() === 1, "calendar: a day picked in place");
 
+  // Tooltip: hidden until its trigger has focus (or the pointer), then shown; named by aria-describedby.
+  await go("/feedback");
+  assert(await js("return getComputedStyle(document.querySelector('.nojs-tooltip-text')).visibility") === "hidden", "tooltip: hidden at rest");
+  await js("document.querySelector('.nojs-tooltip button').focus()");
+  await until(async () => (await js("return getComputedStyle(document.querySelector('.nojs-tooltip-text')).visibility")) === "visible", "tooltip shows on focus");
+  assert(await js("return document.activeElement.getAttribute('aria-describedby') === document.querySelector('.nojs-tooltip-text').id"), "tooltip: shown on focus and named by aria-describedby");
+
   // Date picker: the button opens the calendar popover; a day is a radio the form posts.
   await go("/calendar?due=2026-09-24");
   await click("#f-due");

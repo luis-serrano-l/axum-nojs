@@ -254,6 +254,11 @@ browser-compat-data; `no` means unshipped, so that browser gets the fallback.
 | Streaming | `<template shadowrootmode="open">`, `<slot name`, `Chunked transfer` | 111 / 123 / 16.4; 53 / 63 / 10; 1 / 1 / 1 | in-order streaming with in-place splicing | No |
 | Upload | `<input type="file" accept multiple>`, `<progress>`, `loading="lazy"` | 1 / 1 / 1; 6 / 6 / 6; 77 / 75 / 15.4 | none needed: a plain multipart post; the progress bar needs the enhancement script | Partly: upload progress and a preview before sending need script |
 | Kanban | `<form method="post">`, `scroll-snap-type`, `view-transition-name` | 1 / 1 / 1; 69 / 68 / 11; 111 / 144 / 18 | without view transitions a moved card is simply in its new column | Partly: drag and drop and reordering within a column need script |
+| Alert | `role="alert"`, `role="status"` | 1 / 1 / 1; 1 / 1 / 1 | none needed | No |
+| Progress | `<progress>`, `appearance: none` | 6 / 6 / 6; 84 / 80 / 15.4 | without the pseudo-elements a browser draws its own bar | Partly: moving on its own needs a streamed page or the script |
+| Meter | `<meter>` | 6 / 16 / 6 | without the pseudo-elements a browser draws its own meter | No |
+| Tooltip | `:focus-within`, `@media (hover: none)` | 60 / 52 / 10.1; 41 / 64 / 9 | none needed | Partly: a delay before opening and Escape to close need script |
+| Separator | `<hr>`, `aria-orientation` | 1 / 1 / 1; 1 / 1 / 1 | none needed | No |
 | Toast | `position: fixed`, `role="status"`, `role="alert"`, `@keyframes`, `prefers-reduced-motion` | 1 / 1 / 1; 1 / 1 / 1; 1 / 1 / 1; 43 / 16 / 9; 74 / 63 / 10.1 | without CSS animations toasts stay until the next page | No |
 | Breadcrumbs | `aria-current="page"`, `::before`, `<details>` | 1 / 1 / 1; 1 / 1 / 1; 12 / 49 / 6 | none needed | No |
 | Skeleton | `aria-busy`, `role="status"`, `@keyframes`, `prefers-reduced-motion` | 1 / 1 / 1; 1 / 1 / 1; 43 / 16 / 9; 74 / 63 / 10.1 | without CSS animations the bars are still | No |
