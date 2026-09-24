@@ -1964,6 +1964,20 @@ mod tests {
                     .await
                     .unwrap();
                 let html = String::from_utf8(body.to_vec()).unwrap();
+                // The whole page, inline stylesheet included (README: "What a page weighs").
+                // A streamed page with declarative shadow DOM carries the stylesheet twice
+                // (styles do not cross into the shadow root), so it gets its own budget.
+                let budget = if html.contains("shadowrootmode") {
+                    128
+                } else {
+                    96
+                } * 1024;
+                assert!(
+                    html.len() < budget,
+                    "{path}: {} bytes, over the {} KB page budget",
+                    html.len(),
+                    budget / 1024
+                );
                 assert_eq!(
                     html.matches("<script").count(),
                     1,

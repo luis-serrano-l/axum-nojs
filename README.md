@@ -142,6 +142,24 @@ component gives the HTML to another template engine.
   matching shadcn docs page, for comparing the look by eye.
   A test fails if any component CSS names a colour instead of a token.
 
+## What a page weighs
+
+Measured on the demo's release build (M26), gzip as served; every page inlines the whole
+stylesheet, so there is no second request for CSS, and no script is required.
+
+| | raw | gzip |
+|---|---|---|
+| The whole stylesheet, every component (`stylesheet()`) | 57.6 KB | 10.3 KB |
+| A demo page, stylesheet included (`/dialog` … `/calendar`) | 62–80 KB | 11.8–13.5 KB |
+| `/stream` with declarative shadow DOM (the stylesheet twice: once for the shadow root) | 117 KB | 20.4 KB |
+| JavaScript required | 0 | 0 |
+| The optional script, `/nojs/enhance.js` (cached forever) | 10.6 KB | 3.6 KB |
+
+For comparison, `maud-ui` 0.20.3 (the same stack and look) ships 313 KB of CSS (44 KB gzipped)
+and needs an 89 KB script (24 KB gzipped) plus htmx. Two tests keep these numbers honest: the
+stylesheet stays under 64 KB, and every demo page under 96 KB (128 KB for the shadow-DOM
+stream) in `cargo test`.
+
 ## How the script works
 
 `/nojs/enhance.js` is one file, plain ES2020, served with a content hash so it caches forever

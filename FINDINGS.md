@@ -618,3 +618,16 @@ and the bar fills as the body goes out. That took the script from about 10.2 KB 
   as `Uploader(String)` does not serialise and is silently not saved (a sequence of pairs,
   `Kinds(Vec<(String, String)>)`, does work). The fix is `struct Uploader { id: String }`;
   whether `Saved` should fail loudly instead is a question for M24's docs.
+
+### M26 · What a page weighs
+
+A demo page is 62–80 KB raw and 11.8–13.5 KB gzipped, with the whole stylesheet (57.6 KB,
+10.3 KB gzipped) inlined and no script required. The exception is the streamed page when it
+uses declarative shadow DOM. Styles do not cross a shadow root, so the stylesheet has to go
+both in `<head>` (for the slotted fills, which are light DOM) and inside the
+`<template shadowrootmode>`. That doubles it to 117 KB. Gzip only looks back 32 KB, so the
+second copy still costs 9.4 KB compressed (20.4 KB against 11.2 KB for the fallback
+variant). Brotli's larger window could make the copy nearly free. The fix within the no-script
+rule would be a `<link rel="stylesheet">` inside the shadow root to a cached CSS URL, which
+costs a request on the first view. Not done: the demo is the only streamed page, and the
+budget test gives that variant 128 KB.

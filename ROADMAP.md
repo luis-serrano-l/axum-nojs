@@ -627,9 +627,14 @@ script, proven in CI, with server-side flows included.
   `nojs-*` classes, `--nojs-*` tokens and `/nojs/` routes stay either way.
   Blocked on the owner: question and suggested answer (keep `axum-nojs`, decide together
   with M27) in BLOCKED.md.
-- [ ] Measure and publish: bytes shipped per demo page (HTML, CSS, script = 0 required),
+- [x] Measure and publish: bytes shipped per demo page (HTML, CSS, script = 0 required),
   `stylesheet()` size raw and gzip, next to maud-ui's numbers; a bench or test keeps them
   from regressing.
+  Done: README "What a page weighs": stylesheet 57.6 KB (10.3 KB gzip), demo pages 62–80 KB
+  (11.8–13.5 KB gzip) with the stylesheet inlined, 0 required script, the optional one 10.6 KB
+  (3.6 KB gzip), beside maud-ui's 313 KB CSS / 89 KB script. Tests: `stylesheet()` under
+  64 KB (axum-nojs), every `PATHS` page under 96 KB in both caps variants (demo); the
+  shadow-DOM stream carries the stylesheet twice (117 KB), gets 128 KB, and is in FINDINGS.
 - [ ] Strict CSP: the demo sends `Content-Security-Policy: script-src 'none'` (and `'self'`
   only when the enhancement script is on); a test asserts every route renders under it and
   README documents the header.

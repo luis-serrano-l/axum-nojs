@@ -387,6 +387,17 @@ mod tests {
         }
     }
 
+    /// Every component's CSS together, inlined once per page, stays under 64 KB (57.6 KB and
+    /// 10.3 KB gzipped at M26; README "What a page weighs").
+    #[test]
+    fn stylesheet_stays_under_its_budget() {
+        assert!(
+            stylesheet().len() < 64 * 1024,
+            "stylesheet() is {} bytes",
+            stylesheet().len()
+        );
+    }
+
     /// Buttons and inputs are styled in one place each: no other component's CSS selects a
     /// bare `button` or `input` (anywhere in a selector, `:is()` and `:where()` included), so
     /// a change to the primitive reaches every component. A component styles its own parts
