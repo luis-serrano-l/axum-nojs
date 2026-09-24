@@ -21,6 +21,7 @@ the button restyles every dialog, table and form, including yours.
 | Components | primitives, components and widgets, themed by tokens | from the ecosystem, or your own | your own |
 | State | URL, cookies, form posts (Post/Redirect/Get) | signals in the browser, server functions | on the server, swapped fragments |
 
+`docs/comparison.md` goes further, with maud-ui, CSP and the API shape side by side.
 Pick Leptos or Dioxus for an app that reacts on every keystroke (an editor, a live canvas).
 Pick this for the admin panels, dashboards, settings pages, forms and content sites that
 refresh per action, where it gives the same components with nothing to hydrate.
@@ -306,6 +307,7 @@ docs/state.md               how state works with no script
 docs/caps.md                how the beacons work, cookie format, the first view, adding a flag
 docs/theming.md             every --nojs-* token, contrast pairs, a second palette as a Tokens value
 docs/components.md          write your own component from the primitives (a doctest)
+docs/comparison.md          against maud-ui, htmx + Maud, Leptos and Dioxus; builders against Props
 docs/layers.svg             the layers diagram at the top of this file
 docs/ergonomics.md          audit of every call site and how M17 makes them shorter
 docs/latency.md             what made pages faster, what did not, and the order to apply it to your server

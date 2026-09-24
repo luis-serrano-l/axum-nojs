@@ -651,9 +651,13 @@ script, proven in CI, with server-side flows included.
   `axum-nojs-test/tests/demo.rs` (Blitz) and `demo/src/lib.rs` (the only-one-script test), plus
   "strict CSP". True as written: `.github/workflows/rust.yml` runs `cargo test --workspace`,
   which runs both.
-- [ ] Comparison page in docs (`docs/comparison.md`): maud-ui, htmx + hand-written Maud,
+- [x] Comparison page in docs (`docs/comparison.md`): maud-ui, htmx + hand-written Maud,
   Leptos/Dioxus on required JS, CSP, no-script proof, API shape (builder vs `Props`), server
   state; side-by-side of `ui.button("Ship it").primary()` vs `button::render(button::Props {..})`.
+  Done: a table on where the UI runs, required JS, behaviour with script blocked, proof,
+  strict CSP, CSS shipped, components, server state and API shape; the button side by side
+  (the Props field names marked illustrative, maud-ui's source not read here) with why the
+  builder fits; when to pick which. Linked from the README.
 - [ ] API shape stays builders (asked and answered after the owner weighed maud-ui's
   `Props { .., ..Default::default() }`; M11 tried options structs and M18 removed them). Why:
   components read their input from `ui` (params, state, caps, swap ids), which a detached
