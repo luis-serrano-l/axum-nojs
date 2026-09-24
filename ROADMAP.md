@@ -224,6 +224,11 @@ form, and the old form kept only where removing it would break a published signa
   builder form for the rare setting.
 - [ ] Less plumbing in handlers: extractors that hand a route the flash, the theme and the
   `UiState` together, so a route reads as "parse input, render components" in a few lines.
+- [ ] Fewer calls in the demo, more in the component: where a demo route stitches several
+  helper calls around a component (building items, reading state, wrapping markup, formatting
+  values), move that work into the component as an option so the route makes one call; the
+  refactor should show how much a single component call can do, with the demo shrinking as
+  proof and each moved piece covered by a test in the component's file.
 - [ ] Names read like HTML: option and setter names match the attribute or element they set
   (`.required()`, `.placeholder()`, `.open()`), one word where one word says it; a pass over
   every doc example so each reads top to bottom without jumping to another file.
