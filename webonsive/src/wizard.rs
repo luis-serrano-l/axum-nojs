@@ -78,6 +78,13 @@ impl Step {
     }
 }
 
+/// `("Account", html! { … })`: a required step, its title and its fields.
+impl From<(&'static str, Markup)> for Step {
+    fn from((title, body): (&'static str, Markup)) -> Self {
+        Step::new(title, body)
+    }
+}
+
 /// Options for [`wizard`]; `Default::default()` labels the last button "Finish" and shows the
 /// progress bar.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

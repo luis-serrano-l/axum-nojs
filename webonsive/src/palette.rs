@@ -69,6 +69,13 @@ impl<'a> Command<'a> {
     }
 }
 
+/// `("Settings", "/settings")`: a command, its label and where it goes.
+impl<'a> From<(&'a str, &'a str)> for Command<'a> {
+    fn from((label, href): (&'a str, &'a str)) -> Self {
+        Command::new(label, href)
+    }
+}
+
 /// The command whose label is `query`, ignoring case and outer spaces: where Enter goes.
 pub fn exact<'c, 'a>(commands: &'c [Command<'a>], query: &str) -> Option<&'c Command<'a>> {
     let q = query.trim();

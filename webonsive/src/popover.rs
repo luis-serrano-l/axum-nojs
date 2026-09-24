@@ -158,6 +158,13 @@ impl<'a> MenuItem<'a> {
     }
 }
 
+/// `("Profile", "/profile")`: a link, its text and where it goes.
+impl<'a> From<(&'a str, &'a str)> for MenuItem<'a> {
+    fn from((text, href): (&'a str, &'a str)) -> Self {
+        MenuItem::link(text, href)
+    }
+}
+
 /// A menu whose id is derived from `label`; use [`popover_menu_with`] to name it.
 /// [`popover_menu_with`] takes the options.
 pub fn popover_menu(caps: &Caps, label: &str, items: &[MenuItem]) -> Markup {

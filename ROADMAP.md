@@ -219,7 +219,7 @@ form, and the old form kept only where removing it would break a published signa
 - [x] One obvious way in: each component has a short constructor for the common case
   (`dialog(&caps, "confirm", "Delete account", body)`) and options only for the rest;
   required text first, ids derived from it where the caller does not care.
-- [ ] Readable data: items, columns, fields and options built with `From` impls from plain
+- [x] Readable data: items, columns, fields and options built with `From` impls from plain
   tuples and `&str` where that reads better (`["Name", "Size"].into()`), without losing the
   builder form for the rare setting.
 - [ ] Less plumbing in handlers: extractors that hand a route the flash, the theme and the

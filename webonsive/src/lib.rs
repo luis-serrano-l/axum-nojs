@@ -225,6 +225,28 @@ mod tests {
     use maud::html;
 
     #[test]
+    fn tuples_build_the_same_items_as_the_constructors() {
+        use select::SelectOption;
+        let body = || html! { p { "Body" } };
+        assert_eq!(MenuItem::from(("Profile", "/p")), MenuItem::link("Profile", "/p"));
+        assert_eq!(Command::from(("Settings", "/s")), Command::new("Settings", "/s"));
+        assert_eq!(Column::from(("note", "Note")), Column::plain("note", "Note"));
+        let o = SelectOption::from(("m", "Medium", "🐕"));
+        assert_eq!((o.value, o.text, o.icon), ("m", "Medium", Some("🐕")));
+        let options = [o];
+        let g: select::Group = ("Sizes", &options[..]).into();
+        assert_eq!(g.label, Some("Sizes"));
+        // Items that hold markup: compare what they render.
+        let tabs_of = |t: Tab| tabs(&Caps::all(), "t", &[t]).into_string();
+        assert_eq!(tabs_of(("One", body()).into()), tabs_of(Tab::new("One", body())));
+        let acc_of = |a: AccordionItem| accordion(&Caps::all(), "a", &[a]).into_string();
+        assert_eq!(acc_of(("Q", body()).into()), acc_of(AccordionItem::new("Q", body())));
+        let fields = [Field::new("n", "Name", FieldKind::Text)];
+        let fg: FieldGroup = ("Account", &fields[..]).into();
+        assert_eq!(fg.legend, Some("Account"));
+    }
+
+    #[test]
     fn short_forms_are_the_full_forms_with_default_options() {
         let caps = Caps::all();
         let body = || html! { p { "Body" } };

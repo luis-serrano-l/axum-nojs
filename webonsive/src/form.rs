@@ -180,6 +180,20 @@ impl<'a> FieldGroup<'a> {
     }
 }
 
+/// Fields with no fieldset: `(&fields).into()`.
+impl<'a> From<&'a [Field<'a>]> for FieldGroup<'a> {
+    fn from(fields: &'a [Field<'a>]) -> Self {
+        FieldGroup::plain(fields)
+    }
+}
+
+/// `("Account", &fields)`: a fieldset and its legend.
+impl<'a> From<(&'a str, &'a [Field<'a>])> for FieldGroup<'a> {
+    fn from((legend, fields): (&'a str, &'a [Field<'a>])) -> Self {
+        FieldGroup::new(legend, fields)
+    }
+}
+
 /// Where labels sit.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum FormLayout {

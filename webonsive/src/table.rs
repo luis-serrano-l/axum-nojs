@@ -105,6 +105,13 @@ impl<'a> Column<'a> {
     }
 }
 
+/// `("note", "Note")`: a plain column, its key and its header.
+impl<'a> From<(&'a str, &'a str)> for Column<'a> {
+    fn from((key, label): (&'a str, &'a str)) -> Self {
+        Column::plain(key, label)
+    }
+}
+
 /// One row: its cells, and optionally a key (for selection and its menu id), a detail
 /// block opened from the first cell, and an action menu in a last column.
 #[derive(Clone, Debug)]
@@ -134,6 +141,13 @@ impl<'a> Row<'a> {
     pub const fn menu(mut self, items: &'a [MenuItem<'a>]) -> Self {
         self.menu = items;
         self
+    }
+}
+
+/// A row from its cells: `vec![html! { "a.txt" }, html! { "1 KB" }].into()`.
+impl From<Vec<Markup>> for Row<'_> {
+    fn from(cells: Vec<Markup>) -> Self {
+        Row::new(cells)
     }
 }
 

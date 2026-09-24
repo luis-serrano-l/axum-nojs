@@ -666,9 +666,10 @@ async fn inputs_page(caps: Caps, jar: CookieJar, state: UiState, Query(q): Query
     let v = if q.country_q.is_some() { q } else { saved_inputs(&jar) };
     let accent = v.accent.as_deref().unwrap_or("#1f6f5f");
     let (lo, hi) = range::order(v.price_min.unwrap_or(20), v.price_max.unwrap_or(80));
-    let sizes: Vec<SelectOption> = SIZES.iter().map(|(v, l, i)| SelectOption::new(v, l).icon(i)).collect();
-    let countries: Vec<Vec<SelectOption>> = COUNTRIES.iter().map(|(_, cs)| cs.iter().map(|(v, l, i)| SelectOption::new(v, l).icon(i)).collect()).collect();
-    let groups: Vec<SelectGroup> = COUNTRIES.iter().zip(&countries).map(|((g, _), cs)| SelectGroup::new(g, cs)).collect();
+    // `(value, label, icon)` tuples become options through `From`.
+    let sizes = SIZES.map(SelectOption::from);
+    let countries = COUNTRIES.map(|(group, cs)| (group, cs.map(SelectOption::from)));
+    let groups = countries.each_ref().map(|(group, cs)| SelectGroup::new(group, cs));
     let body = page(&caps, &jar, "Select, range, colour", html! {
         (flash(&caps, state.flash()))
         form id="inputs" data-wo="swap" class="wo-form" method="post" action="/inputs" {

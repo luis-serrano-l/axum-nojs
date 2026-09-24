@@ -79,6 +79,13 @@ impl<'a> Tab<'a> {
     }
 }
 
+/// `("Install", html! { … })`: a tab, its title and its panel.
+impl<'a> From<(&'a str, Markup)> for Tab<'a> {
+    fn from((title, body): (&'a str, Markup)) -> Self {
+        Tab::new(title, body)
+    }
+}
+
 /// Options for [`tabs`]; `Default::default()` is a horizontal strip with no server state.
 #[derive(Clone, Copy, Debug, Default)]
 pub struct TabsOptions<'a> {

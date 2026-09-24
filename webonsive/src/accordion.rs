@@ -75,6 +75,13 @@ impl<'a> AccordionItem<'a> {
     }
 }
 
+/// `("Question", html! { … })`: a section, its title and its body.
+impl<'a> From<(&'a str, Markup)> for AccordionItem<'a> {
+    fn from((title, body): (&'a str, Markup)) -> Self {
+        AccordionItem::new(title, body)
+    }
+}
+
 /// Options for [`accordion`]; `Default::default()` is exclusive, unpersisted, without links.
 #[derive(Clone, Copy, Debug, Default)]
 pub struct AccordionOptions<'a> {

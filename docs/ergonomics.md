@@ -178,3 +178,23 @@ for the rest. `popover_menu` and `drawer` derive their id from the label
 (popover_menu(&caps, "Account", &items))
 (flash(&caps, state.flash()))
 ```
+
+## Done: data from plain tuples
+
+Items convert from tuples with `From`, and the builders stay for the rare setting:
+`SelectOption` from `(value, label)` or `(value, label, icon)`, `select::Group` from a slice
+or `(label, slice)`, `Column` from `(key, label)` (a plain column), `Row` from its cells,
+`MenuItem` and `Command` from `(text, href)`, `Tab` and `AccordionItem` from
+`(title, body)`, `Step` from `(title, body)`, `FieldGroup` from a slice or
+`(legend, slice)`. `SelectOption::new`, `.icon` and `Group::new` / `flat` are now `const`.
+
+```rust
+// before: /inputs
+let sizes: Vec<SelectOption> = SIZES.iter().map(|(v, l, i)| SelectOption::new(v, l).icon(i)).collect();
+let countries: Vec<Vec<SelectOption>> = COUNTRIES.iter().map(|(_, cs)| cs.iter().map(|(v, l, i)| SelectOption::new(v, l).icon(i)).collect()).collect();
+let groups: Vec<SelectGroup> = COUNTRIES.iter().zip(&countries).map(|((g, _), cs)| SelectGroup::new(g, cs)).collect();
+// after
+let sizes = SIZES.map(SelectOption::from);
+let countries = COUNTRIES.map(|(group, cs)| (group, cs.map(SelectOption::from)));
+let groups = countries.each_ref().map(|(group, cs)| SelectGroup::new(group, cs));
+```

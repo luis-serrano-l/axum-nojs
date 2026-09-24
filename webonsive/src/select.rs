@@ -28,7 +28,8 @@
 //! ```rust
 //! use maud::html;
 //! use webonsive::{Caps, select, select_with, select::{Group, SelectOption, SelectOptions}};
-//! let sizes = [SelectOption::new("s", "Small"), SelectOption::new("l", "Large").icon("🐘")];
+//! // Plain tuples of (value, label) or (value, label, icon) convert with `From`.
+//! let sizes = [("s", "Small", "🐭"), ("l", "Large", "🐘")].map(SelectOption::from);
 //! let m = select(&Caps::all(), "size", &[Group::flat(&sizes)], "l");
 //! assert!(m.into_string().contains("<selectedcontent>"));
 //!
@@ -60,11 +61,11 @@ pub struct SelectOption<'a> {
 
 impl<'a> SelectOption<'a> {
     /// An option with a plain label.
-    pub fn new(value: &'a str, text: &'a str) -> Self {
+    pub const fn new(value: &'a str, text: &'a str) -> Self {
         SelectOption { value, text, icon: None, content: None }
     }
     /// An icon before the label.
-    pub fn icon(mut self, icon: &'a str) -> Self {
+    pub const fn icon(mut self, icon: &'a str) -> Self {
         self.icon = Some(icon);
         self
     }
@@ -72,6 +73,20 @@ impl<'a> SelectOption<'a> {
     pub fn content(mut self, content: Markup) -> Self {
         self.content = Some(content);
         self
+    }
+}
+
+/// `("m", "Medium")`: a value and its label.
+impl<'a> From<(&'a str, &'a str)> for SelectOption<'a> {
+    fn from((value, text): (&'a str, &'a str)) -> Self {
+        SelectOption::new(value, text)
+    }
+}
+
+/// `("m", "Medium", "🐕")`: a value, its label and an icon.
+impl<'a> From<(&'a str, &'a str, &'a str)> for SelectOption<'a> {
+    fn from((value, text, icon): (&'a str, &'a str, &'a str)) -> Self {
+        SelectOption::new(value, text).icon(icon)
     }
 }
 
@@ -86,12 +101,26 @@ pub struct Group<'a> {
 
 impl<'a> Group<'a> {
     /// A labelled group.
-    pub fn new(label: &'a str, options: &'a [SelectOption<'a>]) -> Self {
+    pub const fn new(label: &'a str, options: &'a [SelectOption<'a>]) -> Self {
         Group { label: Some(label), options }
     }
     /// Options with no group.
-    pub fn flat(options: &'a [SelectOption<'a>]) -> Self {
+    pub const fn flat(options: &'a [SelectOption<'a>]) -> Self {
         Group { label: None, options }
+    }
+}
+
+/// Loose options with no `<optgroup>`: `(&SIZES).into()`.
+impl<'a> From<&'a [SelectOption<'a>]> for Group<'a> {
+    fn from(options: &'a [SelectOption<'a>]) -> Self {
+        Group::flat(options)
+    }
+}
+
+/// `("Europe", &EUROPE)`: a labelled group.
+impl<'a> From<(&'a str, &'a [SelectOption<'a>])> for Group<'a> {
+    fn from((label, options): (&'a str, &'a [SelectOption<'a>])) -> Self {
+        Group::new(label, options)
     }
 }
 
