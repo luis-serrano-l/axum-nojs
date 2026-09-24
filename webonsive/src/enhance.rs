@@ -20,9 +20,13 @@
 //! A form or link anywhere may name its root instead with `data-wo-target="#id"`, and
 //! `data-wo-swap="outer|inner|append|prepend"` (default `outer`) says how the new element
 //! lands: replace the root, replace its children, or add them at the end or the start. The
-//! request is the same either way, so the server may answer an enhanced request (header
-//! `Wo-Enhance: 1`) with only the fragment it needs to; without the script it is a full
-//! navigation to the same URL. A response may also carry elements marked `data-wo-oob`
+//! request is the same either way, so the server may answer an enhanced request (headers
+//! `Wo-Enhance: 1` and `Accept: text/html`) with only the fragment it needs to; without the
+//! script it is a full navigation to the same URL. [`slim`] does that for every page: an
+//! enhanced request gets the page without its inline stylesheet, which the document already
+//! has, and every HTML answer says `Vary: Wo-Enhance`. User actions fetch with
+//! `priority: "high"`. Links inside an element marked `data-wo-prefetch` are fetched at low
+//! priority on hover or focus, and a click within five seconds reuses that answer. A response may also carry elements marked `data-wo-oob`
 //! (out of band): each replaces the element of the same `id` anywhere in the page, in the
 //! mode the attribute names (`outer` by default), and is dropped from the main swap; the
 //! full page without the script already shows them in place. While a request is in flight
@@ -56,10 +60,15 @@ use maud::{Markup, html};
 /// Path the script is served from. [`script_url`] appends a content hash.
 pub const SCRIPT_PATH: &str = "/wo/enhance.js";
 
-/// The whole enhancement script. Plain ES2020, no build step, under 10 KB.
+/// The whole enhancement script. Plain ES2020, no build step, under 10 KB as [`served`].
 pub const JS: &str = r##"(function () {
 "use strict";
-var roots = "[data-wo=swap]", queue = {};
+var roots = "[data-wo=swap]", queue = {}, cache = {};
+// Every request says it is the script's (the server may answer with less) and wants HTML.
+var init = function (priority) { return { credentials: "same-origin", priority: priority || "high", headers: { "Wo-Enhance": "1", Accept: "text/html" } }; };
+var load = function (url, req) {
+  return fetch(url, req).then(function (res) { return res.text().then(function (html) { return { url: res.url, html: html }; }); });
+};
 var parse = function (html) { return new DOMParser().parseFromString(html, "text/html"); };
 var reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -155,13 +164,15 @@ function busy(t, src, on) {
   if (ind) ind.hidden = !on;
 }
 
-function request(t, src, url, init, fallback) {
+function request(t, src, url, req, fallback) {
   var id = t.id;
   pending[id] = (pending[id] || 0) + 1;
   busy(t, src, true);
   var run = function () {
-    return fetch(url, init).then(function (res) {
-      return res.text().then(function (html) { apply(parse(html), id, res.url, t.hist, t.mode); });
+    var hit = !req.method && cache[url];
+    delete cache[url];
+    return (hit && Date.now() - hit.at < 5000 ? hit.got : load(url, req)).then(function (r) {
+      apply(parse(r.html), id, r.url, t.hist, t.mode);
     }).then(function () { done(); }, function () { done(); fallback(); });
   };
   var done = function () { pending[id]--; busy(t, src, false); if (pending[id]) busy(t, src, true); };
@@ -176,11 +187,11 @@ function submit(form, submitter) {
   if (submitter && submitter.name) data.append(submitter.name, submitter.value);
   var at = function (a) { return submitter && submitter.getAttribute("form" + a) || form.getAttribute(a); };
   var url = new URL(at("action") || location.href, location.href);
-  var init = { credentials: "same-origin", headers: { "Wo-Enhance": "1" } };
+  var req = init();
   var params = new URLSearchParams(data);
-  if ((at("method") || "get").toLowerCase() === "post") { init.method = "POST"; init.body = form.enctype === "multipart/form-data" ? data : params; }
+  if ((at("method") || "get").toLowerCase() === "post") { req.method = "POST"; req.body = form.enctype === "multipart/form-data" ? data : params; }
   else url.search = params.toString();
-  request(t, form, url.href, init, function () { HTMLFormElement.prototype.submit.call(form); });
+  request(t, form, url.href, req, function () { HTMLFormElement.prototype.submit.call(form); });
   return true;
 }
 
@@ -204,7 +215,22 @@ document.addEventListener("click", function (e) {
   var t = target(a, "push");
   if (!t || a.origin !== location.origin) return;
   e.preventDefault();
-  request(t, a, a.href, { credentials: "same-origin", headers: { "Wo-Enhance": "1" } }, function () { location.href = a.href; });
+  request(t, a, a.href, init(), function () { location.href = a.href; });
+});
+
+// data-wo-prefetch on a link or an ancestor: a hover or focus fetches the link's answer at
+// low priority (not the page already shown), and a click within five
+// seconds uses it instead of asking again.
+["mouseover", "focusin"].forEach(function (type) {
+  document.addEventListener(type, function (e) {
+    var a = e.target.closest && e.target.closest("a[href]");
+    if (!a || a.href === location.href || a.origin !== location.origin || !a.closest("[data-wo-prefetch]") || !target(a, "push")) return;
+    var hit = cache[a.href];
+    if (hit && Date.now() - hit.at < 5000) return;
+    var got = load(a.href, init("low"));
+    got.catch(function () { delete cache[a.href]; });
+    cache[a.href] = { at: Date.now(), got: got };
+  });
 });
 
 // The narrow-screen tab select submits on change (its Go button stays for everyone else).
@@ -266,15 +292,23 @@ addEventListener("popstate", function (e) {
     });
     return;
   }
-  fetch(location.href, { credentials: "same-origin", headers: { "Wo-Enhance": "1" } })
-    .then(function (r) { return r.text(); })
-    .then(function (html) {
-      var doc = parse(html);
+  load(location.href, init())
+    .then(function (r) {
+      var doc = parse(r.html);
       document.querySelectorAll(roots).forEach(function (r) { apply(doc, r.id, location.href, "none", "outer"); });
     });
 });
 })();
 "##;
+
+/// [`JS`] as served: comment lines and indentation dropped, nothing else touched. The budget
+/// (10 KB) applies to this; the source keeps its comments for the reader.
+pub fn served() -> &'static str {
+    static SERVED: std::sync::OnceLock<String> = std::sync::OnceLock::new();
+    SERVED.get_or_init(|| {
+        JS.lines().map(str::trim_start).filter(|l| !l.is_empty() && !l.starts_with("//")).collect::<Vec<_>>().join("\n")
+    })
+}
 
 /// FNV-1a hash of [`JS`]: the cache-busting version in [`script_url`].
 fn version() -> String {
@@ -292,6 +326,28 @@ pub fn script_tag() -> Markup {
     html! { script src=(script_url()) defer {} }
 }
 
+/// The page an enhanced request needs: `html` without the `<style>` elements in its `<head>`,
+/// since the document making the request already has them. Everything the script reads
+/// (swap roots, flash, toasts, out-of-band elements, `<title>`, `data-theme`) is kept.
+pub fn slim_html(html: &str) -> String {
+    let head_end = html.find("</head>").unwrap_or(0);
+    let mut out = String::with_capacity(html.len());
+    let mut rest = html;
+    let mut done = 0;
+    while let Some(start) = rest.find("<style") {
+        if done + start >= head_end {
+            break;
+        }
+        let Some(len) = rest[start..].find("</style>") else { break };
+        out.push_str(&rest[..start]);
+        let skip = start + len + "</style>".len();
+        done += skip;
+        rest = &rest[skip..];
+    }
+    out.push_str(rest);
+    out
+}
+
 /// Build a swap-root id from a component prefix and a key such as a form action.
 /// `swap_id("wo-counter", "/counter")` is `wo-counter--counter`.
 pub fn swap_id(prefix: &str, key: &str) -> String {
@@ -301,10 +357,42 @@ pub fn swap_id(prefix: &str, key: &str) -> String {
 
 #[cfg(feature = "axum")]
 mod axum_glue {
-    use super::{JS, SCRIPT_PATH};
-    use axum::{Router, http::header, routing::get};
+    use super::{SCRIPT_PATH, served, slim_html};
+    use axum::{
+        Router,
+        body::{Body, HttpBody},
+        extract::Request,
+        http::{HeaderValue, header},
+        middleware::Next,
+        response::Response,
+        routing::get,
+    };
 
-    /// Serves [`JS`] at [`SCRIPT_PATH`], immutable for a year (the URL carries a hash).
+    /// Middleware for the whole router (`.layer(axum::middleware::from_fn(enhance::slim))`):
+    /// an HTML answer to an enhanced request (`Wo-Enhance: 1`) loses its inline stylesheet
+    /// ([`slim_html`]), and every HTML answer carries `Vary: Wo-Enhance` so a cache keeps the
+    /// two apart. Streamed bodies (no known size) pass through untouched.
+    pub async fn slim(req: Request, next: Next) -> Response {
+        let enhanced = req.headers().contains_key("wo-enhance");
+        let mut res = next.run(req).await;
+        let html = res.headers().get(header::CONTENT_TYPE).is_some_and(|v| v.as_bytes().starts_with(b"text/html"));
+        if !html {
+            return res;
+        }
+        res.headers_mut().append(header::VARY, HeaderValue::from_static("wo-enhance"));
+        if !enhanced || res.body().size_hint().exact().is_none() {
+            return res;
+        }
+        let (mut parts, body) = res.into_parts();
+        let Ok(bytes) = axum::body::to_bytes(body, usize::MAX).await else {
+            return Response::from_parts(parts, Body::empty());
+        };
+        let page = slim_html(&String::from_utf8_lossy(&bytes));
+        parts.headers.remove(header::CONTENT_LENGTH);
+        Response::from_parts(parts, Body::from(page))
+    }
+
+    /// Serves [`served`] at [`SCRIPT_PATH`], immutable for a year (the URL carries a hash).
     pub fn router() -> Router {
         Router::new().route(SCRIPT_PATH, get(|| async {
             (
@@ -312,13 +400,13 @@ mod axum_glue {
                     (header::CONTENT_TYPE, "text/javascript; charset=utf-8"),
                     (header::CACHE_CONTROL, "public, max-age=31536000, immutable"),
                 ],
-                JS,
+                served(),
             )
         }))
     }
 }
 #[cfg(feature = "axum")]
-pub use axum_glue::router;
+pub use axum_glue::{router, slim};
 
 #[cfg(test)]
 mod tests {
@@ -326,9 +414,17 @@ mod tests {
 
     #[test]
     fn script_is_small_and_plain() {
-        assert!(JS.len() < 10240, "enhance.js is {} bytes", JS.len());
+        assert!(served().len() < 10240, "enhance.js is {} bytes served", served().len());
+        assert!(JS.len() < 12288, "enhance.js source is {} bytes; trim before adding comments", JS.len());
         assert!(!JS.contains("eval(") && !JS.contains("innerHTML"));
         assert!(script_url().starts_with("/wo/enhance.js?v="));
         assert_eq!(swap_id("wo-form", "/sign-up"), "wo-form--sign-up");
+    }
+
+    #[test]
+    fn slim_drops_head_styles_only() {
+        let page = "<html><head><title>T</title><style>a{}</style><style class=\"wo-tokens\">b{}</style></head><body><style>c{}</style><p id=x>hi</p></body></html>";
+        assert_eq!(slim_html(page), "<html><head><title>T</title></head><body><style>c{}</style><p id=x>hi</p></body></html>");
+        assert_eq!(slim_html("<p>no head</p>"), "<p>no head</p>");
     }
 }

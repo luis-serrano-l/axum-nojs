@@ -431,3 +431,23 @@ The rest of the box, checked and left as is:
   request once all are set), and each beacon answer is exactly one `Set-Cookie`. Folding them
   into a single bitset cookie would need the server to merge flags, and the beacons fire in
   parallel, so two answers would race and one flag would be lost; the per-flag cookies stay.
+
+**Script cheap wins.** Every request from `enhance.js` sends `Wo-Enhance: 1` and
+`Accept: text/html`, and user actions fetch with `priority: "high"`. Rather than a
+hand-written fragment per route, one middleware (`enhance::slim`, on the whole demo router)
+answers any enhanced request with the page minus its inline stylesheet, which the requesting
+document already has; every HTML answer says `Vary: Wo-Enhance`. `/swap` keeps its own
+smaller answer. Links under `data-wo-prefetch` (the demo's first tab strip) are fetched at
+low priority on hover or focus and a click within five seconds reuses the answer; the browser
+check proves one request, no reload. Links to the page already shown are not prefetched: after
+a swap the link under the pointer is a new element and gets a fresh `mouseover`.
+
+| Swap request | Full page | Enhanced answer | Enhanced + gzip |
+|---|---|---|---|
+| `/tabs?tab.demo=1` | 39 904 B | 3 226 B | 1 153 B |
+| `/table?page=2` | 51 289 B | 14 611 B | 2 392 B |
+| `/counter` | 38 900 B | 2 222 B | 926 B |
+
+The script grew past 10 KB with prefetch; it is now served without comment lines and
+indentation (`enhance::served()`, 9 398 bytes) and the budget applies to that, while the
+source keeps its comments (a second test caps the source at 12 KB).

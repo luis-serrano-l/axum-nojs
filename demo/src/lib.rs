@@ -61,6 +61,7 @@ pub fn router() -> Router {
         .route("/palette", get(palette_page))
         .merge(caps::router())
         .merge(webonsive::enhance::router())
+        .layer(axum::middleware::from_fn(webonsive::enhance::slim))
         .layer(CompressionLayer::new().compress_when(DefaultPredicate::new().and(WholeBody)))
 }
 
@@ -224,12 +225,13 @@ async fn popover_signout() -> axum::response::Response {
 async fn tabs_page(caps: Caps, jar: CookieJar, state: UiState) -> (UiState, Markup) {
     let open = state.tab("demo");
     let body = page(&caps, &jar, "Tabs", html! {
-        (tabs(&caps, "demo", &[
+        // Hovering or focusing a tab title fetches it early; the click reuses the answer.
+        div data-wo-prefetch { (tabs(&caps, "demo", &[
             Tab::new("Install", html! { p { code { "cargo add webonsive maud axum" } } }),
             Tab::new("Use", html! { p { "Call a function, get " code { "Markup" } ", send it." } }).badge(3),
             // Lazy: the body is rendered only by the request that opens the tab.
             if open == 2 { Tab::new("Why", html! { p { "Because the platform can do this without script now. (Rendered on demand.)" } }) } else { Tab::lazy("Why") },
-        ], TabsOptions::default().state(&state).select_below(true)))
+        ], TabsOptions::default().state(&state).select_below(true))) }
         p class="wo-note" { "Deep link: " a href="/tabs?tab.demo=2" { "?tab.demo=2" } ". Leave and come back: the tab is remembered. The third tab is lazy; under 40rem the strip becomes a select." }
         h2 { "Vertical" }
         (tabs(&caps, "side", &[
@@ -890,6 +892,24 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn enhanced_requests_get_the_page_without_its_stylesheet() {
+        let get = |enhanced: bool| {
+            let req = Request::get("/tabs?tab.demo=1");
+            let req = if enhanced { req.header("wo-enhance", "1") } else { req };
+            router().oneshot(req.body(Body::empty()).unwrap())
+        };
+        let full = get(false).await.unwrap();
+        assert_eq!(full.headers()["vary"], "wo-enhance");
+        let full = String::from_utf8(axum::body::to_bytes(full.into_body(), usize::MAX).await.unwrap().to_vec()).unwrap();
+        let slim = get(true).await.unwrap();
+        assert_eq!(slim.headers()["vary"], "wo-enhance");
+        let slim = String::from_utf8(axum::body::to_bytes(slim.into_body(), usize::MAX).await.unwrap().to_vec()).unwrap();
+        assert!(full.contains("<style>") && !slim.contains("<style>"), "the stylesheet stays home");
+        assert!(slim.contains("id=\"wo-tabs-demo\"") && slim.contains("<title>"), "the swap root and title are still there");
+        assert!(slim.len() * 3 < full.len(), "slim is {} of {} bytes", slim.len(), full.len());
+    }
+
+    #[tokio::test]
     async fn enhancement_script_is_served_immutable() {
         let req = Request::get(webonsive::enhance::script_url()).body(Body::empty()).unwrap();
         let res = router().oneshot(req).await.unwrap();
@@ -897,7 +917,7 @@ mod tests {
         assert_eq!(res.headers()["content-type"], "text/javascript; charset=utf-8");
         assert!(res.headers()["cache-control"].to_str().unwrap().contains("immutable"));
         let body = axum::body::to_bytes(res.into_body(), usize::MAX).await.unwrap();
-        assert_eq!(body, webonsive::enhance::JS.as_bytes());
+        assert_eq!(body, webonsive::enhance::served().as_bytes());
     }
 
     #[tokio::test]

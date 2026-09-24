@@ -184,7 +184,7 @@ in FINDINGS.md (`hyperfine` against the demo, Firefox navigation timing from
   so they never delay first paint; `<script defer>` stays last; `<link rel="preconnect">` not
   needed (no third party) and recorded as such; the caps cookie small enough to fit one
   `Set-Cookie`.
-- [ ] Cheap wins, script: `enhance.js` requests carry `Accept: text/html` and the server's
+- [x] Cheap wins, script: `enhance.js` requests carry `Accept: text/html` and the server's
   fragment answer (`Wo-Enhance: 1`) used on every swap route in the demo, not only `/swap`,
   so a swap moves a few hundred bytes instead of the page; `fetch` with `priority: "high"`
   for user actions; prefetch on `mouseenter`/`focus` for same-origin links inside a swap root

@@ -8,6 +8,12 @@ follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); the project us
 
 ### `webonsive`
 
+- Latency: `stylesheet()` built once and minified (`minify_css`); `enhance::slim` middleware
+  answers an enhanced request without the inline stylesheet and sets `Vary: Wo-Enhance`
+  (`enhance::slim_html` without a framework); the script sends `Accept: text/html`, fetches
+  user actions with `priority: "high"`, prefetches links under `data-wo-prefetch` on hover or
+  focus and reuses the answer for a click within five seconds; `enhance::served()` is the
+  script without comment lines and indentation, and the 10 KB budget applies to it.
 - Enhancement script: `data-wo-target`, `data-wo-swap`, `data-wo-oob`, the `Wo-Enhance: 1`
   request header, busy state (`data-wo-busy`, `aria-busy`, disabled submit buttons,
   `data-wo-indicator`, `--wo-busy`), failed requests fall back to a navigation,

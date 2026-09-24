@@ -62,7 +62,12 @@ try {
   assert(await js("return location.search") === "?tab.demo=1", "tabs: URL follows the swap");
   assert(await navigations() === 1, "tabs: switched without a reload");
   assert(await js("return getComputedStyle(document.querySelector('.wo-tabs details[open] .wo-tabs-mark')).viewTransitionName") === "wo-tabs-demo", "tabs: the underline, not the title, carries the view-transition-name");
+  const fetched = (q) => js("return performance.getEntriesByType('resource').filter((r) => r.name.endsWith(arguments[0])).length", q);
+  await js("document.querySelector(\".wo-tabs summary a[href*='tab.demo=2']\").dispatchEvent(new MouseEvent('mouseover', { bubbles: true }))");
+  await until(async () => (await fetched("?tab.demo=2")) === 1, "hover prefetches the tab");
   await click(".wo-tabs summary a[href*='tab.demo=2']");
+  await until(async () => await js("return !!document.querySelector('#wo-tabs-demo details[open] .wo-tabs-panel p')"), "prefetched tab shown");
+  assert(await fetched("?tab.demo=2") === 1 && await navigations() === 1, "tabs: the click reused the prefetched answer in place, no second request");
   await until(async () => await js("return !!document.querySelector('#wo-tabs-demo details[open] .wo-tabs-panel p')"), "lazy tab filled");
   assert(!(await js("return document.querySelector('#wo-tabs-demo details[open] .wo-tabs-lazy')")), "tabs: lazy panel rendered by the request that opened it");
   await wd("POST", S + "/window/rect", { width: 500, height: 800 });
