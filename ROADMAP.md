@@ -700,9 +700,11 @@ script, proven in CI, with server-side flows included.
   `separator.rs` (`<hr>`, labelled, vertical). The textarea field already existed
   (`ui.input(..).textarea(rows)`, `Form::textarea`). Demo `/feedback`; SPECS and README matrix;
   the browser check focuses a tooltip's trigger and sees it shown. Stopped there.
-- [ ] Audience pages in docs: public-sector / GOV.UK-style services, strict-CSP environments,
+- [x] Audience pages in docs: public-sector / GOV.UK-style services, strict-CSP environments,
   low bandwidth and old devices, Tor Browser "Safest", internal tools, each with the
   guarantee it relies on.
+  Done: `docs/audiences.md`, one section each: the need, the guarantee it relies on, and the
+  proof (which test, script or number), plus who it is not for. Linked from the README.
 - [ ] Launch material: live demo host, a post "shadcn look, zero JavaScript, verified",
   crates.io keywords `no-js`, `progressive-enhancement`, `maud`, `ssr`, `components`.
   Posting to r/rust / This Week in Rust and hosting are outward actions: ask the owner first.
