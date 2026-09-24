@@ -113,6 +113,11 @@ pub use table::Row;
 pub use theme::Theme;
 pub use ui::{Page, Redirect, Ui};
 
+/// `docs/components.md`, whose code runs as a doctest so the guide keeps compiling.
+#[cfg(doctest)]
+#[doc = include_str!("../../docs/components.md")]
+pub struct ComponentsGuide;
+
 /// Everything a handler needs, in one import: `use axum_nojs::prelude::*;`.
 pub mod prelude {
     #[cfg(feature = "axum")]
@@ -122,8 +127,13 @@ pub mod prelude {
 }
 
 /// A key made safe for an `id`: anything but letters, digits, `-` and `_` becomes `-`, and
-/// ASCII letters are lowercased, so `"Account"` gives `account`.
-pub(crate) fn slug(key: &str) -> String {
+/// ASCII letters are lowercased, so `"Account"` gives `account`. Components derive the ids
+/// a caller does not care about from a label this way; so can yours.
+///
+/// ```rust
+/// assert_eq!(axum_nojs::slug("Billing & plans"), "billing---plans");
+/// ```
+pub fn slug(key: &str) -> String {
     key.chars()
         .map(|c| {
             if c.is_ascii_alphanumeric() || c == '-' || c == '_' {

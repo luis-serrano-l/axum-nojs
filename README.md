@@ -102,7 +102,9 @@ component gives the HTML to another template engine.
   `ui.radio_group`, `ui.badge`, `ui.card`, `Icon` (29 Lucide shapes as inline SVG),
   `ui.avatar`, and the layouts `ui.stack`, `ui.cluster`, `ui.grid(min, ..)`, `ui.split(side,
   main)` with `.gap(n)` on a `--nojs-space-*` scale. Components are built from them (`ui.form`
-  renders its fields through `input.rs`), and so can yours.
+  renders its fields through `input.rs`), and so can yours: `docs/components.md` writes one in
+  about 30 lines (an extension trait on `Ui`, `impl Render`, a CSS const passed to
+  `Page::css`), and its code runs as a doctest.
 - `Caps` is server-side feature detection with no script: `@supports` beacons set one cookie per
   capability, and each component emits only the variant that browser needs (see `/caps`).
   `?caps=popover,anchor` on any URL forces a set. The protocol is three plain functions
@@ -245,6 +247,7 @@ spec/components.json        generated from SPECS (cargo run -p demo -- spec writ
 docs/state.md               how state works with no script
 docs/caps.md                how the beacons work, cookie format, the first view, adding a flag
 docs/theming.md             every --nojs-* token, contrast pairs, a second palette as a Tokens value
+docs/components.md          write your own component from the primitives (a doctest)
 docs/ergonomics.md          audit of every call site and how M17 makes them shorter
 docs/latency.md             what made pages faster, what did not, and the order to apply it to your server
 axum-nojs/src/<name>.rs     one component each: dialog, popover, tabs, accordion, table, paged_table, wizard,

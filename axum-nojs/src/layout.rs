@@ -183,7 +183,7 @@ impl Tokens {
 /// Wrap `body` in a full page with the default [`Tokens`]. Beacons are added while the
 /// browser is still unknown.
 pub fn layout(caps: &Caps, title: &str, theme: Theme, body: Markup) -> Markup {
-    page(caps, title, theme, None, body)
+    page(caps, title, theme, None, &[], body)
 }
 
 /// [`layout`] under a different set of [`Tokens`]: the overrides are emitted once, in a
@@ -195,10 +195,19 @@ pub fn layout_with(
     tokens: &Tokens,
     body: Markup,
 ) -> Markup {
-    page(caps, title, theme, Some(tokens), body)
+    page(caps, title, theme, Some(tokens), &[], body)
 }
 
-fn page(caps: &Caps, title: &str, theme: Theme, tokens: Option<&Tokens>, body: Markup) -> Markup {
+/// The whole document: `tokens` overrides and then `css` (a user component's styles, see
+/// `Page::css`) follow the stylesheet in the head, each once.
+pub(crate) fn page(
+    caps: &Caps,
+    title: &str,
+    theme: Theme,
+    tokens: Option<&Tokens>,
+    css: &[&str],
+    body: Markup,
+) -> Markup {
     // The stylesheet is most of the page: size the buffer once instead of doubling into it.
     let size = stylesheet().len() + body.0.len() + 2048;
     html! {
@@ -212,6 +221,7 @@ fn page(caps: &Caps, title: &str, theme: Theme, tokens: Option<&Tokens>, body: M
                 link rel="expect" href="#main" blocking="render";
                 style { (PreEscaped(stylesheet())) }
                 @if let Some(t) = tokens { style class="nojs-tokens" { (PreEscaped(t.css())) } }
+                @if !css.is_empty() { style class="nojs-user" { @for c in css { (PreEscaped(crate::minify_css(c))) } } }
             }
             body {
                 (header())

@@ -147,6 +147,7 @@ impl Ui {
             tokens: None,
             body,
             cookies: self.state.set_cookies(),
+            css: Vec::new(),
         }
     }
 
@@ -185,9 +186,20 @@ pub struct Page {
     tokens: Option<Tokens>,
     body: Markup,
     cookies: Vec<String>,
+    css: Vec<&'static str>,
 }
 
 impl Page {
+    /// Add a stylesheet to this page's `<head>`, after the library's: a component of your own
+    /// ships its `CSS` const this way (see `docs/components.md`). Call it once per component;
+    /// each is minified and inlined once.
+    pub fn css(mut self, css: &'static str) -> Self {
+        if !self.css.contains(&css) {
+            self.css.push(css);
+        }
+        self
+    }
+
     /// Render under other [`Tokens`] (a palette is a value, see `docs/theming.md`).
     pub fn tokens(mut self, tokens: &Tokens) -> Self {
         self.tokens = Some(*tokens);
@@ -207,12 +219,14 @@ impl Page {
 
 impl Render for Page {
     fn render(&self) -> Markup {
-        match &self.tokens {
-            Some(t) => {
-                layout::layout_with(&self.caps, &self.title, self.theme, t, self.body.clone())
-            }
-            None => layout::layout(&self.caps, &self.title, self.theme, self.body.clone()),
-        }
+        layout::page(
+            &self.caps,
+            &self.title,
+            self.theme,
+            self.tokens.as_ref(),
+            &self.css,
+            self.body.clone(),
+        )
     }
 }
 

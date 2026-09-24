@@ -568,8 +568,15 @@ The showcase for "wait, this needs no JS?".
 
 ## M24 · Write your own component
 The React idea worth keeping: a component model users extend, not a closed catalogue.
-- [ ] `docs/components.md`: a component from primitives in about 30 lines (builder holding
+- [x] `docs/components.md`: a component from primitives in about 30 lines (builder holding
   `&Ui`, an extension trait for `impl Ui` in user crates, `impl Render`, CSS const, swap id).
+  Done: a newsletter box (`ui.subscribe(action)`: a card with `ui.input` and `ui.button`,
+  a thank-you state read from `?subscribed`, a swap root, a CSS const on tokens), its routes
+  and assertions on the output; the whole page is included under `#[cfg(doctest)]` so its
+  code runs with `cargo test`. The rules follow: extension trait, input from `ui`, primitives
+  only, tokens only, an own class prefix, `Page::css`, one variant per request, swap roots,
+  `Saved<T>` needs named fields, Blitz for tests, and `maud` as a direct dependency. Needed
+  two helpers from the next box, added here: `axum_nojs::slug` is public and `Page::css` exists.
 - [ ] Public helpers users need: `slug`, `enhance::swap_id`, `caps`, and a way to add CSS to
   `ui.page()` (`Ui::with_css` or `Page::css`).
 - [ ] A user-land `ui.pricing_card()` in the demo crate, built only from primitives.
