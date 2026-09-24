@@ -313,3 +313,102 @@ gets a second visual pass.
   is built; about 1 s in a debug build). Maud's `@if` shows `if` as a keyword and the `@` plain.
 - [x] README "Run the demo" updated (index groups, the plate, the code markers, syntect) and
   CLAUDE.md notes the markers; clippy/tests/`scripts/verify.sh` green, local commit.
+
+## M20 · The shadcn look
+The owner found the M19 visual pass not good enough and asked for a modern look borrowed from
+the best component libraries rather than an original one. Chosen (asked and answered): follow
+shadcn/ui (MIT) closely, drop ink and moss for its neutral default, system fonts only (no web
+font). References by job: shadcn/ui for tokens, spacing and states; Basecoat UI (shadcn as
+plain HTML/CSS) for markup structure; Radix Colors for status scales; Pico CSS / Open Props for
+native elements shadcn replaces with React (`<dialog>`, `<details>`, `<select>`, date, range);
+Vercel Geist for dense tables and stats. Paid kits (Tailwind UI, Catalyst) are not copied.
+Done before M21 so the primitives are born in this look.
+- [ ] Tokens: `Palette` gains the shadcn roles it lacks (`card`, `popover`, `secondary`,
+  `accent` as hover surface, `primary`/`on_primary`, `input`, `ring`), keeping `--nojs-*`
+  names; `Tokens::default()` is shadcn's neutral (zinc) light and dark, primary near-black /
+  near-white. `radius` 0.5rem with derived `--nojs-radius-sm/-lg`. ok/warn/danger from Radix
+  Colors steps 9/11. Docs and `docs/theming` updated; the "ink and moss" wording removed.
+- [ ] Type: system stack only (`ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+  "Helvetica Neue", Arial, sans-serif`, mono `ui-monospace, SFMono-Regular, Menlo, Consolas`),
+  shadcn's scale (text-sm 0.875rem body in controls, 1.25/1.5 line heights, 500/600 weights),
+  `-webkit-font-smoothing: antialiased`, tabular numbers in tables and stats.
+- [ ] Base styles in `layout.rs`: shadcn heights and paddings (controls h-9 = 2.25rem, px-3/px-4),
+  1px `--nojs-input` borders, `shadow-xs` on controls, `shadow-lg` on dialog/popover,
+  focus-visible as a 3px `--nojs-ring` at 50% opacity, `aria-invalid` red ring, disabled at
+  50% opacity, hover as `--nojs-accent` surface. Native `<select>`, checkbox, radio, range,
+  date and `<details>` restyled to match (`appearance`, `accent-color`).
+- [ ] Every existing component's CSS re-tuned to these values (dialog, drawer as shadcn sheet,
+  popover/menu as dropdown-menu, tabs as the muted pill list, accordion, toast as sonner-style
+  cards, table, pager as pagination, badge-like chips, skeleton, palette as command).
+- [ ] The demo takes the same look (index, plate, code box); syntect classes recoloured.
+- [ ] Side-by-side check: for each component, a Firefox screenshot of the demo (light and dark,
+  1280 and 420 wide) next to the shadcn docs page for the same component; mismatches fixed
+  or noted. `tests/shots/` refreshed; the colour-literal test still passes.
+- [ ] README (screenshot, theming section) and FINDINGS updated; clippy, tests,
+  `scripts/verify.sh` green; local commit.
+
+## M21 · Primitives
+The owner found the library "in the middle of nowhere": 30 components, but no button (buttons
+are only global element CSS in `layout.rs`) and no calendar, and components barely reuse each
+other. A "React for Rust" was discussed and rejected: client-side reactivity contradicts the
+no-script rule, and Leptos/Dioxus/Yew own that space. Chosen direction (asked and answered): a
+layered design system: primitives → existing components rebuilt on them → flagship widgets
+→ a documented way to write your own. The first thing a user looks for is a button.
+- [ ] `button.rs`: `ui.button(text)` with `.primary()/.danger()/.ghost()/.small()/.icon()`,
+  `.submit()/.reset()`, `.command(cmd, target)` (invoker), `.popovertarget()`, `.form(id)`,
+  `.name().value()`, `.disabled()`, `.loading(bool)`; `ui.link_button(text, href)` with the
+  same look. The global `button {}` CSS in `layout.rs` moves into `button::CSS` as `.nojs-button`.
+- [ ] `input.rs`: `ui.input(name, label)`, one labelled field (label, hint, error,
+  `aria-describedby`), same setters as form fields; `ui.checkbox`, `ui.radio_group`,
+  `ui.switch` (checkbox with `role=switch`).
+- [ ] `badge.rs`, `card.rs` (`.header/.body/.footer`), `icon.rs` (small inline-SVG set, no
+  font), `avatar.rs`.
+- [ ] Layout primitives: `ui.stack()`, `ui.cluster()`, `ui.grid(min)`, `ui.split()`, CSS-only,
+  gaps from `--nojs-space-*` tokens.
+- [ ] Demo pages, `PATHS` entries, doctests and README matrix for each; Blitz test for button
+  variants and the focus ring.
+
+## M22 · Components rebuilt on primitives
+One change to the button restyles every dialog, pager and table.
+- [ ] Every component that renders a `button`, `input`, label+field or chip uses the primitive
+  builders internally: dialog, drawer, popover/menu, counter, pager, table, paged_table,
+  form, wizard, select, combobox, color, range, theme, tabs, palette, empty_state.
+  Public API unchanged.
+- [ ] `form.rs` fields delegate to `input.rs` (one field renderer, not two).
+- [ ] Delete the per-component button/input CSS the primitives now carry; measure
+  `stylesheet()` bytes and the bench before and after.
+- [ ] A test fails if a component's CSS styles bare `button`/`input` selectors outside
+  `button.rs`/`input.rs`.
+- [ ] CLAUDE.md component convention 8: a component builds its parts from primitives
+  (`ui.button`, `ui.input`, `ui.card`…), never raw `button`/`input` with its own CSS.
+  Update `docs/` and FINDINGS.
+- [ ] `tests/shots/` compared before and after; only intended visual diffs.
+
+## M23 · Flagship widgets
+The showcase for "wait, this needs no JS?".
+- [ ] `calendar.rs`: server-rendered month grid, previous/next month as links (`?month=`),
+  day cells as links or radio inputs, `.min/.max/.disabled(fn)`, `.events(..)`, week start;
+  swap root for in-place month changes.
+- [ ] `date_picker.rs`: calendar inside a popover (no popover → inline grid) writing a form
+  field; native `input type=date` when the caller asks for `.native()`.
+- [ ] `table` upgrades: row selection with bulk actions (checkboxes + one form), inline edit
+  row via PRG, sticky header.
+- [ ] `upload.rs`: file input with a preview list after the round trip; progress only through
+  the enhance script, no-script path intact.
+- [ ] `kanban.rs`: moving a card is a form post per column.
+- [ ] Demo pages, Blitz screenshots, browser-check steps for the calendar swap.
+
+## M24 · Write your own component
+The React idea worth keeping: a component model users extend, not a closed catalogue.
+- [ ] `docs/components.md`: a component from primitives in about 30 lines (builder holding
+  `&Ui`, an extension trait for `impl Ui` in user crates, `impl Render`, CSS const, swap id).
+- [ ] Public helpers users need: `slug`, `enhance::swap_id`, `caps`, and a way to add CSS to
+  `ui.page()` (`Ui::with_css` or `Page::css`).
+- [ ] A user-land `ui.pricing_card()` in the demo crate, built only from primitives.
+
+## M25 · Positioning for release
+- [ ] README opening: "the no-JS UI kit for Rust servers", a layers diagram first
+  (primitives → components → widgets → yours), then a comparison with Leptos, Dioxus and
+  htmx + hand-written Maud.
+- [ ] Demo index grouped by layer.
+- [ ] M13 (Publish) happens after M25.
