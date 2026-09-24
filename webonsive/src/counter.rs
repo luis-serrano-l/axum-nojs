@@ -22,9 +22,9 @@
 //! while the page unloads is dropped. There is no optimistic update and no offline behaviour.
 //!
 //! ```rust
-//! use webonsive::{Caps, counter, counter::CounterOptions};
-//! let m = counter(&Caps::all(), "/counter", 3, Default::default());
-//! let m = counter(&Caps::all(), "/counter", 10, CounterOptions::default().min(0).max(10).step(2).typed(true));
+//! use webonsive::{Caps, counter, counter_with, counter::CounterOptions};
+//! let m = counter(&Caps::all(), "/counter", 3);
+//! let m = counter_with(&Caps::all(), "/counter", 10, CounterOptions::default().min(0).max(10).step(2).typed(true));
 //! let html = m.into_string();
 //! assert!(html.contains("value=\"inc\" aria-label=\"increment\" disabled"));
 //! assert!(html.contains("type=\"number\" name=\"value\" min=\"0\" max=\"10\" step=\"2\" value=\"10\""));
@@ -87,8 +87,14 @@ impl CounterOptions {
     }
 }
 
+/// A counter with the default options.
+/// [`counter_with`] takes the options.
+pub fn counter(caps: &Caps, action: &str, value: i64) -> Markup {
+    counter_with(caps, action, value, Default::default())
+}
+
 /// Increment / decrement / reset buttons posting `op` to `action`.
-pub fn counter(caps: &Caps, action: &str, value: i64, options: CounterOptions) -> Markup {
+pub fn counter_with(caps: &Caps, action: &str, value: i64, options: CounterOptions) -> Markup {
     let CounterOptions { min, max, step, typed } = options;
     let vt = caps.has(Cap::ViewTransitions).then_some("view-transition-name: wo-counter");
     let at_min = min.is_some_and(|m| value <= m);
@@ -137,7 +143,7 @@ mod tests {
     #[test]
     fn bounds_disable_and_clamp() {
         let o = CounterOptions::default().min(0).max(10).step(3);
-        let m = counter(&Caps::NONE, "/c", 0, o).into_string();
+        let m = counter_with(&Caps::NONE, "/c", 0, o).into_string();
         assert!(m.contains("aria-label=\"decrement\" disabled") && !m.contains("aria-label=\"increment\" disabled"), "{m}");
         assert!(m.contains("0 to 10, in steps of 3"));
         assert_eq!(o.apply(9, "inc", None), 10);

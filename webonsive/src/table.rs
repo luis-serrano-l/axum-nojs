@@ -41,14 +41,14 @@
 //!
 //! ```rust
 //! use maud::html;
-//! use webonsive::{Caps, MenuItem, table, table::{Column, Row, TableOptions}};
+//! use webonsive::{Caps, MenuItem, table, table_with, table::{Column, Row, TableOptions}};
 //! let cols = [Column::sortable("name", "Name"), Column::numeric("size", "Size").width("6rem"), Column::plain("note", "Note")];
 //! let rows = vec![Row::new(vec![html!{"a.txt"}, html!{"1 KB"}, html!{"—"}])];
-//! let m = table(&Caps::all(), "files", "/table", &cols, &rows, Default::default());
+//! let m = table(&Caps::all(), "files", "/table", &cols, &rows);
 //!
 //! let menu = [MenuItem::link("Open", "/files/a.txt"), MenuItem::action("Delete", "/files/a.txt/delete").danger(true)];
 //! let rows = vec![Row::new(vec![html!{"a.txt"}, html!{"1 KB"}, html!{"—"}]).key("a.txt").detail(html!{ p { "Modified today." } }).menu(&menu)];
-//! let m = table(&Caps::all(), "files", "/table", &cols, &rows, TableOptions::default()
+//! let m = table_with(&Caps::all(), "files", "/table", &cols, &rows, TableOptions::default()
 //!     .sort(Some(("name", false))).filter("a").keep(&[("per", "5")])
 //!     .cols(Some(&["name", "size"])).choose_columns(true)
 //!     .bulk("/files/bulk", &[("archive", "Archive"), ("delete", "Delete")])
@@ -63,8 +63,8 @@
 
 use maud::{Markup, html};
 
-use crate::popover::{MenuItem, Placement, PopoverOptions, popover_menu};
-use crate::{Cap, Caps, enhance};
+use crate::popover::{MenuItem, Placement, PopoverOptions, popover_menu_with};
+use crate::{Cap, Caps, enhance, slug};
 
 /// One column: the query key it sorts by, its header text, whether it can be sorted, how
 /// its cells align and how wide it is.
@@ -233,9 +233,15 @@ impl<'a> TableOptions<'a> {
     }
 }
 
+/// A table with no sort, filter or bulk form.
+/// [`table_with`] takes the options.
+pub fn table(caps: &Caps, id: &str, href: &str, columns: &[Column], rows: &[Row]) -> Markup {
+    table_with(caps, id, href, columns, rows, Default::default())
+}
+
 /// `rows` are already sorted and filtered by the caller; `options` says how, so the links
 /// and the filter box reflect it.
-pub fn table(caps: &Caps, id: &str, href: &str, columns: &[Column], rows: &[Row], options: TableOptions) -> Markup {
+pub fn table_with(caps: &Caps, id: &str, href: &str, columns: &[Column], rows: &[Row], options: TableOptions) -> Markup {
     table_in(caps, id, href, columns, rows, options, true)
 }
 
@@ -362,7 +368,7 @@ pub(crate) fn table_in(caps: &Caps, id: &str, href: &str, columns: &[Column], ro
                         @if has_menu {
                             td class="wo-table-menu" {
                                 @if let (Some(k), false) = (row.key, row.menu.is_empty()) {
-                                    (popover_menu(caps, &format!("{root}-{}", slug(k)), "\u{22ef}", row.menu, PopoverOptions::default().placement(Placement::BottomEnd)))
+                                    (popover_menu_with(caps, &format!("{root}-{}", slug(k)), "\u{22ef}", row.menu, PopoverOptions::default().placement(Placement::BottomEnd)))
                                 }
                             }
                         }
@@ -377,11 +383,6 @@ pub(crate) fn table_in(caps: &Caps, id: &str, href: &str, columns: &[Column], ro
             }
         }
     }
-}
-
-/// A key made safe for an `id`: anything but letters, digits, `-` and `_` becomes `-`.
-fn slug(key: &str) -> String {
-    key.chars().map(|c| if c.is_ascii_alphanumeric() || c == '-' || c == '_' { c } else { '-' }).collect()
 }
 
 /// Percent-encode a query value: everything but unreserved characters.
@@ -454,7 +455,7 @@ mod tests {
     fn links_flip_direction_and_keep_the_filter() {
         let cols = [Column::sortable("name", "Name"), Column::plain("note", "Note")];
         let opts = TableOptions::default().sort(Some(("name", false))).filter("a b").keep(&[("per", "5")]);
-        let m = table(&Caps::NONE, "t", "/t", &cols, &[], opts).into_string();
+        let m = table_with(&Caps::NONE, "t", "/t", &cols, &[], opts).into_string();
         assert!(m.contains("href=\"/t?sort=name&amp;dir=desc&amp;q=a+b&amp;per=5\""), "{m}");
         assert!(m.contains("name=\"per\" value=\"5\""));
         assert!(m.contains("href=\"/t?sort=name&amp;dir=asc&amp;per=5\""), "clear link");
@@ -470,7 +471,7 @@ mod tests {
         let cols = [Column::sortable("a", "A"), Column::numeric("b", "B"), Column::plain("c", "C")];
         assert_eq!(cols_from_query(&cols, Some("c,zzz,a")), Some(vec!["a", "c"]));
         assert_eq!(cols_from_query(&cols, Some("zzz")), None);
-        let m = table(&Caps::NONE, "t", "/t", &cols, &[], TableOptions::default().cols(Some(&["a", "c"])).filter("x")).into_string();
+        let m = table_with(&Caps::NONE, "t", "/t", &cols, &[], TableOptions::default().cols(Some(&["a", "c"])).filter("x")).into_string();
         assert!(m.contains("href=\"/t?q=x&amp;cols=c\" aria-pressed=\"true\""), "a shown column links to hiding it: {m}");
         assert!(m.contains("href=\"/t?q=x&amp;cols=a%2Cb%2Cc\" aria-pressed=\"false\""), "a hidden one links to showing it in place");
         assert!(m.contains("name=\"cols\" value=\"a,c\""), "the filter form keeps the columns");
@@ -480,7 +481,7 @@ mod tests {
     #[test]
     fn loading_and_bulk_states() {
         let cols = [Column::sortable("a", "A")];
-        let m = table(&Caps::NONE, "t", "/t", &cols, &[], TableOptions::default().loading(true).bulk("/b", &[("x", "X")])).into_string();
+        let m = table_with(&Caps::NONE, "t", "/t", &cols, &[], TableOptions::default().loading(true).bulk("/b", &[("x", "X")])).into_string();
         assert!(m.contains("aria-busy=\"true\"") && m.contains("wo-table-skeleton"));
         assert!(m.contains("<form method=\"post\" action=\"/b\" id=\"wo-table-t-bulk\""));
         assert!(m.contains("<button type=\"submit\" name=\"action\" value=\"x\">X</button>"));

@@ -30,14 +30,14 @@
 //!
 //! ```rust
 //! use maud::html;
-//! use webonsive::{Caps, UiState, paged_table, paged_table::PagedTableOptions, table::{Column, Row}};
+//! use webonsive::{Caps, UiState, paged_table, paged_table_with, paged_table::PagedTableOptions, table::{Column, Row}};
 //! let cols = [Column::sortable("name", "Name"), Column::plain("note", "Note")];
 //! let rows = vec![Row::new(vec![html!{"a"}, html!{"b"}])];
-//! let m = paged_table(&Caps::all(), "files", "/table", &cols, &rows, 36, Default::default());
+//! let m = paged_table(&Caps::all(), "files", "/table", &cols, &rows, 36);
 //!
 //! let state = UiState::parse("/table", "per.files=25", "");
 //! let per = state.per_page("files").unwrap_or(10);
-//! let m = paged_table(&Caps::all(), "files", "/table", &cols, &rows, 1234,
+//! let m = paged_table_with(&Caps::all(), "files", "/table", &cols, &rows, 1234,
 //!                     PagedTableOptions::default().sort(Some(("name", true))).filter("a").page(20).per_page(per).state(&state));
 //! let html = m.into_string();
 //! assert!(html.contains("476–500 of 1,234"));
@@ -118,9 +118,15 @@ impl<'a> PagedTableOptions<'a> {
     }
 }
 
+/// Page 1 of a paged table with the default options.
+/// [`paged_table_with`] takes the options.
+pub fn paged_table(caps: &Caps, id: &str, href: &str, columns: &[Column], rows: &[Row], total: usize) -> Markup {
+    paged_table_with(caps, id, href, columns, rows, total, Default::default())
+}
+
 /// `rows` are the rows of the current page only; `total` is the full row count after
 /// filtering, which sizes the page links.
-pub fn paged_table(caps: &Caps, id: &str, href: &str, columns: &[Column], rows: &[Row], total: usize, options: PagedTableOptions) -> Markup {
+pub fn paged_table_with(caps: &Caps, id: &str, href: &str, columns: &[Column], rows: &[Row], total: usize, options: PagedTableOptions) -> Markup {
     let PagedTableOptions { sort, filter, page, per_page, table: inner, state } = options;
     let per_key = if state.is_some() { format!("per.{id}") } else { "per".to_string() };
     let per_page = per_page.max(1);
@@ -274,12 +280,12 @@ mod tests {
     fn links_keep_sort_filter_and_size() {
         let cols = [Column::sortable("n", "N")];
         let opts = PagedTableOptions::default().sort(Some(("n", true))).filter("x").page(2).per_page(5);
-        let m = paged_table(&Caps::NONE, "t", "/t", &cols, &[], 12, opts).into_string();
+        let m = paged_table_with(&Caps::NONE, "t", "/t", &cols, &[], 12, opts).into_string();
         assert!(m.contains("href=\"/t?sort=n&amp;dir=desc&amp;q=x&amp;per=5&amp;page=3\""), "{m}");
         assert!(m.contains("rel=\"prev\"") && m.contains("rel=\"next\""));
         assert!(m.contains("6–10 of 12"));
         assert!(m.contains("value=\"5\" selected"));
-        let empty = paged_table(&Caps::NONE, "t", "/t", &cols, &[], 0, PagedTableOptions::default().page(9)).into_string();
+        let empty = paged_table_with(&Caps::NONE, "t", "/t", &cols, &[], 0, PagedTableOptions::default().page(9)).into_string();
         assert!(empty.contains("0–0 of 0") && !empty.contains("rel="));
         assert!(!empty.contains("wo-paged-table-jump"), "no jump form for a single page");
     }
@@ -302,7 +308,7 @@ mod tests {
     fn state_names_the_size_per_table() {
         let state = UiState::parse("/t", "per.t=5", "");
         let opts = PagedTableOptions::default().per_page(state.per_page("t").unwrap()).page(2).state(&state);
-        let m = paged_table(&Caps::NONE, "t", "/t", &[Column::plain("n", "N")], &[], 40, opts).into_string();
+        let m = paged_table_with(&Caps::NONE, "t", "/t", &[Column::plain("n", "N")], &[], 40, opts).into_string();
         assert!(m.contains("href=\"/t?per.t=5&amp;page=8\">Last"), "{m}");
         assert!(m.contains("href=\"/t?per.t=5&amp;page=1\">First"));
         assert!(m.contains("<input type=\"number\" name=\"page\" min=\"1\" max=\"8\" value=\"2\""));

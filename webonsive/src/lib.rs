@@ -22,7 +22,7 @@
 //! // `Caps` says what the browser supports; the demo reads it from a cookie set by beacons.
 //! let caps = Caps::all();
 //! let page = layout(&caps, "Hello", Theme::Auto, html! {
-//!     (dialog(&caps, "hi", "Say hi", html! { p { "Hello from a <dialog>." } }, Default::default()))
+//!     (dialog(&caps, "hi", "Say hi", html! { p { "Hello from a <dialog>." } }))
 //! });
 //! // The only script is the optional enhancement tag; the page works without it.
 //! assert_eq!(page.into_string().matches("<script").count(), 1);
@@ -39,7 +39,7 @@
 //! use webonsive::{Caps, Theme, flash, stylesheet, theme_toggle};
 //!
 //! let caps = Caps::all();
-//! let body: String = flash(&caps, Some("Saved."), Default::default()).into_string()
+//! let body: String = flash(&caps, Some("Saved.")).into_string()
 //!     + &theme_toggle(&caps, "/theme", Theme::Auto).into_string();
 //! let page = format!("<!DOCTYPE html><style>{}</style><main>{body}</main>", stylesheet());
 //! assert!(page.contains("class=\"wo-theme\""));
@@ -85,36 +85,42 @@ pub mod wizard;
 /// keeps working.
 pub use wo_caps as caps;
 
-pub use accordion::{AccordionItem, AccordionOptions, accordion};
+pub use accordion::{AccordionItem, AccordionOptions, accordion, accordion_with};
 pub use breadcrumbs::breadcrumbs;
 pub use wo_caps::{Cap, Caps};
-pub use color::color;
-pub use combobox::{ComboboxOptions, OptionGroup, combobox};
-pub use counter::counter;
-pub use dialog::{DialogOptions, DialogSize, dialog};
-pub use drawer::{DrawerOptions, drawer};
-pub use empty_state::{EmptyOptions, empty_state};
-pub use flash::{FlashOptions, flash};
-pub use form::{Field, FieldGroup, FieldKind, FormLayout, FormOptions, form};
+pub use color::{ColorOptions, color, color_with};
+pub use combobox::{ComboboxOptions, OptionGroup, combobox, combobox_with};
+pub use counter::{CounterOptions, counter, counter_with};
+pub use dialog::{DialogOptions, DialogSize, dialog, dialog_with};
+pub use drawer::{DrawerOptions, drawer, drawer_with};
+pub use empty_state::{EmptyOptions, empty_state, empty_state_with};
+pub use flash::{FlashOptions, flash, flash_with};
+pub use form::{Field, FieldGroup, FieldKind, FormLayout, FormOptions, form, form_with};
 pub use layout::{Tokens, layout, layout_with};
-pub use paged_table::{PagedTableOptions, paged_table};
-pub use pager::{PagerOptions, pager};
-pub use palette::{Command, PaletteOptions, command_palette};
-pub use popover::{MenuItem, Placement, PopoverOptions, popover_menu};
-pub use range::{RangeOptions, range};
-pub use select::select;
-pub use skeleton::{SkeletonOptions, skeleton};
-pub use stat::{StatOptions, Trend, stat};
+pub use paged_table::{PagedTableOptions, paged_table, paged_table_with};
+pub use pager::{PagerOptions, pager, pager_with};
+pub use palette::{Command, PaletteOptions, command_palette, command_palette_with};
+pub use popover::{MenuItem, Placement, PopoverOptions, popover_menu, popover_menu_with};
+pub use range::{RangeOptions, range, range_pair, range_pair_with, range_with};
+pub use select::{SelectOptions, select, select_with};
+pub use skeleton::{SkeletonOptions, skeleton, skeleton_with};
+pub use stat::{StatOptions, Trend, stat, stat_with};
 #[cfg(feature = "http")]
 pub use state::prg;
 pub use state::UiState;
 #[cfg(feature = "http")]
 pub use stream::{Streamed, slot};
-pub use table::{Column, Row, TableOptions, cols_from_query, sort_from_query, table};
-pub use tabs::{Tab, TabsOptions, tabs};
+pub use table::{Column, Row, TableOptions, cols_from_query, sort_from_query, table, table_with};
+pub use tabs::{Tab, TabsOptions, tabs, tabs_with};
 pub use theme::{Theme, theme_toggle};
-pub use toast::{ToastOptions, toasts};
-pub use wizard::{WizardOptions, wizard};
+pub use toast::{ToastOptions, toasts, toasts_with};
+pub use wizard::{WizardOptions, wizard, wizard_with};
+
+/// A key made safe for an `id`: anything but letters, digits, `-` and `_` becomes `-`, and
+/// ASCII letters are lowercased, so `"Account"` gives `account`.
+pub(crate) fn slug(key: &str) -> String {
+    key.chars().map(|c| if c.is_ascii_alphanumeric() || c == '-' || c == '_' { c.to_ascii_lowercase() } else { '-' }).collect()
+}
 
 /// All component stylesheets, concatenated once per process. `layout` inlines this once per page.
 pub fn stylesheet() -> &'static str {
@@ -216,6 +222,20 @@ pub const COMPONENT_CSS: &[&str] = &[
 #[cfg(test)]
 mod tests {
     use super::*;
+    use maud::html;
+
+    #[test]
+    fn short_forms_are_the_full_forms_with_default_options() {
+        let caps = Caps::all();
+        let body = || html! { p { "Body" } };
+        assert_eq!(dialog(&caps, "d", "Open", body()).0, dialog_with(&caps, "d", "Open", body(), Default::default()).0);
+        assert_eq!(stat(&caps, "Visitors", "12").0, stat_with(&caps, "Visitors", "12", Default::default()).0);
+        assert_eq!(flash(&caps, Some("Saved.")).0, flash_with(&caps, Some("Saved."), Default::default()).0);
+        // An id the caller does not name is the label's slug.
+        let items = [MenuItem::link("Profile", "/p")];
+        assert_eq!(popover_menu(&caps, "My account", &items).0, popover_menu_with(&caps, "my-account", "My account", &items, Default::default()).0);
+        assert_eq!(drawer(&caps, "Menu", body(), body()).0, drawer_with(&caps, "menu", "Menu", body(), body(), Default::default()).0);
+    }
 
     #[test]
     fn minified_stylesheet_keeps_every_rule() {
@@ -255,8 +275,8 @@ mod tests {
         fn renders<T: maud::Render>(_: &T) {}
         let caps = Caps::all();
         let parts = [
-            flash(&caps, Some("hi"), Default::default()),
-            counter(&caps, "/counter", 3, Default::default()),
+            flash(&caps, Some("hi")),
+            counter(&caps, "/counter", 3),
             theme_toggle(&caps, "/theme", Theme::Auto),
         ];
         for part in &parts {

@@ -34,12 +34,12 @@
 //!
 //! ```rust
 //! use maud::html;
-//! use webonsive::{Caps, UiState, tabs, tabs::{Tab, TabsOptions}};
-//! let m = tabs(&Caps::all(), "t", &[Tab::new("One", html! { p { "First." } }), Tab::new("Two", html! { p { "Second." } })], Default::default());
+//! use webonsive::{Caps, UiState, tabs, tabs_with, tabs::{Tab, TabsOptions}};
+//! let m = tabs(&Caps::all(), "t", &[Tab::new("One", html! { p { "First." } }), Tab::new("Two", html! { p { "Second." } })]);
 //!
 //! let state = UiState::parse("/docs", "tab.docs=1", "");
 //! let open = state.tab("docs");
-//! let m = tabs(&Caps::all(), "docs", &[
+//! let m = tabs_with(&Caps::all(), "docs", &[
 //!     Tab::new("Install", html! { p { "cargo add" } }),
 //!     Tab::new("Use", html! { p { "html!" } }).badge(3),
 //!     if open == 2 { Tab::new("Changelog", html! { p { "(long)" } }) } else { Tab::lazy("Changelog") },
@@ -108,8 +108,14 @@ impl<'a> TabsOptions<'a> {
     }
 }
 
+/// Tabs with the first one open and no remembered state.
+/// [`tabs_with`] takes the options.
+pub fn tabs(caps: &Caps, name: &str, tabs: &[Tab]) -> Markup {
+    tabs_with(caps, name, tabs, Default::default())
+}
+
 /// Tab strip `name`. The open panel is `state.tab(name)`, or the first one without state.
-pub fn tabs(caps: &Caps, name: &str, tabs: &[Tab], options: TabsOptions) -> Markup {
+pub fn tabs_with(caps: &Caps, name: &str, tabs: &[Tab], options: TabsOptions) -> Markup {
     let TabsOptions { state, vertical, select_below } = options;
     let strip = caps.has(Cap::DetailsContent);
     let active = state.map(|s| s.tab(name)).unwrap_or(0);

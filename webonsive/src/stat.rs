@@ -12,10 +12,10 @@
 //! **Fallback:** none needed.
 //!
 //! ```rust
-//! use webonsive::{Caps, stat, stat::{StatOptions, Trend}};
-//! let m = stat(&Caps::all(), "Visitors", "12,480", Default::default()).into_string();
+//! use webonsive::{Caps, stat, stat_with, stat::{StatOptions, Trend}};
+//! let m = stat(&Caps::all(), "Visitors", "12,480").into_string();
 //! assert!(m.contains("12,480"));
-//! let m = stat(&Caps::all(), "Error rate", "0.4%", StatOptions::default()
+//! let m = stat_with(&Caps::all(), "Error rate", "0.4%", StatOptions::default()
 //!     .delta("-0.2 pt", Trend::Down)
 //!     .down_is_good(true)
 //!     .note("last 7 days")
@@ -75,8 +75,14 @@ impl<'a> StatOptions<'a> {
     }
 }
 
+/// A stat with no delta or note.
+/// [`stat_with`] takes the options.
+pub fn stat(caps: &Caps, label: &str, value: &str) -> Markup {
+    stat_with(caps, label, value, Default::default())
+}
+
 /// A stat card: `label` above `value`.
-pub fn stat(_caps: &Caps, label: &str, value: &str, options: StatOptions) -> Markup {
+pub fn stat_with(_caps: &Caps, label: &str, value: &str, options: StatOptions) -> Markup {
     let inner = html! {
         p class="wo-stat-label" { (label) }
         p class="wo-stat-value" { (value) }

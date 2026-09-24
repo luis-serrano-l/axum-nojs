@@ -24,7 +24,7 @@ use hyper_util::rt::{TokioExecutor, TokioIo};
 use hyper_util::server::conn::auto;
 use maud::html;
 use tokio::net::TcpListener;
-use webonsive::{Caps, Theme, UiState, caps, counter, dialog, dialog::DialogOptions, enhance, layout, prg, tabs, tabs::{Tab, TabsOptions}};
+use webonsive::{Caps, Theme, UiState, caps, counter, dialog_with, dialog::DialogOptions, enhance, layout, prg, tabs_with, tabs::{Tab, TabsOptions}};
 
 type Reply = Response<Full<Bytes>>;
 
@@ -63,12 +63,12 @@ async fn handle(req: Request<Incoming>) -> Result<Reply, Infallible> {
             let page = layout(&caps, "webonsive on hyper", Theme::Auto, html! {
                 h1 { "webonsive on hyper" }
                 p { "This browser supports: " @for n in caps.names() { code { (n) } " " } }
-                (dialog(&caps, "d", "Open dialog", html! { p { "Closed by the platform, not by script." } }, DialogOptions::default().open(state.dialog() == Some("d"))))
+                (dialog_with(&caps, "d", "Open dialog", html! { p { "Closed by the platform, not by script." } }, DialogOptions::default().open(state.dialog() == Some("d"))))
                 h2 { "Tabs" }
-                (tabs(&caps, "demo", &[Tab::new("First", html! { p { "Tab state lives in the URL and a cookie." } }),
+                (tabs_with(&caps, "demo", &[Tab::new("First", html! { p { "Tab state lives in the URL and a cookie." } }),
                                       Tab::new("Second", html! { p { "Reload, leave, come back: still here." } })], TabsOptions::default().state(&state)))
                 h2 { "Counter" }
-                (counter(&caps, "/counter", count, Default::default()))
+                (counter(&caps, "/counter", count))
             });
             html_reply(page.into_string(), state.set_cookies())
         }

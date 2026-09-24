@@ -27,10 +27,10 @@
 //! ArrowDown/ArrowUp walk the input and the results.
 //!
 //! ```rust
-//! use webonsive::{Caps, combobox, combobox::{ComboboxOptions, OptionGroup}};
-//! let m = combobox(&Caps::all(), "q", "/langs", Default::default());
+//! use webonsive::{Caps, combobox, combobox_with, combobox::{ComboboxOptions, OptionGroup}};
+//! let m = combobox(&Caps::all(), "q", "/langs");
 //!
-//! let m = combobox(&Caps::all(), "q", "/langs", ComboboxOptions::default()
+//! let m = combobox_with(&Caps::all(), "q", "/langs", ComboboxOptions::default()
 //!     .query("ru")
 //!     .suggestions(&[OptionGroup::new("Systems", &["Rust", "Zig"]), OptionGroup::flat(&["Ruby"])])
 //!     .results(&["Rust", "Ruby"])
@@ -152,8 +152,14 @@ impl<'a> ComboboxOptions<'a> {
     }
 }
 
+/// A single-choice combobox with no query yet.
+/// [`combobox_with`] takes the options.
+pub fn combobox(caps: &Caps, name: &str, action: &str) -> Markup {
+    combobox_with(caps, name, action, Default::default())
+}
+
 /// A search form sending `name` (the text) and `sel` (the selection) to `action` by GET.
-pub fn combobox(_caps: &Caps, name: &str, action: &str, options: ComboboxOptions) -> Markup {
+pub fn combobox_with(_caps: &Caps, name: &str, action: &str, options: ComboboxOptions) -> Markup {
     let ComboboxOptions { query, suggestions, results, selected, multi, create, label, placeholder } = options;
     let list_id = format!("{name}-options");
     let results_id = format!("{name}-results");

@@ -12,12 +12,9 @@ use axum_extra::extract::cookie::{Cookie, CookieJar};
 use maud::{Markup, html};
 use serde::Deserialize;
 use webonsive::{
-    Cap, Caps, Field, FieldGroup, FieldKind, FormLayout, FormOptions, Streamed, Theme, UiState, accordion, accordion::{AccordionItem, AccordionOptions}, caps, color, combobox, combobox::{ComboboxOptions, OptionGroup},
-    counter, counter::CounterOptions, color::ColorOptions, select::{Group as SelectGroup, SelectOption, SelectOptions}, dialog, dialog::{DialogOptions, DialogSize}, flash, flash::{FlashOptions, Level, stack}, form, layout, layout::{Palette, Tokens, layout_with}, paged_table, paged_table::PagedTableOptions,
-    pager, pager::PagerOptions, popover::{MenuItem, Placement, PopoverOptions}, popover_menu, prg, range, range::RangeOptions, select, slot, tabs::{Tab, TabsOptions},
-    table::{Column, Row, TableOptions, cols_from_query, sort_from_query}, tabs, theme_toggle, wizard, wizard::{Step, WizardOptions},
-    breadcrumbs, command_palette, drawer, empty_state, palette::{self, Command, PaletteOptions}, skeleton, skeleton::SkeletonOptions, stat, stat::{StatOptions, Trend},
-    toasts, toast::ToastOptions, drawer::DrawerOptions, empty_state::EmptyOptions,
+    Cap, Caps, Field, FieldGroup, FieldKind, FormLayout, FormOptions, Streamed, Theme, UiState, accordion_with, accordion::{AccordionItem, AccordionOptions}, caps, color_with, combobox_with, combobox::{ComboboxOptions, OptionGroup}, counter_with, counter::CounterOptions, color::ColorOptions, select::{Group as SelectGroup, SelectOption, SelectOptions}, dialog_with, dialog::{DialogOptions, DialogSize}, flash, flash_with, flash::{FlashOptions, Level, stack}, form_with, layout, layout::{Palette, Tokens, layout_with}, paged_table, paged_table_with, paged_table::PagedTableOptions, pager_with, pager::PagerOptions, popover::{MenuItem, Placement, PopoverOptions}, popover_menu, popover_menu_with, prg, range, range_with, range::RangeOptions, select, select_with, slot, tabs::{Tab, TabsOptions},
+    table::{Column, Row, TableOptions, cols_from_query, sort_from_query}, tabs_with, theme_toggle, wizard, wizard_with, wizard::{Step, WizardOptions},
+    breadcrumbs, command_palette_with, drawer_with, empty_state_with, palette::{self, Command, PaletteOptions}, skeleton_with, skeleton::SkeletonOptions, stat_with, stat::{StatOptions, Trend}, toasts_with, toast::ToastOptions, drawer::DrawerOptions, empty_state::EmptyOptions,
 };
 use std::time::Duration;
 use tower_http::compression::{CompressionLayer, predicate::{DefaultPredicate, Predicate}};
@@ -174,8 +171,8 @@ async fn index(caps: Caps, jar: CookieJar, Query(q): Query<IndexQuery>) -> Marku
 
 async fn dialog_page(caps: Caps, jar: CookieJar, state: UiState) -> Markup {
     page(&caps, &jar, "Dialog", html! {
-        (flash(&caps, state.flash(), Default::default()))
-        (dialog(&caps, "confirm", "Delete account", html! {
+        (flash(&caps, state.flash()))
+        (dialog_with(&caps, "confirm", "Delete account", html! {
             p { "This cannot be undone. Everything you wrote goes with it." }
             label { "Tell us why (optional)" input name="reason" placeholder="Moving on"; }
         }, DialogOptions::default().title("Delete account?").size(DialogSize::Sm).danger(true)
@@ -198,9 +195,9 @@ async fn dialog_delete(Form(f): Form<DeleteForm>) -> axum::response::Response {
 async fn popover_page(caps: Caps, jar: CookieJar, state: UiState) -> Markup {
     const THEME: &[MenuItem] = &[MenuItem::link("Light", "/popover?theme=light"), MenuItem::link("Dark", "/popover?theme=dark")];
     page(&caps, &jar, "Popover menu", html! {
-        (flash(&caps, state.flash(), Default::default()))
+        (flash(&caps, state.flash()))
         div class="wo-popover-row" {
-            (popover_menu(&caps, "account", "Account", &[
+            (popover_menu(&caps, "Account", &[
                 MenuItem::heading("Signed in as Ada"),
                 MenuItem::link("Profile", "/popover").icon("@").shortcut("g p"),
                 MenuItem::link("Settings", "/settings").icon("\u{2699}").shortcut("g s"),
@@ -209,8 +206,8 @@ async fn popover_page(caps: Caps, jar: CookieJar, state: UiState) -> Markup {
                 MenuItem::submenu("Theme", "account-theme", THEME).icon("\u{25d0}"),
                 MenuItem::separator(),
                 MenuItem::action("Sign out", "/popover/signout").icon("\u{2192}").danger(true),
-            ], Default::default()))
-            (popover_menu(&caps, "more", "More", &[
+            ]))
+            (popover_menu_with(&caps, "more", "More", &[
                 MenuItem::link("Documentation", "/").icon("?"),
                 MenuItem::action("Clear cache", "/popover/signout"),
             ], PopoverOptions::default().placement(Placement::BottomEnd)))
@@ -228,7 +225,7 @@ async fn tabs_page(caps: Caps, jar: CookieJar, state: UiState) -> (UiState, Mark
     let open = state.tab("demo");
     let body = page(&caps, &jar, "Tabs", html! {
         // Hovering or focusing a tab title fetches it early; the click reuses the answer.
-        div data-wo-prefetch { (tabs(&caps, "demo", &[
+        div data-wo-prefetch { (tabs_with(&caps, "demo", &[
             Tab::new("Install", html! { p { code { "cargo add webonsive maud axum" } } }),
             Tab::new("Use", html! { p { "Call a function, get " code { "Markup" } ", send it." } }).badge(3),
             // Lazy: the body is rendered only by the request that opens the tab.
@@ -236,7 +233,7 @@ async fn tabs_page(caps: Caps, jar: CookieJar, state: UiState) -> (UiState, Mark
         ], TabsOptions::default().state(&state).select_below(true))) }
         p class="wo-note" { "Deep link: " a href="/tabs?tab.demo=2" { "?tab.demo=2" } ". Leave and come back: the tab is remembered. The third tab is lazy; under 40rem the strip becomes a select." }
         h2 { "Vertical" }
-        (tabs(&caps, "side", &[
+        (tabs_with(&caps, "side", &[
             Tab::new("General", html! { p { "Titles stack on the left; the open panel sits beside them." } }),
             Tab::new("Members", html! { p { "Twelve members." } }).badge(12),
             Tab::new("Danger zone", html! { p { "Nothing here is destructive." } }),
@@ -247,14 +244,14 @@ async fn tabs_page(caps: Caps, jar: CookieJar, state: UiState) -> (UiState, Mark
 
 async fn accordion_page(caps: Caps, jar: CookieJar, state: UiState) -> (UiState, Markup) {
     let body = page(&caps, &jar, "Accordion", html! {
-        (accordion(&caps, "faq", &[
+        (accordion_with(&caps, "faq", &[
             AccordionItem::new("Does this need JavaScript?", html! { p { "No. Turn it off and reload: every control still works through links and form posts. The one script on the page only swaps the answer in place instead of reloading." } })
                 .icon("\u{1F50D}").summary("Every open and close is a link the server answers."),
             AccordionItem::new("Does it animate?", html! { p { "Yes, via ::details-content transitions where supported." } })
                 .icon("\u{1F3AC}").summary("Height animates to auto in Chrome; elsewhere it snaps."),
             AccordionItem::new("Can several be open?", html! {
                 p { "Yes: this group is " code { "multi" } ", so " code { "?open.faq=0,2" } " keeps two open. A body can hold another group:" }
-                (accordion(&caps, "faq-more", &[
+                (accordion_with(&caps, "faq-more", &[
                     AccordionItem::new("Nested", html! { p { "Its own key, " code { "open.faq-more" } "." } }),
                     AccordionItem::new("Exclusive", html! { p { "This inner group opens one at a time." } }),
                 ], AccordionOptions::default().state(&state)))
@@ -284,10 +281,10 @@ async fn combobox_page(caps: Caps, jar: CookieJar, state: UiState, Query(pairs):
     let hits: Vec<&str> = LANGS.iter().flat_map(|g| g.values().iter().copied())
         .filter(|l| !q.is_empty() && l.to_lowercase().contains(&q.to_lowercase())).collect();
     let body = page(&caps, &jar, "Combobox", html! {
-        (flash(&caps, state.flash(), Default::default()))
+        (flash(&caps, state.flash()))
         // One swap root around the form and its results: the script searches as you type.
         div id="langs" data-wo="swap" {
-            (combobox(&caps, "q", "/combobox", ComboboxOptions::default()
+            (combobox_with(&caps, "q", "/combobox", ComboboxOptions::default()
                 .query(&q).suggestions(&LANGS).results(&hits).selected(&sel).multi(true)
                 .create("/combobox/new").label("Language").placeholder("Type a language")))
         }
@@ -316,7 +313,7 @@ async fn list_page(caps: Caps, jar: CookieJar, Query(p): Query<PageQuery>) -> Ma
     let rows: Vec<Markup> = (1..=(current * PER).min(TOTAL))
         .map(|n| html! { "Row " (n) })
         .collect();
-    page(&caps, &jar, "Load-more list", html! { (pager(&caps, "/list", &rows, TOTAL, PagerOptions::default().page(current).per_page(PER))) })
+    page(&caps, &jar, "Load-more list", html! { (pager_with(&caps, "/list", &rows, TOTAL, PagerOptions::default().page(current).per_page(PER))) })
 }
 
 #[derive(Deserialize, Default)]
@@ -356,9 +353,9 @@ async fn table_page(caps: Caps, jar: CookieJar, state: UiState, Query(t): Query<
     let options = TableOptions::default().cols(cols.as_deref()).choose_columns(true).bulk("/table/bulk", &[("archive", "Archive"), ("delete", "Delete")])
         .csv("/table.csv").empty("No files match this filter.").loading(t.loading == Some(1));
     let body = page(&caps, &jar, "Table", html! {
-        (flash(&caps, state.flash(), Default::default()))
+        (flash(&caps, state.flash()))
         p { "Click a header to sort, again to flip. Type to filter. Hide columns, tick rows for the bulk form, open a row's menu or its detail. The page size you pick is remembered for your next visit. Every state is a URL, including " a href="/table?loading=1" { "the loading one" } "." }
-        (paged_table(&caps, "files", "/table", &FILE_COLS, &rows, files.len(), PagedTableOptions::default().sort(sort).filter(&q).page(pg).per_page(per).state(&state).table(options)))
+        (paged_table_with(&caps, "files", "/table", &FILE_COLS, &rows, files.len(), PagedTableOptions::default().sort(sort).filter(&q).page(pg).per_page(per).state(&state).table(options)))
     });
     (state, body)
 }
@@ -426,9 +423,9 @@ fn wizard_steps(state: &UiState, data: &[(String, String)], errors: &[(&str, &st
 
 fn wizard_view(caps: &Caps, jar: &CookieJar, state: &UiState, data: &[(String, String)], errors: &[(&str, &str)]) -> Markup {
     page(caps, jar, "Wizard", html! {
-        (flash(caps, state.flash(), Default::default()))
+        (flash(caps, state.flash()))
         p { "Three steps, one form each. The server checks every step; the second can be skipped. Close the tab and come back to " a href="/wizard" { "/wizard" } ": you resume where you left off." }
-        (wizard(caps, "signup", "/wizard", &wizard_steps(state, data, errors), state, WizardOptions::default().finish("Create account")))
+        (wizard_with(caps, "signup", "/wizard", &wizard_steps(state, data, errors), state, WizardOptions::default().finish("Create account")))
     })
 }
 
@@ -489,10 +486,10 @@ fn form_view(caps: &Caps, jar: &CookieJar, state: &UiState, inline: bool, v: &Si
     ];
     let layout = if inline { FormLayout::Inline } else { FormLayout::Stacked };
     page(caps, jar, "Validated form", html! {
-        (flash(caps, state.flash(), Default::default()))
+        (flash(caps, state.flash()))
         p { "Labels " @if inline { "beside the fields. " a href="/form" { "Put them above" } } @else { "above the fields. " a href="/form?layout=inline" { "Put them beside" } } "." }
         @if !errors.is_empty() { p class="wo-error" { "Server-side checks failed. Browser validation passed, these rules only live on the server." } }
-        (form(caps, "/form", &[FieldGroup::new("Account", &account), FieldGroup::new("Profile", &profile)], FormOptions::default().submit("Sign up").layout(layout)))
+        (form_with(caps, "/form", &[FieldGroup::new("Account", &account), FieldGroup::new("Profile", &profile)], FormOptions::default().submit("Sign up").layout(layout)))
     })
 }
 
@@ -530,7 +527,7 @@ async fn counter_page(caps: Caps, jar: CookieJar) -> Markup {
     let n: i64 = jar.get("count").and_then(|c| c.value().parse().ok()).unwrap_or(0);
     page(&caps, &jar, "Counter", html! {
         p { "Steps of two between 0 and 20. The buttons switch off at the ends; a typed value off the step or the bounds is refused by the browser and clamped by the server." }
-        (counter(&caps, "/counter", n, COUNTER))
+        (counter_with(&caps, "/counter", n, COUNTER))
     })
 }
 
@@ -555,7 +552,7 @@ fn notes_of(jar: &CookieJar) -> Vec<String> {
 async fn swap_page(caps: Caps, jar: CookieJar, state: UiState, Query(q): Query<SwapQuery>) -> Markup {
     let n = q.n.unwrap_or(1);
     page(&caps, &jar, "Swap targets", html! {
-        (flash(&caps, state.flash(), Default::default()))
+        (flash(&caps, state.flash()))
         p class="wo-note" { "Neither control sits inside a swap root. " code { "data-wo-target" } " names the root to update and " code { "data-wo-swap" } " how; without the script both are ordinary navigations to the same URL." }
         p { "Count: " span id="count" data-wo="swap" { (n) } " " a href={ "/swap?n=" (n + 1) } data-wo-target="#count" { "Add one" }
             " · " a href={ "/swap?n=" (n + 10) } data-wo-target="#count" data-wo-push="false" { "Add ten, keep the URL" } }
@@ -602,8 +599,8 @@ async fn settings_page(caps: Caps, jar: CookieJar, state: UiState) -> (UiState, 
     let hidden = html! { input type="hidden" name="tab" value=(state.tab("settings")); };
     let here = format!("/settings?tab.settings={}", state.tab("settings"));
     let body = page(&caps, &jar, "Settings", html! {
-        (flash(&caps, state.flash(), FlashOptions::default().dismiss(&here).auto_hide(true)))
-        (tabs(&caps, "settings", &[
+        (flash_with(&caps, state.flash(), FlashOptions::default().dismiss(&here).auto_hide(true)))
+        (tabs_with(&caps, "settings", &[
             Tab::new("Profile", html! { form class="wo-form" method="post" action="/settings" { (hidden)
                 div class="wo-field" { label for="name" { "Display name" } input id="name" name="name" value=(current.name) required; }
                 button type="submit" class="wo-primary" { "Save" } } }),
@@ -673,14 +670,14 @@ async fn inputs_page(caps: Caps, jar: CookieJar, state: UiState, Query(q): Query
     let countries: Vec<Vec<SelectOption>> = COUNTRIES.iter().map(|(_, cs)| cs.iter().map(|(v, l, i)| SelectOption::new(v, l).icon(i)).collect()).collect();
     let groups: Vec<SelectGroup> = COUNTRIES.iter().zip(&countries).map(|((g, _), cs)| SelectGroup::new(g, cs)).collect();
     let body = page(&caps, &jar, "Select, range, colour", html! {
-        (flash(&caps, state.flash(), Default::default()))
+        (flash(&caps, state.flash()))
         form id="inputs" data-wo="swap" class="wo-form" method="post" action="/inputs" {
-            div class="wo-field" { label for="size" { "Size" } (select(&caps, "size", &[SelectGroup::flat(&sizes)], v.size.as_deref().unwrap_or("m"), Default::default())) }
+            div class="wo-field" { label for="size" { "Size" } (select(&caps, "size", &[SelectGroup::flat(&sizes)], v.size.as_deref().unwrap_or("m"))) }
             div class="wo-field" { label for="country" { "Country" }
-                (select(&caps, "country", &groups, v.country.as_deref().unwrap_or("es"), SelectOptions::default().search("/inputs", v.country_q.as_deref().unwrap_or("")))) }
-            div class="wo-field" { label for="f-volume" { "Volume" } (range(&caps, "volume", v.volume.unwrap_or(40), RangeOptions::default().step(5))) }
-            div class="wo-field" { label for="f-price_min" { "Price" } (range::range_pair(&caps, "price", (lo, hi), RangeOptions::default().step(5))) }
-            div class="wo-field" { label for="f-accent" { "Accent" } (color(&caps, "accent", accent, ColorOptions::default().presets(&ACCENTS).alpha(v.alpha.unwrap_or(100)))) }
+                (select_with(&caps, "country", &groups, v.country.as_deref().unwrap_or("es"), SelectOptions::default().search("/inputs", v.country_q.as_deref().unwrap_or("")))) }
+            div class="wo-field" { label for="f-volume" { "Volume" } (range_with(&caps, "volume", v.volume.unwrap_or(40), RangeOptions::default().step(5))) }
+            div class="wo-field" { label for="f-price_min" { "Price" } (range::range_pair_with(&caps, "price", (lo, hi), RangeOptions::default().step(5))) }
+            div class="wo-field" { label for="f-accent" { "Accent" } (color_with(&caps, "accent", accent, ColorOptions::default().presets(&ACCENTS).alpha(v.alpha.unwrap_or(100)))) }
             button type="submit" class="wo-primary" { "Save" }
         }
         p class="wo-note" { "Without the enhancement script the outputs and the swatch show the last saved values and update on submit, and the country filter needs its button." }
@@ -708,7 +705,7 @@ async fn toast_page(caps: Caps, jar: CookieJar, state: UiState) -> (UiState, Mar
             button type="submit" name="kind" value="danger" { "Sync now" } " "
             button type="submit" name="kind" value="all" { "All three" }
         }
-        (toasts(&caps, state.flash(), ToastOptions::default().dismiss("/toast")))
+        (toasts_with(&caps, state.flash(), ToastOptions::default().dismiss("/toast")))
     });
     (state, body)
 }
@@ -728,7 +725,7 @@ async fn nav_page(caps: Caps, jar: CookieJar, state: UiState) -> Markup {
         li { a href="/nav" aria-current="page" { "Overview" } }
         li { a href="/table" { "Files" } } li { a href="/dashboard" { "Reports" } } li { a href="/settings" { "Settings" } }
     } };
-    page(&caps, &jar, "Drawer and breadcrumbs", drawer(&caps, "site", "Menu", links, html! {
+    page(&caps, &jar, "Drawer and breadcrumbs", drawer_with(&caps, "site", "Menu", links, html! {
         (breadcrumbs(&caps, &[("Home", "/"), ("Projects", "/nav"), ("Webonsive", "")]))
         p { "Wider than 60rem the navigation is a sidebar; narrower, the menu button opens it as a drawer. Escape or a click outside closes it." }
         p { "A long trail folds its middle so both ends stay readable:" }
@@ -745,14 +742,14 @@ async fn dashboard_page(caps: Caps, jar: CookieJar, Query(q): Query<DashboardQue
     let none = q.orders.as_deref() == Some("none");
     page(&caps, &jar, "Stats and empty states", html! {
         div class="wo-stat-grid" {
-            (stat(&caps, "Visitors", "12,480", StatOptions::default().delta("+8.2%", Trend::Up).note("last 7 days")))
-            (stat(&caps, "Orders", if none { "0" } else { "3" }, StatOptions::default().delta(if none { "-3" } else { "0" }, if none { Trend::Down } else { Trend::Flat })))
-            (stat(&caps, "Error rate", "0.4%", StatOptions::default().delta("-0.2 pt", Trend::Down).down_is_good(true).href("/table")))
-            (stat(&caps, "p95 latency", "38 ms", StatOptions::default().delta("+6 ms", Trend::Up).down_is_good(true)))
+            (stat_with(&caps, "Visitors", "12,480", StatOptions::default().delta("+8.2%", Trend::Up).note("last 7 days")))
+            (stat_with(&caps, "Orders", if none { "0" } else { "3" }, StatOptions::default().delta(if none { "-3" } else { "0" }, if none { Trend::Down } else { Trend::Flat })))
+            (stat_with(&caps, "Error rate", "0.4%", StatOptions::default().delta("-0.2 pt", Trend::Down).down_is_good(true).href("/table")))
+            (stat_with(&caps, "p95 latency", "38 ms", StatOptions::default().delta("+6 ms", Trend::Up).down_is_good(true)))
         }
         h2 { "Recent orders" }
         @if none {
-            (empty_state(&caps, "No orders yet", EmptyOptions::default().icon("\u{1f4e6}")
+            (empty_state_with(&caps, "No orders yet", EmptyOptions::default().icon("\u{1f4e6}")
                 .text(html! { "Orders show up here as soon as a customer checks out." })
                 .link("Show sample orders", "/dashboard")))
         } @else {
@@ -783,7 +780,7 @@ async fn palette_page(caps: Caps, jar: CookieJar, Query(p): Query<PaletteQuery>)
     let options = q.map_or(PaletteOptions::default(), |q| PaletteOptions::default().query(q));
     page(&caps, &jar, "Command palette", html! {
         p { "Open it with the button or the access key, type, pick a suggestion and press Enter. An exact name goes straight to the page; anything else lists what matches." }
-        (command_palette(&caps, "cmd", "/palette", &cmds, options))
+        (command_palette_with(&caps, "cmd", "/palette", &cmds, options))
     }).into_response()
 }
 
@@ -798,7 +795,7 @@ async fn stream_page(caps: Caps, jar: CookieJar) -> Streamed {
             @else { "This browser has no declarative shadow DOM: sections stream in document order." } }
         @for (id, ms) in sections {
             (slot(&caps, id, html! { section class="wo-stream-section wo-stream-pending" {
-                (skeleton(&caps, 2, SkeletonOptions::default().label(&format!("Loading {id} ({ms} ms)")).heading(true)))
+                (skeleton_with(&caps, 2, SkeletonOptions::default().label(&format!("Loading {id} ({ms} ms)")).heading(true)))
             } }))
         }
     });

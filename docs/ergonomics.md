@@ -158,3 +158,23 @@ The reader must know which index is open and that `Tab::lazy` means "render noth
   Markup` item source would let the component ask only for what it shows.
 - `accordion` nested inside another passes `AccordionOptions::default().state(&state)` twice;
   with the `Page` extractor the state could reach components without being threaded by hand.
+
+## Done: two forms per component
+
+Every component with options now comes in two forms, like `layout` / `layout_with`:
+`dialog(&caps, "hi", "Say hi", body)` for the common case and
+`dialog_with(&caps, "confirm", "Delete account", body, DialogOptions::default().danger(true))`
+for the rest. `popover_menu` and `drawer` derive their id from the label
+(`popover_menu(&caps, "Account", &items)` is `#account`). Before, every call ended in
+`Default::default()` when it wanted nothing special:
+
+```rust
+// before
+(dialog(&caps, "hi", "Say hi", html! { p { "Hello." } }, Default::default()))
+(popover_menu(&caps, "account", "Account", &items, Default::default()))
+(flash(&caps, state.flash(), Default::default()))
+// after
+(dialog(&caps, "hi", "Say hi", html! { p { "Hello." } }))
+(popover_menu(&caps, "Account", &items))
+(flash(&caps, state.flash()))
+```

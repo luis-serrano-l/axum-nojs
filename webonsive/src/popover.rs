@@ -24,12 +24,11 @@
 //! script; Tab always works.
 //!
 //! ```rust
-//! use webonsive::{Caps, popover_menu, popover::{MenuItem, Placement, PopoverOptions}};
-//! let m = popover_menu(&Caps::all(), "acct", "Account", &[
-//!     MenuItem::link("Profile", "/profile"),
-//!     MenuItem::link("Sign out", "/logout"),
-//! ], Default::default());
-//! let m = popover_menu(&Caps::all(), "acct", "Account", &[
+//! use webonsive::{Caps, popover_menu, popover_menu_with, popover::{MenuItem, Placement, PopoverOptions}};
+//! // The id is derived from the label: this menu is `#account`.
+//! let m = popover_menu(&Caps::all(), "Account", &[MenuItem::link("Profile", "/profile"), MenuItem::link("Sign out", "/logout")]);
+//! assert!(m.into_string().contains(r#"id="account""#));
+//! let m = popover_menu_with(&Caps::all(), "acct", "Account", &[
 //!     MenuItem::heading("Signed in as Ada"),
 //!     MenuItem::link("Profile", "/profile").icon("@").shortcut("g p"),
 //!     MenuItem::link("Billing", "/billing").disabled(true),
@@ -159,8 +158,14 @@ impl<'a> MenuItem<'a> {
     }
 }
 
+/// A menu whose id is derived from `label`; use [`popover_menu_with`] to name it.
+/// [`popover_menu_with`] takes the options.
+pub fn popover_menu(caps: &Caps, label: &str, items: &[MenuItem]) -> Markup {
+    popover_menu_with(caps, &crate::slug(label), label, items, Default::default())
+}
+
 /// A button labelled `label` that toggles a menu of `items`. `id` must be unique on the page.
-pub fn popover_menu(caps: &Caps, id: &str, label: &str, items: &[MenuItem], options: PopoverOptions) -> Markup {
+pub fn popover_menu_with(caps: &Caps, id: &str, label: &str, items: &[MenuItem], options: PopoverOptions) -> Markup {
     let popover = caps.has(Cap::Popover);
     let anchor = caps.has(Cap::Anchor);
     let list = html! { ul role="menu" { @for it in items { (item(it, popover, anchor)) } } };

@@ -36,16 +36,16 @@
 //! on the server round trip, and warning about unsaved changes when leaving needs script.
 //!
 //! ```rust
-//! use webonsive::{Caps, form, Field, FieldKind, form::{FieldGroup, FormLayout, FormOptions}};
+//! use webonsive::{Caps, form, form_with, Field, FieldKind, form::{FieldGroup, FormLayout, FormOptions}};
 //! let fields = [Field::new("email", "Email", FieldKind::Email).required(true)];
-//! let m = form(&Caps::all(), "/form", &[FieldGroup::plain(&fields)], Default::default());
+//! let m = form(&Caps::all(), "/form", &[FieldGroup::plain(&fields)]);
 //!
 //! let about = [
 //!     Field::new("bio", "Bio", FieldKind::Textarea { rows: 3 }).max_len(280).value("Hi").help("Shown on your profile."),
 //!     Field::new("avatar", "Avatar", FieldKind::File { accept: "image/png,image/jpeg", multiple: false }),
 //!     Field::new("born", "Born", FieldKind::Date { min: "1900-01-01", max: "2026-12-31" }),
 //! ];
-//! let m = form(&Caps::all(), "/profile", &[FieldGroup::new("About you", &about)],
+//! let m = form_with(&Caps::all(), "/profile", &[FieldGroup::new("About you", &about)],
 //!              FormOptions::default().submit("Save profile").layout(FormLayout::Inline));
 //! let html = m.into_string();
 //! assert!(html.contains("enctype=\"multipart/form-data\""));
@@ -218,8 +218,14 @@ impl<'a> FormOptions<'a> {
     }
 }
 
+/// A stacked form with the default submit button.
+/// [`form_with`] takes the options.
+pub fn form(caps: &Caps, action: &str, groups: &[FieldGroup<'_>]) -> Markup {
+    form_with(caps, action, groups, Default::default())
+}
+
 /// Render `groups` as a POST form to `action`.
-pub fn form(_caps: &Caps, action: &str, groups: &[FieldGroup<'_>], options: FormOptions) -> Markup {
+pub fn form_with(_caps: &Caps, action: &str, groups: &[FieldGroup<'_>], options: FormOptions) -> Markup {
     let FormOptions { submit, layout } = options;
     let multipart = groups.iter().flat_map(|g| g.fields).any(|f| matches!(f.kind, FieldKind::File { .. }));
     let class = match layout { FormLayout::Stacked => "wo-form", FormLayout::Inline => "wo-form wo-form-inline" };
@@ -312,7 +318,7 @@ mod tests {
     #[test]
     fn help_counter_and_error_describe_the_field() {
         let fields = [Field::new("bio", "Bio", FieldKind::Textarea { rows: 2 }).value("héllo").max_len(10).help("Short.").error(Some("Too dull."))];
-        let m = form(&Caps::NONE, "/p", &[FieldGroup::plain(&fields)], Default::default()).into_string();
+        let m = form(&Caps::NONE, "/p", &[FieldGroup::plain(&fields)]).into_string();
         assert!(m.contains("aria-describedby=\"f-bio-help f-bio-count f-bio-error\""), "{m}");
         assert!(m.contains("<output id=\"f-bio-count\" for=\"f-bio\" class=\"wo-field-count\">5 / 10</output>"), "counts chars, not bytes");
         assert!(m.contains("aria-invalid=\"true\"") && m.contains(">héllo</textarea>"));
@@ -327,7 +333,7 @@ mod tests {
             Field::new("f", "F", FieldKind::File { accept: "", multiple: true }).value("ignored"),
             Field::new("h", "H", FieldKind::Pattern { pattern: "[a-z]+", hint: "Lowercase." }),
         ];
-        let m = form(&Caps::NONE, "/p", &[FieldGroup::new("G", &fields)], FormOptions::default().layout(FormLayout::Inline)).into_string();
+        let m = form_with(&Caps::NONE, "/p", &[FieldGroup::new("G", &fields)], FormOptions::default().layout(FormLayout::Inline)).into_string();
         assert!(m.contains("type=\"date\" value=\"\" min=\"2026-01-01\">"), "an empty bound is left out: {m}");
         assert!(m.contains("type=\"time\" value=\"\" min=\"09:00\" max=\"17:00\""));
         assert!(m.contains("type=\"file\" multiple") && !m.contains("ignored") && !m.contains("accept="));

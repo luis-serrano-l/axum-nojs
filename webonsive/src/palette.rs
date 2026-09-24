@@ -22,16 +22,16 @@
 //! and the global Ctrl+K shortcut (the access key stands in for it).
 //!
 //! ```rust
-//! use webonsive::{Caps, command_palette, palette::{Command, PaletteOptions, exact, matches}};
+//! use webonsive::{Caps, command_palette, command_palette_with, palette::{Command, PaletteOptions, exact, matches}};
 //! const CMDS: &[Command] = &[
 //!     Command::new("Open settings", "/settings").group("Go to"),
 //!     Command::new("New invoice", "/invoices/new").keywords("bill create"),
 //! ];
-//! let m = command_palette(&Caps::all(), "cmd", "/search", CMDS, Default::default()).into_string();
+//! let m = command_palette(&Caps::all(), "cmd", "/search", CMDS).into_string();
 //! assert!(m.contains(r#"popovertarget="cmd""#) && m.contains(r#"list="cmd-list""#));
 //! assert_eq!(exact(CMDS, "open settings").map(|c| c.href), Some("/settings"));
 //! assert_eq!(matches(CMDS, "bill").len(), 1);
-//! let m = command_palette(&Caps::all(), "cmd", "/search", CMDS, PaletteOptions::default().query("new")).into_string();
+//! let m = command_palette_with(&Caps::all(), "cmd", "/search", CMDS, PaletteOptions::default().query("new")).into_string();
 //! assert!(m.contains("wo-palette-results") && m.contains("New invoice"));
 //! ```
 
@@ -125,8 +125,14 @@ impl<'a> PaletteOptions<'a> {
     }
 }
 
+/// A palette with the default options.
+/// [`command_palette_with`] takes the options.
+pub fn command_palette(caps: &Caps, id: &str, action: &str, commands: &[Command]) -> Markup {
+    command_palette_with(caps, id, action, commands, Default::default())
+}
+
 /// A command palette `id` over `commands`, submitting `q` to `action` with GET.
-pub fn command_palette(caps: &Caps, id: &str, action: &str, commands: &[Command], options: PaletteOptions) -> Markup {
+pub fn command_palette_with(caps: &Caps, id: &str, action: &str, commands: &[Command], options: PaletteOptions) -> Markup {
     let list_id = format!("{id}-list");
     let shortcut = format!("Alt+Shift+{}", options.key.to_ascii_uppercase());
     let key = options.key.to_string();

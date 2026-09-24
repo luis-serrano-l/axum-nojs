@@ -20,10 +20,10 @@
 //! and mirrors the opacity into its `<output>`.
 //!
 //! ```rust
-//! use webonsive::{Caps, color, color::{ColorOptions, hex_alpha}};
-//! let m = color(&Caps::all(), "accent", "#2f5bea", Default::default());
+//! use webonsive::{Caps, color, color_with, color::{ColorOptions, hex_alpha}};
+//! let m = color(&Caps::all(), "accent", "#2f5bea");
 //! assert!(m.into_string().contains("type=\"color\""));
-//! let m = color(&Caps::all(), "accent", "#2f5bea", ColorOptions::default().presets(&["#1f6f5f", "#b3261e"]).alpha(80));
+//! let m = color_with(&Caps::all(), "accent", "#2f5bea", ColorOptions::default().presets(&["#1f6f5f", "#b3261e"]).alpha(80));
 //! let html = m.into_string();
 //! assert!(html.contains("name=\"accent-preset\" value=\"#b3261e\""));
 //! assert!(html.contains("name=\"accent-alpha\""));
@@ -61,8 +61,14 @@ pub fn hex_alpha(hex: &str, percent: u8) -> String {
     format!("{hex}{:02x}", (u32::from(percent.min(100)) * 255 + 50) / 100)
 }
 
+/// A colour input with the default options.
+/// [`color_with`] takes the options.
+pub fn color(caps: &Caps, name: &str, value: &str) -> Markup {
+    color_with(caps, name, value, Default::default())
+}
+
 /// A colour input named `name` with the current `#rrggbb` value and a swatch of it.
-pub fn color(_caps: &Caps, name: &str, value: &str, options: ColorOptions) -> Markup {
+pub fn color_with(_caps: &Caps, name: &str, value: &str, options: ColorOptions) -> Markup {
     let ColorOptions { presets, alpha } = options;
     let id = format!("f-{name}");
     let pct = alpha.unwrap_or(100);

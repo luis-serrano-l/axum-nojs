@@ -216,7 +216,7 @@ form, and the old form kept only where removing it would break a published signa
 - [x] Audit: list every public signature and every demo call site with its argument count,
   the setters it needs, and what a reader must know to follow it; record the worst ten in
   `docs/ergonomics.md` with a proposed rewrite for each.
-- [ ] One obvious way in: each component has a short constructor for the common case
+- [x] One obvious way in: each component has a short constructor for the common case
   (`dialog(&caps, "confirm", "Delete account", body)`) and options only for the rest;
   required text first, ids derived from it where the caller does not care.
 - [ ] Readable data: items, columns, fields and options built with `From` impls from plain

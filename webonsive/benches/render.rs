@@ -4,7 +4,7 @@
 use criterion::{Criterion, black_box, criterion_group, criterion_main};
 use maud::html;
 use webonsive::table::{Column, Row, TableOptions};
-use webonsive::{Caps, PagedTableOptions, Theme, UiState, layout, paged_table, stylesheet, table};
+use webonsive::{Caps, PagedTableOptions, Theme, UiState, layout, paged_table_with, stylesheet, table_with};
 
 fn rows(n: usize) -> Vec<Row<'static>> {
     (0..n).map(|i| Row::new(vec![html! { "file-" (i) ".txt" }, html! { (i * 17) " KB" }, html! { "—" }])).collect()
@@ -20,13 +20,13 @@ fn bench(c: &mut Criterion) {
     });
     let thousand = rows(1000);
     c.bench_function("table 1000 rows", |b| {
-        b.iter(|| table(&caps, "t", "/t", &COLS, black_box(&thousand), TableOptions::default().sort(Some(("name", false)))).into_string().len())
+        b.iter(|| table_with(&caps, "t", "/t", &COLS, black_box(&thousand), TableOptions::default().sort(Some(("name", false)))).into_string().len())
     });
     let page = rows(25);
     c.bench_function("paged_table 25 of 1000", |b| {
         b.iter(|| {
             let opts = PagedTableOptions::default().page(black_box(20)).per_page(25).filter("file");
-            paged_table(&caps, "t", "/t", &COLS, &page, 1000, opts).into_string().len()
+            paged_table_with(&caps, "t", "/t", &COLS, &page, 1000, opts).into_string().len()
         })
     });
     c.bench_function("UiState::from_request", |b| {

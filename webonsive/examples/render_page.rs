@@ -11,13 +11,13 @@ fn main() {
     let caps = if fallback { Caps::NONE } else { Caps::all() };
     let page = layout(&caps, "webonsive example", Theme::Auto, html! {
         h1 { "Hello from webonsive" }
-        (dialog(&caps, "hi", "Open a dialog", html! { p { "Closed by the platform, not by script." } }, Default::default()))
+        (dialog(&caps, "hi", "Open a dialog", html! { p { "Closed by the platform, not by script." } }))
         " "
-        (popover_menu(&caps, "menu", "Menu", &[MenuItem::link("Docs", "/docs"), MenuItem::link("Source", "/src")], Default::default()))
+        (popover_menu(&caps, "Menu", &[MenuItem::link("Docs", "/docs"), MenuItem::link("Source", "/src")]))
         h2 { "Tabs" }
-        (tabs(&caps, "t", &[Tab::new("One", html! { p { "First panel." } }), Tab::new("Two", html! { p { "Second panel." } })], Default::default()))
+        (tabs(&caps, "t", &[Tab::new("One", html! { p { "First panel." } }), Tab::new("Two", html! { p { "Second panel." } })]))
         h2 { "Accordion" }
-        (accordion(&caps, "faq", &[AccordionItem::new("Why?", html! { p { "Because the platform can." } })], Default::default()))
+        (accordion(&caps, "faq", &[AccordionItem::new("Why?", html! { p { "Because the platform can." } })]))
     });
     print!("{}", page.into_string());
 }

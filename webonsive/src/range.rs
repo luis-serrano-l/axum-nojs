@@ -22,12 +22,12 @@
 //! moves. Without it the `<output>` shows the value the server last saw.
 //!
 //! ```rust
-//! use webonsive::{Caps, range, range::{RangeOptions, order, range_pair}};
-//! let m = range(&Caps::all(), "volume", 40, Default::default());
-//! let m = range(&Caps::all(), "volume", 40, RangeOptions::default().min(0).max(100).step(5));
+//! use webonsive::{Caps, range, range_with, range::{RangeOptions, order, range_pair, range_pair_with}};
+//! let m = range(&Caps::all(), "volume", 40);
+//! let m = range_with(&Caps::all(), "volume", 40, RangeOptions::default().min(0).max(100).step(5));
 //! assert!(m.into_string().contains("<output"));
 //! let (lo, hi) = order(80, 20);
-//! let m = range_pair(&Caps::all(), "price", (lo, hi), RangeOptions::default().step(10)).into_string();
+//! let m = range_pair_with(&Caps::all(), "price", (lo, hi), RangeOptions::default().step(10)).into_string();
 //! assert!(m.contains("name=\"price_min\"") && m.contains("name=\"price_max\""));
 //! assert!(m.contains("<output for=\"f-price_min\">20</output>"));
 //! ```
@@ -73,8 +73,14 @@ impl RangeOptions {
     }
 }
 
+/// A 0 to 100 slider.
+/// [`range_with`] takes the options.
+pub fn range(caps: &Caps, name: &str, value: i64) -> Markup {
+    range_with(caps, name, value, Default::default())
+}
+
 /// A range input named `name`, with the server's current `value` shown beside it.
-pub fn range(_caps: &Caps, name: &str, value: i64, options: RangeOptions) -> Markup {
+pub fn range_with(_caps: &Caps, name: &str, value: i64, options: RangeOptions) -> Markup {
     let RangeOptions { min, max, step } = options;
     let list = format!("{name}-ticks");
     let id = format!("f-{name}");
@@ -91,8 +97,14 @@ pub fn range(_caps: &Caps, name: &str, value: i64, options: RangeOptions) -> Mar
     }
 }
 
+/// A 0 to 100 two-thumb range.
+/// [`range_pair_with`] takes the options.
+pub fn range_pair(caps: &Caps, name: &str, value: (i64, i64)) -> Markup {
+    range_pair_with(caps, name, value, Default::default())
+}
+
 /// A low/high pair over one track, named `<name>_min` and `<name>_max`.
-pub fn range_pair(_caps: &Caps, name: &str, (lo, hi): (i64, i64), options: RangeOptions) -> Markup {
+pub fn range_pair_with(_caps: &Caps, name: &str, (lo, hi): (i64, i64), options: RangeOptions) -> Markup {
     let RangeOptions { min, max, step } = options;
     let (lo_id, hi_id) = (format!("f-{name}_min"), format!("f-{name}_max"));
     html! {

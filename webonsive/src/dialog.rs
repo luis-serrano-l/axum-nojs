@@ -31,9 +31,9 @@
 //!
 //! ```rust
 //! use maud::html;
-//! use webonsive::{Caps, dialog, dialog::{DialogOptions, DialogSize}};
-//! let m = dialog(&Caps::all(), "hi", "Say hi", html! { p { "Hello." } }, Default::default());
-//! let m = dialog(&Caps::all(), "confirm", "Delete account", html! {
+//! use webonsive::{Caps, dialog, dialog_with, dialog::{DialogOptions, DialogSize}};
+//! let m = dialog(&Caps::all(), "hi", "Say hi", html! { p { "Hello." } });
+//! let m = dialog_with(&Caps::all(), "confirm", "Delete account", html! {
 //!         p { "This cannot be undone." }
 //!         label { "Reason " input name="reason"; }
 //!     },
@@ -177,8 +177,14 @@ impl<'a> DialogOptions<'a> {
     }
 }
 
+/// A dialog opened by a button labelled `trigger`, with the default options.
+/// [`dialog_with`] takes the options.
+pub fn dialog(caps: &Caps, id: &str, trigger: &str, body: Markup) -> Markup {
+    dialog_with(caps, id, trigger, body, Default::default())
+}
+
 /// A modal dialog. `id` must be unique on the page; `trigger` is the opening button's label.
-pub fn dialog(caps: &Caps, id: &str, trigger: &str, body: Markup, options: DialogOptions) -> Markup {
+pub fn dialog_with(caps: &Caps, id: &str, trigger: &str, body: Markup, options: DialogOptions) -> Markup {
     let DialogOptions { open, title, size, danger, confirm, returns_to, close_label, cancel_label, closedby } = options;
     let invokers = caps.has(Cap::Invokers);
     let title_id = format!("{id}-title");

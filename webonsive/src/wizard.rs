@@ -30,15 +30,15 @@
 //!
 //! ```rust
 //! use maud::html;
-//! use webonsive::{Caps, UiState, wizard, wizard::{Step, WizardOptions, summary}};
+//! use webonsive::{Caps, UiState, wizard, wizard_with, wizard::{Step, WizardOptions, summary}};
 //! let state = UiState::parse("/wizard", "step.signup=2", "");
 //! let steps = [
 //!     Step::new("Account", html! { input name="email"; }),
 //!     Step::new("Newsletter", html! { input name="topics"; }).optional(true),
 //!     Step::new("Review", summary(&state, "signup", &[("Email", "a@b.c", 0), ("Topics", "", 1)])),
 //! ];
-//! let m = wizard(&Caps::all(), "signup", "/wizard", &steps, &state, Default::default());
-//! let m = wizard(&Caps::all(), "signup", "/wizard", &steps, &state, WizardOptions::default().finish("Create account").progress(true));
+//! let m = wizard(&Caps::all(), "signup", "/wizard", &steps, &state);
+//! let m = wizard_with(&Caps::all(), "signup", "/wizard", &steps, &state, WizardOptions::default().finish("Create account").progress(true));
 //! let html = m.into_string();
 //! assert!(html.contains("aria-current=\"step\""));
 //! assert!(html.contains("<progress class=\"wo-wizard-progress\" value=\"2\" max=\"2\""));
@@ -107,11 +107,17 @@ impl<'a> WizardOptions<'a> {
     }
 }
 
+/// A wizard with the default options.
+/// [`wizard_with`] takes the options.
+pub fn wizard(caps: &Caps, id: &str, action: &str, steps: &[Step], state: &UiState) -> Markup {
+    wizard_with(caps, id, action, steps, state, Default::default())
+}
+
 /// `steps.last()` is the review step. Each POST to `action` carries `step=<n>` (0-based), the
 /// step's fields and `skip=1` when an optional step was skipped. The handler checks them and
 /// either answers with the same step (values kept, messages beside the fields,
 /// [`Step::error`] set) or stores them and redirects to `state.link("step.<id>", n+1)`.
-pub fn wizard(_caps: &Caps, id: &str, action: &str, steps: &[Step], state: &UiState, options: WizardOptions) -> Markup {
+pub fn wizard_with(_caps: &Caps, id: &str, action: &str, steps: &[Step], state: &UiState, options: WizardOptions) -> Markup {
     let WizardOptions { finish, progress } = options;
     let key = format!("step.{id}");
     let current = state.step(id).min(steps.len().saturating_sub(1));
@@ -216,13 +222,13 @@ mod tests {
     fn step_list_marks_done_current_and_todo() {
         let steps = [Step::new("A", html! {}), Step::new("B", html! {}), Step::new("C", html! {})];
         let state = UiState::parse("/w", "step.x=1", "");
-        let m = wizard(&Caps::NONE, "x", "/w", &steps, &state, WizardOptions::default().finish("Done")).into_string();
+        let m = wizard_with(&Caps::NONE, "x", "/w", &steps, &state, WizardOptions::default().finish("Done")).into_string();
         assert!(m.contains("class=\"wo-wizard-done\"><a href=\"/w?step.x=0\">A</a>"), "{m}");
         assert!(m.contains("aria-current=\"step\"><span>B</span>"));
         assert!(m.contains("value=\"1\"") && m.contains(">Next<") && !m.contains(">Done<"));
         assert!(!m.contains("wo-wizard-resume"), "the step came from the query");
         let end = UiState::parse("/w", "step.x=9", "");
-        let m = wizard(&Caps::NONE, "x", "/w", &steps, &end, WizardOptions::default().finish("Done")).into_string();
+        let m = wizard_with(&Caps::NONE, "x", "/w", &steps, &end, WizardOptions::default().finish("Done")).into_string();
         assert!(m.contains(">Done<") && m.contains("href=\"/w?step.x=1\">Back<"));
     }
 
@@ -230,13 +236,13 @@ mod tests {
     fn errors_skip_and_resume() {
         let steps = [Step::new("A", html! {}), Step::new("B", html! {}).optional(true).error(true), Step::new("C", html! {})];
         let state = UiState::parse("/w", "", "step.x=1");
-        let m = wizard(&Caps::NONE, "x", "/w", &steps, &state, Default::default()).into_string();
+        let m = wizard(&Caps::NONE, "x", "/w", &steps, &state).into_string();
         assert!(m.contains("class=\"wo-wizard-current wo-wizard-error\" aria-current=\"step\""), "{m}");
         assert!(m.contains("<fieldset aria-invalid=\"true\">"));
         assert!(m.contains("name=\"skip\" value=\"1\" formnovalidate"));
         assert!(m.contains("class=\"wo-wizard-resume\"") && m.contains("href=\"/w?step.x=0\">Start over"));
         assert!(m.contains("value=\"1\" max=\"2\""), "progress: one of two steps done");
-        let m = wizard(&Caps::NONE, "x", "/w", &steps, &state, WizardOptions::default().progress(false)).into_string();
+        let m = wizard_with(&Caps::NONE, "x", "/w", &steps, &state, WizardOptions::default().progress(false)).into_string();
         assert!(!m.contains("<progress"));
     }
 }

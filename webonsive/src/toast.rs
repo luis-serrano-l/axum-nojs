@@ -17,13 +17,13 @@
 //! answer to a round trip), and dismissing one is a navigation, not an instant removal.
 //!
 //! ```rust
-//! use webonsive::{Caps, toasts, toast::ToastOptions, flash::{Level, stack}};
+//! use webonsive::{Caps, toasts, toasts_with, toast::ToastOptions, flash::{Level, stack}};
 //! let text = stack(&[(Level::Ok, "Invite sent."), (Level::Danger, "Mail server down.")]);
-//! let m = toasts(&Caps::all(), Some(&text), Default::default()).into_string();
+//! let m = toasts(&Caps::all(), Some(&text)).into_string();
 //! assert!(m.contains("wo-toast-ok") && m.contains(r#"role="alert""#));
-//! let m = toasts(&Caps::all(), Some("Copied."), ToastOptions::default().dismiss("/toast")).into_string();
+//! let m = toasts_with(&Caps::all(), Some("Copied."), ToastOptions::default().dismiss("/toast")).into_string();
 //! assert!(m.contains(r#"href="/toast""#));
-//! assert_eq!(toasts(&Caps::all(), None, Default::default()).into_string(), "");
+//! assert_eq!(toasts(&Caps::all(), None).into_string(), "");
 //! ```
 
 use maud::{Markup, html};
@@ -46,8 +46,14 @@ impl<'a> ToastOptions<'a> {
     }
 }
 
+/// A toast region with the default options.
+/// [`toasts_with`] takes the options.
+pub fn toasts(caps: &Caps, text: Option<&str>) -> Markup {
+    toasts_with(caps, text, Default::default())
+}
+
 /// The messages in `text` as a stack of toasts; nothing when there are none.
-pub fn toasts(_caps: &Caps, text: Option<&str>, options: ToastOptions) -> Markup {
+pub fn toasts_with(_caps: &Caps, text: Option<&str>, options: ToastOptions) -> Markup {
     let messages = text.map(parse).unwrap_or_default();
     html! {
         @if !messages.is_empty() {

@@ -27,14 +27,14 @@
 //!
 //! ```rust
 //! use maud::html;
-//! use webonsive::{Caps, select, select::{Group, SelectOption, SelectOptions}};
+//! use webonsive::{Caps, select, select_with, select::{Group, SelectOption, SelectOptions}};
 //! let sizes = [SelectOption::new("s", "Small"), SelectOption::new("l", "Large").icon("🐘")];
-//! let m = select(&Caps::all(), "size", &[Group::flat(&sizes)], "l", Default::default());
+//! let m = select(&Caps::all(), "size", &[Group::flat(&sizes)], "l");
 //! assert!(m.into_string().contains("<selectedcontent>"));
 //!
 //! let fruit = [SelectOption::new("apple", "Apple"), SelectOption::new("kiwi", "Kiwi").content(html! { b { "Kiwi" } })];
 //! let veg = [SelectOption::new("leek", "Leek")];
-//! let m = select(&Caps::all(), "food", &[Group::new("Fruit", &fruit), Group::new("Vegetables", &veg)], "leek",
+//! let m = select_with(&Caps::all(), "food", &[Group::new("Fruit", &fruit), Group::new("Vegetables", &veg)], "leek",
 //!                SelectOptions::default().search("/shop", "k").search_over(2)).into_string();
 //! assert!(m.contains("<optgroup label=\"Fruit\">") && !m.contains("Apple"), "filtered to 'k'");
 //! assert!(m.contains("formmethod=\"get\" formaction=\"/shop\""));
@@ -123,8 +123,14 @@ impl<'a> SelectOptions<'a> {
     }
 }
 
+/// A select with the default options.
+/// [`select_with`] takes the options.
+pub fn select(caps: &Caps, name: &str, groups: &[Group], selected: &str) -> Markup {
+    select_with(caps, name, groups, selected, Default::default())
+}
+
 /// `groups` of options; `selected` is the current value from the server.
-pub fn select(caps: &Caps, name: &str, groups: &[Group], selected: &str, options: SelectOptions) -> Markup {
+pub fn select_with(caps: &Caps, name: &str, groups: &[Group], selected: &str, options: SelectOptions) -> Markup {
     let SelectOptions { search, search_over } = options;
     let rich = caps.has(Cap::BaseSelect);
     let total: usize = groups.iter().map(|g| g.options.len()).sum();

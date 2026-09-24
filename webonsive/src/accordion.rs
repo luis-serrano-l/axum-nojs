@@ -27,17 +27,17 @@
 //!
 //! ```rust
 //! use maud::html;
-//! use webonsive::{Caps, UiState, accordion, accordion::{AccordionItem, AccordionOptions}};
+//! use webonsive::{Caps, UiState, accordion, accordion_with, accordion::{AccordionItem, AccordionOptions}};
 //! let m = accordion(&Caps::all(), "faq", &[
 //!     AccordionItem::new("What?", html! { p { "A" } }),
 //!     AccordionItem::new("Why?", html! { p { "B" } }),
-//! ], Default::default());
+//! ]);
 //!
 //! let state = UiState::parse("/help", "open.faq=0,2", "");
-//! let m = accordion(&Caps::all(), "faq", &[
+//! let m = accordion_with(&Caps::all(), "faq", &[
 //!     AccordionItem::new("Install", html! { p { "cargo add" } }).icon("\u{1F4E6}").summary("One line."),
 //!     AccordionItem::new("Use", html! { p { "html!" } }),
-//!     AccordionItem::new("More", accordion(&Caps::all(), "faq-more", &[AccordionItem::new("Nested", html! { p { "Own group." } })], AccordionOptions::default().state(&state))),
+//!     AccordionItem::new("More", accordion_with(&Caps::all(), "faq-more", &[AccordionItem::new("Nested", html! { p { "Own group." } })], AccordionOptions::default().state(&state))),
 //! ], AccordionOptions::default().state(&state).multi(true).controls(true));
 //! let html = m.into_string();
 //! assert!(html.contains("href=\"/help?open.faq=2\">Install"), "open item's link removes itself from the list");
@@ -104,8 +104,14 @@ impl<'a> AccordionOptions<'a> {
     }
 }
 
+/// An exclusive accordion with no state and the default options.
+/// [`accordion_with`] takes the options.
+pub fn accordion(caps: &Caps, group: &str, items: &[AccordionItem]) -> Markup {
+    accordion_with(caps, group, items, Default::default())
+}
+
 /// Accordion `group`. Open sections are `state.opens(group)` (none without a state).
-pub fn accordion(_caps: &Caps, group: &str, items: &[AccordionItem], options: AccordionOptions) -> Markup {
+pub fn accordion_with(_caps: &Caps, group: &str, items: &[AccordionItem], options: AccordionOptions) -> Markup {
     let AccordionOptions { state, multi, controls } = options;
     let open: Vec<usize> = state.map(|s| s.opens(group)).unwrap_or_default();
     let key = format!("open.{group}");

@@ -12,10 +12,10 @@
 //!
 //! ```rust
 //! use maud::html;
-//! use webonsive::{Caps, empty_state, empty_state::EmptyOptions};
-//! let m = empty_state(&Caps::all(), "No files yet", Default::default()).into_string();
+//! use webonsive::{Caps, empty_state, empty_state_with, empty_state::EmptyOptions};
+//! let m = empty_state(&Caps::all(), "No files yet").into_string();
 //! assert!(m.contains("No files yet"));
-//! let m = empty_state(&Caps::all(), "No results for \u{201c}zzz\u{201d}", EmptyOptions::default()
+//! let m = empty_state_with(&Caps::all(), "No results for \u{201c}zzz\u{201d}", EmptyOptions::default()
 //!     .icon("\u{1f50d}")
 //!     .text(html! { "Check the spelling or clear the filter." })
 //!     .link("Clear the filter", "/table")
@@ -63,8 +63,14 @@ impl<'a> EmptyOptions<'a> {
     }
 }
 
+/// An empty state with only a title.
+/// [`empty_state_with`] takes the options.
+pub fn empty_state(caps: &Caps, title: &str) -> Markup {
+    empty_state_with(caps, title, Default::default())
+}
+
 /// An empty state titled `title`.
-pub fn empty_state(_caps: &Caps, title: &str, options: EmptyOptions) -> Markup {
+pub fn empty_state_with(_caps: &Caps, title: &str, options: EmptyOptions) -> Markup {
     html! {
         div class="wo-empty" {
             @if let Some(i) = options.icon { span class="wo-empty-icon" aria-hidden="true" { (i) } }

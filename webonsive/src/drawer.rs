@@ -22,11 +22,12 @@
 //!
 //! ```rust
 //! use maud::html;
-//! use webonsive::{Caps, drawer, drawer::DrawerOptions};
+//! use webonsive::{Caps, drawer, drawer_with, drawer::DrawerOptions};
 //! let nav = html! { ul { li { a href="/" { "Home" } } } };
-//! let m = drawer(&Caps::all(), "site", "Menu", nav.clone(), html! { p { "Page" } }, Default::default()).into_string();
-//! assert!(m.contains(r#"command="show-modal" commandfor="site""#) && m.contains(r#"closedby="any""#));
-//! let m = drawer(&Caps::all(), "site", "Menu", nav, html! { p { "Page" } },
+//! // The id is derived from the label: this drawer is `#menu`.
+//! let m = drawer(&Caps::all(), "Menu", nav.clone(), html! { p { "Page" } }).into_string();
+//! assert!(m.contains(r#"command="show-modal" commandfor="menu""#) && m.contains(r#"closedby="any""#));
+//! let m = drawer_with(&Caps::all(), "site", "Menu", nav, html! { p { "Page" } },
 //!     DrawerOptions::default().title("Browse").sidebar(true).open(true)).into_string();
 //! assert!(m.contains("wo-drawer-sidebar") && m.contains(" open>"));
 //! ```
@@ -64,8 +65,14 @@ impl<'a> DrawerOptions<'a> {
     }
 }
 
+/// A drawer whose id is derived from `label`; use [`drawer_with`] to name it.
+/// [`drawer_with`] takes the options.
+pub fn drawer(caps: &Caps, label: &str, nav: Markup, content: Markup) -> Markup {
+    drawer_with(caps, &crate::slug(label), label, nav, content, Default::default())
+}
+
 /// A navigation drawer `id` opened by a button labelled `label`, holding `nav`, beside `content`.
-pub fn drawer(caps: &Caps, id: &str, label: &str, nav: Markup, content: Markup, options: DrawerOptions) -> Markup {
+pub fn drawer_with(caps: &Caps, id: &str, label: &str, nav: Markup, content: Markup, options: DrawerOptions) -> Markup {
     let invokers = caps.has(Cap::Invokers);
     let title = options.title.unwrap_or(label);
     let title_id = format!("{id}-title");

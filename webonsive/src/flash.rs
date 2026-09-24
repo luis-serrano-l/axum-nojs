@@ -25,15 +25,15 @@
 //! **Fallback:** without CSS animations the message stays; nothing else differs.
 //!
 //! ```rust
-//! use webonsive::{Caps, flash, flash::{FlashOptions, Level, stack}};
+//! use webonsive::{Caps, flash, flash_with, flash::{FlashOptions, Level, stack}};
 //! let caps = Caps::all();
-//! let m = flash(&caps, Some("Saved."), Default::default()).into_string();
+//! let m = flash(&caps, Some("Saved.")).into_string();
 //! assert!(m.contains("wo-flash-info") && m.contains("Saved."));
-//! assert_eq!(flash(&caps, None, Default::default()).into_string(), "");
+//! assert_eq!(flash(&caps, None).into_string(), "");
 //!
 //! // Two at once, one of them an error, with a dismiss link and auto-hide.
 //! let text = stack(&[(Level::Ok, "Saved."), (Level::Danger, "Avatar too large.")]);
-//! let m = flash(&caps, Some(&text), FlashOptions::default().dismiss("/settings").auto_hide(true)).into_string();
+//! let m = flash_with(&caps, Some(&text), FlashOptions::default().dismiss("/settings").auto_hide(true)).into_string();
 //! assert!(m.contains(r#"role="alert""#) && m.contains("wo-flash-auto"));
 //! assert_eq!(m.matches("wo-flash-dismiss").count(), 2);
 //! ```
@@ -112,8 +112,14 @@ impl<'a> FlashOptions<'a> {
     }
 }
 
+/// A flash banner with the default level.
+/// [`flash_with`] takes the options.
+pub fn flash(caps: &Caps, text: Option<&str>) -> Markup {
+    flash_with(caps, text, Default::default())
+}
+
 /// Render the messages in `text` (see [`parse`]) as a stack of banners; nothing when there are none.
-pub fn flash(_caps: &Caps, text: Option<&str>, options: FlashOptions) -> Markup {
+pub fn flash_with(_caps: &Caps, text: Option<&str>, options: FlashOptions) -> Markup {
     let messages = text.map(parse).unwrap_or_default();
     html! {
         @if !messages.is_empty() {
@@ -170,7 +176,7 @@ mod tests {
 
     #[test]
     fn danger_is_an_alert_and_never_auto_hides() {
-        let m = flash(&Caps::all(), Some("danger:Failed."), FlashOptions::default().auto_hide(true)).into_string();
+        let m = flash_with(&Caps::all(), Some("danger:Failed."), FlashOptions::default().auto_hide(true)).into_string();
         assert!(m.contains(r#"role="alert""#) && !m.contains("wo-flash-auto") && !m.contains("wo-flash-dismiss"));
     }
 }

@@ -22,10 +22,10 @@
 //!
 //! ```rust
 //! use maud::html;
-//! use webonsive::{Caps, pager, pager::PagerOptions};
+//! use webonsive::{Caps, pager, pager_with, pager::PagerOptions};
 //! let rows = vec![html!{ li{"a"} }, html!{ li{"b"} }];
-//! let m = pager(&Caps::all(), "/list", &rows, 2, Default::default());
-//! let m = pager(&Caps::all(), "/list", &rows, 30, PagerOptions::default().page(2).per_page(1));
+//! let m = pager(&Caps::all(), "/list", &rows, 2);
+//! let m = pager_with(&Caps::all(), "/list", &rows, 30, PagerOptions::default().page(2).per_page(1));
 //! assert!(m.into_string().contains("?page=3#more"));
 //! ```
 
@@ -62,8 +62,14 @@ impl PagerOptions {
     }
 }
 
+/// Page 1 of a load-more list with the default page size.
+/// [`pager_with`] takes the options.
+pub fn pager(caps: &Caps, href: &str, items: &[Markup], total: usize) -> Markup {
+    pager_with(caps, href, items, total, Default::default())
+}
+
 /// `items` are the rows for pages 1..=page. `total` is the full row count.
-pub fn pager(caps: &Caps, href: &str, items: &[Markup], total: usize, options: PagerOptions) -> Markup {
+pub fn pager_with(caps: &Caps, href: &str, items: &[Markup], total: usize, options: PagerOptions) -> Markup {
     let PagerOptions { page, per_page } = options;
     let vt = caps.has(Cap::ViewTransitions);
     let shown = items.len();

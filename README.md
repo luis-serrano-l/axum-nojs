@@ -14,7 +14,7 @@ use webonsive::{Caps, layout, dialog, Theme};
 // `Caps` is what the server knows about the browser; in Axum it is an extractor.
 let caps = Caps::all();
 let page = layout(&caps, "Hello", Theme::Auto, html! {
-    (dialog(&caps, "hi", "Say hi", html! { p { "Hello from a <dialog>." } }, Default::default()))
+    (dialog(&caps, "hi", "Say hi", html! { p { "Hello from a <dialog>." } }))
 });
 ```
 

@@ -14,10 +14,10 @@
 //! when the real content arrives (a streamed slot, a swap, the next page).
 //!
 //! ```rust
-//! use webonsive::{Caps, skeleton, skeleton::SkeletonOptions};
-//! let m = skeleton(&Caps::all(), 3, Default::default()).into_string();
+//! use webonsive::{Caps, skeleton, skeleton_with, skeleton::SkeletonOptions};
+//! let m = skeleton(&Caps::all(), 3).into_string();
 //! assert_eq!(m.matches("wo-skeleton-line").count(), 3);
-//! let m = skeleton(&Caps::all(), 2, SkeletonOptions::default().label("Loading orders").heading(true)).into_string();
+//! let m = skeleton_with(&Caps::all(), 2, SkeletonOptions::default().label("Loading orders").heading(true)).into_string();
 //! assert!(m.contains("Loading orders") && m.contains("wo-skeleton-heading"));
 //! ```
 
@@ -53,8 +53,14 @@ impl<'a> SkeletonOptions<'a> {
     }
 }
 
+/// A skeleton of `lines` lines.
+/// [`skeleton_with`] takes the options.
+pub fn skeleton(caps: &Caps, lines: usize) -> Markup {
+    skeleton_with(caps, lines, Default::default())
+}
+
 /// `lines` placeholder bars; the last one is shorter, like the end of a paragraph.
-pub fn skeleton(_caps: &Caps, lines: usize, options: SkeletonOptions) -> Markup {
+pub fn skeleton_with(_caps: &Caps, lines: usize, options: SkeletonOptions) -> Markup {
     html! {
         div class="wo-skeleton" role="status" aria-busy="true" {
             span class="wo-sr" { (options.label) }
