@@ -5,22 +5,24 @@
 
 use axum::{Router, routing::get};
 use maud::{Markup, html};
-use webonsive::{Caps, Theme, UiState, caps, dialog_with, dialog::DialogOptions, layout, tabs_with, tabs::{Tab, TabsOptions}};
+use webonsive::{Ui, caps, dialog_with, dialog::DialogOptions, enhance, tabs_with, tabs::{Tab, TabsOptions}};
 
-async fn index(caps: Caps, state: UiState) -> (UiState, Markup) {
-    let page = layout(&caps, "webonsive", Theme::Auto, html! {
+/// `Ui` is the browser's capabilities, the theme and the UI state in one extractor; returning
+/// it beside the page remembers the open tab.
+async fn index(ui: Ui) -> (Ui, Markup) {
+    let page = ui.layout("webonsive", html! {
         h1 { "webonsive on Axum" }
-        p { "This browser supports: " @for n in caps.names() { code { (n) } " " } }
-        (tabs_with(&caps, "demo", &[Tab::new("First", html! { p { "Tab state lives in the URL and a cookie." } }),
-                              Tab::new("Second", html! { p { "Reload, leave, come back: still here." } })], TabsOptions::default().state(&state)))
-        (dialog_with(&caps, "d", "Open dialog", html! { p { "Hello." } }, DialogOptions::default().state(&state)))
+        p { "This browser supports: " @for n in ui.caps.names() { code { (n) } " " } }
+        (tabs_with(&ui, "demo", &[Tab::new("First", html! { p { "Tab state lives in the URL and a cookie." } }),
+                                  Tab::new("Second", html! { p { "Reload, leave, come back: still here." } })], TabsOptions::default().state(&ui.state)))
+        (dialog_with(&ui, "d", "Open dialog", html! { p { "Hello." } }, DialogOptions::default().state(&ui.state)))
     });
-    (state, page)
+    (ui, page)
 }
 
 #[tokio::main]
 async fn main() {
-    let app = Router::new().route("/", get(index)).merge(caps::router());
+    let app = Router::new().route("/", get(index)).merge(caps::router()).merge(enhance::router());
     let listener = tokio::net::TcpListener::bind("127.0.0.1:3001").await.unwrap();
     println!("http://127.0.0.1:3001");
     axum::serve(listener, app).await.unwrap();

@@ -288,3 +288,24 @@ Things that were changed or left alone:
   Messages that come from the server go through `FormOptions::errors` instead.
 - **Doc examples** say in a comment what a literal means where the reader would otherwise
   have to look in another file: `(key, descending)`, `(label, value, step)`, `open.faq=0,2`.
+
+```rust
+// before
+Field::new("handle", "Handle", kind).value(v.get("handle")).required(true).error(err("handle")),
+Field::new("bio", "Bio", FieldKind::Textarea { rows: 3 }).value(v.get("bio")).max_len(160),
+(dialog_with(&ui, "confirm", "Delete account", body, DialogOptions::default().danger(true)
+    .confirm("Delete account", "/dialog/delete").returns_to("/dialog").open(ui.state.dialog() == Some("confirm"))))
+// after
+Field::new("handle", "Handle", kind).required(),
+Field::new("bio", "Bio", FieldKind::Textarea { rows: 3 }).maxlength(160),
+(dialog_with(&ui, "confirm", "Delete account", body, DialogOptions::default().danger()
+    .confirm("Delete account", "/dialog/delete").state(&ui.state)))
+```
+
+## Done: README's first example
+
+The first example used to build a page from `Caps::all()` and `layout(&caps, "Hello",
+Theme::Auto, …)`, with no route and no server around it. Now it is a whole Axum route:
+`async fn hello(ui: Ui) -> Markup { ui.layout("Hello", html! { (dialog(&ui, …)) }) }`, followed
+by the router with the beacon and script routes. That is five lines a reader can paste, and
+none of them is plumbing. `webonsive/examples/axum_server.rs` follows the same shape.

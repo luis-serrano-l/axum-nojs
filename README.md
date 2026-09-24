@@ -8,15 +8,25 @@ same markup update in place; see "How the script works" below. Every page works 
 with the script blocked; that is the only `<script>` tag allowed, and a test enforces it.
 
 ```rust
-use maud::html;
-use webonsive::{Caps, layout, dialog, Theme};
+use axum::{Router, routing::get};
+use maud::{Markup, html};
+use webonsive::{Ui, dialog};
 
-// `Caps` is what the server knows about the browser; in Axum it is an extractor.
-let caps = Caps::all();
-let page = layout(&caps, "Hello", Theme::Auto, html! {
-    (dialog(&caps, "hi", "Say hi", html! { p { "Hello from a <dialog>." } }))
-});
+// `Ui` is what the server knows about this browser, its theme and the page's UI state.
+async fn hello(ui: Ui) -> Markup {
+    ui.layout("Hello", html! {
+        (dialog(&ui, "hi", "Say hi", html! { p { "Hello from a <dialog>." } }))
+    })
+}
+
+let app = Router::new()
+    .route("/", get(hello))
+    .merge(webonsive::caps::router())     // the beacons that tell the server what the browser supports
+    .merge(webonsive::enhance::router()); // the optional script
 ```
+
+With `webonsive = { features = ["axum"] }`. Without Axum, `dialog(&Caps::all(), …)` returns
+the same `Markup`; `webonsive/examples/hyper_server.rs` shows a raw hyper server.
 
 ## Run the demo
 
@@ -56,9 +66,11 @@ component gives the HTML to another template engine.
 
 - One component = one file in `webonsive/src/`. Each starts with a `//!` header: what it does,
   the platform features it uses (with browser baseline), the fallback, a usage example.
-- Signatures are uniform: `fn name(&caps, id, ...required, options) -> Markup`. Anything past the
-  required arguments is a plain `XOptions` struct with `Default` and builder setters
-  (`DialogOptions::default().open(true)`), so the short call is `Default::default()`. No macros beyond `html!`.
+- Signatures are uniform: `name(&caps, ...required) -> Markup` for the common case and
+  `name_with(&caps, ...required, options)` for the rest, where options is a plain `XOptions`
+  struct with `Default` and one setter per field named after the attribute it sets
+  (`DialogOptions::default().danger().state(&ui.state)`). `&ui` works wherever `&caps` does.
+  No macros beyond `html!`.
 - `Caps` is server-side feature detection with no script: `@supports` beacons set one cookie per
   capability, and each component emits only the variant that browser needs (see `/caps`).
   `?caps=popover,anchor` on any URL forces a set. The protocol is three plain functions

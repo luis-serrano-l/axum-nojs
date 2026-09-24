@@ -232,5 +232,5 @@ form, and the old form kept only where removing it would break a published signa
 - [x] Names read like HTML: option and setter names match the attribute or element they set
   (`.required()`, `.placeholder()`, `.open()`), one word where one word says it; a pass over
   every doc example so each reads top to bottom without jumping to another file.
-- [ ] Docs: `docs/ergonomics.md` shows before/after for each changed call site; README's
+- [x] Docs: `docs/ergonomics.md` shows before/after for each changed call site; README's
   first example is the most pleasant one the library can offer.
