@@ -1,5 +1,5 @@
 [workspace]
-members = ["wo-caps", "webonsive", "demo", "webonsive-test"]
+members = ["axum-nojs-caps", "axum-nojs", "demo", "axum-nojs-test"]
 resolver = "2"
 
 [workspace.dependencies]

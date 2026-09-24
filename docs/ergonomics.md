@@ -201,7 +201,7 @@ let groups = countries.each_ref().map(|(group, cs)| SelectGroup::new(group, cs))
 
 ## Done: one extractor per page
 
-`webonsive::Ui` holds the caps, the theme from its cookie and the `UiState` with the flash. It
+`axum_nojs::Ui` holds the caps, the theme from its cookie and the `UiState` with the flash. It
 dereferences to `Caps`, so `&ui` goes wherever a component wants `&Caps`, and returning it
 beside the page writes the state back. `ui.flash()` renders the flash banner and
 `ui.layout(title, body)` wraps a page in the request's theme. Every demo page route now takes it.
@@ -308,4 +308,4 @@ The first example used to build a page from `Caps::all()` and `layout(&caps, "He
 Theme::Auto, …)`, with no route and no server around it. Now it is a whole Axum route:
 `async fn hello(ui: Ui) -> Markup { ui.layout("Hello", html! { (dialog(&ui, …)) }) }`, followed
 by the router with the beacon and script routes. That is five lines a reader can paste, and
-none of them is plumbing. `webonsive/examples/axum_server.rs` follows the same shape.
+none of them is plumbing. `axum-nojs/examples/axum_server.rs` follows the same shape.

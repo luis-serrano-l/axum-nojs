@@ -196,6 +196,53 @@ dependencies = [
 ]
 
 [[package]]
+name = "axum-nojs"
+version = "0.1.0"
+dependencies = [
+ "axum",
+ "axum-nojs-caps",
+ "bytes",
+ "criterion",
+ "futures-util",
+ "http",
+ "http-body-util",
+ "hyper",
+ "hyper-util",
+ "maud",
+ "tokio",
+]
+
+[[package]]
+name = "axum-nojs-caps"
+version = "0.1.0"
+dependencies = [
+ "axum",
+ "http-body-util",
+ "hyper",
+ "hyper-util",
+ "maud",
+ "tokio",
+]
+
+[[package]]
+name = "axum-nojs-test"
+version = "0.1.0"
+dependencies = [
+ "anyrender",
+ "anyrender_vello_cpu",
+ "axum",
+ "blitz-dom",
+ "blitz-html",
+ "blitz-paint",
+ "blitz-traits",
+ "demo",
+ "http-body-util",
+ "png",
+ "tokio",
+ "tower",
+]
+
+[[package]]
 name = "bitflags"
 version = "2.13.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -643,13 +690,13 @@ version = "0.1.0"
 dependencies = [
  "axum",
  "axum-extra",
+ "axum-nojs",
  "http-body-util",
  "maud",
  "serde",
  "tokio",
  "tower",
  "tower-http",
- "webonsive",
 ]
 
 [[package]]
@@ -2882,41 +2929,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "webonsive"
-version = "0.1.0"
-dependencies = [
- "axum",
- "bytes",
- "criterion",
- "futures-util",
- "http",
- "http-body-util",
- "hyper",
- "hyper-util",
- "maud",
- "tokio",
- "wo-caps",
-]
-
-[[package]]
-name = "webonsive-test"
-version = "0.1.0"
-dependencies = [
- "anyrender",
- "anyrender_vello_cpu",
- "axum",
- "blitz-dom",
- "blitz-html",
- "blitz-paint",
- "blitz-traits",
- "demo",
- "http-body-util",
- "png",
- "tokio",
- "tower",
-]
-
-[[package]]
 name = "winapi-util"
 version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3049,18 +3061,6 @@ name = "winnow"
 version = "1.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "23b97319f7b8343df12cc98938e5c3eb436064524c8d2b4e30a1d3a36eecdf81"
-
-[[package]]
-name = "wo-caps"
-version = "0.1.0"
-dependencies = [
- "axum",
- "http-body-util",
- "hyper",
- "hyper-util",
- "maud",
- "tokio",
-]
 
 [[package]]
 name = "writeable"

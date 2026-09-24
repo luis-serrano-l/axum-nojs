@@ -1,5 +1,5 @@
-//! Demo server: one route per component. Handlers only parse input and call `webonsive`.
-//! The binary in `main.rs` serves [`router`]; tests and `webonsive-test` call it directly.
+//! Demo server: one route per component. Handlers only parse input and call `axum-nojs`.
+//! The binary in `main.rs` serves [`router`]; tests and `axum-nojs-test` call it directly.
 
 use axum::{
     Form, Router,
@@ -11,7 +11,7 @@ use axum::{
 use axum_extra::extract::cookie::{Cookie, CookieJar};
 use maud::{Markup, html};
 use serde::Deserialize;
-use webonsive::{
+use axum_nojs::{
     Ui, theme::THEME_COOKIE,
     Cap, Caps, Field, FieldGroup, FieldKind, FormLayout, FormOptions, Streamed, Theme, UiState, accordion_with, accordion::{AccordionItem, AccordionOptions}, caps, color_with, combobox_with, combobox::{ComboboxOptions, OptionGroup}, counter_with, counter::CounterOptions, color::ColorOptions, select::{Group as SelectGroup, SelectOption, SelectOptions}, dialog_with, dialog::{DialogOptions, DialogSize}, flash_with, flash::{FlashOptions, Level, stack}, form_with, form::fields, layout, layout::{Palette, Tokens, layout_with}, paged_table, paged_table_with, paged_table::PagedTableOptions, pager_with, pager::PagerOptions, popover::{MenuItem, Placement, PopoverOptions}, popover_menu, popover_menu_with, prg, range, range_with, range::RangeOptions, select, select_with, slot, tabs::{Tab, TabsOptions},
     table::{Column, Row, TableOptions, TableQuery}, tabs_with, theme_toggle, wizard, wizard_with, wizard::{Step, WizardOptions},
@@ -58,8 +58,8 @@ pub fn router() -> Router {
         .route("/dashboard", get(dashboard_page))
         .route("/palette", get(palette_page))
         .merge(caps::router())
-        .merge(webonsive::enhance::router())
-        .layer(axum::middleware::from_fn(webonsive::enhance::slim))
+        .merge(axum_nojs::enhance::router())
+        .layer(axum::middleware::from_fn(axum_nojs::enhance::slim))
         .layer(CompressionLayer::new().compress_when(DefaultPredicate::new().and(WholeBody)))
 }
 
@@ -97,14 +97,14 @@ const COMPONENTS: [(&str, &str, &str, &str); 19] = [
     ("/table", "Table", "Server state", "sort links, <search> filter, form= checkboxes, ?cols=, <details> rows, sticky header, ?page=n"),
     ("/caps", "Capabilities", "Server state", "@supports beacons + cookie"),
     ("/stream", "Streaming", "Server state", "declarative shadow DOM slots, skeleton placeholders, aria-busy"),
-    ("/swap", "Swap targets", "Server state", "data-wo-target, data-wo-swap, data-wo-oob, data-wo-indicator, data-wo-push, Wo-Enhance header"),
+    ("/swap", "Swap targets", "Server state", "data-nojs-target, data-nojs-swap, data-nojs-oob, data-nojs-indicator, data-nojs-push, Nojs-Enhance header"),
 ];
 const GROUPS: [&str; 6] = ["Overlays", "Disclosure", "Navigation", "Input", "Feedback", "Server state"];
 
 /// The row above every title: the way back to the index (not on the index) and the theme switch.
 fn toolbar(caps: &Caps, theme: Theme, back: bool) -> Markup {
-    html! { nav class="wo-toolbar" {
-        @if back { a class="wo-back" href="/" { "All components" } } @else { span {} }
+    html! { nav class="nojs-toolbar" {
+        @if back { a class="nojs-back" href="/" { "All components" } } @else { span {} }
         (theme_toggle(caps, "/theme", theme))
     } }
 }
@@ -121,7 +121,7 @@ fn page_with(ui: &Ui, title: &str, tokens: Option<&Tokens>, body: Markup) -> Mar
     let body = html! {
         (toolbar(caps, theme, built.is_some()))
         h1 { (title) }
-        @if let Some(feats) = built { p class="wo-built" { "Built on " @for f in feats.split(", ") { code { (f) } " " } } }
+        @if let Some(feats) = built { p class="nojs-built" { "Built on " @for f in feats.split(", ") { code { (f) } " " } } }
         (body)
     };
     match tokens {
@@ -152,10 +152,10 @@ struct IndexQuery { palette: Option<String> }
 async fn index(ui: Ui, Query(q): Query<IndexQuery>) -> Markup {
     let tokens = (q.palette.as_deref() == Some("linen")).then_some(&LINEN);
     page_with(&ui, "Components", tokens, html! {
-        p class="wo-lede" { (COMPONENTS.len()) " interactive components for Axum and Maud that work with JavaScript turned off. The HTML platform and plain form posts do the work. Each page loads one optional script, " code { "/wo/enhance.js" } ", which updates the same markup in place instead of reloading. Block it and every page still works." }
-        @if !ui.has(Cap::Probed) { p class="wo-note" { "First visit: this page is the fallback variant. Reload and the server will know your browser." } }
-        p class="wo-note" { "Theme: " @if tokens.is_some() { a href="/" { "ink and moss" } " · linen and copper" } @else { "ink and moss · " a href="/?palette=linen" { "linen and copper" } } ", see " code { "docs/theming.md" } }
-        div class="wo-index" { @for group in GROUPS {
+        p class="nojs-lede" { (COMPONENTS.len()) " interactive components for Axum and Maud that work with JavaScript turned off. The HTML platform and plain form posts do the work. Each page loads one optional script, " code { "/nojs/enhance.js" } ", which updates the same markup in place instead of reloading. Block it and every page still works." }
+        @if !ui.has(Cap::Probed) { p class="nojs-note" { "First visit: this page is the fallback variant. Reload and the server will know your browser." } }
+        p class="nojs-note" { "Theme: " @if tokens.is_some() { a href="/" { "ink and moss" } " · linen and copper" } @else { "ink and moss · " a href="/?palette=linen" { "linen and copper" } } ", see " code { "docs/theming.md" } }
+        div class="nojs-index" { @for group in GROUPS {
             h2 { (group) }
             ul { @for (href, title, _, feats) in COMPONENTS.iter().filter(|c| c.2 == group) {
                 li { a href=(href) { (title) } span { @for f in feats.split(", ") { code { (f) } " " } } }
@@ -174,7 +174,7 @@ async fn dialog_page(ui: Ui) -> Markup {
             label { "Tell us why (optional)" input name="reason" placeholder="Moving on"; }
         }, DialogOptions::default().title("Delete account?").size(DialogSize::Sm).danger()
             .confirm("Delete account", "/dialog/delete").cancel_label("Keep it").state(&ui.state)))
-        p class="wo-note" { "Opened by an invoker button; the footer is a real form posting to " code { "/dialog/delete" } " with a hidden " code { "returns_to" } " so the server comes back here. Server-opened: " a href="/dialog?dialog=confirm" { "?dialog=confirm" } }
+        p class="nojs-note" { "Opened by an invoker button; the footer is a real form posting to " code { "/dialog/delete" } " with a hidden " code { "returns_to" } " so the server comes back here. Server-opened: " a href="/dialog?dialog=confirm" { "?dialog=confirm" } }
     })
 }
 
@@ -192,7 +192,7 @@ async fn popover_page(ui: Ui) -> Markup {
     const THEME: &[MenuItem] = &[MenuItem::link("Light", "/popover?theme=light"), MenuItem::link("Dark", "/popover?theme=dark")];
     page(&ui, "Popover menu", html! {
         (ui.flash())
-        div class="wo-popover-row" {
+        div class="nojs-popover-row" {
             (popover_menu(&ui, "Account", &[
                 MenuItem::heading("Signed in as Ada"),
                 MenuItem::link("Profile", "/popover").icon("@").shortcut("g p"),
@@ -208,7 +208,7 @@ async fn popover_page(ui: Ui) -> Markup {
                 MenuItem::action("Clear cache", "/popover/signout"),
             ], PopoverOptions::default().placement(Placement::BottomEnd)))
         }
-        p class="wo-note" { "Links, a heading, a disabled item, a submenu that is another popover, and a " code { "<form method=\"post\">" } " action. Click outside or press Escape to close; the second menu opens end-aligned." }
+        p class="nojs-note" { "Links, a heading, a disabled item, a submenu that is another popover, and a " code { "<form method=\"post\">" } " action. Click outside or press Escape to close; the second menu opens end-aligned." }
     })
 }
 
@@ -220,13 +220,13 @@ async fn popover_signout() -> axum::response::Response {
 async fn tabs_page(ui: Ui) -> (Ui, Markup) {
     let body = page(&ui, "Tabs", html! {
         // Hovering or focusing a tab title fetches it early; the click reuses the answer.
-        div data-wo-prefetch { (tabs_with(&ui, "demo", &[
-            Tab::new("Install", html! { p { code { "cargo add webonsive maud axum" } } }),
+        div data-nojs-prefetch { (tabs_with(&ui, "demo", &[
+            Tab::new("Install", html! { p { code { "cargo add axum-nojs maud axum" } } }),
             Tab::new("Use", html! { p { "Call a function, get " code { "Markup" } ", send it." } }).badge(3),
             // Lazy: the body is rendered only by the request that opens the tab.
             Tab::lazy_with("Why", &|| html! { p { "Because the platform can do this without script now. (Rendered on demand.)" } }),
         ], TabsOptions::default().state(&ui.state).select_below())) }
-        p class="wo-note" { "Deep link: " a href="/tabs?tab.demo=2" { "?tab.demo=2" } ". Leave and come back: the tab is remembered. The third tab is lazy; under 40rem the strip becomes a select." }
+        p class="nojs-note" { "Deep link: " a href="/tabs?tab.demo=2" { "?tab.demo=2" } ". Leave and come back: the tab is remembered. The third tab is lazy; under 40rem the strip becomes a select." }
         h2 { "Vertical" }
         (tabs_with(&ui, "side", &[
             Tab::new("General", html! { p { "Titles stack on the left; the open panel sits beside them." } }),
@@ -252,7 +252,7 @@ async fn accordion_page(ui: Ui) -> (Ui, Markup) {
                 ], AccordionOptions::default().state(&ui.state)))
             }).icon("\u{1F4DA}").summary("Lists, links and a nested accordion."),
         ], AccordionOptions::default().state(&ui.state).multi().controls()))
-        p class="wo-note" { "Deep link: " a href="/accordion?open.faq=0,2" { "?open.faq=0,2" } ". Leave and come back: the open sections are remembered." }
+        p class="nojs-note" { "Deep link: " a href="/accordion?open.faq=0,2" { "?open.faq=0,2" } ". Leave and come back: the open sections are remembered." }
     });
     (ui, body)
 }
@@ -278,12 +278,12 @@ async fn combobox_page(ui: Ui, Query(pairs): Query<Vec<(String, String)>>) -> (U
     let body = page(&ui, "Combobox", html! {
         (ui.flash())
         // One swap root around the form and its results: the script searches as you type.
-        div id="langs" data-wo="swap" {
+        div id="langs" data-nojs="swap" {
             (combobox_with(&ui, "q", "/combobox", ComboboxOptions::default()
                 .query(&q).suggestions(&LANGS).results(&hits).selected(&sel).multi()
                 .create("/combobox/new").label("Language").placeholder("Type a language")))
         }
-        p class="wo-note" { "Pick several: each result adds a chip, each chip's \u{d7} removes it, and the chips ride along with the next search. Type a language that is not here to get a Create row." }
+        p class="nojs-note" { "Pick several: each result adds a chip, each chip's \u{d7} removes it, and the chips ride along with the next search. Type a language that is not here to get a Create row." }
     });
     (ui, body)
 }
@@ -472,7 +472,7 @@ fn form_view(ui: &Ui, inline: bool, v: &SignUp, errors: &[(&str, &str)]) -> Mark
     page(ui, "Validated form", html! {
         (ui.flash())
         p { "Labels " @if inline { "beside the fields. " a href="/form" { "Put them above" } } @else { "above the fields. " a href="/form?layout=inline" { "Put them beside" } } "." }
-        @if !errors.is_empty() { p class="wo-error" { "Server-side checks failed. Browser validation passed, these rules only live on the server." } }
+        @if !errors.is_empty() { p class="nojs-error" { "Server-side checks failed. Browser validation passed, these rules only live on the server." } }
         (form_with(ui, "/form", &[FieldGroup::new("Account", &account), FieldGroup::new("Profile", &profile)],
             FormOptions::default().submit("Sign up").layout(layout).values(&v.values).errors(errors)))
     })
@@ -538,32 +538,32 @@ async fn swap_page(ui: Ui, jar: CookieJar, Query(q): Query<SwapQuery>) -> Markup
     let n = q.n.unwrap_or(1);
     page(&ui, "Swap targets", html! {
         (ui.flash())
-        p class="wo-note" { "Neither control sits inside a swap root. " code { "data-wo-target" } " names the root to update and " code { "data-wo-swap" } " how; without the script both are ordinary navigations to the same URL." }
-        p { "Count: " span id="count" data-wo="swap" { (n) } " " a href={ "/swap?n=" (n + 1) } data-wo-target="#count" { "Add one" }
-            " · " a href={ "/swap?n=" (n + 10) } data-wo-target="#count" data-wo-push="false" { "Add ten, keep the URL" } }
+        p class="nojs-note" { "Neither control sits inside a swap root. " code { "data-nojs-target" } " names the root to update and " code { "data-nojs-swap" } " how; without the script both are ordinary navigations to the same URL." }
+        p { "Count: " span id="count" data-nojs="swap" { (n) } " " a href={ "/swap?n=" (n + 1) } data-nojs-target="#count" { "Add one" }
+            " · " a href={ "/swap?n=" (n + 10) } data-nojs-target="#count" data-nojs-push="false" { "Add ten, keep the URL" } }
         p { "Notes so far: " span id="note-count" { (notes_of(&jar).len()) } }
-        form method="post" action="/swap" data-wo-target="#log" data-wo-swap="append" data-wo-indicator="#saving" {
+        form method="post" action="/swap" data-nojs-target="#log" data-nojs-swap="append" data-nojs-indicator="#saving" {
             input name="note" required placeholder="A note" aria-label="Note" autocomplete="off";
-            button type="submit" class="wo-primary" { "Add note" }
-            " " span id="saving" class="wo-note" hidden { "Saving…" }
+            button type="submit" class="nojs-primary" { "Add note" }
+            " " span id="saving" class="nojs-note" hidden { "Saving…" }
         }
-        ol id="log" data-wo="swap" { @for note in notes_of(&jar) { li { (note) } } }
+        ol id="log" data-nojs="swap" { @for note in notes_of(&jar) { li { (note) } } }
     })
 }
 
 #[derive(Deserialize)]
 struct SwapForm { note: String }
 
-/// An enhanced request (`Wo-Enhance: 1`) gets only the new `<li>` inside an `#log` to append,
-/// plus the note count marked `data-wo-oob` so it updates wherever it is on the page; a plain
+/// An enhanced request (`Nojs-Enhance: 1`) gets only the new `<li>` inside an `#log` to append,
+/// plus the note count marked `data-nojs-oob` so it updates wherever it is on the page; a plain
 /// one gets Post/Redirect/Get to the full page, which shows both anyway.
 async fn swap_submit(jar: CookieJar, headers: HeaderMap, Form(f): Form<SwapForm>) -> axum::response::Response {
     let note = f.note.replace('|', " ");
     let mut notes = notes_of(&jar);
     notes.push(note.clone());
     let jar = jar.add(Cookie::new("notes", notes.join("|")));
-    if headers.contains_key("wo-enhance") {
-        return (jar, html! { ol id="log" { li { (note) } } span id="note-count" data-wo-oob { (notes.len()) } }).into_response();
+    if headers.contains_key("nojs-enhance") {
+        return (jar, html! { ol id="log" { li { (note) } } span id="note-count" data-nojs-oob { (notes.len()) } }).into_response();
     }
     (jar, prg::<axum::body::Body>("/swap", Some("Note added"))).into_response()
 }
@@ -577,7 +577,7 @@ fn settings_of(jar: &CookieJar) -> Settings {
         .unwrap_or_default()
 }
 
-/// Tabs + form + flash. Everything survives a full navigation: tab in the `wo-ui` cookie,
+/// Tabs + form + flash. Everything survives a full navigation: tab in the `nojs-ui` cookie,
 /// values in a `settings` cookie, flash in a one-shot cookie set by `prg`.
 async fn settings_page(ui: Ui, jar: CookieJar) -> (Ui, Markup) {
     let Settings { name, notify } = settings_of(&jar);
@@ -589,7 +589,7 @@ async fn settings_page(ui: Ui, jar: CookieJar) -> (Ui, Markup) {
     let body = page(&ui, "Settings", html! {
         (flash_with(&ui, ui.state.flash(), FlashOptions::default().dismiss(&here).auto_hide()))
         (tabs_with(&ui, "settings", &[Tab::new("Profile", save("profile", &PROFILE)), Tab::new("Notifications", save("notify", &NOTIFY))], TabsOptions::default().state(&ui.state)))
-        p class="wo-note" { "Go to " a href="/" { "the index" } " and come back: the open tab and the values are remembered. Saving with notifications off stacks a warning under the confirmation; the name " code { "admin" } " is refused with an alert. The confirmation fades after six seconds unless reduced motion is on." }
+        p class="nojs-note" { "Go to " a href="/" { "the index" } " and come back: the open tab and the values are remembered. Saving with notifications off stacks a warning under the confirmation; the name " code { "admin" } " is refused with an alert. The confirmation fades after six seconds unless reduced motion is on." }
     });
     (ui, body)
 }
@@ -652,16 +652,16 @@ async fn inputs_page(ui: Ui, jar: CookieJar, Query(q): Query<Inputs>) -> (Ui, Ma
     let groups = countries.each_ref().map(|(group, cs)| SelectGroup::new(group, cs));
     let body = page(&ui, "Select, range, colour", html! {
         (ui.flash())
-        form id="inputs" data-wo="swap" class="wo-form" method="post" action="/inputs" {
-            div class="wo-field" { label for="size" { "Size" } (select(&ui, "size", &[SelectGroup::flat(&sizes)], v.size.as_deref().unwrap_or("m"))) }
-            div class="wo-field" { label for="country" { "Country" }
+        form id="inputs" data-nojs="swap" class="nojs-form" method="post" action="/inputs" {
+            div class="nojs-field" { label for="size" { "Size" } (select(&ui, "size", &[SelectGroup::flat(&sizes)], v.size.as_deref().unwrap_or("m"))) }
+            div class="nojs-field" { label for="country" { "Country" }
                 (select_with(&ui, "country", &groups, v.country.as_deref().unwrap_or("es"), SelectOptions::default().search("/inputs", v.country_q.as_deref().unwrap_or("")))) }
-            div class="wo-field" { label for="f-volume" { "Volume" } (range_with(&ui, "volume", v.volume.unwrap_or(40), RangeOptions::default().step(5))) }
-            div class="wo-field" { label for="f-price_min" { "Price" } (range::range_pair_with(&ui, "price", (lo, hi), RangeOptions::default().step(5))) }
-            div class="wo-field" { label for="f-accent" { "Accent" } (color_with(&ui, "accent", accent, ColorOptions::default().presets(&ACCENTS).alpha(v.alpha.unwrap_or(100)))) }
-            button type="submit" class="wo-primary" { "Save" }
+            div class="nojs-field" { label for="f-volume" { "Volume" } (range_with(&ui, "volume", v.volume.unwrap_or(40), RangeOptions::default().step(5))) }
+            div class="nojs-field" { label for="f-price_min" { "Price" } (range::range_pair_with(&ui, "price", (lo, hi), RangeOptions::default().step(5))) }
+            div class="nojs-field" { label for="f-accent" { "Accent" } (color_with(&ui, "accent", accent, ColorOptions::default().presets(&ACCENTS).alpha(v.alpha.unwrap_or(100)))) }
+            button type="submit" class="nojs-primary" { "Save" }
         }
-        p class="wo-note" { "Without the enhancement script the outputs and the swatch show the last saved values and update on submit, and the country filter needs its button." }
+        p class="nojs-note" { "Without the enhancement script the outputs and the swatch show the last saved values and update on submit, and the country filter needs its button." }
     });
     (ui, body)
 }
@@ -681,7 +681,7 @@ async fn toast_page(ui: Ui) -> (Ui, Markup) {
     let body = page(&ui, "Toasts", html! {
         p { "Each button posts, the server redirects back, and the answer shows in the corner. Calm ones fade after five seconds (hover to keep them); errors stay until dismissed." }
         form method="post" action="/toast" {
-            button type="submit" name="kind" value="ok" class="wo-primary" { "Send invite" } " "
+            button type="submit" name="kind" value="ok" class="nojs-primary" { "Send invite" } " "
             button type="submit" name="kind" value="warn" { "Copy link" } " "
             button type="submit" name="kind" value="danger" { "Sync now" } " "
             button type="submit" name="kind" value="all" { "All three" }
@@ -707,12 +707,12 @@ async fn nav_page(ui: Ui) -> Markup {
         li { a href="/table" { "Files" } } li { a href="/dashboard" { "Reports" } } li { a href="/settings" { "Settings" } }
     } };
     page(&ui, "Drawer and breadcrumbs", drawer_with(&ui, "site", "Menu", links, html! {
-        (breadcrumbs(&ui, &[("Home", "/"), ("Projects", "/nav"), ("Webonsive", "")]))
+        (breadcrumbs(&ui, &[("Home", "/"), ("Projects", "/nav"), ("axum-nojs", "")]))
         p { "Wider than 60rem the navigation is a sidebar; narrower, the menu button opens it as a drawer. Escape or a click outside closes it." }
         p { "A long trail folds its middle so both ends stay readable:" }
-        (breadcrumbs(&ui, &[("Home", "/"), ("Projects", "/nav"), ("Webonsive", "/nav"), ("Components", "/"), ("Navigation", "/nav"), ("Breadcrumbs", "")]))
-        p class="wo-note" { "Server-opened: " a href="/nav?dialog=site" { "?dialog=site" } }
-    }, DrawerOptions::default().title("Webonsive").sidebar().open(ui.state.dialog() == Some("site"))))
+        (breadcrumbs(&ui, &[("Home", "/"), ("Projects", "/nav"), ("axum-nojs", "/nav"), ("Components", "/"), ("Navigation", "/nav"), ("Breadcrumbs", "")]))
+        p class="nojs-note" { "Server-opened: " a href="/nav?dialog=site" { "?dialog=site" } }
+    }, DrawerOptions::default().title("axum-nojs").sidebar().open(ui.state.dialog() == Some("site"))))
 }
 
 #[derive(Deserialize)]
@@ -722,7 +722,7 @@ struct DashboardQuery { orders: Option<String> }
 async fn dashboard_page(ui: Ui, Query(q): Query<DashboardQuery>) -> Markup {
     let none = q.orders.as_deref() == Some("none");
     page(&ui, "Stats and empty states", html! {
-        div class="wo-stat-grid" {
+        div class="nojs-stat-grid" {
             (stat_with(&ui, "Visitors", "12,480", StatOptions::default().delta("+8.2%").note("last 7 days")))
             (stat_with(&ui, "Orders", if none { "0" } else { "3" }, StatOptions::default().delta(if none { "-3" } else { "0" })))
             (stat_with(&ui, "Error rate", "0.4%", StatOptions::default().delta("-0.2 pt").down_is_good().href("/table")))
@@ -735,7 +735,7 @@ async fn dashboard_page(ui: Ui, Query(q): Query<DashboardQuery>) -> Markup {
                 .link("Show sample orders", "/dashboard")))
         } @else {
             ul { li { "#1042, Ada Lovelace, 3 items" } li { "#1041, Grace Hopper, 1 item" } li { "#1040, Alan Turing, 2 items" } }
-            p class="wo-note" { a href="/dashboard?orders=none" { "See the empty state" } }
+            p class="nojs-note" { a href="/dashboard?orders=none" { "See the empty state" } }
         }
     })
 }
@@ -775,7 +775,7 @@ async fn stream_page(ui: Ui) -> Streamed {
         p { @if ui.has(Cap::StreamingDsd) { "Sections arrive out of order into named slots." }
             @else { "This browser has no declarative shadow DOM: sections stream in document order." } }
         @for (id, ms) in sections {
-            (slot(&ui, id, html! { section class="wo-stream-section wo-stream-pending" {
+            (slot(&ui, id, html! { section class="nojs-stream-section nojs-stream-pending" {
                 (skeleton_with(&ui, 2, SkeletonOptions::default().label(&format!("Loading {id} ({ms} ms)")).heading()))
             } }))
         }
@@ -785,7 +785,7 @@ async fn stream_page(ui: Ui) -> Streamed {
 
 async fn section(id: &'static str, ms: u64) -> Markup {
     tokio::time::sleep(Duration::from_millis(ms)).await;
-    html! { section class="wo-stream-section" { strong { (id) } " arrived after " (ms) " ms." } }
+    html! { section class="nojs-stream-section" { strong { (id) } " arrived after " (ms) " ms." } }
 }
 
 /// What the server believes about this browser, one row per capability.
@@ -793,20 +793,20 @@ async fn caps_page(ui: Ui) -> Markup {
     let probed = ui.has(Cap::Probed);
     page(&ui, "Capabilities", html! {
         @if probed { p { "Beacons have fired. Rows below drive which markup every component emits." } }
-        @else { p class="wo-error" { "Not probed yet: the beacons fire while this page loads. Reload to see the result." } }
-        table class="wo-caps-table" {
+        @else { p class="nojs-error" { "Not probed yet: the beacons fire while this page loads. Reload to see the result." } }
+        table class="nojs-caps-table" {
             thead { tr { th { "Capability" } th { "Supported" } th { "Effect" } th { "@supports test" } } }
             tbody { @for cap in Cap::ALL {
                 tr {
                     td { code { (cap.name()) } }
-                    td { @if ui.has(cap) { span class="wo-yes" { "yes" } } @else if probed { span class="wo-no" { "no" } } @else { span class="wo-note" { "unknown" } } }
+                    td { @if ui.has(cap) { span class="nojs-yes" { "yes" } } @else if probed { span class="nojs-no" { "no" } } @else { span class="nojs-note" { "unknown" } } }
                     td { (cap.description()) }
-                    td { @match cap.supports() { Some(t) => code { (t) }, None => span class="wo-note" { "always" } } }
+                    td { @match cap.supports() { Some(t) => code { (t) }, None => span class="nojs-note" { "always" } } }
                 }
             } }
         }
-        p class="wo-note" { "Cookies: " @for n in ui.names() { code { "wo-cap-" (n) } " " } }
-        p class="wo-note" { "To view any page as another browser, add " code { "?caps=popover,anchor" } " to its URL: the query wins over the cookies." }
+        p class="nojs-note" { "Cookies: " @for n in ui.names() { code { "nojs-cap-" (n) } " " } }
+        p class="nojs-note" { "To view any page as another browser, add " code { "?caps=popover,anchor" } " to its URL: the query wins over the cookies." }
     })
 }
 
@@ -841,9 +841,9 @@ mod tests {
     /// without it.
     #[tokio::test]
     async fn pages_ship_only_the_enhancement_script() {
-        let tag = webonsive::enhance::script_tag().into_string();
+        let tag = axum_nojs::enhance::script_tag().into_string();
         for path in PATHS {
-            let modern = Cap::ALL.map(|c| format!("wo-cap-{}=1", c.name())).join("; ");
+            let modern = Cap::ALL.map(|c| format!("nojs-cap-{}=1", c.name())).join("; ");
             for cookie in ["", modern.as_str()] {
                 let req = Request::get(path).header("cookie", cookie).body(Body::empty()).unwrap();
                 let res = router().oneshot(req).await.unwrap();
@@ -875,39 +875,39 @@ mod tests {
     async fn enhanced_requests_get_the_page_without_its_stylesheet() {
         let get = |enhanced: bool| {
             let req = Request::get("/tabs?tab.demo=1");
-            let req = if enhanced { req.header("wo-enhance", "1") } else { req };
+            let req = if enhanced { req.header("nojs-enhance", "1") } else { req };
             router().oneshot(req.body(Body::empty()).unwrap())
         };
         let full = get(false).await.unwrap();
-        assert_eq!(full.headers()["vary"], "wo-enhance, cookie");
+        assert_eq!(full.headers()["vary"], "nojs-enhance, cookie");
         let full = String::from_utf8(axum::body::to_bytes(full.into_body(), usize::MAX).await.unwrap().to_vec()).unwrap();
         let slim = get(true).await.unwrap();
-        assert_eq!(slim.headers()["vary"], "wo-enhance, cookie");
+        assert_eq!(slim.headers()["vary"], "nojs-enhance, cookie");
         let slim = String::from_utf8(axum::body::to_bytes(slim.into_body(), usize::MAX).await.unwrap().to_vec()).unwrap();
         assert!(full.contains("<style>") && !slim.contains("<style>"), "the stylesheet stays home");
-        assert!(slim.contains("id=\"wo-tabs-demo\"") && slim.contains("<title>"), "the swap root and title are still there");
+        assert!(slim.contains("id=\"nojs-tabs-demo\"") && slim.contains("<title>"), "the swap root and title are still there");
         assert!(slim.len() * 3 < full.len(), "slim is {} of {} bytes", slim.len(), full.len());
     }
 
     #[tokio::test]
     async fn enhancement_script_is_served_immutable() {
-        let req = Request::get(webonsive::enhance::script_url()).body(Body::empty()).unwrap();
+        let req = Request::get(axum_nojs::enhance::script_url()).body(Body::empty()).unwrap();
         let res = router().oneshot(req).await.unwrap();
         assert_eq!(res.status(), 200);
         assert_eq!(res.headers()["content-type"], "text/javascript; charset=utf-8");
         assert!(res.headers()["cache-control"].to_str().unwrap().contains("immutable"));
         let body = axum::body::to_bytes(res.into_body(), usize::MAX).await.unwrap();
-        assert_eq!(body, webonsive::enhance::served().as_bytes());
+        assert_eq!(body, axum_nojs::enhance::served().as_bytes());
     }
 
     #[tokio::test]
     async fn caps_beacon_sets_one_cookie_per_flag() {
-        let req = Request::get("/wo/caps?flag=popover").body(Body::empty()).unwrap();
+        let req = Request::get("/nojs/caps?flag=popover").body(Body::empty()).unwrap();
         let res = router().oneshot(req).await.unwrap();
         assert_eq!(res.status(), 204);
         let cookie = res.headers().get("set-cookie").unwrap().to_str().unwrap();
-        assert!(cookie.starts_with("wo-cap-popover=1;"), "{cookie}");
-        let req = Request::get("/wo/caps?flag=nope").body(Body::empty()).unwrap();
+        assert!(cookie.starts_with("nojs-cap-popover=1;"), "{cookie}");
+        let req = Request::get("/nojs/caps?flag=nope").body(Body::empty()).unwrap();
         assert_eq!(router().oneshot(req).await.unwrap().status(), 404);
     }
 
@@ -928,7 +928,7 @@ mod tests {
 
     #[tokio::test]
     async fn stream_is_chunked_in_completion_order() {
-        let chunks = frames("/stream", "wo-cap-probed=1; wo-cap-streaming_dsd=1").await;
+        let chunks = frames("/stream", "nojs-cap-probed=1; nojs-cap-streaming_dsd=1").await;
         assert!(chunks.len() >= 6, "expected head + shell + 3 fills + suffix, got {}", chunks.len());
         assert!(chunks[0].ends_with("</head>") && chunks[0].contains("<style>"), "the head, stylesheet included, goes first");
         assert!(chunks[1].contains("<template shadowrootmode=\"open\">"));
@@ -940,7 +940,7 @@ mod tests {
 
     #[tokio::test]
     async fn stream_fallback_is_in_document_order() {
-        let chunks = frames("/stream", "wo-cap-probed=1").await;
+        let chunks = frames("/stream", "nojs-cap-probed=1").await;
         let html = chunks.concat();
         assert!(!html.contains("<template") && !html.contains("<slot"));
         let pos = |s: &str| html.find(s).unwrap();
@@ -959,7 +959,7 @@ mod tests {
         let req = Request::post("/toast").header("content-type", "application/x-www-form-urlencoded").body(Body::from("kind=all")).unwrap();
         let res = router().oneshot(req).await.unwrap();
         let cookie = res.headers().get("set-cookie").unwrap().to_str().unwrap();
-        assert!(cookie.starts_with("wo-flash=ok%3AInvite") && cookie.contains("%0Awarn%3A") && cookie.contains("%0Adanger%3A"), "{cookie}");
+        assert!(cookie.starts_with("nojs-flash=ok%3AInvite") && cookie.contains("%0Awarn%3A") && cookie.contains("%0Adanger%3A"), "{cookie}");
     }
 
     #[tokio::test]
@@ -971,19 +971,19 @@ mod tests {
         assert_eq!(res.status(), 303);
         assert_eq!(res.headers().get("location").unwrap(), "/settings?tab.settings=1");
         let cookies: Vec<String> = res.headers().get_all("set-cookie").iter().map(|v| v.to_str().unwrap().to_string()).collect();
-        assert!(cookies.iter().any(|c| c.starts_with("wo-flash=ok%3ASettings%20saved.")), "{cookies:?}");
+        assert!(cookies.iter().any(|c| c.starts_with("nojs-flash=ok%3ASettings%20saved.")), "{cookies:?}");
         assert!(cookies.iter().any(|c| c.starts_with("settings=Ada")), "{cookies:?}");
-        // GET the redirect target: flash shown and cleared, tab persisted to wo-ui, values filled in.
-        let req = Request::get("/settings?tab.settings=1").header("cookie", "wo-flash=Settings%20saved.; settings=Ada|1").body(Body::empty()).unwrap();
+        // GET the redirect target: flash shown and cleared, tab persisted to nojs-ui, values filled in.
+        let req = Request::get("/settings?tab.settings=1").header("cookie", "nojs-flash=Settings%20saved.; settings=Ada|1").body(Body::empty()).unwrap();
         let res = router().oneshot(req).await.unwrap();
         let cookies: Vec<String> = res.headers().get_all("set-cookie").iter().map(|v| v.to_str().unwrap().to_string()).collect();
-        assert!(cookies.iter().any(|c| c.starts_with("wo-ui=tab.settings=1;")), "{cookies:?}");
-        assert!(cookies.iter().any(|c| c.starts_with("wo-flash=; Path=/; Max-Age=0")), "{cookies:?}");
+        assert!(cookies.iter().any(|c| c.starts_with("nojs-ui=tab.settings=1;")), "{cookies:?}");
+        assert!(cookies.iter().any(|c| c.starts_with("nojs-flash=; Path=/; Max-Age=0")), "{cookies:?}");
         let html = String::from_utf8(axum::body::to_bytes(res.into_body(), usize::MAX).await.unwrap().to_vec()).unwrap();
         assert!(html.contains("Settings saved.") && html.contains("value=\"Ada\"") && html.contains("checked"));
         assert!(html.contains("<details name=\"settings\" open>") && html.contains("href=\"/settings?tab.settings=0\""));
         // Coming back with only the cookie: the tab is still open, nothing is rewritten.
-        let req = Request::get("/settings").header("cookie", "wo-ui=tab.settings=1").body(Body::empty()).unwrap();
+        let req = Request::get("/settings").header("cookie", "nojs-ui=tab.settings=1").body(Body::empty()).unwrap();
         let res = router().oneshot(req).await.unwrap();
         assert!(res.headers().get("set-cookie").is_none());
         let html = String::from_utf8(axum::body::to_bytes(res.into_body(), usize::MAX).await.unwrap().to_vec()).unwrap();
@@ -1000,12 +1000,12 @@ mod tests {
         }
         let old = body("/dialog", "").await;
         assert!(old.contains("href=\"#confirm\"") && !old.contains("commandfor"));
-        assert!(old.contains("wo-caps"), "unknown browser gets beacons");
-        let new = body("/dialog", "wo-cap-probed=1; wo-cap-invokers=1").await;
+        assert!(old.contains("nojs-caps"), "unknown browser gets beacons");
+        let new = body("/dialog", "nojs-cap-probed=1; nojs-cap-invokers=1").await;
         assert!(new.contains("commandfor=\"confirm\"") && !new.contains("href=\"#confirm\""));
-        assert!(!new.contains("class=\"wo-caps\""), "probed browser gets no beacons");
-        assert!(body("/popover", "").await.contains("wo-popover-details"));
-        assert!(body("/tabs", "wo-cap-details_content=1").await.contains("wo-tabs-panel"));
-        assert!(body("/tabs", "").await.contains("wo-accordion-body"));
+        assert!(!new.contains("class=\"nojs-caps\""), "probed browser gets no beacons");
+        assert!(body("/popover", "").await.contains("nojs-popover-details"));
+        assert!(body("/tabs", "nojs-cap-details_content=1").await.contains("nojs-tabs-panel"));
+        assert!(body("/tabs", "").await.contains("nojs-accordion-body"));
     }
 }

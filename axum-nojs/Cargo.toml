@@ -1,0 +1,48 @@
+[package]
+name = "axum-nojs"
+version = "0.1.0"
+edition = "2024"
+description = "Interactive HTML components for Axum that work without JavaScript"
+readme = "../README.md"
+license = "MIT"
+keywords = ["html", "components", "maud", "axum", "no-js"]
+categories = ["web-programming", "template-engine", "gui"]
+
+[features]
+default = []
+# Framework-neutral responses: `prg` as an `http::Response`, `Streamed` as a chunk stream.
+http = ["dep:http", "dep:futures-util"]
+# Axum glue on top of `http`: extractors, the `/nojs/caps` beacon route, `IntoResponse` impls.
+axum = ["http", "dep:axum", "dep:bytes", "axum-nojs-caps/axum"]
+
+[dependencies]
+maud.workspace = true
+axum-nojs-caps = { path = "../axum-nojs-caps", version = "0.1.0" }
+http = { version = "1", optional = true }
+axum = { workspace = true, optional = true }
+futures-util = { version = "0.3", optional = true, default-features = false, features = ["std"] }
+bytes = { version = "1", optional = true }
+
+[dev-dependencies]
+axum.workspace = true
+tokio.workspace = true
+hyper = { version = "1", features = ["server", "http1", "http2"] }
+hyper-util = { version = "0.1", features = ["tokio", "server-auto", "http1", "http2"] }
+http-body-util = "0.1"
+criterion = { version = "0.5", default-features = false, features = ["cargo_bench_support"] }
+
+[[bench]]
+name = "render"
+harness = false
+
+[[example]]
+name = "axum_server"
+required-features = ["axum"]
+
+[[example]]
+name = "hyper_server"
+required-features = ["http"]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]

@@ -1,13 +1,13 @@
 # Latency: what moved the numbers
 
-A webonsive page is one server round trip, so the round trip is the whole experience. This
+A axum-nojs page is one server round trip, so the round trip is the whole experience. This
 page collects what was measured in M16, what moved and what did not, and the order to apply it
 to your own server. The raw numbers and the reasoning are in `FINDINGS.md` (M16 sections).
 
 How it was measured: `scripts/bench.sh` starts the release demo on port 3001 and reports curl
 p50/p95 time to first byte and full response, cold (new connection) and warm (kept alive),
 plus Firefox navigation timing (`scripts/bench-nav.mjs`, median of five).
-`cargo bench -p webonsive` times the render functions with criterion. All on loopback: real
+`cargo bench -p axum-nojs` times the render functions with criterion. All on loopback: real
 networks make the byte savings count for more, not less.
 
 ## What moved
@@ -20,7 +20,7 @@ networks make the byte savings count for more, not less.
 | Firefox DOMContentLoaded on `/` (the two above together) | 66 ms | 33 ms |
 | `enhance::slim`: enhanced requests get the page without its stylesheet | tab swap 39.9 KB | 3.2 KB (1.2 KB gzipped) |
 | `<link rel="prefetch">` on the index | `/dialog` 24–46 ms, 8.9 KB | from cache, 0 bytes |
-| `data-wo-prefetch`: fetch on hover/focus, reuse on click | request starts on click | starts on hover; the click reuses it (one request, checked in Firefox) |
+| `data-nojs-prefetch`: fetch on hover/focus, reuse on click | request starts on click | starts on hover; the click reuses it (one request, checked in Firefox) |
 | Streamed pages flush `<head>` as the first chunk | head and shell in one chunk with the body | first paint 50 ms while the last slot lands at 2 s |
 | `layout` sizes its buffer once | 15.6 µs per page | 11.9 µs |
 | `UiState` borrows until it must decode | 884 ns per request | 596 ns |
@@ -50,12 +50,12 @@ networks make the byte savings count for more, not less.
 2. **Compress** whole responses: gzip or br for any body of known size. Pages are mostly
    inline stylesheet and shrink to a fifth. Skip streamed bodies, or their chunks are held.
 3. **Mount `enhance::slim`** so enhanced swaps skip the stylesheet, and keep the
-   `Vary: Wo-Enhance, Cookie` it sends: every page depends on cookies.
+   `Vary: Nojs-Enhance, Cookie` it sends: every page depends on cookies.
 4. **Serve over HTTP/2 or HTTP/3** from the same origin as the page, usually by letting the
    TLS proxy in front terminate them (`docs/caps.md`, section 5).
 5. **Stream** routes whose body awaits a database or another service: `Streamed` flushes the
    head first, `slot`s fill as they land. Leave in-memory pages whole.
 6. **Prefetch** where the next click is predictable: `<link rel="prefetch">` for a small set
-   of likely pages, `data-wo-prefetch` around a tab strip or a list of links.
+   of likely pages, `data-nojs-prefetch` around a tab strip or a list of links.
 7. **Build with** `lto = "fat"`, `codegen-units = 1`, `panic = "abort"`. The library already
    caches and minifies the stylesheet; nothing to do there.

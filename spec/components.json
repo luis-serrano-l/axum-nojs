@@ -9,7 +9,7 @@
         { "name": "document.startViewTransition", "baseline": { "chrome": "111", "firefox": "144", "safari": "18" } },
         { "name": "CustomEvent", "baseline": { "chrome": "15", "firefox": "11", "safari": "6" } }
       ],
-      "fallback": "none needed: without the script every form and link is a normal navigation and every data-wo-* attribute is inert",
+      "fallback": "none needed: without the script every form and link is a normal navigation and every data-nojs-* attribute is inert",
       "needs_js": "no"
     },
     {

@@ -12,20 +12,20 @@ cargo build --workspace --all-targets
 echo "== clippy (deny warnings)"
 cargo clippy --workspace --all-targets -- -D warnings
 # The library must build and be clean at every feature level: none, http, axum.
-cargo clippy -p wo-caps --all-targets -- -D warnings
-cargo clippy -p webonsive --all-targets -- -D warnings
-cargo clippy -p webonsive --features http --all-targets -- -D warnings
+cargo clippy -p axum-nojs-caps --all-targets -- -D warnings
+cargo clippy -p axum-nojs --all-targets -- -D warnings
+cargo clippy -p axum-nojs --features http --all-targets -- -D warnings
 
 echo "== tests (unit, doc, only-one-script, Blitz layout + screenshots)"
 cargo test --workspace
 
 echo "== rustdoc (deny warnings, all features)"
-RUSTDOCFLAGS="-D warnings" cargo doc --no-deps -p wo-caps -p webonsive --all-features
+RUSTDOCFLAGS="-D warnings" cargo doc --no-deps -p axum-nojs-caps -p axum-nojs --all-features
 
 echo "== no <script> outside enhance.rs"
-# The enhancement tag is built in webonsive/src/enhance.rs; nothing else may write one.
-if grep -rn '<script' webonsive/src demo/src webonsive-test/src \
-     | grep -v '^webonsive/src/enhance.rs:' \
+# The enhancement tag is built in axum-nojs/src/enhance.rs; nothing else may write one.
+if grep -rn '<script' axum-nojs/src demo/src axum-nojs-test/src \
+     | grep -v '^axum-nojs/src/enhance.rs:' \
      | grep -v 'matches("<script")' \
      | grep -v '^\S*:\s*//' \
      | grep -v 'code { "<script>" }'; then

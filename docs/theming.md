@@ -1,7 +1,7 @@
 # Theming
 
-Every colour, corner and gap in `webonsive` is a `--wo-*` custom property. The components never
-name a colour of their own (a test in `webonsive/src/lib.rs` fails if one does), so a theme is
+Every colour, corner and gap in `axum-nojs` is a `--nojs-*` custom property. The components never
+name a colour of their own (a test in `axum-nojs/src/lib.rs` fails if one does), so a theme is
 twelve values, not a stylesheet. `layout::Tokens` holds them; `layout_with` emits them once per
 page.
 
@@ -9,19 +9,19 @@ page.
 
 | Token | Default light / dark | What it affects |
 |---|---|---|
-| `--wo-bg` | `#eef1ec` / `#0f1512` | The page background. The sticky table header and the popover fallback paint it too, so they cover rows that scroll under them. |
-| `--wo-fg` | `#14201a` / `#e4ebe6` | Body text, headings, tab titles, sorted column header, the dialog and flash text, the wordmark. |
-| `--wo-muted` | `#566158` / `#97a59c` | Secondary text: notes, table headers, the wizard's step list and legends, streamed placeholders, the "built on" line, the tagline. |
-| `--wo-line` | `#c9d2cb` / `#2b3630` | Every 1px border: inputs, buttons, dialogs, popovers, accordion and wizard fieldsets, table rules, the pager list, the theme switch. |
-| `--wo-surface` | `#ffffff` / `#171f1b` | Raised things: inputs, buttons, `<code>`, dialogs, popovers, open accordion panels, streamed slots, the flash banner. |
-| `--wo-accent` | `#1f6f5f` / `#62c9a8` | Links, primary buttons, the active tab's underline, the current page, the current wizard step, the range slider, the focus ring, hover borders. |
-| `--wo-on-accent` | `#ffffff` / `#08110d` | Text on the accent: primary buttons, current page link, current wizard step, the pager's "Load more". |
-| `--wo-danger` | `#b3261e` / `#ff8a80` | Form validation messages and `:user-invalid` borders, the "no" cells on `/caps`, danger flashes. |
-| `--wo-ok` | `#2f7a3a` / `#7bd389` | The "yes" cells on `/caps`, ok flashes; free for your own success states. |
-| `--wo-warn` | `#8a5a00` / `#e6b450` | Warning flashes. |
-| `--wo-radius` | `6px` | Corners of buttons, inputs, dialogs, popovers, chips, `<code>`, the colour swatch. |
-| `--wo-space` | `8px` | The unit every gap, margin and padding is a multiple of (`calc(var(--wo-space) * 3)`). |
-| `--wo-busy` | `0.6` | Not a `Tokens` field: the opacity of a swap root or form while the enhancement script has a request in flight (`[data-wo-busy]`). Set it to `1` on `:root` or on one root to turn the fade off. |
+| `--nojs-bg` | `#eef1ec` / `#0f1512` | The page background. The sticky table header and the popover fallback paint it too, so they cover rows that scroll under them. |
+| `--nojs-fg` | `#14201a` / `#e4ebe6` | Body text, headings, tab titles, sorted column header, the dialog and flash text, the wordmark. |
+| `--nojs-muted` | `#566158` / `#97a59c` | Secondary text: notes, table headers, the wizard's step list and legends, streamed placeholders, the "built on" line, the tagline. |
+| `--nojs-line` | `#c9d2cb` / `#2b3630` | Every 1px border: inputs, buttons, dialogs, popovers, accordion and wizard fieldsets, table rules, the pager list, the theme switch. |
+| `--nojs-surface` | `#ffffff` / `#171f1b` | Raised things: inputs, buttons, `<code>`, dialogs, popovers, open accordion panels, streamed slots, the flash banner. |
+| `--nojs-accent` | `#1f6f5f` / `#62c9a8` | Links, primary buttons, the active tab's underline, the current page, the current wizard step, the range slider, the focus ring, hover borders. |
+| `--nojs-on-accent` | `#ffffff` / `#08110d` | Text on the accent: primary buttons, current page link, current wizard step, the pager's "Load more". |
+| `--nojs-danger` | `#b3261e` / `#ff8a80` | Form validation messages and `:user-invalid` borders, the "no" cells on `/caps`, danger flashes. |
+| `--nojs-ok` | `#2f7a3a` / `#7bd389` | The "yes" cells on `/caps`, ok flashes; free for your own success states. |
+| `--nojs-warn` | `#8a5a00` / `#e6b450` | Warning flashes. |
+| `--nojs-radius` | `6px` | Corners of buttons, inputs, dialogs, popovers, chips, `<code>`, the colour swatch. |
+| `--nojs-space` | `8px` | The unit every gap, margin and padding is a multiple of (`calc(var(--nojs-space) * 3)`). |
+| `--nojs-busy` | `0.6` | Not a `Tokens` field: the opacity of a swap root or form while the enhancement script has a request in flight (`[data-nojs-busy]`). Set it to `1` on `:root` or on one root to turn the fade off. |
 
 The dark palette applies under `prefers-color-scheme: dark` unless `<html data-theme="light">`,
 and always under `data-theme="dark"`. `theme_toggle` sets that attribute through a cookie, so a
@@ -58,7 +58,7 @@ copper": warm paper, near-black ink, a copper accent that turns to amber in the 
 
 ```rust
 use maud::html;
-use webonsive::{Caps, Theme, layout::{Palette, Tokens, layout_with}};
+use axum_nojs::{Caps, Theme, layout::{Palette, Tokens, layout_with}};
 
 const LINEN: Tokens = Tokens {
     light: Palette {
@@ -82,7 +82,7 @@ Its ratios: `fg`/`bg` 15.1 and 14.9, `muted`/`bg` 6.2 and 6.8, `accent`/`bg` 6.8
 To change one value, spread the default: `Tokens { radius: "0", ..Default::default() }` or
 `Palette { accent: "#7a3b1e", ..Tokens::default().light }`.
 
-`layout_with` puts a second `<style class="wo-tokens">` right after the stylesheet with the
+`layout_with` puts a second `<style class="nojs-tokens">` right after the stylesheet with the
 same three rule blocks the default palette uses, so it wins by source order and nothing else
 changes. The demo shows the pair: `/` is the default, `/?palette=linen` is this one.
 
@@ -90,6 +90,6 @@ changes. The demo shows the pair: `/` is the default, `/?palette=linen` is this 
 
 Fonts, the type scale and the page width are base rules in `layout.rs`, not tokens. To change
 them, put your own `<style>` after `layout`'s (or use your own shell and call
-`webonsive::stylesheet()` for the component CSS). A component's parts are addressable by class,
-`wo-<component>` on the root and `wo-<component>-<part>` inside, so overriding a single part is
+`axum_nojs::stylesheet()` for the component CSS). A component's parts are addressable by class,
+`nojs-<component>` on the root and `nojs-<component>-<part>` inside, so overriding a single part is
 one selector.

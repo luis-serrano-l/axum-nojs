@@ -6,23 +6,23 @@ matrix and findings are updated, and the work is committed. Unknowns become entr
 `FINDINGS.md`, never reasons to add script.
 
 ## M1 · Capability beacons (server-side feature detection, no script)
-- [x] `webonsive::caps`: `Caps` bitset (invokers, anchor, details_content, view_transitions, popover, light_dark, streaming_dsd)
-- [x] `caps::beacon_css()` emits `@supports` rules that request `/wo/caps?flag=1` as a background image
-- [x] Axum route `/wo/caps` sets/extends a `wo-caps` cookie; `Caps` implements `FromRequestParts`
+- [x] `axum_nojs::caps`: `Caps` bitset (invokers, anchor, details_content, view_transitions, popover, light_dark, streaming_dsd)
+- [x] `caps::beacon_css()` emits `@supports` rules that request `/nojs/caps?flag=1` as a background image
+- [x] Axum route `/nojs/caps` sets/extends a `axum-nojs-caps` cookie; `Caps` implements `FromRequestParts`
 - [x] Every component takes `&Caps` and emits only the best markup for that browser (dialog: invokers vs `:target`; popover: anchor vs centred; tabs: `::details-content` vs accordion)
 - [x] Demo page `/caps` shows what the server thinks the browser supports
 - [x] Screenshot verification in Firefox headless; old-Chrome-109 check confirms fallbacks render
 
 ## M2 · Out-of-order streaming without script
-- [x] `webonsive::stream`: `Streamed` response type built on `axum::body::Body::from_stream`
-- [x] `slot(id, placeholder)` renders `<wo-slot><template shadowrootmode=open><slot name=id>…`
+- [x] `axum_nojs::stream`: `Streamed` response type built on `axum::body::Body::from_stream`
+- [x] `slot(id, placeholder)` renders `<nojs-slot><template shadowrootmode=open><slot name=id>…`
 - [x] `fill(id, future)` appends the resolved chunk with `slot=id` later in the stream, any order
 - [x] Demo `/stream` with three slow sections (100ms, 800ms, 2s) arriving out of order
 - [x] Fallback when DSD unsupported (per `Caps`): render sequentially at the end
 - [x] Test: response body is chunked and slots arrive in completion order
 
 ## M3 · State model for scriptless apps
-- [x] `webonsive::state`: `UiState` extractor merging query + cookie (open tab, open details, dialog)
+- [x] `axum_nojs::state`: `UiState` extractor merging query + cookie (open tab, open details, dialog)
 - [x] `prg(redirect_to, flash)` helper: Post/Redirect/Get with a one-shot flash cookie
 - [x] `flash()` component rendering and clearing the flash
 - [x] `details` and `tabs` persist open state via `?open=` links generated from `UiState`
@@ -30,7 +30,7 @@ matrix and findings are updated, and the work is committed. Unknowns become entr
 - [x] Docs: one page "how state works with no script"
 
 ## M4 · Blitz as the test engine
-- [x] `webonsive-test` crate: render a route via `tower::oneshot`, load HTML into `blitz-dom`, resolve layout
+- [x] `axum-nojs-test` crate: render a route via `tower::oneshot`, load HTML into `blitz-dom`, resolve layout
 - [x] Assertions: element exists, is visible, bounding box, computed style
 - [x] Screenshot every demo route through Blitz's painter; store PNGs under `tests/shots`
 - [x] CI-style script `just verify` (or `scripts/verify.sh`): build, clippy, tests, screenshots, no-script grep
@@ -45,12 +45,12 @@ matrix and findings are updated, and the work is committed. Unknowns become entr
 ## M6 · Polish for release
 - [x] `<select>` with `<selectedcontent>` component, `<input type=range>` and colour with server round trip
 - [x] Crate docs on docs.rs style: every pub item documented, `#![warn(missing_docs)]`
-- [x] Examples in `webonsive/examples/`
-- [x] Publish dry run: `cargo publish --dry-run -p webonsive`
-- [x] Demo visual pass: one palette (`--wo-*` for light and dark, moss accent), one type scale, index grouped by platform feature, toolbar with a back link and the theme switch on every component page
+- [x] Examples in `axum-nojs/examples/`
+- [x] Publish dry run: `cargo publish --dry-run -p axum-nojs`
+- [x] Demo visual pass: one palette (`--nojs-*` for light and dark, moss accent), one type scale, index grouped by platform feature, toolbar with a back link and the theme switch on every component page
 
 ## M7 · Optional enhancement script
-- [x] `webonsive::enhance`: one small script (`/wo/enhance.js`, content-hashed, immutable) that upgrades swap roots (`id` + `data-wo="swap"`) to fetch + replace, queued per root, with focus, flash, title, theme and URL synced
+- [x] `axum_nojs::enhance`: one small script (`/nojs/enhance.js`, content-hashed, immutable) that upgrades swap roots (`id` + `data-nojs="swap"`) to fetch + replace, queued per root, with focus, flash, title, theme and URL synced
 - [x] Counter, form, tabs, accordion, pager, theme toggle are swap roots; combobox searches as you type; range and colour mirror live; `:target` dialog fallback opens as a real modal; `<details>` popover fallback light-dismisses
 - [x] Enforcement: exactly one `<script>` per page and it is the enhancement tag; no inline handlers; Blitz suite (no script engine) proves every route works without it
 - [x] Headless Firefox check through geckodriver (`scripts/browser-check.mjs`, run by `scripts/verify.sh` when available)
@@ -60,14 +60,14 @@ matrix and findings are updated, and the work is committed. Unknowns become entr
 - [x] `Caps::from_cookie_header(&str)` and `Caps::from_query(&str)` as the only entry points; the Axum extractor becomes a thin wrapper behind the `axum` feature
 - [x] Every component returns `Markup` that also implements `Render`; a `string` feature (or `.into_string()` docs) shows use without Maud templates
 - [x] `state::prg`, `flash` and `stream` compile without Axum: an `http` feature exposes `http::Response` builders, the `axum` feature wraps them
-- [x] Example `webonsive/examples/actix_server.rs` (or `hyper_server.rs`) rendering three components with the beacon route wired by hand
+- [x] Example `axum-nojs/examples/actix_server.rs` (or `hyper_server.rs`) rendering three components with the beacon route wired by hand
 - [x] README: "Use with any server" section; CLAUDE.md workspace notes updated
 
-## M9 · `wo-caps` as its own crate
-- [x] Move `caps.rs` (bitset, `@supports` beacons, cookie parsing, beacon route) into `wo-caps/` in the workspace; `webonsive` depends on it and re-exports `Caps`, `Cap`
+## M9 · `axum-nojs-caps` as its own crate
+- [x] Move `caps.rs` (bitset, `@supports` beacons, cookie parsing, beacon route) into `axum-nojs-caps/` in the workspace; `axum-nojs` depends on it and re-exports `Caps`, `Cap`
 - [x] Spec page `docs/caps.md`: how the beacons work, the first-view problem, what each flag tests, cookie format, how to add a flag
 - [x] Standalone example: a raw `hyper` handler that reads `Caps` and prints one line per flag
-- [x] `cargo publish --dry-run -p wo-caps` passes; README of the sub-crate written for a reader who has never seen webonsive
+- [x] `cargo publish --dry-run -p axum-nojs-caps` passes; README of the sub-crate written for a reader who has never seen axum-nojs
 
 ## M10 · Components admin panels need
 - [x] `table`: server-side sort (`?sort=col&dir=asc` links in `<th>`), column filter (`<form method=get>` with `<search>`), sticky header, `aria-sort`; swap root
@@ -84,15 +84,15 @@ matrix and findings are updated, and the work is committed. Unknowns become entr
 
 ## M12 · Theming guide
 - [x] `layout::Tokens` struct (`accent`, `bg`, `fg`, …, light and dark) with `Default` = ink and moss; `layout_with(&caps, title, theme, &tokens, body)` emits the overrides once per page
-- [x] `docs/theming.md`: every `--wo-*` token, what it affects, contrast requirements, one worked example with a different palette
+- [x] `docs/theming.md`: every `--nojs-*` token, what it affects, contrast requirements, one worked example with a different palette
 - [x] Demo `/theme-demo` (or a query flag on the index) rendering the same page under a second palette; Blitz screenshot pair `index-modern.png` vs `index-alt.png`
 - [x] Test: no colour literal outside `layout.rs` (grep for `#[0-9a-f]{3,6}` in component CSS)
 
 ## M13 · Publish
 - [ ] `license`, `repository`, `readme`, `keywords`, `categories` in every publishable `Cargo.toml` (needs the owner's answer in BLOCKED.md)
-- [x] `CHANGELOG.md` with 0.1.0; version bump; `cargo publish --dry-run` for `wo-caps` then `webonsive`
-      (both crates are 0.1.0; `wo-caps` dry-runs clean; `webonsive` alone cannot until `wo-caps`
-      is on crates.io, so `cargo package --workspace --exclude demo --exclude webonsive-test`
+- [x] `CHANGELOG.md` with 0.1.0; version bump; `cargo publish --dry-run` for `axum-nojs-caps` then `axum-nojs`
+      (both crates are 0.1.0; `axum-nojs-caps` dry-runs clean; `axum-nojs` alone cannot until `axum-nojs-caps`
+      is on crates.io, so `cargo package --workspace --exclude demo --exclude axum-nojs-test`
       verifies both together)
 - [x] docs.rs metadata (`all-features`), crate-level README rendered on docs.rs checked with `cargo doc --no-deps`
 - [ ] The publish itself is an outward action: ask the owner, do not run `cargo publish` without a yes
@@ -101,19 +101,19 @@ matrix and findings are updated, and the work is committed. Unknowns become entr
 Every item must keep the no-script path intact: the markup is the same, the script only reads
 attributes. Blitz proves each route works without it; `scripts/browser-check.mjs` proves the
 script does its job.
-- [x] Partial swaps with explicit targets: `data-wo-target="#id"` on a form or link swaps that
-  root instead of the closest one; `data-wo-swap="inner|outer|append|prepend"` chooses how.
+- [x] Partial swaps with explicit targets: `data-nojs-target="#id"` on a form or link swaps that
+  root instead of the closest one; `data-nojs-swap="inner|outer|append|prepend"` chooses how.
   Without the script the same request is a full navigation to the same page.
-- [x] Out-of-band updates: a response may carry extra swap roots marked `data-wo-oob`; the
+- [x] Out-of-band updates: a response may carry extra swap roots marked `data-nojs-oob`; the
   script replaces each matching `id` anywhere in the page (flash banner, counter in the header)
   and drops them from the main swap. Without the script the full page already shows them.
-- [x] Request lifecycle feedback: `data-wo-busy` class on the root while a request is in flight,
-  `aria-busy="true"`, submit buttons disabled, a `--wo-busy` CSS hook; optional
-  `data-wo-indicator="#id"` element shown while pending. Failed requests fall back to a normal
+- [x] Request lifecycle feedback: `data-nojs-busy` class on the root while a request is in flight,
+  `aria-busy="true"`, submit buttons disabled, a `--nojs-busy` CSS hook; optional
+  `data-nojs-indicator="#id"` element shown while pending. Failed requests fall back to a normal
   navigation so the user always sees the server's answer.
-- [x] History and URL control: `data-wo-push="false"` keeps the URL, `data-wo-replace` uses
+- [x] History and URL control: `data-nojs-push="false"` keeps the URL, `data-nojs-replace` uses
   `replaceState`, and Back/Forward restore the swapped roots from a cached copy instead of a
-  reload; a `wo:swap` custom event fires after every swap for anything that must react.
+  reload; a `nojs:swap` custom event fires after every swap for anything that must react.
 - [x] Spec entry for the enhancement script updated, README "How the script works" section,
   Firefox checks for each attribute, FINDINGS on what the platform still cannot do.
 
@@ -121,7 +121,7 @@ script does its job.
 The components are too basic: each proves a platform feature but stops short of what an app
 needs from it. Make each one something a real page would reach for, without giving up what
 makes them simple: one function, one options struct, plain HTML you can `curl`, no script
-beyond `/wo/enhance.js`, every state a URL or a form. One box per component; each box ends
+beyond `/nojs/enhance.js`, every state a URL or a form. One box per component; each box ends
 with a demo route that shows the new behaviour, a Blitz assertion and (where the script is
 involved) a Firefox check.
 - [x] Dialog: sizes (`sm|md|lg`), a header with title and close, a footer slot for real actions
@@ -176,7 +176,7 @@ in FINDINGS.md (`hyperfine` against the demo, Firefox navigation timing from
   `performance.getEntriesByType("navigation")` for the same routes; numbers in FINDINGS.md.
 - [x] Cheap wins, server: `stylesheet()` built once (`OnceLock`) instead of per page; the
   `Tokens::css()` string cached; `Content-Length` on every response; `Cache-Control` with a
-  hash on `/wo/caps` beacon images and `/wo/enhance.js` verified; gzip/br on the demo through
+  hash on `/nojs/caps` beacon images and `/nojs/enhance.js` verified; gzip/br on the demo through
   `tower-http` `CompressionLayer`; release profile with `lto = "fat"`, `codegen-units = 1`,
   `panic = "abort"` for the demo binary.
 - [x] Cheap wins, page: the inline stylesheet minified (whitespace and comments stripped at
@@ -185,10 +185,10 @@ in FINDINGS.md (`hyperfine` against the demo, Firefox navigation timing from
   needed (no third party) and recorded as such; the caps cookie small enough to fit one
   `Set-Cookie`.
 - [x] Cheap wins, script: `enhance.js` requests carry `Accept: text/html` and the server's
-  fragment answer (`Wo-Enhance: 1`) used on every swap route in the demo, not only `/swap`,
+  fragment answer (`Nojs-Enhance: 1`) used on every swap route in the demo, not only `/swap`,
   so a swap moves a few hundred bytes instead of the page; `fetch` with `priority: "high"`
   for user actions; prefetch on `mouseenter`/`focus` for same-origin links inside a swap root
-  (`data-wo-prefetch`), cached for a few seconds and reused by the click.
+  (`data-nojs-prefetch`), cached for a few seconds and reused by the click.
 - [x] Speculation rules: a `<script type="speculationrules">` is a `<script>` tag and so out
   of bounds by CLAUDE.md; instead `<link rel="prefetch">` for the index's component links and
   `<link rel="prerender">`-free; record in FINDINGS what the platform cannot prefetch without

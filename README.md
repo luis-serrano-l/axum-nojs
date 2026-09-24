@@ -1,16 +1,17 @@
-# webonsive
+# axum-nojs
 
-Interactive HTML components for Rust servers that work with JavaScript turned off. Axum + Maud.
+Interactive HTML components for Axum and Maud that work without JavaScript. The core is plain
+functions over strings, so it also works with any other Rust server.
 
 Every component is a plain function returning `Markup`. Interactivity comes from the HTML/CSS
-platform and ordinary form round trips. One optional 10 KB script (`/wo/enhance.js`) makes the
+platform and ordinary form round trips. One optional 10 KB script (`/nojs/enhance.js`) makes the
 same markup update in place; see "How the script works" below. Every page works identically
 with the script blocked; that is the only `<script>` tag allowed, and a test enforces it.
 
 ```rust
 use axum::{Router, routing::get};
 use maud::{Markup, html};
-use webonsive::{Ui, dialog};
+use axum_nojs::{Ui, dialog};
 
 // `Ui` is what the server knows about this browser, its theme and the page's UI state.
 async fn hello(ui: Ui) -> Markup {
@@ -21,12 +22,12 @@ async fn hello(ui: Ui) -> Markup {
 
 let app = Router::new()
     .route("/", get(hello))
-    .merge(webonsive::caps::router())     // the beacons that tell the server what the browser supports
-    .merge(webonsive::enhance::router()); // the optional script
+    .merge(axum_nojs::caps::router())     // the beacons that tell the server what the browser supports
+    .merge(axum_nojs::enhance::router()); // the optional script
 ```
 
-With `webonsive = { features = ["axum"] }`. Without Axum, `dialog(&Caps::all(), …)` returns
-the same `Markup`; `webonsive/examples/hyper_server.rs` shows a raw hyper server.
+With `axum-nojs = { features = ["axum"] }`. Without Axum, `dialog(&Caps::all(), …)` returns
+the same `Markup`; `axum-nojs/examples/hyper_server.rs` shows a raw hyper server.
 
 ## Run the demo
 
@@ -37,7 +38,7 @@ cargo test             # includes: only the enhancement <script> on any route, a
 scripts/verify.sh      # build + clippy -D warnings + tests + screenshots + <script> grep + Firefox check
 ```
 
-`webonsive-test` renders every route through [Blitz](https://github.com/DioxusLabs/blitz)
+`axum-nojs-test` renders every route through [Blitz](https://github.com/DioxusLabs/blitz)
 (Stylo + Taffy + vello_cpu, no script engine) and writes a PNG per route and capability level
 to `tests/shots/`, which is also the proof that every route works with no script. What Blitz
 cannot render is listed with issue links in `FINDINGS.md`. `scripts/browser-check.mjs` drives
@@ -52,19 +53,19 @@ thin wrapper over plain functions on strings, so any server can do the same in a
 | You need | Without a framework | With `--features http` | With `--features axum` |
 |---|---|---|---|
 | What the browser supports | `Caps::from_query(query)` then `Caps::from_cookie_header(cookies)` | same | `caps: Caps` extractor |
-| The beacon route `GET /wo/caps?flag=x` | `caps::beacon_cookie(query)` → 204 + `Set-Cookie`, or 404 | same | `caps::router()` |
+| The beacon route `GET /nojs/caps?flag=x` | `caps::beacon_cookie(query)` → 204 + `Set-Cookie`, or 404 | same | `caps::router()` |
 | Tab, accordion, dialog state | `UiState::from_request(path, query, cookies)`, `state.set_cookies()` | same | `state: UiState` extractor, return `(state, page)` |
 | Post/Redirect/Get with a flash | `state::prg_parts(to, flash)` → 303, `Location`, `Set-Cookie` | `prg(to, flash)` → `http::Response<B>` | `prg(to, flash)` → `Response` |
 | Out-of-order streaming | | `Streamed::into_stream()` → chunks | `impl IntoResponse for Streamed` |
 | The optional script | serve `enhance::JS` at `enhance::SCRIPT_PATH` | same | `enhance::router()` |
 
-`webonsive/examples/hyper_server.rs` is the whole of it on raw hyper: three components, the
+`axum-nojs/examples/hyper_server.rs` is the whole of it on raw hyper: three components, the
 beacon route, a POST answered with PRG, the script served by hand. `.into_string()` on any
 component gives the HTML to another template engine.
 
 ## How to read this crate
 
-- One component = one file in `webonsive/src/`. Each starts with a `//!` header: what it does,
+- One component = one file in `axum-nojs/src/`. Each starts with a `//!` header: what it does,
   the platform features it uses (with browser baseline), the fallback, a usage example.
 - Signatures are uniform: `name(&caps, ...required) -> Markup` for the common case and
   `name_with(&caps, ...required, options)` for the rest, where options is a plain `XOptions`
@@ -75,8 +76,8 @@ component gives the HTML to another template engine.
   capability, and each component emits only the variant that browser needs (see `/caps`).
   `?caps=popover,anchor` on any URL forces a set. The protocol is three plain functions
   (`Caps::from_cookie_header`, `Caps::from_query`, `caps::beacon_cookie`); Axum only wraps them.
-- Output HTML is semantic with one `wo-<component>` class per root. `curl` any page and read it.
-- CSS lives beside its component as `const CSS`. Theming is via `--wo-*` custom properties only
+- Output HTML is semantic with one `nojs-<component>` class per root. `curl` any page and read it.
+- CSS lives beside its component as `const CSS`. Theming is via `--nojs-*` custom properties only
   (`bg`, `surface`, `fg`, `muted`, `line`, `accent`, `on-accent`, `danger`, `ok`, `warn`, `radius`, `space`).
   `layout::Tokens` holds them for light and dark, `layout_with` applies another set once per
   page, and `docs/theming.md` says what each one affects and which pairs must keep contrast.
@@ -85,24 +86,24 @@ component gives the HTML to another template engine.
 
 ## How the script works
 
-`/wo/enhance.js` is one file, plain ES2020, served with a content hash so it caches forever
+`/nojs/enhance.js` is one file, plain ES2020, served with a content hash so it caches forever
 and compatible with `script-src 'self'`. It never changes what the server sends: it reads a
-few `data-wo-*` attributes and does in place what the browser would have done as a full
+few `data-nojs-*` attributes and does in place what the browser would have done as a full
 navigation. Without it every attribute is inert and every control is a normal form or link.
 
 | Attribute | On | What the script does | Without the script |
 |---|---|---|---|
-| `id` + `data-wo="swap"` | a root element | Forms and links inside it are fetched; the element of the same `id` in the answer replaces the root. Flash, `<title>`, `data-theme` and the URL follow. Requests on one root are queued. | Normal navigation to the same URL. |
-| `data-wo-target="#id"` | a form or link, or an ancestor | Swaps that root instead of the closest one, so a control can sit anywhere. | Same navigation. |
-| `data-wo-swap="outer\|inner\|append\|prepend"` | with `data-wo-target` | How the answer lands: replace the root, replace its children, add at the end or the start. | Same navigation; the full page already shows the result. |
-| `data-wo-oob="outer\|inner\|…"` | an element in the answer | Replaces the element of the same `id` anywhere in the page and is dropped from the main swap. | The full page shows it in place. |
-| `Wo-Enhance: 1` | the request header | Sent on every enhanced request, so a handler may answer with only the fragment it needs to (`/swap` does). | Not sent; the handler returns the page. |
-| `data-wo-busy` + `aria-busy="true"` | set by the script on the root and the form | Present while a request is in flight; submit buttons are disabled meanwhile; `[data-wo-busy]` fades to `--wo-busy` (0.6). | Never set. |
-| `data-wo-indicator="#id"` | a form or link | The named element (authored with `hidden`) is shown while the request runs. | Stays hidden. |
-| `data-wo-push="false"` | a form or link | The URL does not change. Links push a history entry by default, forms replace it. | Normal navigation. |
-| `data-wo-replace` | a form or link | `replaceState` instead of `pushState`. | Normal navigation. |
+| `id` + `data-nojs="swap"` | a root element | Forms and links inside it are fetched; the element of the same `id` in the answer replaces the root. Flash, `<title>`, `data-theme` and the URL follow. Requests on one root are queued. | Normal navigation to the same URL. |
+| `data-nojs-target="#id"` | a form or link, or an ancestor | Swaps that root instead of the closest one, so a control can sit anywhere. | Same navigation. |
+| `data-nojs-swap="outer\|inner\|append\|prepend"` | with `data-nojs-target` | How the answer lands: replace the root, replace its children, add at the end or the start. | Same navigation; the full page already shows the result. |
+| `data-nojs-oob="outer\|inner\|…"` | an element in the answer | Replaces the element of the same `id` anywhere in the page and is dropped from the main swap. | The full page shows it in place. |
+| `Nojs-Enhance: 1` | the request header | Sent on every enhanced request, so a handler may answer with only the fragment it needs to (`/swap` does). | Not sent; the handler returns the page. |
+| `data-nojs-busy` + `aria-busy="true"` | set by the script on the root and the form | Present while a request is in flight; submit buttons are disabled meanwhile; `[data-nojs-busy]` fades to `--nojs-busy` (0.6). | Never set. |
+| `data-nojs-indicator="#id"` | a form or link | The named element (authored with `hidden`) is shown while the request runs. | Stays hidden. |
+| `data-nojs-push="false"` | a form or link | The URL does not change. Links push a history entry by default, forms replace it. | Normal navigation. |
+| `data-nojs-replace` | a form or link | `replaceState` instead of `pushState`. | Normal navigation. |
 | Back and Forward | | Each swap stores a copy of every root in the history entry; Back and Forward restore from it with no request. Entries without a copy are re-fetched. | Normal history. |
-| `wo:swap` | a bubbling `CustomEvent` on the swapped root | `detail` is `{ id, url, mode }`, for anything that must react; no listener ships with the crate. | Never fires. |
+| `nojs:swap` | a bubbling `CustomEvent` on the swapped root | `detail` is `{ id, url, mode }`, for anything that must react; no listener ships with the crate. | Never fires. |
 
 A request that fails (network down, the answer has no element of that `id`) becomes the
 navigation the browser would have made, so the server's answer is always seen. The script also
@@ -113,14 +114,14 @@ Firefox; the Blitz suite proves every route with no script engine at all.
 
 ## Feature matrix
 
-Generated from `webonsive::spec::SPECS` by `cargo run -p demo -- spec write` (a test fails if it
+Generated from `axum_nojs::spec::SPECS` by `cargo run -p demo -- spec write` (a test fails if it
 drifts). Versions are the first release of each engine with the feature, from MDN
 browser-compat-data; `no` means unshipped, so that browser gets the fallback.
 
 <!-- matrix:start -->
 | Component | Platform features | Chrome / Firefox / Safari | Fallback | Needs JS? |
 |---|---|---|---|---|
-| Enhancement script | `fetch`, `history.pushState`, `document.startViewTransition`, `CustomEvent` | 42 / 39 / 10.1; 5 / 4 / 5; 111 / 144 / 18; 15 / 11 / 6 | none needed: without the script every form and link is a normal navigation and every data-wo-* attribute is inert | No |
+| Enhancement script | `fetch`, `history.pushState`, `document.startViewTransition`, `CustomEvent` | 42 / 39 / 10.1; 5 / 4 / 5; 111 / 144 / 18; 15 / 11 / 6 | none needed: without the script every form and link is a normal navigation and every data-nojs-* attribute is inert | No |
 | Layout | `@view-transition`, `prefers-color-scheme`, `custom properties` | 126 / no / 18.2; 76 / 67 / 12.1; 49 / 31 / 9.1 | plain navigations (root never cross-fades); colours still switch by media query and data-theme | No |
 | Capability beacons | `@supports`, `selector()`, `background images`, `cookies` | 28 / 22 / 9; 83 / 69 / 14.1; 1 / 1 / 1; 1 / 1 / 1 | unknown browser gets every fallback; the first view always does | No |
 | Dialog | `<dialog>`, `command="show-modal"`, `<form method="dialog">`, `closedby` | 37 / 98 / 15.4; 135 / 144 / 26.2; 37 / 98 / 15.4; 134 / 141 / 26 | link to #id opens it through a :target rule, chosen server-side; the confirm footer is a plain form either way | No |
@@ -175,32 +176,32 @@ reacts per keystroke, it is not.
 ## Layout
 
 ```
-webonsive/src/lib.rs        crate docs, re-exports, stylesheet()
-wo-caps/src/lib.rs          Caps bitset, @supports beacons, cookie parsing, /wo/caps route (own crate)
-wo-caps/examples/hyper.rs   the beacons on raw hyper, one line per flag
-webonsive/src/layout.rs     page shell + base CSS + beacons
-webonsive/src/stream.rs     Streamed response: DSD slots out of order, in-order fallback (http feature)
-webonsive/src/state.rs      UiState (query + cookie), prg_parts()/prg() redirect with flash
-webonsive/src/ui.rs         Ui: caps, theme and UiState in one extractor; ui.flash(), ui.layout()
-webonsive/src/flash.rs      one-shot status banners: levels, stacked, dismiss, auto-hide
-webonsive/src/select.rs     <select> with <selectedcontent> where supported
-webonsive/src/range.rs      <input type=range> with ticks and a server-rendered <output>
-webonsive/src/color.rs      <input type=color> with a swatch of the saved value
-webonsive/src/spec.rs       SPECS: features, per-browser baselines, fallback, needs_js
-webonsive/examples/         render_page (no server), axum_server (--features axum), hyper_server (--features http)
+axum-nojs/src/lib.rs        crate docs, re-exports, stylesheet()
+axum-nojs-caps/src/lib.rs          Caps bitset, @supports beacons, cookie parsing, /nojs/caps route (own crate)
+axum-nojs-caps/examples/hyper.rs   the beacons on raw hyper, one line per flag
+axum-nojs/src/layout.rs     page shell + base CSS + beacons
+axum-nojs/src/stream.rs     Streamed response: DSD slots out of order, in-order fallback (http feature)
+axum-nojs/src/state.rs      UiState (query + cookie), prg_parts()/prg() redirect with flash
+axum-nojs/src/ui.rs         Ui: caps, theme and UiState in one extractor; ui.flash(), ui.layout()
+axum-nojs/src/flash.rs      one-shot status banners: levels, stacked, dismiss, auto-hide
+axum-nojs/src/select.rs     <select> with <selectedcontent> where supported
+axum-nojs/src/range.rs      <input type=range> with ticks and a server-rendered <output>
+axum-nojs/src/color.rs      <input type=color> with a swatch of the saved value
+axum-nojs/src/spec.rs       SPECS: features, per-browser baselines, fallback, needs_js
+axum-nojs/examples/         render_page (no server), axum_server (--features axum), hyper_server (--features http)
 spec/components.json        generated from SPECS (cargo run -p demo -- spec write)
 docs/state.md               how state works with no script
 docs/caps.md                how the beacons work, cookie format, the first view, adding a flag
-docs/theming.md             every --wo-* token, contrast pairs, a second palette as a Tokens value
+docs/theming.md             every --nojs-* token, contrast pairs, a second palette as a Tokens value
 docs/ergonomics.md          audit of every call site and how M17 makes them shorter
 docs/latency.md             what made pages faster, what did not, and the order to apply it to your server
-webonsive/src/<name>.rs     one component each: dialog, popover, tabs, accordion, table, paged_table, wizard,
+axum-nojs/src/<name>.rs     one component each: dialog, popover, tabs, accordion, table, paged_table, wizard,
                             combobox, pager, form, counter, theme, toast, breadcrumbs, skeleton,
                             empty_state, stat, drawer, palette (command palette)
 demo/src/lib.rs             Axum routes, ≤15 lines each, plus the no-script test
-webonsive-test/src/lib.rs   Page: render a route through Blitz, assert layout, screenshot
-webonsive-test/tests/       every route rendered and captured; layout assertions
-webonsive-test/examples/probe.rs   render any HTML file through Blitz, print boxes
+axum-nojs-test/src/lib.rs   Page: render a route through Blitz, assert layout, screenshot
+axum-nojs-test/tests/       every route rendered and captured; layout assertions
+axum-nojs-test/examples/probe.rs   render any HTML file through Blitz, print boxes
 tests/shots/                PNG per route and capability level, from Blitz
 scripts/verify.sh           the full verification pass
 FINDINGS.md                 what works, what needs a fallback, what is impossible without JS

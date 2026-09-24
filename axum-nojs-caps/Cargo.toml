@@ -1,0 +1,28 @@
+[package]
+name = "axum-nojs-caps"
+version = "0.1.0"
+edition = "2024"
+description = "Server-side browser feature detection with no JavaScript: @supports beacons set one cookie per capability"
+readme = "README.md"
+license = "MIT"
+keywords = ["feature-detection", "supports", "cookie", "axum", "no-js"]
+categories = ["web-programming", "web-programming::http-server"]
+
+[features]
+default = []
+# Axum glue: `Caps` extractor and the `/nojs/caps` beacon route.
+axum = ["dep:axum"]
+
+[dependencies]
+maud.workspace = true
+axum = { workspace = true, optional = true }
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
+
+[dev-dependencies]
+tokio.workspace = true
+hyper = { version = "1", features = ["server", "http1"] }
+hyper-util = { version = "0.1", features = ["tokio"] }
+http-body-util = "0.1"
