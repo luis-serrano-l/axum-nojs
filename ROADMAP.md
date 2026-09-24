@@ -491,9 +491,12 @@ One change to the button restyles every dialog, pager and table.
   `:is()`/`:where()` arguments included, and names the offending selector. `select`,
   `textarea` and `summary` are not covered: the box asks for buttons and inputs, and
   components still style their own `<select>` (select.rs) and `<summary>` (tabs, accordion).
-- [ ] CLAUDE.md component convention 8: a component builds its parts from primitives
+- [x] CLAUDE.md component convention 8: a component builds its parts from primitives
   (`ui.button`, `ui.input`, `ui.card`…), never raw `button`/`input` with its own CSS.
   Update `docs/` and FINDINGS.
+  Done: convention 8 names the primitives, the part-class rule, the test that enforces it and
+  the exceptions; `docs/theming.md` says buttons and controls are styled in one place each;
+  FINDINGS has an M22 section.
 - [ ] `tests/shots/` compared before and after; only intended visual diffs.
 
 ## M23 · Flagship widgets

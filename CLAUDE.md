@@ -85,6 +85,13 @@ scripts/verify.sh                  # everything above plus a <script> grep and t
 6. Server-held state (theme, counter, active tab) travels via cookie or `?query=`; mutations use
    `<form method="post">` + redirect (Post/Redirect/Get), never GET side effects.
 7. Update the README feature matrix and Findings when a component or its fallback changes.
+8. A component builds its parts from the primitives: `ui.button` / `Button::new(caps, ..)`
+   (or `class="nojs-button"` on a `<summary>`), `ui.input` / `Input` with `.hide_label()` for a
+   bare control, `ui.badge`, `ui.card`, `Icon`, and the layouts (`ui.stack`, `ui.cluster`,
+   `ui.grid`, `ui.split`). Never a raw `<button>` or visible `<input>` with its own CSS: a
+   component's CSS styles its parts by class (`.nojs-<component>-<part>`), and a test
+   (`only_the_primitives_select_bare_buttons_and_inputs`) fails if it selects a bare `button`
+   or `input`. Hidden inputs, `<select>`, range sliders and menu items are the exceptions.
 
 ## Roadmap
 

@@ -117,7 +117,9 @@ changes. The demo shows the pair: `/` is the default, `/?palette=linen` is this 
 
 Fonts are the system stack in two custom properties on `:root`, `--nojs-font-sans` and
 `--nojs-font-mono`; set either to change every component. The type scale and the page width are
-base rules in `layout.rs`, not tokens. To change
+base rules in `layout.rs`, not tokens; the look of buttons and native form controls lives in
+one place each, `button.rs` and `input.rs`, and every component draws its buttons and fields
+through them, so one override there reaches every dialog, table and form. To change
 them, put your own `<style>` after `layout`'s (or use your own shell and call
 `axum_nojs::stylesheet()` for the component CSS). A component's parts are addressable by class,
 `nojs-<component>` on the root and `nojs-<component>-<part>` inside, so overriding a single part is

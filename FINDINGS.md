@@ -557,3 +557,27 @@ A crate that uses `html!` from the prelude still needs its own `maud` dependency
 the macro expands to `maud::` paths (M24's guide must say so). `.error("")` on a field is
 now "no error", so a route can pass `if bad { "…" } else { "" }` without wrapping the
 builder in a branch.
+
+### M22 · Components rebuilt on the primitives
+
+Every component now draws its buttons with `Button` and its search, filter and number boxes
+with `Input`. One change to `button.rs` restyles every dialog, menu, pager, table and form,
+and a test keeps component CSS from styling a bare `button` or `input` again.
+
+- **A primitive has to work without a `Ui`.** Several components (menus, counter, pager, table,
+  form, theme, colour, empty state) hold only `Caps`, or nothing. `Button` therefore keeps a
+  `Caps` rather than `&Ui`; components call `Button::new(caps, ..)`.
+- **A primitive needs escape hatches for real markup.** Rebuilding 17 components on `Button`
+  needed `.content(markup)` (icon plus text, formatted counts) and a dozen attribute setters
+  (`role`, `aria-haspopup`, `aria-pressed`, `accesskey`, `formaction`, `rel`, `aria-current`).
+  `Input` needed `.hide_label()`: a toolbar filter has no visible label, but it still needs one
+  for screen readers, so the label becomes its `aria-label`.
+- **Not everything that looks like a button should be one.** Menu items stay menu items
+  (shadcn's DropdownMenuItem isn't a Button either), tab titles stay `<summary>` links, and
+  a row menu's trigger uses the `⋯` text character rather than an SVG icon, because it repeats
+  on every row: the icon cost about 330 bytes a row and 15% of `/table`.
+- **Bytes and time.** Measured against the code before M21: the stylesheet is 2.3 KB larger
+  (0.7 KB gzipped) for ten primitives. Deleting the duplicated CSS saved only 0.2 KB, because
+  M20 had already cut most copies down to overrides. `paged_table` renders in 12.2 µs instead
+  of 8.2 µs, because of the richer page buttons. The 1,000-row table is unchanged. The table
+  in ROADMAP M22 has the numbers.
