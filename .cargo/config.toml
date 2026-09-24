@@ -1,3 +1,4 @@
 [alias]
-# `cargo dev`: rebuild and restart the demo whenever a source file changes.
-dev = ["watch", "-x", "run -p demo"]
+# `cargo dev`: rebuild and restart the demo whenever a crate's source or manifest changes.
+# Only what the demo compiles is watched, so docs, screenshots and spec/ edits do not restart it.
+dev = ["watch", "-w", "axum-nojs/src", "-w", "axum-nojs/Cargo.toml", "-w", "axum-nojs-caps/src", "-w", "axum-nojs-caps/Cargo.toml", "-w", "demo/src", "-w", "demo/Cargo.toml", "-w", "Cargo.toml", "-x", "run -p demo"]
