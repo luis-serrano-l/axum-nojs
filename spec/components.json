@@ -153,9 +153,14 @@
       "features": [
         { "name": "required", "baseline": { "chrome": "4", "firefox": "4", "safari": "5" } },
         { "name": "pattern", "baseline": { "chrome": "4", "firefox": "4", "safari": "5" } },
-        { "name": ":user-invalid", "baseline": { "chrome": "119", "firefox": "88", "safari": "16.5" } }
+        { "name": ":user-invalid", "baseline": { "chrome": "119", "firefox": "88", "safari": "16.5" } },
+        { "name": "<fieldset>", "baseline": { "chrome": "1", "firefox": "1", "safari": "1" } },
+        { "name": "<output>", "baseline": { "chrome": "10", "firefox": "4", "safari": "7" } },
+        { "name": "type=date", "baseline": { "chrome": "20", "firefox": "57", "safari": "14.1" } },
+        { "name": "accept", "baseline": { "chrome": "1", "firefox": "1", "safari": "1" } },
+        { "name": "field-sizing", "baseline": { "chrome": "123", "firefox": "no", "safari": "no" } }
       ],
-      "fallback": "server re-renders with messages; no early styling",
+      "fallback": "server re-renders with messages; no early styling; textareas keep their rows; the counter shows the submitted length",
       "needs_js": "no"
     },
     {

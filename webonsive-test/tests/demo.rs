@@ -262,6 +262,26 @@ async fn swap_targets_render_without_script() {
     assert!(!page.exists("[data-wo-busy], [aria-busy]"), "nothing is busy without the script");
 }
 
+/// `/form`: groups with legends, help and counters tied to their fields, a multipart form for
+/// the file field, and labels beside the fields in the inline layout.
+#[tokio::test]
+async fn form_groups_help_counters_and_layouts() {
+    let page = Page::render(demo::router(), "/form", MODERN).await;
+    assert_eq!(page.count("form.wo-form fieldset.wo-form-group legend"), 2, "two groups with legends");
+    assert!(page.exists("form.wo-form[enctype='multipart/form-data'] input[type=file][accept='image/png,image/jpeg']"), "file field makes the form multipart");
+    assert_eq!(page.text("output.wo-field-count[for=f-bio]").as_deref(), Some("0 / 160"));
+    assert!(page.exists("textarea#f-bio[maxlength='160'][aria-describedby='f-bio-help f-bio-count']"));
+    assert!(page.exists("input[type=date][min='2026-01-01'][max='2027-12-31']") && page.exists("input[type=time][min='09:00'][max='17:00']"));
+    let label = page.bbox("label[for=f-name]").unwrap();
+    let input = page.bbox("#f-name").unwrap();
+    assert!(input.y > label.y + label.height - 1.0, "stacked: label above the field: {label:?} {input:?}");
+
+    let inline = Page::render(demo::router(), "/form?layout=inline", MODERN).await;
+    let label = inline.bbox("label[for=f-name]").unwrap();
+    let input = inline.bbox("#f-name").unwrap();
+    assert!(input.x >= label.x + label.width - 1.0 && (input.y - label.y).abs() < 20.0, "inline: label beside the field: {label:?} {input:?}");
+}
+
 #[tokio::test]
 async fn wizard_marks_steps() {
     let page = Page::render(demo::router(), "/wizard?step.signup=1", MODERN).await;

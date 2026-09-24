@@ -85,7 +85,7 @@ pub use combobox::{ComboboxOptions, OptionGroup, combobox};
 pub use counter::counter;
 pub use dialog::{DialogOptions, DialogSize, dialog};
 pub use flash::flash;
-pub use form::{Field, FieldKind, form};
+pub use form::{Field, FieldGroup, FieldKind, FormLayout, FormOptions, form};
 pub use layout::{Tokens, layout, layout_with};
 pub use paged_table::{PagedTableOptions, paged_table};
 pub use pager::{PagerOptions, pager};

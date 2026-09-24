@@ -149,7 +149,7 @@ involved) a Firefox check.
 - [x] Wizard: per-step server validation with messages beside the field and the step marked
   in error in the step list, optional steps that can be skipped, a progress bar, a summary
   that links each field back to its step, resume from the cookie after closing the tab.
-- [ ] Form: field groups with legends, help text and character counters (`<output>`),
+- [x] Form: field groups with legends, help text and character counters (`<output>`),
   file inputs with accepted types, date/time/number inputs with min/max, textarea autosize via
   `field-sizing: content`, inline and stacked layouts, a "dirty" warning link-back is not
   possible without script and is recorded in FINDINGS.

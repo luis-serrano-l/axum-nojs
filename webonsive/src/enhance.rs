@@ -36,7 +36,9 @@
 //! restore them without a request. After every swap the root dispatches a bubbling `wo:swap`
 //! event with `{ id, url, mode }` in `detail`.
 //! Rapid actions on one root are queued, so a counter clicked five times counts five. The
-//! script also mirrors `<input type=range>` and `type=color` values while they move, opens
+//! script also mirrors `<input type=range>` and `type=color` values while they move, counts
+//! characters into the `<output for>` of a field with `maxlength`, sends multipart forms as
+//! `FormData` so files survive, opens
 //! the `:target` dialog fallback as a real modal, moves through an open popover menu with the
 //! arrow keys, searches a combobox as you type and walks its results with the arrow keys.
 //!
@@ -175,7 +177,7 @@ function submit(form, submitter) {
   var url = new URL(form.getAttribute("action") || location.href, location.href);
   var init = { credentials: "same-origin", headers: { "Wo-Enhance": "1" } };
   var params = new URLSearchParams(data);
-  if ((form.method || "get").toLowerCase() === "post") { init.method = "POST"; init.body = params; }
+  if ((form.method || "get").toLowerCase() === "post") { init.method = "POST"; init.body = form.enctype === "multipart/form-data" ? data : params; }
   else url.search = params.toString();
   request(t, form, url.href, init, function () { HTMLFormElement.prototype.submit.call(form); });
   return true;
@@ -211,11 +213,10 @@ document.addEventListener("change", function (e) {
 
 var typing;
 document.addEventListener("input", function (e) {
-  var t = e.target;
-  if (t.type === "range") {
-    var out = t.id && document.querySelector("output[for='" + t.id + "']");
-    if (out) out.textContent = t.value;
-  } else if (t.type === "color") {
+  var t = e.target, out = t.id && document.querySelector("output[for='" + t.id + "']");
+  // A range shows its value; a field with maxlength shows its length out of the limit.
+  if (out) out.textContent = t.maxLength > 0 ? t.value.length + " / " + t.maxLength : t.value;
+  if (t.type === "color") {
     var box = t.closest(".wo-color");
     if (box) {
       var sw = box.querySelector(".wo-color-swatch"), code = box.querySelector("code");

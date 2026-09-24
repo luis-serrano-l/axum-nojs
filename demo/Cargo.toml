@@ -6,7 +6,7 @@ edition = "2024"
 [dependencies]
 webonsive = { path = "../webonsive", features = ["axum"] }
 maud.workspace = true
-axum.workspace = true
+axum = { workspace = true, features = ["multipart"] }
 tokio.workspace = true
 serde.workspace = true
 axum-extra = { version = "0.10", features = ["cookie"] }

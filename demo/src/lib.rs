@@ -12,7 +12,7 @@ use axum_extra::extract::cookie::{Cookie, CookieJar};
 use maud::{Markup, html};
 use serde::Deserialize;
 use webonsive::{
-    Cap, Caps, Field, FieldKind, Streamed, Theme, UiState, accordion, accordion::{AccordionItem, AccordionOptions}, caps, color, combobox, combobox::{ComboboxOptions, OptionGroup},
+    Cap, Caps, Field, FieldGroup, FieldKind, FormLayout, FormOptions, Streamed, Theme, UiState, accordion, accordion::{AccordionItem, AccordionOptions}, caps, color, combobox, combobox::{ComboboxOptions, OptionGroup},
     counter, dialog, dialog::{DialogOptions, DialogSize}, flash, form, layout, layout::{Palette, Tokens, layout_with}, paged_table, paged_table::PagedTableOptions,
     pager, pager::PagerOptions, popover::{MenuItem, Placement, PopoverOptions}, popover_menu, prg, range, range::RangeOptions, select, slot, tabs::{Tab, TabsOptions},
     table::{Column, Row, TableOptions, cols_from_query, sort_from_query}, tabs, theme_toggle, wizard, wizard::{Step, WizardOptions},
@@ -20,9 +20,9 @@ use webonsive::{
 use std::time::Duration;
 
 /// Every demo path the no-script test and the screenshot test visit.
-pub const PATHS: [&str; 16] = [
+pub const PATHS: [&str; 17] = [
     "/", "/caps", "/stream", "/settings", "/dialog?dialog=confirm", "/popover", "/tabs?tab.demo=1",
-    "/accordion?open.faq=0,2&open.faq-more=0", "/combobox?q=r&sel=Zig", "/list?page=2", "/form", "/counter", "/inputs",
+    "/accordion?open.faq=0,2&open.faq-more=0", "/combobox?q=r&sel=Zig", "/list?page=2", "/form", "/form?layout=inline", "/counter", "/inputs",
     "/table?sort=size&dir=desc&q=a&per.files=5&page=2&cols=name,size", "/wizard?step.signup=1", "/swap?n=3",
 ];
 
@@ -69,7 +69,7 @@ const COMPONENTS: [(&str, &str, &str, &str); 15] = [
     ("/tabs", "Tabs", "Disclosure", "<details name>, ::details-content, view-transition-name, grid"),
     ("/accordion", "Accordion", "Disclosure", "<details name>, ::details-content, interpolate-size"),
     ("/combobox", "Combobox", "Input", "<datalist>, <optgroup>, <search>, aria-live"),
-    ("/form", "Validated form", "Input", ":user-invalid, PRG"),
+    ("/form", "Validated form", "Input", ":user-invalid, <fieldset>, <output> counters, field-sizing, multipart, PRG"),
     ("/wizard", "Wizard", "Input", "one form per step, PRG, formnovalidate, <progress>, UiState"),
     ("/inputs", "Select, range, colour", "Input", "<selectedcontent>, type=range, type=color"),
     ("/counter", "Counter", "Server state", "form POST + cookie"),
@@ -434,35 +434,66 @@ async fn wizard_submit(caps: Caps, jar: CookieJar, headers: HeaderMap, Form(fiel
     (jar.add(kept), prg::<axum::body::Body>(&state.link("step.signup", &(step + 1).to_string()), None)).into_response()
 }
 
-#[derive(Deserialize, Default)]
-struct SignUp { name: String, email: String, age: String, handle: String }
+/// The sign-up fields as posted: text values by name, and for each file field its name and size.
+#[derive(Default)]
+struct SignUp { values: Vec<(String, String)>, files: Vec<(String, usize)> }
 
-fn signup_fields<'a>(v: &'a SignUp, errors: &'a [(&'a str, &'a str)]) -> Vec<Field<'a>> {
-    let err = |n: &str| errors.iter().find(|(f, _)| *f == n).map(|(_, m)| *m);
-    vec![
-        Field { name: "name", label: "Name", kind: FieldKind::Text, value: &v.name, error: err("name"), required: true },
-        Field { name: "email", label: "Email", kind: FieldKind::Email, value: &v.email, error: err("email"), required: true },
-        Field { name: "age", label: "Age", kind: FieldKind::Number { min: 13, max: 120 }, value: &v.age, error: err("age"), required: true },
-        Field { name: "handle", label: "Handle", kind: FieldKind::Pattern { pattern: "[a-z0-9_]{3,16}", hint: "3–16 lowercase letters, digits or _" }, value: &v.handle, error: err("handle"), required: true },
-    ]
-}
-
-async fn form_page(caps: Caps, jar: CookieJar) -> Markup {
-    let v = SignUp::default();
-    page(&caps, &jar, "Validated form", html! { (form(&caps, "/form", &signup_fields(&v, &[]), "Sign up")) })
-}
-
-async fn form_submit(caps: Caps, jar: CookieJar, Form(v): Form<SignUp>) -> axum::response::Response {
-    let mut errors = Vec::new();
-    if v.handle == "admin" { errors.push(("handle", "That handle is reserved.")); }
-    if v.email.ends_with("@example.com") { errors.push(("email", "example.com addresses are not accepted.")); }
-    if errors.is_empty() {
-        return Redirect::to("/form?ok").into_response();
+impl SignUp {
+    fn get(&self, k: &str) -> &str {
+        self.values.iter().find(|(n, _)| n == k).map(|(_, v)| v.as_str()).unwrap_or("")
     }
-    page(&caps, &jar, "Validated form", html! {
-        p class="wo-error" { "Server-side checks failed. Browser validation passed, these rules only live on the server." }
-        (form(&caps, "/form", &signup_fields(&v, &errors), "Sign up"))
-    }).into_response()
+}
+
+fn form_view(caps: &Caps, jar: &CookieJar, state: &UiState, inline: bool, v: &SignUp, errors: &[(&str, &str)]) -> Markup {
+    let err = |n: &str| errors.iter().find(|(f, _)| *f == n).map(|(_, m)| *m);
+    let account = [
+        Field::new("name", "Name", FieldKind::Text).value(v.get("name")).required(true).error(err("name")),
+        Field::new("email", "Email", FieldKind::Email).value(v.get("email")).required(true).error(err("email")),
+        Field::new("age", "Age", FieldKind::Number { min: 13, max: 120 }).value(v.get("age")).required(true),
+        Field::new("handle", "Handle", FieldKind::Pattern { pattern: "[a-z0-9_]{3,16}", hint: "3–16 lowercase letters, digits or _" })
+            .value(v.get("handle")).required(true).error(err("handle")),
+    ];
+    let profile = [
+        Field::new("bio", "Bio", FieldKind::Textarea { rows: 3 }).value(v.get("bio")).max_len(160).help("Grows as you type where the browser supports it."),
+        Field::new("avatar", "Avatar", FieldKind::File { accept: "image/png,image/jpeg", multiple: false }).help("PNG or JPEG."),
+        Field::new("start", "Start date", FieldKind::Date { min: "2026-01-01", max: "2027-12-31" }).value(v.get("start")),
+        Field::new("call", "Best time to call", FieldKind::Time { min: "09:00", max: "17:00" }).value(v.get("call")).help("Office hours, 09:00 to 17:00."),
+    ];
+    let layout = if inline { FormLayout::Inline } else { FormLayout::Stacked };
+    page(caps, jar, "Validated form", html! {
+        (flash(caps, state.flash()))
+        p { "Labels " @if inline { "beside the fields. " a href="/form" { "Put them above" } } @else { "above the fields. " a href="/form?layout=inline" { "Put them beside" } } "." }
+        @if !errors.is_empty() { p class="wo-error" { "Server-side checks failed. Browser validation passed, these rules only live on the server." } }
+        (form(caps, "/form", &[FieldGroup::new("Account", &account), FieldGroup::new("Profile", &profile)], FormOptions::default().submit("Sign up").layout(layout)))
+    })
+}
+
+#[derive(Deserialize)]
+struct FormQuery { layout: Option<String> }
+
+async fn form_page(caps: Caps, jar: CookieJar, state: UiState, Query(q): Query<FormQuery>) -> (UiState, Markup) {
+    let body = form_view(&caps, &jar, &state, q.layout.as_deref() == Some("inline"), &SignUp::default(), &[]);
+    (state, body)
+}
+
+/// A multipart post (the avatar is a file): server rules, then PRG with a flash or the form again.
+async fn form_submit(caps: Caps, jar: CookieJar, state: UiState, mut parts: axum::extract::Multipart) -> axum::response::Response {
+    let mut v = SignUp::default();
+    while let Ok(Some(part)) = parts.next_field().await {
+        let (name, file) = (part.name().unwrap_or("").to_string(), part.file_name().map(str::to_string));
+        match file {
+            Some(f) => { let n = part.bytes().await.map(|b| b.len()).unwrap_or(0); if !f.is_empty() { v.files.push((f, n)); } }
+            None => v.values.push((name, part.text().await.unwrap_or_default())),
+        }
+    }
+    let mut errors = Vec::new();
+    if v.get("handle") == "admin" { errors.push(("handle", "That handle is reserved.")); }
+    if v.get("email").ends_with("@example.com") { errors.push(("email", "example.com addresses are not accepted.")); }
+    if errors.is_empty() {
+        let got = v.files.iter().map(|(f, n)| format!(" with {f} ({n} bytes)")).collect::<String>();
+        return prg::<axum::body::Body>("/form", Some(&format!("Signed up as {}{got}.", v.get("handle")))).into_response();
+    }
+    (axum::http::StatusCode::UNPROCESSABLE_ENTITY, form_view(&caps, &jar, &state, false, &v, &errors)).into_response()
 }
 
 async fn counter_page(caps: Caps, jar: CookieJar) -> Markup {

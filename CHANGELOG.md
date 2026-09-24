@@ -41,6 +41,14 @@ follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); the project us
   the `form` attribute), `csv`, `empty`, `loading` (skeleton rows, `aria-busy`);
   `Column::numeric` and `Column::width`. `PagedTableOptions::table` carries them through the
   pager. **Breaking:** rows were `Vec<Markup>`; `Column` has two more fields.
+- `form` takes `&[FieldGroup]` (a `<fieldset>` and `<legend>` each, or `FieldGroup::plain`)
+  and `FormOptions` (`submit`, `layout: FormLayout::Stacked|Inline`). `Field::new` with
+  `value`, `error`, `required`, `help` (tied by `aria-describedby`) and `max_len` (a
+  `maxlength` with an `<output>` counter). New `FieldKind`s: `Textarea` (grows with
+  `field-sizing: content`), `File` (`accept`, `multiple`; the form becomes multipart), `Date`,
+  `Time`. **Breaking:** the signature and `Field` changed.
+- Enhancement script: an `<output for>` of a field with `maxlength` counts its characters;
+  multipart forms are sent as `FormData`, so files survive an in-place submit.
 - `wizard`: `Step::new` with `optional` (a `formnovalidate` Skip button posting `skip=1`) and
   `error` (marked in the step list and on the fieldset), a `<progress>` bar
   (`WizardOptions::progress`, on by default), a "Picked up where you left off" notice with

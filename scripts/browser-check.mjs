@@ -143,6 +143,19 @@ try {
   await go("/wizard");
   assert(await js("return !!document.querySelector('.wo-wizard-resume')") && await text(".wo-wizard li[aria-current=step]") === "Review", "wizard: a new visit resumes at the review");
 
+  // Form: the counter follows typing; a multipart post with a file lands as a flash in place.
+  await go("/form");
+  await type("#f-bio", "Hello there");
+  assert(await text("output[for=f-bio]") === "11 / 160", "form: the counter follows typing");
+  await type("#f-name", "Ada");
+  await type("#f-email", "ada@example.org");
+  await type("#f-age", "36");
+  await type("#f-handle", "ada_l");
+  await type("#f-avatar", process.cwd() + "/webonsive-test/tests/fixture.png");
+  await click(".wo-form button[type=submit]");
+  await until(async () => (await js("return document.querySelector('.wo-flash')?.textContent || ''")).includes("fixture.png"), "file posted as multipart and named in the flash");
+  assert(await navigations() === 1, "form: submitted with a file without a reload");
+
   // Swap targets: a link outside any root updates only #count; a form appends to #log.
   await go("/swap");
   await click("a[data-wo-target='#count']");

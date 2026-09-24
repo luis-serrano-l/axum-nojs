@@ -283,6 +283,17 @@ query, so no action forgets the others; `paged_table` threads `per` through both
 still names it, so a URL someone sends shows the same rows for everyone; only a bare `/table`
 differs per visitor.
 
+**"You have unsaved changes" cannot be done without script.** Warning before leaving a
+half-filled form needs a `beforeunload` listener and a comparison of the fields with what was
+loaded; no attribute or CSS state says "this form differs from its defaults", and the server
+never learns of edits that were not submitted. The honest no-script substitute is to make
+leaving cheap: the wizard stores each step as it is posted and resumes from the cookie. The
+character counter is the same shape of problem: `maxlength` enforces the limit natively, but
+the `<output>` only moves while typing when the enhancement script is there.
+
+**`field-sizing: content` is Chrome only (123).** Firefox and Safari keep the textarea at its
+`rows` with a vertical resize handle, which is the fallback and needs no branch on `Caps`.
+
 **A wizard step that fails answers, it does not redirect.** A valid step is stored and
 redirected (PRG); an invalid one answers `422` with the same step, the typed values and the
 messages beside the fields, because a redirect would need the messages parked somewhere for
