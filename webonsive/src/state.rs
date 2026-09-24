@@ -2,9 +2,9 @@
 //!
 //! Where UI state lives when there is no script: in the URL and in a cookie.
 //!
-//! [`UiState`] is a small string map with four kinds of keys: `tab.<name>` (open tab index),
-//! `open.<group>` (open accordion indexes, a comma list), `step.<wizard>` (current wizard step) and `dialog`
-//! (id of a dialog to render open). It is
+//! [`UiState`] is a small string map with five kinds of keys: `tab.<name>` (open tab index),
+//! `open.<group>` (open accordion indexes, a comma list), `step.<wizard>` (current wizard step),
+//! `per.<table>` (rows per page of a paged table) and `dialog` (id of a dialog to render open). It is
 //! read from the query string first and a `wo-ui` cookie second, so a link can change one key
 //! while everything else is remembered. In Axum it is an extractor, and returning it as part
 //! of the response writes the cookie back when the query changed something.
@@ -59,7 +59,7 @@ pub struct UiState {
 }
 
 fn is_state_key(key: &str) -> bool {
-    key == "dialog" || key.starts_with("tab.") || key.starts_with("open.") || key.starts_with("step.")
+    key == "dialog" || ["tab.", "open.", "step.", "per."].iter().any(|p| key.starts_with(p))
 }
 
 /// Parse `a=b&c=d` pairs, keeping only state keys. Understands `%XX` and `+`.
@@ -186,6 +186,11 @@ impl UiState {
     /// Current step (0-based) of the wizard `id`; `0` when unknown.
     pub fn step(&self, id: &str) -> usize {
         self.get(&format!("step.{id}")).and_then(|v| v.parse().ok()).unwrap_or(0)
+    }
+
+    /// Rows per page remembered for the paged table `id` (`per.<id>`); `None` when unknown.
+    pub fn per_page(&self, id: &str) -> Option<usize> {
+        self.get(&format!("per.{id}")).and_then(|v| v.parse().ok()).filter(|&n| n > 0)
     }
 
     /// Id of the dialog to render open, if any.

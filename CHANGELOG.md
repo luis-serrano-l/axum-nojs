@@ -41,6 +41,10 @@ follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); the project us
   the `form` attribute), `csv`, `empty`, `loading` (skeleton rows, `aria-busy`);
   `Column::numeric` and `Column::width`. `PagedTableOptions::table` carries them through the
   pager. **Breaking:** rows were `Vec<Markup>`; `Column` has two more fields.
+- `paged_table`: First and Last links, an ellipsis past seven pages, a jump-to-page form,
+  counts with thousands separators (`paged_table::thousands`), and `PagedTableOptions::state`
+  to remember the page size per table as `per.<id>` (`UiState::per_page`). The whole block is
+  now the swap root, so the page links follow an in-place sort.
 
 ## [0.1.0] - 2026-09-23
 

@@ -187,7 +187,8 @@ pub const SPECS: &[ComponentSpec] = &[
         module: "paged_table",
         features: &[
             f("?page=n", b("1", "1", "1")),
-            f("<select name=\"per\">", b("1", "1", "1")),
+            f("<select>", b("1", "1", "1")),
+            f("<input type=\"number\">", b("6", "29", "5.1")),
             f("<output>", b("10", "4", "7")),
         ],
         fallback: "none needed: every control is a link or a form",

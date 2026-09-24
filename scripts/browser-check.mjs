@@ -100,11 +100,12 @@ try {
   assert(await navigations() === 1, "combobox: searched, picked and removed without a reload");
 
   // Table: a sort link re-renders the rows in place, URL follows.
-  await go("/table?per=5");
+  await go("/table?per.files=5");
   await click(".wo-table th a[href*='sort=size']");
   await until(async () => (await js("return document.querySelector('.wo-table th[aria-sort]')?.textContent.trim()")) === "Size▲", "sort by size");
-  assert(await js("return location.search") === "?sort=size&dir=asc&per=5", "table: URL follows the sort");
+  assert(await js("return location.search") === "?sort=size&dir=asc&per.files=5", "table: URL follows the sort");
   assert(await navigations() === 1, "table: sorted without a reload");
+  assert(await js("return document.querySelector('a[rel=next]').href.includes('sort=size')"), "table: the pager's links follow the sort swapped in place");
   await click(".wo-table-cols summary");
   await click(".wo-table-cols a[href*='cols=name%2Csize']");
   await until(async () => (await js("return document.querySelectorAll('.wo-table thead th a').length")) === 2, "column hidden");
@@ -113,6 +114,13 @@ try {
   await until(async () => (await js("return document.querySelector('.wo-flash')?.textContent || ''")).includes("archive: 1 file"), "bulk form posted and redirected with a flash");
   await js("document.querySelector('tbody tr:first-child .wo-table-detail summary').click()");
   assert(await js("return document.querySelector('tbody tr:first-child .wo-table-detail').open"), "table: a row's detail opens natively");
+  // Paged table: the page size picked on one visit is remembered on the next (wo-ui cookie).
+  await go("/table");
+  assert(await text(".wo-paged-table-range") === "1–5 of 36", "table: page size remembered from the earlier visit");
+  await js("const f = document.querySelector('.wo-paged-table-jump'); f.page.value = 7; f.requestSubmit()");
+  await until(async () => (await js("return document.querySelector('.wo-paged-table-range')?.textContent")) === "31–35 of 36", "jump to page 7");
+  assert(await js("return location.search").then(q => q.includes("page=7")), "table: the jump is in the URL");
+  assert(await navigations() === 1, "table: jumped without a reload");
 
   // Wizard: Next posts, PRG lands on step 2 in place, Back keeps the value.
   await go("/wizard");

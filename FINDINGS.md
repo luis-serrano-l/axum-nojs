@@ -278,6 +278,16 @@ from `curl` and keeps the data path (a database query) in the handler where it b
 The `<search>` form keeps the sort in hidden inputs and the sort links keep the filter in the
 query, so no action forgets the others; `paged_table` threads `per` through both.
 
+**A remembered page size that still shares.** With a `UiState` the size is the state key
+`per.<table>`, so the `wo-ui` cookie brings back the size a visitor picked. Every page link
+still names it, so a URL someone sends shows the same rows for everyone; only a bare `/table`
+differs per visitor.
+
+**The pager went stale behind an in-place sort.** The table was the swap root and the pager
+sat outside it, so after a sort through the enhancement script the page links still carried
+the old sort. The paged table is now the swap root and its inner table is not, so a sort,
+filter, page or size change replaces both.
+
 **Sticky headers are one line of CSS and one Blitz gap.** `position: sticky; top: 0` on
 `thead th` keeps the columns labelled while a long table scrolls. `stylo_taffy` maps
 `sticky` to `relative` with a `TODO` and Blitz then paints the cells at the viewport top,

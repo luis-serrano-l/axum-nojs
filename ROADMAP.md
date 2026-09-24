@@ -144,7 +144,7 @@ involved) a Firefox check.
   (`?cols=`), a per-row action menu (the popover), expandable detail rows (`<details>` in a
   cell), numeric alignment and column widths, empty and loading states, CSV link for the
   current filter.
-- [ ] Paged table: jump-to-page form, first/last links, ellipsis for long ranges, page size
+- [x] Paged table: jump-to-page form, first/last links, ellipsis for long ranges, page size
   remembered per table in `UiState`, total row count formatted with separators.
 - [ ] Wizard: per-step server validation with messages beside the field and the step marked
   in error in the step list, optional steps that can be skipped, a progress bar, a summary

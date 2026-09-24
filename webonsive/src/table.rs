@@ -233,6 +233,12 @@ impl<'a> TableOptions<'a> {
 /// `rows` are already sorted and filtered by the caller; `options` says how, so the links
 /// and the filter box reflect it.
 pub fn table(caps: &Caps, id: &str, href: &str, columns: &[Column], rows: &[Row], options: TableOptions) -> Markup {
+    table_in(caps, id, href, columns, rows, options, true)
+}
+
+/// [`table`], as a swap root or not: inside a [`crate::paged_table()`] the pager's root is the
+/// swap root, so a sort also refreshes the page links.
+pub(crate) fn table_in(caps: &Caps, id: &str, href: &str, columns: &[Column], rows: &[Row], options: TableOptions, swap: bool) -> Markup {
     let TableOptions { sort, filter, keep, cols, choose_columns, bulk, csv, empty, loading } = options;
     let root = enhance::swap_id("wo-table", id);
     let bulk_id = format!("{root}-bulk");
@@ -269,7 +275,7 @@ pub fn table(caps: &Caps, id: &str, href: &str, columns: &[Column], rows: &[Row]
     let has_menu = rows.iter().any(|r| !r.menu.is_empty());
     let span = visible.len() + usize::from(bulk.is_some()) + usize::from(has_menu);
     html! {
-        div id=(root) data-wo="swap" class="wo-table" {
+        div id=(root) data-wo=[swap.then_some("swap")] class="wo-table" {
             div class="wo-table-toolbar" {
                 search class="wo-table-filter" {
                     form method="get" action=(href) {

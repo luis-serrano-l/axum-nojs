@@ -1,36 +1,52 @@
 //! # Paged table
 //!
-//! [`crate::table()`] for data too long for one page: page links, a page-size `<select>`, and a
-//! line saying which rows of how many are shown. Everything is a URL, so a page can be
-//! bookmarked, and the sort and filter survive paging.
+//! [`crate::table()`] for data too long for one page: first, previous, numbered, next and last
+//! links with an ellipsis over long ranges, a jump-to-page form, a page-size `<select>`, and a
+//! line saying which rows of how many are shown (`1–10 of 1,234`). Everything is a URL, so a
+//! page can be bookmarked, and the sort, filter and columns survive paging.
 //!
 //! **Platform features:**
-//! - Ordinary links to `?page=n` that keep `sort`, `dir`, `q` and `per`; the current page is
-//!   `aria-current="page"` and the previous/next links are `rel="prev"` / `rel="next"`.
-//! - `<form method="get">` with a `<select name="per">` for rows per page; a "Show" button
-//!   submits it, so it works with no script and reaches by keyboard (Tab, Space, Enter).
-//! - `<output>` for the "1–10 of 36" range, so assistive tech announces it as a result.
+//! - Ordinary links to `?page=n` that keep `sort`, `dir`, `q`, `cols` and the page size; the
+//!   current page is `aria-current="page"` and the previous/next links are `rel="prev"` /
+//!   `rel="next"`. Past seven pages only the first, the last and the current one's neighbours
+//!   are numbered; the gaps are an `aria-hidden` ellipsis.
+//! - `<form method="get">` with `<input type="number">` (`min`, `max`) to jump to a page, and another
+//!   with a `<select>` for rows per page. Their buttons submit them, so both work with no script
+//!   and by keyboard.
+//! - The whole block (table and pager) is one swap root, so with the enhancement script a
+//!   sort, filter, page or size change replaces both and the page links never go stale.
+//! - `<output>` for the range, so assistive tech announces it as a result. Counts use a comma
+//!   every three digits.
 //!
 //! **Fallback:** none needed. Every control is a link or a form.
 //!
-//! **Finding:** page links are the whole state; there is nothing to persist. A page size
-//! stored in a cookie would make the same URL show different rows for different people.
+//! **Server state:** with a `UiState` in the options the page size is `per.<id>`, a state key,
+//! so the size a visitor picked is remembered in the `wo-ui` cookie and read back through
+//! `state.per_page(id)`. Every page link still names it, so a shared URL shows the same rows
+//! for everyone. Without a state the parameter is a plain `per` and nothing is remembered.
 //!
 //! ```rust
 //! use maud::html;
-//! use webonsive::{Caps, paged_table, paged_table::PagedTableOptions, table::{Column, Row}};
+//! use webonsive::{Caps, UiState, paged_table, paged_table::PagedTableOptions, table::{Column, Row}};
 //! let cols = [Column::sortable("name", "Name"), Column::plain("note", "Note")];
 //! let rows = vec![Row::new(vec![html!{"a"}, html!{"b"}])];
 //! let m = paged_table(&Caps::all(), "files", "/table", &cols, &rows, 36, Default::default());
-//! let m = paged_table(&Caps::all(), "files", "/table", &cols, &rows, 36,
-//!                     PagedTableOptions::default().sort(Some(("name", true))).filter("a").page(2).per_page(10));
-//! assert!(m.into_string().contains("11–20 of 36"));
+//!
+//! let state = UiState::parse("/table", "per.files=25", "");
+//! let per = state.per_page("files").unwrap_or(10);
+//! let m = paged_table(&Caps::all(), "files", "/table", &cols, &rows, 1234,
+//!                     PagedTableOptions::default().sort(Some(("name", true))).filter("a").page(20).per_page(per).state(&state));
+//! let html = m.into_string();
+//! assert!(html.contains("476–500 of 1,234"));
+//! assert!(html.contains("per.files=25&amp;page=50\">Last"));
+//! assert!(html.contains("<select name=\"per.files\""));
 //! ```
 
 use maud::{Markup, html};
 
-use crate::table::{Column, Row, TableOptions, encode, table};
-use crate::Caps;
+use crate::table::{Column, Row, TableOptions, encode, table_in};
+use crate::enhance;
+use crate::{Caps, UiState};
 
 /// Page sizes offered in the select.
 pub const PAGE_SIZES: [usize; 4] = [5, 10, 25, 50];
@@ -46,14 +62,16 @@ pub struct PagedTableOptions<'a> {
     pub page: usize,
     /// Rows per page; one of [`PAGE_SIZES`] is selected in the size control.
     pub per_page: usize,
-    /// Everything else the inner [`table`] takes (columns, bulk form, CSV link, empty and
+    /// Everything else the inner [`crate::table()`] takes (columns, bulk form, CSV link, empty and
     /// loading states); its `sort`, `filter` and `keep` are overwritten by the pager's.
     pub table: TableOptions<'a>,
+    /// Remember the page size per table as the state key `per.<id>`.
+    pub state: Option<&'a UiState>,
 }
 
 impl Default for PagedTableOptions<'_> {
     fn default() -> Self {
-        PagedTableOptions { sort: None, filter: "", page: 1, per_page: PAGE_SIZES[1], table: TableOptions::default() }
+        PagedTableOptions { sort: None, filter: "", page: 1, per_page: PAGE_SIZES[1], table: TableOptions::default(), state: None }
     }
 }
 
@@ -87,51 +105,77 @@ impl<'a> PagedTableOptions<'a> {
         self.table = table;
         self
     }
+
+    /// Name the page-size parameter `per.<id>` so the `wo-ui` cookie remembers it.
+    pub fn state(mut self, state: &'a UiState) -> Self {
+        self.state = Some(state);
+        self
+    }
 }
 
 /// `rows` are the rows of the current page only; `total` is the full row count after
 /// filtering, which sizes the page links.
 pub fn paged_table(caps: &Caps, id: &str, href: &str, columns: &[Column], rows: &[Row], total: usize, options: PagedTableOptions) -> Markup {
-    let PagedTableOptions { sort, filter, page, per_page, table: inner } = options;
+    let PagedTableOptions { sort, filter, page, per_page, table: inner, state } = options;
+    let per_key = if state.is_some() { format!("per.{id}") } else { "per".to_string() };
     let per_page = per_page.max(1);
     let pages = total.div_ceil(per_page).max(1);
     let page = page.clamp(1, pages);
     let per = per_page.to_string();
     let first = if total == 0 { 0 } else { (page - 1) * per_page + 1 };
     let last = (page * per_page).min(total);
-    let mut base = String::new();
-    if let Some((k, d)) = sort {
-        base.push_str(&format!("sort={k}&dir={}&", if d { "desc" } else { "asc" }));
-    }
-    if !filter.is_empty() {
-        base.push_str(&format!("q={}&", encode(filter)));
-    }
+    let dir = |d: bool| if d { "desc" } else { "asc" };
     let cols_value = inner.cols.map(|c| c.join(","));
-    if let Some(c) = &cols_value {
-        base.push_str(&format!("cols={}&", encode(c)));
-    }
-    let link = |n: usize| format!("{href}?{base}per={per}&page={n}");
+    // Hidden fields shared by both forms: everything in the URL except what the form sets.
+    let carried = |skip: &str| {
+        let mut pairs: Vec<(&str, String)> = Vec::new();
+        if let Some((k, d)) = sort {
+            pairs.extend([("sort", k.to_string()), ("dir", dir(d).to_string())]);
+        }
+        if !filter.is_empty() { pairs.push(("q", filter.to_string())); }
+        if let Some(c) = &cols_value { pairs.push(("cols", c.clone())); }
+        if skip != per_key { pairs.push((per_key.as_str(), per.clone())); }
+        pairs
+    };
+    let base: String = carried("").iter().map(|(k, v)| format!("{}={}&", encode(k), encode(v))).collect();
+    let link = |n: usize| format!("{href}?{base}page={n}");
+    let keep = [(per_key.as_str(), per.as_str())];
     html! {
-        div class="wo-paged-table" {
-            (table(caps, id, href, columns, rows, TableOptions { sort, filter, keep: &[("per", &per)], ..inner }))
+        div id=(enhance::swap_id("wo-paged-table", id)) data-wo="swap" class="wo-paged-table" {
+            (table_in(caps, id, href, columns, rows, TableOptions { sort, filter, keep: &keep, ..inner }, false))
             nav class="wo-paged-table-nav" aria-label="Pages" {
-                output class="wo-paged-table-range" { (first) "–" (last) " of " (total) }
+                output class="wo-paged-table-range" { (thousands(first)) "–" (thousands(last)) " of " (thousands(total)) }
                 ul class="wo-paged-table-pages" {
-                    @if page > 1 { li { a rel="prev" href=(link(page - 1)) { "Previous" } } }
-                    @for n in 1..=pages {
-                        li { @if n == page { a aria-current="page" href=(link(n)) { (n) } } @else { a href=(link(n)) { (n) } } }
+                    @if page > 1 {
+                        li { a class="wo-paged-table-end" href=(link(1)) { "First" } }
+                        li { a rel="prev" href=(link(page - 1)) { "Previous" } }
                     }
-                    @if page < pages { li { a rel="next" href=(link(page + 1)) { "Next" } } }
+                    @for slot in window(page, pages) {
+                        @match slot {
+                            Some(n) if n == page => li { a aria-current="page" href=(link(n)) { (thousands(n)) } },
+                            Some(n) => li { a href=(link(n)) { (thousands(n)) } },
+                            None => li class="wo-paged-table-gap" aria-hidden="true" { "…" },
+                        }
+                    }
+                    @if page < pages {
+                        li { a rel="next" href=(link(page + 1)) { "Next" } }
+                        li { a class="wo-paged-table-end" href=(link(pages)) { "Last" } }
+                    }
+                }
+                @if pages > 1 {
+                    form method="get" action=(href) class="wo-paged-table-jump" {
+                        @for (k, v) in carried("") { input type="hidden" name=(k) value=(v); }
+                        label { "Page "
+                            input type="number" name="page" min="1" max=(pages) value=(page) inputmode="numeric";
+                            " of " (thousands(pages))
+                        }
+                        button type="submit" { "Go" }
+                    }
                 }
                 form method="get" action=(href) class="wo-paged-table-per" {
-                    @if let Some((k, d)) = sort {
-                        input type="hidden" name="sort" value=(k);
-                        input type="hidden" name="dir" value=(if d { "desc" } else { "asc" });
-                    }
-                    @if !filter.is_empty() { input type="hidden" name="q" value=(filter); }
-                    @if let Some(c) = &cols_value { input type="hidden" name="cols" value=(c); }
+                    @for (k, v) in carried(&per_key) { input type="hidden" name=(k) value=(v); }
                     label { "Rows per page "
-                        select name="per" {
+                        select name=(per_key) {
                             @for size in PAGE_SIZES { option value=(size) selected[size == per_page] { (size) } }
                         }
                     }
@@ -142,6 +186,37 @@ pub fn paged_table(caps: &Caps, id: &str, href: &str, columns: &[Column], rows: 
     }
 }
 
+/// The numbered slots: every page up to seven, else the first, the last and the current
+/// page's neighbours, with `None` for each gap.
+fn window(page: usize, pages: usize) -> Vec<Option<usize>> {
+    if pages <= 7 {
+        return (1..=pages).map(Some).collect();
+    }
+    // Near an end, show five in a row so the list keeps its length.
+    let (lo, hi) = match page {
+        p if p <= 4 => (2, 5),
+        p if p + 3 >= pages => (pages - 4, pages - 1),
+        p => (p - 1, p + 1),
+    };
+    let mut out = vec![Some(1)];
+    if lo > 2 { out.push(None); }
+    out.extend((lo..=hi).map(Some));
+    if hi < pages - 1 { out.push(None); }
+    out.push(Some(pages));
+    out
+}
+
+/// `1234567` as `1,234,567`.
+pub fn thousands(n: usize) -> String {
+    let digits = n.to_string();
+    let mut out = String::with_capacity(digits.len() + digits.len() / 3);
+    for (i, c) in digits.chars().enumerate() {
+        if i > 0 && (digits.len() - i).is_multiple_of(3) { out.push(','); }
+        out.push(c);
+    }
+    out
+}
+
 /// Styles for this component; included in [`crate::stylesheet`].
 pub const CSS: &str = r#"
 .wo-paged-table-nav { display: flex; flex-wrap: wrap; align-items: center; gap: var(--wo-space) calc(var(--wo-space) * 2); margin-top: var(--wo-space); color: var(--wo-muted); }
@@ -149,7 +224,11 @@ pub const CSS: &str = r#"
 .wo-paged-table-pages a { display: inline-block; min-width: 2rem; padding: 0.25rem 0.5rem; text-align: center; text-decoration: none; border: 1px solid var(--wo-line); border-radius: var(--wo-radius); color: var(--wo-fg); }
 .wo-paged-table-pages a:hover { border-color: var(--wo-accent); }
 .wo-paged-table-pages a[aria-current="page"] { background: var(--wo-accent); color: var(--wo-on-accent); border-color: transparent; }
-.wo-paged-table-per { display: flex; align-items: center; gap: var(--wo-space); margin-left: auto; }
+.wo-paged-table-gap { align-self: center; padding: 0 0.25rem; }
+.wo-paged-table-jump, .wo-paged-table-per { display: flex; align-items: center; gap: var(--wo-space); }
+.wo-paged-table-jump { margin-left: auto; }
+.wo-paged-table-jump input { width: 5em; }
+@media (max-width: 40rem) { .wo-paged-table-jump { margin-left: 0; } }
 "#;
 
 #[cfg(test)]
@@ -167,5 +246,31 @@ mod tests {
         assert!(m.contains("value=\"5\" selected"));
         let empty = paged_table(&Caps::NONE, "t", "/t", &cols, &[], 0, PagedTableOptions::default().page(9)).into_string();
         assert!(empty.contains("0–0 of 0") && !empty.contains("rel="));
+        assert!(!empty.contains("wo-paged-table-jump"), "no jump form for a single page");
+    }
+
+    #[test]
+    fn window_and_separators() {
+        let w = |p, n| window(p, n).iter().map(|s| s.map_or("…".into(), |n| n.to_string())).collect::<Vec<_>>().join(" ");
+        assert_eq!(w(3, 7), "1 2 3 4 5 6 7");
+        assert_eq!(w(1, 20), "1 2 3 4 5 … 20");
+        assert_eq!(w(10, 20), "1 … 9 10 11 … 20");
+        assert_eq!(w(19, 20), "1 … 16 17 18 19 20");
+        assert_eq!(w(5, 8), "1 … 4 5 6 7 8");
+        assert_eq!(thousands(0), "0");
+        assert_eq!(thousands(999), "999");
+        assert_eq!(thousands(1000), "1,000");
+        assert_eq!(thousands(1234567), "1,234,567");
+    }
+
+    #[test]
+    fn state_names_the_size_per_table() {
+        let state = UiState::parse("/t", "per.t=5", "");
+        let opts = PagedTableOptions::default().per_page(state.per_page("t").unwrap()).page(2).state(&state);
+        let m = paged_table(&Caps::NONE, "t", "/t", &[Column::plain("n", "N")], &[], 40, opts).into_string();
+        assert!(m.contains("href=\"/t?per.t=5&amp;page=8\">Last"), "{m}");
+        assert!(m.contains("href=\"/t?per.t=5&amp;page=1\">First"));
+        assert!(m.contains("<input type=\"number\" name=\"page\" min=\"1\" max=\"8\" value=\"2\""));
+        assert!(m.contains("<select name=\"per.t\">"));
     }
 }

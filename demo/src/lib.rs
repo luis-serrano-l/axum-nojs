@@ -23,7 +23,7 @@ use std::time::Duration;
 pub const PATHS: [&str; 16] = [
     "/", "/caps", "/stream", "/settings", "/dialog?dialog=confirm", "/popover", "/tabs?tab.demo=1",
     "/accordion?open.faq=0,2&open.faq-more=0", "/combobox?q=r&sel=Zig", "/list?page=2", "/form", "/counter", "/inputs",
-    "/table?sort=size&dir=desc&q=a&per=5&page=2&cols=name,size", "/wizard?step.signup=1", "/swap?n=3",
+    "/table?sort=size&dir=desc&q=a&per.files=5&page=2&cols=name,size", "/wizard?step.signup=1", "/swap?n=3",
 ];
 
 /// The whole demo app.
@@ -292,7 +292,7 @@ async fn list_page(caps: Caps, jar: CookieJar, Query(p): Query<PageQuery>) -> Ma
 }
 
 #[derive(Deserialize, Default)]
-struct TableQuery { sort: Option<String>, dir: Option<String>, q: Option<String>, page: Option<usize>, per: Option<usize>, cols: Option<String>, loading: Option<u8> }
+struct TableQuery { sort: Option<String>, dir: Option<String>, q: Option<String>, page: Option<usize>, cols: Option<String>, loading: Option<u8> }
 
 const FILES: [(&str, u32, &str); 12] = [
     ("archive.tar", 40960, "backup"), ("build.rs", 1200, "script"), ("cargo.lock", 8800, "generated"),
@@ -319,18 +319,18 @@ async fn table_page(caps: Caps, jar: CookieJar, state: UiState, Query(t): Query<
     let sort = sort_from_query(&FILE_COLS, t.sort.as_deref(), t.dir.as_deref());
     let cols = cols_from_query(&FILE_COLS, t.cols.as_deref());
     let q = t.q.unwrap_or_default().to_lowercase();
-    let (per, pg) = (t.per.unwrap_or(10).clamp(1, 50), t.page.unwrap_or(1).max(1));
+    let (per, pg) = (state.per_page("files").unwrap_or(10).clamp(1, 50), t.page.unwrap_or(1).max(1));
     let files = files(sort, &q);
     const MENU: [MenuItem; 2] = [MenuItem::link("Open", "/table"), MenuItem::action("Delete", "/table/bulk").danger(true)];
     let rows: Vec<Row> = files.iter().skip((pg - 1) * per).take(per)
-        .map(|f| Row::new(vec![html! { code { (f.0) } }, html! { (f.1 / 1024) " KB" }, html! { (f.2) }])
+        .map(|f| Row::new(vec![html! { code { (f.0) } }, html! { (paged_table::thousands(f.1 as usize / 1024)) " KB" }, html! { (f.2) }])
             .key(&f.0).detail(html! { p { "A " (f.2) " of " (f.1) " bytes, in " code { (f.0.split('/').next().unwrap_or("")) } "." } }).menu(&MENU)).collect();
     let options = TableOptions::default().cols(cols.as_deref()).choose_columns(true).bulk("/table/bulk", &[("archive", "Archive"), ("delete", "Delete")])
         .csv("/table.csv").empty("No files match this filter.").loading(t.loading == Some(1));
     let body = page(&caps, &jar, "Table", html! {
         (flash(&caps, state.flash()))
-        p { "Click a header to sort, again to flip. Type to filter. Hide columns, tick rows for the bulk form, open a row's menu or its detail. Every state is a URL, including " a href="/table?loading=1" { "the loading one" } "." }
-        (paged_table(&caps, "files", "/table", &FILE_COLS, &rows, files.len(), PagedTableOptions::default().sort(sort).filter(&q).page(pg).per_page(per).table(options)))
+        p { "Click a header to sort, again to flip. Type to filter. Hide columns, tick rows for the bulk form, open a row's menu or its detail. The page size you pick is remembered for your next visit. Every state is a URL, including " a href="/table?loading=1" { "the loading one" } "." }
+        (paged_table(&caps, "files", "/table", &FILE_COLS, &rows, files.len(), PagedTableOptions::default().sort(sort).filter(&q).page(pg).per_page(per).state(&state).table(options)))
     });
     (state, body)
 }
