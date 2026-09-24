@@ -457,7 +457,9 @@ One change to the button restyles every dialog, pager and table.
   menu items (shadcn's DropdownMenuItem is not a Button either), tab summaries, `<select>`,
   range sliders (range.rs is itself the slider primitive), row checkboxes and hidden inputs.
   The demo's own raw buttons moved to `ui.button` too.
-- [ ] `form.rs` fields delegate to `input.rs` (one field renderer, not two).
+- [x] `form.rs` fields delegate to `input.rs` (one field renderer, not two).
+  Done in M21's input box: `Field`, `FieldKind` and the renderer live in `input.rs`; `form.rs`
+  holds a list of `Field`s and renders each with `(f)`.
 - [ ] Delete the per-component button/input CSS the primitives now carry; measure
   `stylesheet()` bytes and the bench before and after.
 - [ ] A test fails if a component's CSS styles bare `button`/`input` selectors outside
