@@ -206,3 +206,26 @@ in FINDINGS.md (`hyperfine` against the demo, Firefox navigation timing from
   how to serve them from the same origin as the page.
 - [ ] Docs: `docs/latency.md` with the numbers, what moved them, what did not, and the order a
   user should apply them to their own server; README gets one line pointing at it.
+
+## M17 · Pleasant to use
+Calling a component should read like describing the page. Today a call site can carry eight
+positional arguments, a chain of setters and a `jar.get(...).map(...).as_deref()` just to
+reach a value; the goal is call sites a newcomer reads once and understands, and that stay
+short enough to scan. Every box lands with the demo and the doc headers rewritten to the new
+form, and the old form kept only where removing it would break a published signature.
+- [ ] Audit: list every public signature and every demo call site with its argument count,
+  the setters it needs, and what a reader must know to follow it; record the worst ten in
+  `docs/ergonomics.md` with a proposed rewrite for each.
+- [ ] One obvious way in: each component has a short constructor for the common case
+  (`dialog(&caps, "confirm", "Delete account", body)`) and options only for the rest;
+  required text first, ids derived from it where the caller does not care.
+- [ ] Readable data: items, columns, fields and options built with `From` impls from plain
+  tuples and `&str` where that reads better (`["Name", "Size"].into()`), without losing the
+  builder form for the rare setting.
+- [ ] Less plumbing in handlers: extractors that hand a route the flash, the theme and the
+  `UiState` together, so a route reads as "parse input, render components" in a few lines.
+- [ ] Names read like HTML: option and setter names match the attribute or element they set
+  (`.required()`, `.placeholder()`, `.open()`), one word where one word says it; a pass over
+  every doc example so each reads top to bottom without jumping to another file.
+- [ ] Docs: `docs/ergonomics.md` shows before/after for each changed call site; README's
+  first example is the most pleasant one the library can offer.
