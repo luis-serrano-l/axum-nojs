@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2024"
 description = "Server-side browser feature detection with no JavaScript: @supports beacons set one cookie per capability"
 readme = "README.md"
+license = "MIT"
 keywords = ["feature-detection", "supports", "cookie", "axum", "no-js"]
 categories = ["web-programming", "web-programming::http-server"]
 

@@ -206,3 +206,7 @@ scripts/verify.sh           the full verification pass
 FINDINGS.md                 what works, what needs a fallback, what is impossible without JS
 CHANGELOG.md                what each version added; both crates share the version
 ```
+
+## License
+
+MIT, see [LICENSE](LICENSE).

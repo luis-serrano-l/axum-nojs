@@ -2,36 +2,24 @@
 
 Questions only the owner can answer. Everything else in ROADMAP.md is done.
 
-## License and repository for `cargo publish` (M13, box 1)
+## Name and repository (M13, box 1), on hold until the project is renamed
 
-Done without you: `readme`, `keywords` and `categories` are set in both crates. Still open,
-and the reason box 1 stays unticked: `license` and `repository`.
+Answered 2026-09-24: **license is MIT**. `license = "MIT"` is set in both manifests, and
+`LICENSE` sits at the root with `luis-serrano-l` (the git user name) as the copyright holder.
+Edit that line if you want your full name there.
 
-`cargo publish --dry-run -p wo-caps` succeeds; `webonsive` cannot dry-run alone until `wo-caps`
-is on crates.io (its path dependency is looked up in the index), so
-`cargo package --workspace --exclude demo --exclude webonsive-test` is what verifies both.
-`CHANGELOG.md` has 0.1.0; its compare links need the repository URL too. A real publish to crates.io is rejected without a `license` (or `license-file`),
-and `repository` is expected too. Nothing was chosen on your behalf. Also: is `wo-caps` the
-name you want on crates.io (it is short and free as of 2026-09-23), or `webonsive-caps`?
+Still open, waiting on the rename the owner is considering ("tacit", "ax" or something else):
+- **The crate names.** As of 2026-09-24, `tacit` and `ax` are both taken on crates.io;
+  `tacit-html` is free. The capabilities crate would follow the new name (`<name>-caps`).
+- **`repository`.** It goes in both manifests once the name, and so the GitHub URL, is fixed.
 
-Suggested, if you agree (same block in `wo-caps/Cargo.toml` and `webonsive/Cargo.toml`;
-`wo-caps` already has `readme = "README.md"`):
+The rename touches the crate names, the `wo-` CSS class prefix, the `--wo-*` tokens, the
+`wo-ui`/`wo-flash`/`wo-cap-*` cookies, `/wo/enhance.js` and the docs. Once you choose, it can
+be done in one pass.
 
-```toml
-[package]
-license = "MIT OR Apache-2.0"
-repository = "https://github.com/<you>/webonsive"
-readme = "../README.md"   # webonsive only
-```
+## The publish itself (M13, box 4), on hold
 
-M13 also needs a `LICENSE-MIT` and `LICENSE-APACHE` file at the workspace root with your
-name as the copyright holder; say the word and they will be written.
-
-## The publish itself (M13, box 4)
-
-Never run on your behalf. Once `license` and `repository` are in, the order is
-`cargo publish -p wo-caps`, wait for the index, then `cargo publish -p webonsive`. Say "publish"
-and both will be run with the output shown.
+On hold at the owner's request until the rename (2026-09-24). Never run on your behalf.
 
 ## Reply to Blitz issue #923
 
