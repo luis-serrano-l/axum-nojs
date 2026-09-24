@@ -497,7 +497,14 @@ One change to the button restyles every dialog, pager and table.
   Done: convention 8 names the primitives, the part-class rule, the test that enforces it and
   the exceptions; `docs/theming.md` says buttons and controls are styled in one place each;
   FINDINGS has an M22 section.
-- [ ] `tests/shots/` compared before and after; only intended visual diffs.
+- [x] `tests/shots/` compared before and after; only intended visual diffs.
+  Done: Blitz shots from `999e74b` (end of M21) against now, pixel-diffed (all 55 exist on
+  both sides, same size). Every page differs only in the theme toggle (small ghost buttons in
+  the group); beyond that: counter (± icons, ghost "Reset"), dialog (the body field is
+  `ui.input`, 7px tighter), toast (buttons in a cluster), wizard (field spacing from
+  `.nojs-field`), table ("Columns" with a chevron, ghost `⋯` row menus instead of "⋯ ▾"),
+  popover (chevron icons on the triggers), palette (search icon in the trigger), dashboard (the
+  empty-state link is an outline button). All intended; nothing else moved.
 
 ## M23 · Flagship widgets
 The showcase for "wait, this needs no JS?".
