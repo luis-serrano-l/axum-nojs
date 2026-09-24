@@ -71,28 +71,28 @@ impl Predicate for WholeBody {
 
 // ---------- helpers ----------
 
-/// Every component in the index: path, title (what each route passes to `page`), group, and
-/// the platform features it is built on.
-const COMPONENTS: [(&str, &str, &str, &str); 19] = [
-    ("/palette", "Command palette", "Navigation", "popover, <datalist>, <search>, accesskey, GET + 303"),
-    ("/nav", "Drawer and breadcrumbs", "Navigation", "<dialog>, invoker commands, closedby, @starting-style, <details>"),
-    ("/toast", "Toasts", "Feedback", "position: fixed, role=alert, CSS fade, PRG"),
-    ("/dashboard", "Stats and empty states", "Feedback", "auto-fit grid, form POST"),
-    ("/dialog", "Dialog", "Overlays", "<dialog>, closedby, invoker commands, form footer"),
-    ("/popover", "Popover menu", "Overlays", "popover, anchor positioning, nested popover, form actions"),
-    ("/tabs", "Tabs", "Disclosure", "<details name>, ::details-content, view-transition-name, grid"),
-    ("/accordion", "Accordion", "Disclosure", "<details name>, ::details-content, interpolate-size"),
-    ("/combobox", "Combobox", "Input", "<datalist>, <optgroup>, <search>, aria-live"),
-    ("/form", "Validated form", "Input", ":user-invalid, <fieldset>, <output> counters, field-sizing, multipart, PRG"),
-    ("/wizard", "Wizard", "Input", "one form per step, PRG, formnovalidate, <progress>, UiState"),
-    ("/inputs", "Select, range, colour", "Input", "<selectedcontent>, <optgroup>, formmethod, two-thumb range, color-mix()"),
-    ("/counter", "Counter", "Server state", "form POST + cookie, type=number, disabled"),
-    ("/settings", "Settings", "Server state", "UiState, PRG + flash, role=alert, CSS auto-hide"),
-    ("/list", "Load-more list", "Server state", "links + view transitions"),
-    ("/table", "Table", "Server state", "sort links, <search> filter, form= checkboxes, ?cols=, <details> rows, sticky header, ?page=n"),
-    ("/caps", "Capabilities", "Server state", "@supports beacons + cookie"),
-    ("/stream", "Streaming", "Server state", "declarative shadow DOM slots, skeleton placeholders, aria-busy"),
-    ("/swap", "Swap targets", "Server state", "data-nojs-target, data-nojs-swap, data-nojs-oob, data-nojs-indicator, data-nojs-push, Nojs-Enhance header"),
+/// Every component in the index: path, title (what each route passes to `page`), group, the
+/// platform features it is built on, and what it is for in plain words.
+const COMPONENTS: [(&str, &str, &str, &str, &str); 19] = [
+    ("/palette", "Command palette", "Navigation", "popover, <datalist>, <search>, accesskey, GET + 303", "Jump to any page by typing its name."),
+    ("/nav", "Drawer and breadcrumbs", "Navigation", "<dialog>, invoker commands, closedby, @starting-style, <details>", "A sidebar that turns into a drawer on small screens, with a trail back up."),
+    ("/toast", "Toasts", "Feedback", "position: fixed, role=alert, CSS fade, PRG", "Short messages in the corner after a form is sent."),
+    ("/dashboard", "Stats and empty states", "Feedback", "auto-fit grid, form POST", "Numbers with how they changed, and what to show when there is nothing yet."),
+    ("/dialog", "Dialog", "Overlays", "<dialog>, closedby, invoker commands, form footer", "Ask before doing something that cannot be undone."),
+    ("/popover", "Popover menu", "Overlays", "popover, anchor positioning, nested popover, form actions", "A menu of links and actions that opens over the page."),
+    ("/tabs", "Tabs", "Disclosure", "<details name>, ::details-content, view-transition-name, grid", "Several panels in one place, one open at a time."),
+    ("/accordion", "Accordion", "Disclosure", "<details name>, ::details-content, interpolate-size", "Questions that open to their answers."),
+    ("/combobox", "Combobox", "Input", "<datalist>, <optgroup>, <search>, aria-live", "Search a list and pick one item or several."),
+    ("/form", "Validated form", "Input", ":user-invalid, <fieldset>, <output> counters, field-sizing, multipart, PRG", "Fields the browser checks first and the server checks again."),
+    ("/wizard", "Wizard", "Input", "one form per step, PRG, formnovalidate, <progress>, UiState", "A long form split into steps you can leave and come back to."),
+    ("/inputs", "Select, range, colour", "Input", "<selectedcontent>, <optgroup>, formmethod, two-thumb range, color-mix()", "Pick a size, a country, a volume, a price range and a colour."),
+    ("/counter", "Counter", "Server state", "form POST + cookie, type=number, disabled", "A number that goes up and down within limits."),
+    ("/settings", "Settings", "Server state", "UiState, PRG + flash, role=alert, CSS auto-hide", "Tabs of settings that stay where you left them."),
+    ("/list", "Load-more list", "Server state", "links + view transitions", "A long list shown a page at a time."),
+    ("/table", "Table", "Server state", "sort links, <search> filter, form= checkboxes, ?cols=, <details> rows, sticky header, ?page=n", "Sort, filter, page through and select rows of data."),
+    ("/caps", "Capabilities", "Server state", "@supports beacons + cookie", "What the server knows this browser can do."),
+    ("/stream", "Streaming", "Server state", "declarative shadow DOM slots, skeleton placeholders, aria-busy", "A page that sends its fast parts first."),
+    ("/swap", "Swap targets", "Server state", "data-nojs-target, data-nojs-swap, data-nojs-oob, data-nojs-indicator, data-nojs-push, Nojs-Enhance header", "Update one part of the page without reloading it."),
 ];
 const GROUPS: [&str; 6] = ["Overlays", "Disclosure", "Navigation", "Input", "Feedback", "Server state"];
 
@@ -118,19 +118,23 @@ fn toolbar(ui: &Ui, back: bool) -> Markup {
     } }
 }
 
-/// What every page shows around its body: the toolbar, the title and what it is built on
-/// above, the code that drew it below.
+/// What every page shows around its body: the toolbar and the title, and on a component page
+/// what it is for and built on, then the body on a stage with the code that drew it underneath.
 fn shell(ui: &Ui, title: &str, body: Markup) -> Markup {
     let component = COMPONENTS.iter().find(|c| c.1 == title);
+    let Some(c) = component else {
+        return html! { (toolbar(ui, false)) h1 { (title) } (body) };
+    };
     html! {
-        (toolbar(ui, component.is_some()))
+        (toolbar(ui, true))
         h1 { (title) }
-        @if let Some(c) = component { p class="nojs-built" { "Built on " @for f in c.3.split(", ") { code { (f) } " " } } }
-        (body)
-        @if let Some(c) = component {
-            h2 { "The code" }
+        p class="nojs-lede" { (c.4) }
+        p class="nojs-built" { "Built on " @for f in c.3.split(", ") { code { (f) } " " } }
+        // The live component and the code that drew it, joined as one plate.
+        div class="nojs-plate" {
+            div class="nojs-stage" { (body) }
             figure class="nojs-snippet" {
-                figcaption { span { "demo/src/lib.rs" } span { "Cut from the handler that drew this page" } }
+                figcaption { span { "demo/src/lib.rs" } span { "The code behind the component above" } }
                 pre { code { (highlight(&snippet(c.0))) } }
             }
         }
@@ -209,8 +213,8 @@ async fn index(ui: Ui) -> Page {
         p class="nojs-note" { "Theme: " @if linen { a href="/" { "ink and moss" } " · linen and copper" } @else { "ink and moss · " a href="/?palette=linen" { "linen and copper" } } ", see " code { "docs/theming.md" } }
         div class="nojs-index" { @for group in GROUPS {
             h2 { (group) }
-            ul { @for (href, title, _, feats) in COMPONENTS.iter().filter(|c| c.2 == group) {
-                li { a href=(href) { (title) } span { @for f in feats.split(", ") { code { (f) } " " } } }
+            ul { @for (href, title, _, feats, what) in COMPONENTS.iter().filter(|c| c.2 == group) {
+                li { a href=(href) { (title) } div { p { (what) } span { @for f in feats.split(", ") { code { (f) } " " } } } }
             } }
         } }
         // Idle-time fetch of every component page, so the click is served from cache.

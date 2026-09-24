@@ -267,7 +267,9 @@ mod tests {
                     c == '#' && line[i + 1..].chars().take_while(|c| c.is_ascii_hexdigit()).count() >= 3
                 });
                 let func = ["rgb(", "rgba(", "hsl(", "hsla(", "oklch(", "light-dark("].iter().any(|f| line.contains(f));
+                // `white-space` is a property, not a colour.
                 let named = line
+                    .replace("white-space", "")
                     .split(|c: char| !c.is_ascii_alphabetic())
                     .any(|w| ["white", "black", "gray", "grey", "red", "blue", "green"].contains(&w));
                 assert!(!hex && !func && !named, "colour literal in component CSS: {line}");

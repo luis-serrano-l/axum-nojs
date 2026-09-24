@@ -296,8 +296,17 @@ gets a second visual pass.
   (keywords, strings, numbers, types, comments, macros, methods), coloured only with
   `--nojs-*` tokens (`.nojs-snippet`, `.nojs-hl-*` in `layout.rs`); no script. A test checks
   every component page has a snippet and that the box shows exactly that code.
-- [ ] Visual pass with the frontend-design skill: plan (palette, type, layout, principles),
-  review against the generic defaults, then build. Theming only through `--nojs-*` tokens;
-  demo-shell classes in `layout.rs`. Look at the Blitz PNGs and Firefox screenshots, light
-  and dark, narrow and wide.
+- [x] Visual pass with the frontend-design skill. Plan: keep ink and moss (tokens only), spend
+  the boldness on one element, the plate: the live component on a stage (`--nojs-surface`)
+  with the code box joined under it, one per page. Index rows became a two-column grid
+  (name, then a plain-words line of what the component is for, then the chips); the same
+  line is the lede under each component title; chips no longer break mid-word. Reviewed
+  against the defaults: no card grid, shadows, gradients or eyebrows. Checked in Firefox
+  (light and dark, 1280 and 420 wide) and the Blitz PNGs. The colour-literal test no longer
+  mistakes `white-space` for a colour.
+- [ ] Replace the demo's hand-written `highlight()` with `syntect` (asked by the owner): a
+  dependency of `demo` only, never of `axum-nojs`; `ClassedHTMLGenerator` so the output is
+  classes, not inline colours, mapped to `--nojs-*` tokens in `layout.rs` (no bundled theme);
+  every snippet highlighted once at startup (`LazyLock`), not per request. Check Maud's
+  `@if`/`@for` and `html!` bodies still read well, and that the snippet test still passes.
 - [ ] README "Run the demo" updated, clippy/tests/`scripts/verify.sh` green, local commit.

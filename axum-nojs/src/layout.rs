@@ -245,31 +245,41 @@ th { color: var(--nojs-muted); font-weight: 600; }
 .nojs-no { color: var(--nojs-danger); font-weight: 600; }
 
 /* Demo shell: toolbar with the way back and the theme switch, the lede under a title,
-   the "built on" line, the highlighted code box under each component, and the grouped index. */
+   the "built on" line, the plate (stage + highlighted code), and the grouped index. */
 .nojs-toolbar { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: var(--nojs-space); margin: 0 0 calc(var(--nojs-space) * 3); min-height: 2.25rem; }
 .nojs-popover-row { display: flex; justify-content: space-between; gap: var(--nojs-space); margin-bottom: calc(var(--nojs-space) * 2); }
 .nojs-back { color: var(--nojs-muted); text-decoration: none; }
 .nojs-back::before { content: "\2190"; margin-right: 0.35em; }
 .nojs-back:hover { color: var(--nojs-accent); text-decoration: underline; }
 .nojs-lede { font-size: 1.125rem; color: var(--nojs-muted); margin-bottom: 1.5rem; }
-.nojs-built { color: var(--nojs-muted); font-size: 0.9rem; margin: -0.25rem 0 1.5rem; }
-.nojs-built code { color: var(--nojs-fg); margin-right: 0.25rem; }
+.nojs-built { color: var(--nojs-muted); font-size: 0.9rem; margin: -0.5rem 0 1.5rem; }
+.nojs-built code, .nojs-index li code { color: var(--nojs-fg); margin: 0 0.25rem 0.25rem 0; display: inline-block; white-space: nowrap; }
+/* A component page's plate: the live component on a stage, the code that drew it joined
+   underneath. One per page; no transform, overflow or contain on the stage, so dialogs,
+   drawers and toasts still escape it. */
+.nojs-plate { margin: 0 0 2rem; }
+.nojs-stage {
+  padding: calc(var(--nojs-space) * 3); background: var(--nojs-surface);
+  border: 1px solid var(--nojs-line); border-bottom: 0; border-radius: var(--nojs-radius) var(--nojs-radius) 0 0;
+}
+.nojs-stage > :last-child { margin-bottom: 0; }
+.nojs-stage h2:first-child { margin-top: 0; }
+@media (max-width: 40rem) { .nojs-stage { padding: calc(var(--nojs-space) * 2); } }
 .nojs-snippet {
-  margin: 0 0 1.5rem; max-width: none; overflow: hidden;
-  border: 1px solid var(--nojs-line); border-radius: var(--nojs-radius);
+  margin: 0; max-width: none; overflow: hidden;
+  border: 1px solid var(--nojs-line); border-radius: 0 0 var(--nojs-radius) var(--nojs-radius);
   background: color-mix(in srgb, var(--nojs-fg) 5%, var(--nojs-surface));
 }
 .nojs-snippet figcaption {
   display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.25rem 1rem;
   padding: 0.5rem calc(var(--nojs-space) * 2); border-bottom: 1px solid var(--nojs-line);
-  background: var(--nojs-surface); color: var(--nojs-muted); font-size: 0.8125rem;
+  color: var(--nojs-muted); font-size: 0.8125rem;
 }
 .nojs-snippet figcaption span:first-child { color: var(--nojs-fg); font-weight: 600; font-family: ui-monospace, "Cascadia Mono", "JetBrains Mono", Menlo, Consolas, monospace; }
 .nojs-snippet pre { margin: 0; padding: calc(var(--nojs-space) * 2); overflow-x: auto; scrollbar-color: var(--nojs-line) transparent; line-height: 1.55; tab-size: 4; }
 .nojs-snippet pre code { background: none; border: 0; padding: 0; font-size: 0.8125rem; color: var(--nojs-fg); }
 /* Highlighted Rust: keyword, string, number and type, comment, macro, method. */
-.nojs-hl-k { font-weight: 600; }
-.nojs-hl-k { color: var(--nojs-danger); }
+.nojs-hl-k { color: var(--nojs-danger); font-weight: 600; }
 .nojs-hl-s { color: var(--nojs-warn); }
 .nojs-hl-n, .nojs-hl-t { color: var(--nojs-ok); }
 .nojs-hl-c { color: var(--nojs-muted); font-style: italic; }
@@ -278,13 +288,13 @@ th { color: var(--nojs-muted); font-weight: 600; }
 .nojs-index { max-width: none; }
 .nojs-index h2 { margin-top: 2.5rem; padding-bottom: 0.35rem; border-bottom: 1px solid var(--nojs-line); }
 .nojs-index ul { list-style: none; margin: 0; padding: 0; }
-.nojs-index li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.25rem 1rem; padding: 0.6rem 0; max-width: none; }
+.nojs-index li { display: grid; grid-template-columns: 13rem 1fr; gap: 0.25rem 1.5rem; align-items: baseline; padding: 0.9rem 0; max-width: none; }
 .nojs-index li + li { border-top: 1px solid var(--nojs-line); }
-.nojs-index li a { font-size: 1.25rem; font-weight: 600; text-decoration: none; color: var(--nojs-fg); flex: 0 0 12rem; }
+.nojs-index li a { font-size: 1.25rem; font-weight: 600; line-height: 1.3; text-decoration: none; color: var(--nojs-fg); }
 .nojs-index li a:hover { color: var(--nojs-accent); text-decoration: underline; }
-.nojs-index li span { color: var(--nojs-muted); }
-.nojs-index li code { margin-right: 0.25rem; }
-@media (max-width: 40rem) { .nojs-index li { flex-direction: column; gap: 0.2rem; } .nojs-index li a { flex: none; } }
+.nojs-index li p { margin: 0 0 0.4rem; }
+.nojs-index li span { display: block; font-size: 0.9rem; }
+@media (max-width: 40rem) { .nojs-index li { grid-template-columns: 1fr; } }
 
 @media (prefers-reduced-motion: reduce) {
   *, ::before, ::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
