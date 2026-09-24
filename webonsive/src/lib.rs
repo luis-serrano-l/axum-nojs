@@ -79,6 +79,7 @@ pub mod table;
 pub mod tabs;
 pub mod theme;
 pub mod toast;
+pub mod ui;
 pub mod wizard;
 
 /// Server-side feature detection: the [`wo_caps`] crate, re-exported so `webonsive::caps`
@@ -113,6 +114,7 @@ pub use stream::{Streamed, slot};
 pub use table::{Column, Row, TableOptions, cols_from_query, sort_from_query, table, table_with};
 pub use tabs::{Tab, TabsOptions, tabs, tabs_with};
 pub use theme::{Theme, theme_toggle};
+pub use ui::Ui;
 pub use toast::{ToastOptions, toasts, toasts_with};
 pub use wizard::{WizardOptions, wizard, wizard_with};
 

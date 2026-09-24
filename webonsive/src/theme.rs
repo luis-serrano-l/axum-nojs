@@ -23,6 +23,9 @@ use maud::{Markup, html};
 
 use crate::Caps;
 
+/// Name of the cookie that remembers the chosen theme.
+pub const THEME_COOKIE: &str = "theme";
+
 /// The theme the page should render with.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum Theme {

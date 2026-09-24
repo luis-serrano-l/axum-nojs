@@ -169,6 +169,7 @@ wo-caps/examples/hyper.rs   the beacons on raw hyper, one line per flag
 webonsive/src/layout.rs     page shell + base CSS + beacons
 webonsive/src/stream.rs     Streamed response: DSD slots out of order, in-order fallback (http feature)
 webonsive/src/state.rs      UiState (query + cookie), prg_parts()/prg() redirect with flash
+webonsive/src/ui.rs         Ui: caps, theme and UiState in one extractor; ui.flash(), ui.layout()
 webonsive/src/flash.rs      one-shot status banners: levels, stacked, dismiss, auto-hide
 webonsive/src/select.rs     <select> with <selectedcontent> where supported
 webonsive/src/range.rs      <input type=range> with ticks and a server-rendered <output>

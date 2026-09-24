@@ -198,3 +198,27 @@ let sizes = SIZES.map(SelectOption::from);
 let countries = COUNTRIES.map(|(group, cs)| (group, cs.map(SelectOption::from)));
 let groups = countries.each_ref().map(|(group, cs)| SelectGroup::new(group, cs));
 ```
+
+## Done: one extractor per page
+
+`webonsive::Ui` holds the caps, the theme from its cookie and the `UiState` with the flash. It
+dereferences to `Caps`, so `&ui` goes wherever a component wants `&Caps`, and returning it
+beside the page writes the state back. `ui.flash()` renders the flash banner and
+`ui.layout(title, body)` wraps a page in the request's theme. Every demo page route now takes it.
+
+```rust
+// before
+async fn dialog_page(caps: Caps, jar: CookieJar, state: UiState) -> Markup {
+    page(&caps, &jar, "Dialog", html! {
+        (flash(&caps, state.flash(), Default::default()))
+        (dialog(&caps, "confirm", "Delete account", body, DialogOptions::default().open(state.dialog() == Some("confirm"))))
+    })
+}
+// after
+async fn dialog_page(ui: Ui) -> Markup {
+    page(&ui, "Dialog", html! {
+        (ui.flash())
+        (dialog_with(&ui, "confirm", "Delete account", body, DialogOptions::default().open(ui.state.dialog() == Some("confirm"))))
+    })
+}
+```

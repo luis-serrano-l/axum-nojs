@@ -222,7 +222,7 @@ form, and the old form kept only where removing it would break a published signa
 - [x] Readable data: items, columns, fields and options built with `From` impls from plain
   tuples and `&str` where that reads better (`["Name", "Size"].into()`), without losing the
   builder form for the rare setting.
-- [ ] Less plumbing in handlers: extractors that hand a route the flash, the theme and the
+- [x] Less plumbing in handlers: extractors that hand a route the flash, the theme and the
   `UiState` together, so a route reads as "parse input, render components" in a few lines.
 - [ ] Fewer calls in the demo, more in the component: where a demo route stitches several
   helper calls around a component (building items, reading state, wrapping markup, formatting

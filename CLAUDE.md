@@ -41,8 +41,8 @@ scripts/verify.sh                  # everything above plus a <script> grep and t
   extractors, `IntoResponse` impls and the `/wo/caps` beacon route on top. Everything else is
   plain functions over strings (`Caps::from_cookie_header`, `UiState::from_request`,
   `prg_parts`, `caps::beacon_cookie`). No serde.
-- `demo/` – Axum lib + binary, one route per component. Handlers only parse input (query, form,
-  cookie) and call `webonsive`; keep each route around 15 lines. The only-one-script test lives here
+- `demo/` – Axum lib + binary, one route per component. Handlers take `webonsive::Ui` (caps,
+  theme and `UiState` in one extractor), only parse input (query, form, cookie) and call `webonsive`; keep each route around 15 lines. The only-one-script test lives here
   and hits every route via `tower::oneshot`, so **add new demo routes to `PATHS`** (the
   screenshot test in `webonsive-test` uses the same list).
 - `webonsive-test/` – Blitz-based test harness: `Page::render(router, path, cookie)` then
