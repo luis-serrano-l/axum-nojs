@@ -635,9 +635,16 @@ script, proven in CI, with server-side flows included.
   (3.6 KB gzip), beside maud-ui's 313 KB CSS / 89 KB script. Tests: `stylesheet()` under
   64 KB (axum-nojs), every `PATHS` page under 96 KB in both caps variants (demo); the
   shadow-DOM stream carries the stylesheet twice (117 KB), gets 128 KB, and is in FINDINGS.
-- [ ] Strict CSP: the demo sends `Content-Security-Policy: script-src 'none'` (and `'self'`
+- [x] Strict CSP: the demo sends `Content-Security-Policy: script-src 'none'` (and `'self'`
   only when the enhancement script is on); a test asserts every route renders under it and
   README documents the header.
+  Done: `enhance::CSP` (`script-src 'self'`) and `enhance::CSP_NO_SCRIPT` (`'none'`), sent by
+  the `enhance::csp` middleware on HTML answers without a policy of their own; which one is
+  decided by `Page::without_script()` (a response extension, nothing on the wire). The demo
+  layers it and serves any page script-less with `?script=off`. Test
+  `every_route_is_served_under_a_strict_csp` checks the header on every `PATHS` route and the
+  `'none'` variant; the Firefox check passes with the policy in force. Styles need
+  `'unsafe-inline'` (inlined stylesheet, a few `style` attributes); README documents it.
 - [ ] README badge line: "0 KB JavaScript required · verified by a script-less renderer (Blitz)
   in CI", linking the only-one-script test and the Blitz suite.
 - [ ] Comparison page in docs (`docs/comparison.md`): maud-ui, htmx + hand-written Maud,

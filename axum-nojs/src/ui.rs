@@ -157,6 +157,7 @@ impl Ui {
             body,
             cookies: self.state.set_cookies(),
             css: Vec::new(),
+            script: true,
         }
     }
 
@@ -196,9 +197,23 @@ pub struct Page {
     body: Markup,
     cookies: Vec<String>,
     css: Vec<&'static str>,
+    script: bool,
 }
 
 impl Page {
+    /// Leave out the enhancement script: the page is exactly what Blitz renders, and
+    /// [`crate::enhance::csp`] answers it with `script-src 'none'`
+    /// ([`crate::enhance::CSP_NO_SCRIPT`]).
+    pub fn without_script(mut self) -> Self {
+        self.script = false;
+        self
+    }
+
+    /// Whether the page carries the enhancement script tag.
+    pub fn has_script(&self) -> bool {
+        self.script
+    }
+
     /// Add a stylesheet to this page's `<head>`, after the library's: a component of your own
     /// ships its `CSS` const this way (see `docs/components.md`). Call it once per component;
     /// each is minified and inlined once.
@@ -234,6 +249,7 @@ impl Render for Page {
             self.theme,
             self.tokens.as_ref(),
             &self.css,
+            self.script,
             self.body.clone(),
         )
     }
@@ -374,7 +390,11 @@ mod axum_glue {
 
     impl IntoResponse for Page {
         fn into_response(self) -> Response {
-            let res = Html(self.render().into_string()).into_response();
+            let mut res = Html(self.render().into_string()).into_response();
+            if !self.script {
+                // For `enhance::csp`: this page may be served under `script-src 'none'`.
+                res.extensions_mut().insert(crate::enhance::NoScript);
+            }
             with_cookies(res, self.cookies)
         }
     }

@@ -160,6 +160,24 @@ and needs an 89 KB script (24 KB gzipped) plus htmx. Two tests keep these number
 stylesheet stays under 64 KB, and every demo page under 96 KB (128 KB for the shadow-DOM
 stream) in `cargo test`.
 
+## Strict Content-Security-Policy
+
+Nothing is inline but styles, so pages run under a strict policy. `enhance::csp` is an Axum
+middleware that sends it on every HTML answer (the demo layers it):
+
+```text
+default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;
+object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'
+```
+
+`script-src 'self'` allows exactly one file, `/nojs/enhance.js`; there are no inline scripts,
+`on*` handlers or `javascript:` URLs (a test checks every route). A page built with
+`Page::without_script()` has no script tag at all and gets `script-src 'none'`
+(`enhance::CSP_NO_SCRIPT`); in the demo, add `?script=off` to any page. Styles need
+`'unsafe-inline'`: the stylesheet is inlined once per page, and a few per-element values (a
+grid's minimum width, a view-transition name) travel in `style` attributes. The Firefox check
+(`scripts/browser-check.mjs`) runs every enhanced interaction under this policy.
+
 ## How the script works
 
 `/nojs/enhance.js` is one file, plain ES2020, served with a content hash so it caches forever

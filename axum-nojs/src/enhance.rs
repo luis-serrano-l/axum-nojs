@@ -344,6 +344,20 @@ pub fn served() -> &'static str {
     })
 }
 
+/// A strict `Content-Security-Policy` for pages that carry the enhancement script: scripts
+/// only from this origin (the script is a same-origin file, never inline), no plugins, no
+/// `<base>`, no framing, forms posting only here. Styles need `'unsafe-inline'`: the
+/// stylesheet is inlined once per page and a few per-element custom properties travel in
+/// `style` attributes. [`csp`] sends it.
+pub const CSP: &str = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'";
+
+/// [`CSP`] with `script-src 'none'`, for a page built with `Page::without_script`.
+pub const CSP_NO_SCRIPT: &str = "default-src 'self'; script-src 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'";
+
+/// The response extension `Page::without_script` leaves for [`csp`].
+#[derive(Clone, Copy, Debug)]
+pub struct NoScript;
+
 /// FNV-1a hash of [`JS`]: the cache-busting version in [`script_url`].
 fn version() -> String {
     let hash = JS.bytes().fold(0xcbf2_9ce4_8422_2325_u64, |h, b| {
@@ -439,6 +453,29 @@ mod axum_glue {
         Response::from_parts(parts, Body::from(page))
     }
 
+    /// Middleware: every HTML answer without a `Content-Security-Policy` of its own gets
+    /// [`super::CSP`], or [`super::CSP_NO_SCRIPT`] when it is a `Page::without_script`. Layer it on the
+    /// router: `.layer(axum::middleware::from_fn(axum_nojs::enhance::csp))`.
+    pub async fn csp(req: Request, next: Next) -> Response {
+        let mut res = next.run(req).await;
+        let html = res
+            .headers()
+            .get(header::CONTENT_TYPE)
+            .is_some_and(|v| v.as_bytes().starts_with(b"text/html"));
+        if html && !res.headers().contains_key(header::CONTENT_SECURITY_POLICY) {
+            let policy = if res.extensions().get::<super::NoScript>().is_some() {
+                super::CSP_NO_SCRIPT
+            } else {
+                super::CSP
+            };
+            res.headers_mut().insert(
+                header::CONTENT_SECURITY_POLICY,
+                HeaderValue::from_static(policy),
+            );
+        }
+        res
+    }
+
     /// Serves [`served`] at [`SCRIPT_PATH`], immutable for a year (the URL carries a hash).
     pub fn router() -> Router {
         Router::new().route(
@@ -456,7 +493,7 @@ mod axum_glue {
     }
 }
 #[cfg(feature = "axum")]
-pub use axum_glue::{router, slim};
+pub use axum_glue::{csp, router, slim};
 
 #[cfg(test)]
 mod tests {

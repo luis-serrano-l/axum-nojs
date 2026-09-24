@@ -183,7 +183,7 @@ impl Tokens {
 /// Wrap `body` in a full page with the default [`Tokens`]. Beacons are added while the
 /// browser is still unknown.
 pub fn layout(caps: &Caps, title: &str, theme: Theme, body: Markup) -> Markup {
-    page(caps, title, theme, None, &[], body)
+    page(caps, title, theme, None, &[], true, body)
 }
 
 /// [`layout`] under a different set of [`Tokens`]: the overrides are emitted once, in a
@@ -195,7 +195,7 @@ pub fn layout_with(
     tokens: &Tokens,
     body: Markup,
 ) -> Markup {
-    page(caps, title, theme, Some(tokens), &[], body)
+    page(caps, title, theme, Some(tokens), &[], true, body)
 }
 
 /// The whole document: `tokens` overrides and then `css` (a user component's styles, see
@@ -206,6 +206,7 @@ pub(crate) fn page(
     theme: Theme,
     tokens: Option<&Tokens>,
     css: &[&str],
+    script: bool,
     body: Markup,
 ) -> Markup {
     // The stylesheet is most of the page: size the buffer once instead of doubling into it.
@@ -227,7 +228,7 @@ pub(crate) fn page(
                 (header())
                 main id="main" { (body) }
                 (caps::beacons(caps))
-                (enhance::script_tag())
+                @if script { (enhance::script_tag()) }
             }
         }
     }

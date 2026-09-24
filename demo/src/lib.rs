@@ -107,6 +107,7 @@ pub fn router() -> Router {
         .merge(axum_nojs::caps::router())
         .merge(axum_nojs::enhance::router())
         .layer(axum::middleware::from_fn(axum_nojs::enhance::slim))
+        .layer(axum::middleware::from_fn(axum_nojs::enhance::csp))
         .layer(CompressionLayer::new().compress_when(DefaultPredicate::new().and(WholeBody)))
 }
 
@@ -521,7 +522,14 @@ fn highlight(code: &str) -> Markup {
 }
 
 fn page(ui: &Ui, title: &str, body: Markup) -> Page {
-    ui.page(title, shell(ui, title, body))
+    let page = ui.page(title, shell(ui, title, body));
+    // `?script=off`: the same page without the enhancement script, served under
+    // `script-src 'none'`, so the no-script path can be tried in any browser.
+    if ui.param("script") == Some("off") {
+        page.without_script()
+    } else {
+        page
+    }
 }
 
 // ---------- routes ----------
@@ -1932,6 +1940,37 @@ mod tests {
     use axum::body::Body;
     use axum::http::Request;
     use tower::ServiceExt;
+
+    /// Every route answers with the strict CSP (`script-src 'self'`, nothing inline), and
+    /// `?script=off` with `script-src 'none'` and no script tag at all.
+    #[tokio::test]
+    async fn every_route_is_served_under_a_strict_csp() {
+        let policy = |path: &'static str| async move {
+            let req = Request::get(path).body(Body::empty()).unwrap();
+            let res = router().oneshot(req).await.unwrap();
+            let csp = res.headers()["content-security-policy"]
+                .to_str()
+                .unwrap()
+                .to_string();
+            let html = axum::body::to_bytes(res.into_body(), usize::MAX)
+                .await
+                .unwrap();
+            (csp, String::from_utf8(html.to_vec()).unwrap())
+        };
+        for path in PATHS {
+            let (csp, _) = policy(path).await;
+            assert!(
+                csp.contains("script-src 'self';") && csp.contains("object-src 'none'"),
+                "{path}: {csp}"
+            );
+        }
+        let (csp, html) = policy("/dialog?script=off").await;
+        assert!(csp.contains("script-src 'none'"), "{csp}");
+        assert!(
+            html.matches("<script").count() == 0,
+            "a script-less page has no script tag"
+        );
+    }
 
     #[test]
     fn every_index_entry_sits_in_a_layer() {
