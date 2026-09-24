@@ -89,7 +89,7 @@ matrix and findings are updated, and the work is committed. Unknowns become entr
 - [x] Test: no colour literal outside `layout.rs` (grep for `#[0-9a-f]{3,6}` in component CSS)
 
 ## M13 · Publish
-- [ ] `license`, `repository`, `readme`, `keywords`, `categories` in every publishable `Cargo.toml` (needs the owner's answer in BLOCKED.md)
+- [x] `license`, `repository`, `readme`, `keywords`, `categories` in every publishable `Cargo.toml` (MIT; https://github.com/luis-serrano-l/axum-nojs)
 - [x] `CHANGELOG.md` with 0.1.0; version bump; `cargo publish --dry-run` for `axum-nojs-caps` then `axum-nojs`
       (both crates are 0.1.0; `axum-nojs-caps` dry-runs clean; `axum-nojs` alone cannot until `axum-nojs-caps`
       is on crates.io, so `cargo package --workspace --exclude demo --exclude axum-nojs-test`

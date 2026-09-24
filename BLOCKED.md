@@ -2,7 +2,7 @@
 
 Questions only the owner can answer. Everything else in ROADMAP.md is done.
 
-## Repository (M13, box 1), waits for the GitHub repo
+## Name, license and repository (M13, box 1), answered
 
 Answered 2026-09-24: **license is MIT**. `license = "MIT"` is set in both manifests, and
 `LICENSE` sits at the root with `luis-serrano-l` (the git user name) as the copyright holder.
@@ -13,12 +13,12 @@ and `axum-nojs-test` (not published); classes, tokens, cookies, attributes and r
 `nojs-` prefix (`.nojs-dialog`, `--nojs-accent`, `nojs-ui`, `data-nojs`, `/nojs/enhance.js`).
 Both names were free on crates.io on 2026-09-24.
 
-Still open:
-- **`repository`.** It goes in both manifests once the GitHub repo exists under the new name.
+Answered 2026-09-24: **the repository is https://github.com/luis-serrano-l/axum-nojs**
+(public), set as `repository` in both manifests.
 
 ## The publish itself (M13, box 4), on hold
 
-On hold at the owner's request (2026-09-24). The rename is done; publish once `repository` is set. Never run on your behalf.
+On hold at the owner's request (2026-09-24). The rename is done and `repository` is set; publish only on the owner's yes. Never run on your behalf.
 
 ## Reply to Blitz issue #923
 
