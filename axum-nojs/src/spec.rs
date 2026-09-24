@@ -213,6 +213,20 @@ pub const SPECS: &[ComponentSpec] = &[
         needs_js: NeedsJs::No,
     },
     ComponentSpec {
+        name: "Calendar",
+        module: "calendar",
+        features: &[
+            f("<table>", ALWAYS),
+            f("aria-current=\"date\"", ALWAYS),
+            f("role=\"radiogroup\"", ALWAYS),
+            f(":has(:checked)", b("105", "121", "15.4")),
+        ],
+        fallback: "without :has() the picked radio's day is not filled in; it is still checked and posts",
+        needs_js: NeedsJs::Partial(
+            "changing month in place and arrow-key moves between days need script",
+        ),
+    },
+    ComponentSpec {
         name: "Dialog",
         module: "dialog",
         features: &[
@@ -610,6 +624,7 @@ mod tests {
         ("cluster", include_str!("cluster.rs")),
         ("grid", include_str!("grid.rs")),
         ("split", include_str!("split.rs")),
+        ("calendar", include_str!("calendar.rs")),
         ("dialog", include_str!("dialog.rs")),
         ("popover", include_str!("popover.rs")),
         ("tabs", include_str!("tabs.rs")),

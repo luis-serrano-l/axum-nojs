@@ -8,6 +8,7 @@ use axum::{
     response::{IntoResponse, Response},
     routing::{get, post},
 };
+use axum_nojs::calendar::Date;
 use axum_nojs::layout::{Palette, Tokens};
 use axum_nojs::prelude::*;
 use axum_nojs::{
@@ -23,13 +24,14 @@ use tower_http::compression::{
 };
 
 /// Every demo path the no-script test and the screenshot test visit.
-pub const PATHS: [&str; 25] = [
+pub const PATHS: [&str; 26] = [
     "/",
     "/caps",
     "/button?loading=1",
     "/field?email=ada",
     "/card",
     "/layout",
+    "/calendar?month.day=2026-09&day=2026-09-17",
     "/stream",
     "/settings",
     "/dialog?dialog=confirm",
@@ -62,6 +64,7 @@ pub fn router() -> Router {
         .route("/field", get(field_page))
         .route("/card", get(card_page))
         .route("/layout", get(layout_page))
+        .route("/calendar", get(calendar_page))
         .route("/dialog", get(dialog_page))
         .route("/dialog/delete", post(dialog_delete))
         .route("/popover", get(popover_page))
@@ -107,7 +110,14 @@ impl Predicate for WholeBody {
 
 /// Every component in the index: path, title (what each route passes to `page`), group, the
 /// platform features it is built on, and what it is for in plain words.
-const COMPONENTS: [(&str, &str, &str, &str, &str); 23] = [
+const COMPONENTS: [(&str, &str, &str, &str, &str); 24] = [
+    (
+        "/calendar",
+        "Calendar",
+        "Input",
+        "<table>, links or radios, aria-current=date, :has(:checked), ?month=",
+        "A month you can page through and pick a day from.",
+    ),
     (
         "/button",
         "Buttons and badges",
@@ -1308,6 +1318,27 @@ async fn nav_page(ui: Ui) -> Page {
 }
 
 /// Stat cards over a list that may be empty (`?orders=none`).
+async fn calendar_page(ui: Ui) -> Page {
+    let soon = |days| Date::today().add_days(days).to_string();
+    let (invoice, release) = (soon(6), soon(21));
+    page(
+        &ui,
+        "Calendar",
+        html! {
+            // code: /calendar
+            (ui.calendar("day")
+                .disabled(|d| d.weekday() >= 5)
+                .event(&invoice, "Invoice due")
+                .event(&release, "Release"))
+            // end code
+            p class="nojs-note" { @match ui.param("day") {
+                Some(d) => { "You picked " (d) ". Weekends cannot be picked; a dot marks an event." },
+                None => { "Pick a weekday. The month links and the days are ordinary links: the page comes back with " code { "?day=" } " set." },
+            } }
+        },
+    )
+}
+
 async fn button_page(ui: Ui) -> Page {
     let loading = ui.param("loading") == Some("1");
     page(

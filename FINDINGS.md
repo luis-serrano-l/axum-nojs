@@ -581,3 +581,18 @@ and a test keeps component CSS from styling a bare `button` or `input` again.
   M20 had already cut most copies down to overrides. `paged_table` renders in 12.2 µs instead
   of 8.2 µs, because of the richer page buttons. The 1,000-row table is unchanged. The table
   in ROADMAP M22 has the numbers.
+
+### M23 · Calendar
+
+A month grid needs no script. Every day is a link (`?day=2026-09-17`) or a radio in a form,
+and the month is a link too (`?month.day=2026-10`). The enhancement script swaps it in place
+because it is a swap root. Dates are about 60 lines of civil-calendar arithmetic (Howard
+Hinnant's `days_from_civil`), so the crate still depends only on `maud`.
+
+- **Never put `:has()` in a selector list with a selector that must work everywhere.** A
+  browser that cannot parse one selector drops the whole list. That includes Blitz, and
+  browsers from before `:has()`: Chrome < 105, Firefox < 121. The first draft wrote
+  `.nojs-calendar-picked, .nojs-calendar-day:has(:checked) { … }`, and Blitz lost the picked
+  day's fill. The two now have separate rules.
+- **What it cannot do without script:** move between days with the arrow keys (Tab walks them
+  in order), or keep a form's other unsaved fields when a month link is followed in radio mode.

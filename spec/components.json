@@ -141,6 +141,19 @@
       "needs_js": "no"
     },
     {
+      "name": "Calendar",
+      "module": "calendar",
+      "features": [
+        { "name": "<table>", "baseline": { "chrome": "1", "firefox": "1", "safari": "1" } },
+        { "name": "aria-current=\"date\"", "baseline": { "chrome": "1", "firefox": "1", "safari": "1" } },
+        { "name": "role=\"radiogroup\"", "baseline": { "chrome": "1", "firefox": "1", "safari": "1" } },
+        { "name": ":has(:checked)", "baseline": { "chrome": "105", "firefox": "121", "safari": "15.4" } }
+      ],
+      "fallback": "without :has() the picked radio's day is not filled in; it is still checked and posts",
+      "needs_js": "partial",
+      "needs_js_note": "changing month in place and arrow-key moves between days need script"
+    },
+    {
       "name": "Dialog",
       "module": "dialog",
       "features": [

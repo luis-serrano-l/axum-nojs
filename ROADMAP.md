@@ -508,9 +508,17 @@ One change to the button restyles every dialog, pager and table.
 
 ## M23 · Flagship widgets
 The showcase for "wait, this needs no JS?".
-- [ ] `calendar.rs`: server-rendered month grid, previous/next month as links (`?month=`),
+- [x] `calendar.rs`: server-rendered month grid, previous/next month as links (`?month=`),
   day cells as links or radio inputs, `.min/.max/.disabled(fn)`, `.events(..)`, week start;
   swap root for in-place month changes.
+  Done: `ui.calendar(name)`; the picked day is `?<name>=YYYY-MM-DD`, the month
+  `?month.<name>=YYYY-MM` (named like the other state keys; plain `?month=` would clash with
+  two calendars on a page). `calendar::Date` is a small civil date (parse, weekday,
+  add_days/add_months, today in UTC) so no date crate is needed. Setters: `.today()` (override
+  the server clock), `.min/.max`, `.disabled(fn(Date) -> bool)`, `.event(date, text)` (the
+  adder form of `.events`), `.sunday_first()` (Monday by default), `.radio()` and
+  `.required()`. `Ui::link_with(key, value)` builds the "this URL with one parameter changed"
+  links. Demo `/calendar` (weekends off, two events); in `PATHS`, `COMPONENTS` and `SPECS`.
 - [ ] `date_picker.rs`: calendar inside a popover (no popover → inline grid) writing a form
   field; native `input type=date` when the caller asks for `.native()`.
 - [ ] `table` upgrades: row selection with bulk actions (checkboxes + one form), inline edit

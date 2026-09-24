@@ -55,6 +55,7 @@ pub mod avatar;
 pub mod badge;
 pub mod breadcrumbs;
 pub mod button;
+pub mod calendar;
 pub mod card;
 pub mod cluster;
 pub mod color;
@@ -241,6 +242,7 @@ pub const COMPONENT_CSS: &[&str] = &[
     cluster::CSS,
     grid::CSS,
     split::CSS,
+    calendar::CSS,
     dialog::CSS,
     popover::CSS,
     tabs::CSS,
