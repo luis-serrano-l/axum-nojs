@@ -645,8 +645,12 @@ script, proven in CI, with server-side flows included.
   `every_route_is_served_under_a_strict_csp` checks the header on every `PATHS` route and the
   `'none'` variant; the Firefox check passes with the policy in force. Styles need
   `'unsafe-inline'` (inlined stylesheet, a few `style` attributes); README documents it.
-- [ ] README badge line: "0 KB JavaScript required · verified by a script-less renderer (Blitz)
+- [x] README badge line: "0 KB JavaScript required · verified by a script-less renderer (Blitz)
   in CI", linking the only-one-script test and the Blitz suite.
+  Done: a text line under the title (no image badge: no third-party badge service), linking
+  `axum-nojs-test/tests/demo.rs` (Blitz) and `demo/src/lib.rs` (the only-one-script test), plus
+  "strict CSP". True as written: `.github/workflows/rust.yml` runs `cargo test --workspace`,
+  which runs both.
 - [ ] Comparison page in docs (`docs/comparison.md`): maud-ui, htmx + hand-written Maud,
   Leptos/Dioxus on required JS, CSP, no-script proof, API shape (builder vs `Props`), server
   state; side-by-side of `ui.button("Ship it").primary()` vs `button::render(button::Props {..})`.

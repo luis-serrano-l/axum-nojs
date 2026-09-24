@@ -1,5 +1,8 @@
 # axum-nojs
 
+**0 KB JavaScript required** · verified in CI by a script-less renderer ([Blitz](axum-nojs-test/tests/demo.rs)) and
+[a test that allows one optional script and nothing inline](demo/src/lib.rs) · strict CSP
+
 **The no-JS UI kit for Rust servers.** Buttons, forms, dialogs, tables, a calendar, uploads and
 a kanban board for Axum and Maud, in shadcn/ui's look, that work with JavaScript turned off.
 The core is plain functions over strings, so it also works with any other Rust server.
