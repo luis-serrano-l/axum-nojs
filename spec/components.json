@@ -85,11 +85,13 @@
       "module": "combobox",
       "features": [
         { "name": "<datalist>", "baseline": { "chrome": "20", "firefox": "4", "safari": "12.1" } },
-        { "name": "<search>", "baseline": { "chrome": "118", "firefox": "118", "safari": "17" } }
+        { "name": "<optgroup>", "baseline": { "chrome": "20", "firefox": "4", "safari": "12.1" } },
+        { "name": "<search>", "baseline": { "chrome": "118", "firefox": "118", "safari": "17" } },
+        { "name": "aria-live", "baseline": { "chrome": "1", "firefox": "1", "safari": "1" } }
       ],
-      "fallback": "none needed",
+      "fallback": "none needed: chips, results and the create row are links and forms",
       "needs_js": "partial",
-      "needs_js_note": "static suggestions and per-submit results; live filtering needs script"
+      "needs_js_note": "static suggestions and per-submit results; live filtering and arrow keys into the results need script"
     },
     {
       "name": "Load-more list",

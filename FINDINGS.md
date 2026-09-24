@@ -47,7 +47,8 @@ Each of these is now covered by the optional enhancement script (`webonsive::enh
 section 4). The list stays true for a browser with script disabled.
 
 - Filtering results as you type against server data. `<datalist>` covers static suggestions;
-  results update per submit.
+  results update per submit. Choosing, removing (chips) and creating are links and forms, so
+  they need nothing; only the arrow keys into the result list are script.
 - Mirroring a slider or colour picker while it moves. The `<output>` and the swatch show the
   value the server last saved; they update on submit.
 - Infinite scroll. Cumulative pages with one click per page is the ceiling.

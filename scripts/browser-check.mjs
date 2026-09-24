@@ -88,9 +88,16 @@ try {
   // Combobox: results as you type, focus kept.
   await go("/combobox");
   await type("input[type=search]", "ru");
-  await until(async () => (await js("return [...document.querySelectorAll('#langs li')].map(l => l.textContent).join()")) === "Rust,Ruby", "search results");
+  await until(async () => (await js("return [...document.querySelectorAll('#langs [role=option]')].map(l => l.textContent).join()")) === "Rust,Ruby", "search results");
   assert(await js("return document.activeElement.name") === "q", "combobox: focus stays in the input");
-  assert(await navigations() === 1, "combobox: searched without a reload");
+  await js("document.activeElement.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }))");
+  assert(await js("return document.activeElement.textContent") === "Rust", "combobox: ArrowDown moves from the input to the first result");
+  await js("document.activeElement.click()");
+  await until(async () => (await js("return [...document.querySelectorAll('.wo-combobox-chip')].map(c => c.firstChild.textContent).join()")) === "Rust", "result became a chip");
+  assert(await js("return location.search") === "?q=ru&sel=Rust", "combobox: the chip is in the URL");
+  await click(".wo-combobox-chip a");
+  await until(async () => (await js("return document.querySelectorAll('.wo-combobox-chip').length")) === 0, "chip removed");
+  assert(await navigations() === 1, "combobox: searched, picked and removed without a reload");
 
   // Table: a sort link re-renders the rows in place, URL follows.
   await go("/table?per=5");

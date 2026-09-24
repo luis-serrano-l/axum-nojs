@@ -137,7 +137,7 @@ involved) a Firefox check.
   active tab underlined with a morphing `view-transition-name`.
 - [x] Accordion: a "expand all / collapse all" pair of links, an item can carry a summary line
   and an icon, nested accordions, `open.<group>` accepts a list so several items can be open.
-- [ ] Combobox: multi-select with removable chips, grouped options (`<optgroup>` in the
+- [x] Combobox: multi-select with removable chips, grouped options (`<optgroup>` in the
   datalist), a "create new" row when nothing matches, keyboard navigation of server results,
   the current selection kept across a re-filter, async results marked with `aria-live`.
 - [ ] Table: row selection with checkboxes and a bulk-action form, column visibility toggles

@@ -116,6 +116,30 @@ async fn accordion_multi_open_with_controls_and_nesting() {
 }
 
 #[tokio::test]
+async fn combobox_chips_results_and_create_row() {
+    let page = Page::render(demo::router(), "/combobox?q=ru&sel=Zig", MODERN).await;
+    assert_eq!(page.count(".wo-combobox-chip"), 1, "one chip for the selection");
+    assert!(page.exists(".wo-combobox-chip input[type=hidden][name=sel][value=Zig]"), "the chip rides along with the next search");
+    assert!(page.exists(".wo-combobox-chip a[href='/combobox?q=ru'][aria-label='Remove Zig']"), "the chip's link removes it");
+    assert!(page.exists("datalist optgroup[label=Systems] option[value=Rust]"), "grouped suggestions");
+    assert_eq!(page.count("[role=listbox] [role=option]"), 2, "Rust and Ruby match");
+    assert!(page.exists("[role=option] a[href='/combobox?q=ru&sel=Zig&sel=Rust']"), "a result adds itself after the selection");
+    assert!(page.exists("#q-results[aria-live=polite]"));
+    assert_eq!(page.text(".wo-combobox-status").as_deref(), Some("2 matches"));
+    let chip = page.bbox(".wo-combobox-chip").unwrap();
+    let input = page.bbox("input[type=search]").unwrap();
+    assert!((chip.y + chip.height / 2.0 - (input.y + input.height / 2.0)).abs() < 6.0 && chip.x < input.x, "chip sits on the input's row, before it: {chip:?} {input:?}");
+
+    let none = Page::render(demo::router(), "/combobox?q=elixir&sel=Zig", MODERN).await;
+    assert_eq!(none.text(".wo-combobox-status").as_deref(), Some("No matches."));
+    assert!(none.exists("form.wo-combobox-create[action='/combobox/new'] input[name=name][value=elixir]"), "create row posts the text");
+    assert!(none.exists("form.wo-combobox-create input[name=sel][value=Zig]"), "and keeps the selection");
+    assert!(none.is_visible("form.wo-combobox-create button"));
+    let picked = Page::render(demo::router(), "/combobox?q=zig&sel=Zig", MODERN).await;
+    assert!(picked.exists("[role=option][aria-selected=true]") && !picked.exists("[role=option] a"), "an already selected result is not a link");
+}
+
+#[tokio::test]
 async fn popover_variants() {
     let modern = Page::render(demo::router(), "/popover", MODERN).await;
     assert!(modern.is_visible("button[popovertarget]"));

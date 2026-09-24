@@ -95,7 +95,7 @@ fn decode(s: &str) -> String {
     String::from_utf8_lossy(&out).into_owned()
 }
 
-fn encode(s: &str) -> String {
+pub(crate) fn encode(s: &str) -> String {
     let mut out = String::new();
     for b in s.bytes() {
         match b {

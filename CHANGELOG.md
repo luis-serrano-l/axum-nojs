@@ -29,6 +29,13 @@ follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); the project us
   "Expand all" / "Collapse all" links, nested accordions with their own key.
   `UiState::opens()` returns the list. **Breaking:** the `(title, body)` tuple form and the
   `Option<&UiState>` argument are gone.
+- `combobox` takes `ComboboxOptions` (`query`, `suggestions` as `OptionGroup`s with
+  `<optgroup>`, `results`, `selected`, `multi`, `create`, `label`, `placeholder`): the
+  selection shows as removable chips and rides along as `sel` fields, results are links that
+  select, a "Create" post row appears when nothing matches, results carry `aria-live`, and
+  the enhancement script walks input and results with the arrow keys. **Breaking:** the
+  `(action, name, options, value)` positional form is gone; `name` now comes before `action`.
+- `UiState::link(key, "")` keeps `key=` in the URL so an explicit empty beats the cookie.
 
 ## [0.1.0] - 2026-09-23
 

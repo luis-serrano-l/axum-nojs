@@ -38,7 +38,7 @@
 //! Rapid actions on one root are queued, so a counter clicked five times counts five. The
 //! script also mirrors `<input type=range>` and `type=color` values while they move, opens
 //! the `:target` dialog fallback as a real modal, moves through an open popover menu with the
-//! arrow keys, and searches a combobox as you type.
+//! arrow keys, searches a combobox as you type and walks its results with the arrow keys.
 //!
 //! [`script_tag`] goes at the end of `<body>`; [`router`] serves the file with a content
 //! hash in the URL so it caches forever. It is compatible with `script-src 'self'`.
@@ -228,15 +228,18 @@ document.addEventListener("input", function (e) {
   }
 });
 
-// Arrow keys walk the items of the open menu the focus is in (or that this button opened).
+// Arrow keys walk the items of the open menu the focus is in (or that this button opened),
+// and the combobox input plus its results.
 document.addEventListener("keydown", function (e) {
   if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
-  var box = e.target.closest(".wo-popover"), menu = e.target.closest(".wo-popover nav");
+  var box = e.target.closest(".wo-popover"), menu = e.target.closest(".wo-popover nav"), items;
   if (!menu && box) menu = box.querySelector("nav:popover-open, details[open] > nav");
-  if (!menu) return;
-  var items = Array.prototype.filter.call(menu.querySelectorAll("a[href], button:not(:disabled), summary"), function (el) {
+  var combo = e.target.closest(".wo-combobox");
+  if (combo) items = Array.prototype.slice.call(combo.querySelectorAll("input[type=search], [role=option] a[href]"));
+  else if (menu) items = Array.prototype.filter.call(menu.querySelectorAll("a[href], button:not(:disabled), summary"), function (el) {
     return el.closest("nav") === menu;
   });
+  else return;
   if (!items.length) return;
   e.preventDefault();
   var i = items.indexOf(e.target), n = items.length;

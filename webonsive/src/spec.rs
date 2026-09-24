@@ -150,9 +150,9 @@ pub const SPECS: &[ComponentSpec] = &[
     ComponentSpec {
         name: "Combobox",
         module: "combobox",
-        features: &[f("<datalist>", b("20", "4", "12.1")), f("<search>", b("118", "118", "17"))],
-        fallback: "none needed",
-        needs_js: NeedsJs::Partial("static suggestions and per-submit results; live filtering needs script"),
+        features: &[f("<datalist>", b("20", "4", "12.1")), f("<optgroup>", b("20", "4", "12.1")), f("<search>", b("118", "118", "17")), f("aria-live", b("1", "1", "1"))],
+        fallback: "none needed: chips, results and the create row are links and forms",
+        needs_js: NeedsJs::Partial("static suggestions and per-submit results; live filtering and arrow keys into the results need script"),
     },
     ComponentSpec {
         name: "Load-more list",

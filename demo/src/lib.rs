@@ -12,7 +12,7 @@ use axum_extra::extract::cookie::{Cookie, CookieJar};
 use maud::{Markup, html};
 use serde::Deserialize;
 use webonsive::{
-    Cap, Caps, Field, FieldKind, Streamed, Theme, UiState, accordion, accordion::{AccordionItem, AccordionOptions}, caps, color, combobox,
+    Cap, Caps, Field, FieldKind, Streamed, Theme, UiState, accordion, accordion::{AccordionItem, AccordionOptions}, caps, color, combobox, combobox::{ComboboxOptions, OptionGroup},
     counter, dialog, dialog::{DialogOptions, DialogSize}, flash, form, layout, layout::{Palette, Tokens, layout_with}, paged_table, paged_table::PagedTableOptions,
     pager, pager::PagerOptions, popover::{MenuItem, Placement, PopoverOptions}, popover_menu, prg, range, range::RangeOptions, select, slot, tabs::{Tab, TabsOptions},
     table::{Column, sort_from_query}, tabs, theme_toggle, wizard, wizard::{Step, WizardOptions},
@@ -22,7 +22,7 @@ use std::time::Duration;
 /// Every demo path the no-script test and the screenshot test visit.
 pub const PATHS: [&str; 16] = [
     "/", "/caps", "/stream", "/settings", "/dialog?dialog=confirm", "/popover", "/tabs?tab.demo=1",
-    "/accordion?open.faq=0,2&open.faq-more=0", "/combobox?q=r", "/list?page=2", "/form", "/counter", "/inputs",
+    "/accordion?open.faq=0,2&open.faq-more=0", "/combobox?q=r&sel=Zig", "/list?page=2", "/form", "/counter", "/inputs",
     "/table?sort=size&dir=desc&q=a&per=5&page=2", "/wizard?step.signup=1", "/swap?n=3",
 ];
 
@@ -38,6 +38,7 @@ pub fn router() -> Router {
         .route("/tabs", get(tabs_page))
         .route("/accordion", get(accordion_page))
         .route("/combobox", get(combobox_page))
+        .route("/combobox/new", post(combobox_new))
         .route("/list", get(list_page))
         .route("/table", get(table_page))
         .route("/wizard", get(wizard_page).post(wizard_submit))
@@ -65,7 +66,7 @@ const COMPONENTS: [(&str, &str, &str, &str); 15] = [
     ("/popover", "Popover menu", "Overlays", "popover, anchor positioning, nested popover, form actions"),
     ("/tabs", "Tabs", "Disclosure", "<details name>, ::details-content, view-transition-name, grid"),
     ("/accordion", "Accordion", "Disclosure", "<details name>, ::details-content, interpolate-size"),
-    ("/combobox", "Combobox", "Input", "<datalist>, <search>"),
+    ("/combobox", "Combobox", "Input", "<datalist>, <optgroup>, <search>, aria-live"),
     ("/form", "Validated form", "Input", ":user-invalid, PRG"),
     ("/wizard", "Wizard", "Input", "one form per step, PRG, UiState"),
     ("/inputs", "Select, range, colour", "Input", "<selectedcontent>, type=range, type=color"),
@@ -234,23 +235,45 @@ async fn accordion_page(caps: Caps, jar: CookieJar, state: UiState) -> (UiState,
     (state, body)
 }
 
-#[derive(Deserialize)]
-struct SearchQuery { q: Option<String> }
+const LANGS: [OptionGroup; 3] = [
+    OptionGroup::new("Systems", &["Rust", "Zig", "Swift"]),
+    OptionGroup::new("Scripting", &["Ruby", "Python", "Racket"]),
+    OptionGroup::flat(&["Prolog", "Scala"]),
+];
 
-const LANGS: [&str; 8] = ["Rust", "Ruby", "Racket", "Python", "Prolog", "Zig", "Swift", "Scala"];
+/// `?q=text&sel=a&sel=b`: the text and the repeated selection, in order.
+fn combobox_query(pairs: &[(String, String)]) -> (String, Vec<String>) {
+    let q = pairs.iter().find(|(k, _)| k == "q").map(|(_, v)| v.clone()).unwrap_or_default();
+    let sel = pairs.iter().filter(|(k, _)| k == "sel").map(|(_, v)| v.clone()).collect();
+    (q, sel)
+}
 
-async fn combobox_page(caps: Caps, jar: CookieJar, Query(s): Query<SearchQuery>) -> Markup {
-    let q = s.q.unwrap_or_default();
-    let hits: Vec<&str> = LANGS.iter().copied()
-        .filter(|l| l.to_lowercase().contains(&q.to_lowercase())).collect();
-    page(&caps, &jar, "Combobox", html! {
+async fn combobox_page(caps: Caps, jar: CookieJar, state: UiState, Query(pairs): Query<Vec<(String, String)>>) -> (UiState, Markup) {
+    let (q, sel) = combobox_query(&pairs);
+    let sel: Vec<&str> = sel.iter().map(String::as_str).collect();
+    let hits: Vec<&str> = LANGS.iter().flat_map(|g| g.values().iter().copied())
+        .filter(|l| !q.is_empty() && l.to_lowercase().contains(&q.to_lowercase())).collect();
+    let body = page(&caps, &jar, "Combobox", html! {
+        (flash(&caps, state.flash()))
         // One swap root around the form and its results: the script searches as you type.
         div id="langs" data-wo="swap" {
-            (combobox(&caps, "/combobox", "q", &LANGS, &q))
-            ul { @for h in &hits { li { (h) } } }
-            @if hits.is_empty() { p class="wo-note" { "No matches." } }
+            (combobox(&caps, "q", "/combobox", ComboboxOptions::default()
+                .query(&q).suggestions(&LANGS).results(&hits).selected(&sel).multi(true)
+                .create("/combobox/new").label("Language").placeholder("Type a language")))
         }
-    })
+        p class="wo-note" { "Pick several: each result adds a chip, each chip's \u{d7} removes it, and the chips ride along with the next search. Type a language that is not here to get a Create row." }
+    });
+    (state, body)
+}
+
+#[derive(Deserialize)]
+struct NewLang { name: String, #[serde(default)] sel: Vec<String> }
+
+async fn combobox_new(Form(f): Form<NewLang>) -> axum::response::Response {
+    let name = f.name.trim();
+    let mut to = String::from("/combobox?q=");
+    for s in f.sel.iter().map(String::as_str).chain([name]) { to.push_str(&format!("&sel={}", s)); }
+    prg::<axum::body::Body>(&to, Some(&format!("Added {name} (not really: the demo has no database).")))
 }
 
 #[derive(Deserialize)]

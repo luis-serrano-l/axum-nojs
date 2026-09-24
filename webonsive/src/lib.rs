@@ -81,7 +81,7 @@ pub use wo_caps as caps;
 pub use accordion::{AccordionItem, AccordionOptions, accordion};
 pub use wo_caps::{Cap, Caps};
 pub use color::color;
-pub use combobox::combobox;
+pub use combobox::{ComboboxOptions, OptionGroup, combobox};
 pub use counter::counter;
 pub use dialog::{DialogOptions, DialogSize, dialog};
 pub use flash::flash;
