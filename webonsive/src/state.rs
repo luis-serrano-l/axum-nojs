@@ -41,6 +41,7 @@
 //! assert!(cookie.unwrap().starts_with("wo-flash=Saved."));
 //! ```
 
+use std::borrow::Cow;
 use std::collections::BTreeMap;
 
 /// Name of the cookie that remembers UI state between page views.
@@ -62,17 +63,23 @@ fn is_state_key(key: &str) -> bool {
     key == "dialog" || ["tab.", "open.", "step.", "per."].iter().any(|p| key.starts_with(p))
 }
 
-/// Parse `a=b&c=d` pairs, keeping only state keys. Understands `%XX` and `+`.
+/// Parse `a=b&c=d` pairs, keeping only state keys. Understands `%XX` and `+`. The key is
+/// checked before anything is decoded, so pairs that are not state (`page=3`, `q=…`) cost no
+/// allocation; the state prefixes are unreserved characters a browser never escapes.
 fn parse_pairs(input: &str) -> BTreeMap<String, String> {
     input
         .split('&')
-        .filter_map(|pair| pair.split_once('=').or(Some((pair, ""))))
-        .map(|(k, v)| (decode(k), decode(v)))
+        .map(|pair| pair.split_once('=').unwrap_or((pair, "")))
         .filter(|(k, _)| is_state_key(k))
+        .map(|(k, v)| (decode(k).into_owned(), decode(v).into_owned()))
         .collect()
 }
 
-fn decode(s: &str) -> String {
+/// `%XX` and `+` decoded; borrowed when there is nothing to decode.
+fn decode(s: &str) -> Cow<'_, str> {
+    if !s.contains(['%', '+']) {
+        return Cow::Borrowed(s);
+    }
     let bytes = s.as_bytes();
     let mut out = Vec::with_capacity(bytes.len());
     let mut i = 0;
@@ -92,15 +99,18 @@ fn decode(s: &str) -> String {
         }
         i += 1;
     }
-    String::from_utf8_lossy(&out).into_owned()
+    Cow::Owned(String::from_utf8_lossy(&out).into_owned())
 }
 
 pub(crate) fn encode(s: &str) -> String {
-    let mut out = String::new();
+    use std::fmt::Write;
+    let mut out = String::with_capacity(s.len());
     for b in s.bytes() {
         match b {
             b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'_' | b'.' | b'~' => out.push(b as char),
-            _ => out.push_str(&format!("%{b:02X}")),
+            _ => {
+                let _ = write!(out, "%{b:02X}");
+            }
         }
     }
     out
@@ -128,7 +138,7 @@ impl UiState {
                 .map(|(_, v)| v)
         };
         UiState::parse(path, query, cookie(UI_COOKIE).unwrap_or(""))
-            .with_flash(cookie(FLASH_COOKIE).map(decode))
+            .with_flash(cookie(FLASH_COOKIE).map(|v| decode(v).into_owned()))
     }
 
     /// The `Set-Cookie` values a response should carry: the merged state when the query
@@ -298,6 +308,14 @@ mod axum_glue {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn parsing_borrows_until_something_needs_decoding() {
+        assert!(matches!(decode("open.faq"), Cow::Borrowed("open.faq")));
+        assert_eq!(decode("a%2Cb+c"), "a,b c");
+        let state = UiState::parse("/", "page=3&q=a+b&tab.x=1", "per.t=25&sort=name");
+        assert_eq!((state.tab("x"), state.link("tab.x", "2")), (1, "/?per.t=25&tab.x=2".to_string()));
+    }
 
     #[test]
     fn query_wins_over_cookie_and_links_keep_the_rest() {

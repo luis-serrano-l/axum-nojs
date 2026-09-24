@@ -386,15 +386,25 @@ fn slug(key: &str) -> String {
 
 /// Percent-encode a query value: everything but unreserved characters.
 pub(crate) fn encode(s: &str) -> String {
-    let mut out = String::new();
-    for b in s.bytes() {
-        match b {
-            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'_' | b'.' | b'~' => out.push(b as char),
-            b' ' => out.push('+'),
-            _ => out.push_str(&format!("%{b:02X}")),
+    Encoded(s).to_string()
+}
+
+/// [`encode`] written straight into a formatter, so a link can be built without a `String`
+/// per pair.
+pub(crate) struct Encoded<'a>(pub(crate) &'a str);
+
+impl std::fmt::Display for Encoded<'_> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        use std::fmt::Write;
+        for b in self.0.bytes() {
+            match b {
+                b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'_' | b'.' | b'~' => f.write_char(b as char)?,
+                b' ' => f.write_char('+')?,
+                _ => write!(f, "%{b:02X}")?,
+            }
         }
+        Ok(())
     }
-    out
 }
 
 /// Styles for this component; included in [`crate::stylesheet`].

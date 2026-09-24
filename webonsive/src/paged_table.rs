@@ -47,7 +47,9 @@
 
 use maud::{Markup, html};
 
-use crate::table::{Column, Row, TableOptions, encode, table_in};
+use std::fmt::{self, Write};
+
+use crate::table::{Column, Encoded, Row, TableOptions, table_in};
 use crate::enhance;
 use crate::{Caps, UiState};
 
@@ -131,23 +133,26 @@ pub fn paged_table(caps: &Caps, id: &str, href: &str, columns: &[Column], rows: 
     let cols_value = inner.cols.map(|c| c.join(","));
     // Hidden fields shared by both forms: everything in the URL except what the form sets.
     let carried = |skip: &str| {
-        let mut pairs: Vec<(&str, String)> = Vec::new();
+        let mut pairs: Vec<(&str, &str)> = Vec::with_capacity(5);
         if let Some((k, d)) = sort {
-            pairs.extend([("sort", k.to_string()), ("dir", dir(d).to_string())]);
+            pairs.extend([("sort", k), ("dir", dir(d))]);
         }
-        if !filter.is_empty() { pairs.push(("q", filter.to_string())); }
-        if let Some(c) = &cols_value { pairs.push(("cols", c.clone())); }
-        if skip != per_key { pairs.push((per_key.as_str(), per.clone())); }
+        if !filter.is_empty() { pairs.push(("q", filter)); }
+        if let Some(c) = &cols_value { pairs.push(("cols", c)); }
+        if skip != per_key { pairs.push((per_key.as_str(), &per)); }
         pairs
     };
-    let base: String = carried("").iter().map(|(k, v)| format!("{}={}&", encode(k), encode(v))).collect();
-    let link = |n: usize| format!("{href}?{base}page={n}");
+    let mut base = String::new();
+    for (k, v) in carried("") {
+        let _ = write!(base, "{}={}&", Encoded(k), Encoded(v));
+    }
+    let link = |n: usize| PageLink { href, base: &base, n };
     let keep = [(per_key.as_str(), per.as_str())];
     html! {
         div id=(enhance::swap_id("wo-paged-table", id)) data-wo="swap" class="wo-paged-table" {
             (table_in(caps, id, href, columns, rows, TableOptions { sort, filter, keep: &keep, ..inner }, false))
             nav class="wo-paged-table-nav" aria-label="Pages" {
-                output class="wo-paged-table-range" { (thousands(first)) "–" (thousands(last)) " of " (thousands(total)) }
+                output class="wo-paged-table-range" { (Thousands(first)) "–" (Thousands(last)) " of " (Thousands(total)) }
                 ul class="wo-paged-table-pages" {
                     @if page > 1 {
                         li { a class="wo-paged-table-end" href=(link(1)) { "First" } }
@@ -155,8 +160,8 @@ pub fn paged_table(caps: &Caps, id: &str, href: &str, columns: &[Column], rows: 
                     }
                     @for slot in window(page, pages) {
                         @match slot {
-                            Some(n) if n == page => li { a aria-current="page" href=(link(n)) { (thousands(n)) } },
-                            Some(n) => li { a href=(link(n)) { (thousands(n)) } },
+                            Some(n) if n == page => li { a aria-current="page" href=(link(n)) { (Thousands(n)) } },
+                            Some(n) => li { a href=(link(n)) { (Thousands(n)) } },
                             None => li class="wo-paged-table-gap" aria-hidden="true" { "…" },
                         }
                     }
@@ -170,7 +175,7 @@ pub fn paged_table(caps: &Caps, id: &str, href: &str, columns: &[Column], rows: 
                         @for (k, v) in carried("") { input type="hidden" name=(k) value=(v); }
                         label { "Page "
                             input type="number" name="page" min="1" max=(pages) value=(page) inputmode="numeric";
-                            " of " (thousands(pages))
+                            " of " (Thousands(pages))
                         }
                         button type="submit" { "Go" }
                     }
@@ -211,13 +216,40 @@ fn window(page: usize, pages: usize) -> Vec<Option<usize>> {
 
 /// `1234567` as `1,234,567`.
 pub fn thousands(n: usize) -> String {
-    let digits = n.to_string();
-    let mut out = String::with_capacity(digits.len() + digits.len() / 3);
-    for (i, c) in digits.chars().enumerate() {
-        if i > 0 && (digits.len() - i).is_multiple_of(3) { out.push(','); }
-        out.push(c);
+    Thousands(n).to_string()
+}
+
+/// [`thousands`] written straight into the page: no `String` per number.
+struct Thousands(usize);
+
+impl fmt::Display for Thousands {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let (mut digits, mut len, mut n) = ([0u8; 20], 0, self.0);
+        loop {
+            digits[len] = b'0' + (n % 10) as u8;
+            len += 1;
+            n /= 10;
+            if n == 0 { break; }
+        }
+        for i in (0..len).rev() {
+            f.write_char(digits[i] as char)?;
+            if i > 0 && i % 3 == 0 { f.write_char(',')?; }
+        }
+        Ok(())
     }
-    out
+}
+
+/// `href?<carried pairs>page=n`, written into the attribute as it renders.
+struct PageLink<'a> {
+    href: &'a str,
+    base: &'a str,
+    n: usize,
+}
+
+impl fmt::Display for PageLink<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}?{}page={}", self.href, self.base, self.n)
+    }
 }
 
 /// Styles for this component; included in [`crate::stylesheet`].

@@ -197,7 +197,7 @@ in FINDINGS.md (`hyperfine` against the demo, Firefox navigation timing from
   built (an `http`-feature `Streamed` page for every demo route whose body waits on anything),
   `Transfer-Encoding: chunked` with an early flush after `</head>` so the stylesheet parses
   while the server works; measured on `/stream` and `/table`.
-- [ ] Structural: `Caps` from a bitset cookie is already O(1); `UiState` parse checked for
+- [x] Structural: `Caps` from a bitset cookie is already O(1); `UiState` parse checked for
   allocations; Maud templates render into a pre-sized `String` (`html!` with capacity hints
   where a component knows its size); `paged_table` builds rows without intermediate `String`s;
   a `cargo bench` (criterion) for `layout`, `table` with 1 000 rows and `stylesheet()`.

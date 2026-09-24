@@ -484,3 +484,20 @@ would drop `Content-Length` and, through the compression predicate, gzip: 51 KB 
 instead of 9 KB. The rule for a real server: stream a route only when its body awaits I/O
 (a database, another service); give it a `slot` per slow part, or one `slot` around the whole
 body if nothing can be shown early, and the head still goes out first.
+
+**Structural.** `cargo bench -p webonsive` (criterion, `webonsive/benches/render.rs`), before
+→ after on this machine:
+
+| bench | before | after | what changed |
+|---|---|---|---|
+| `stylesheet()` | 1.6 ns | 1.0 ns | nothing: already a `OnceLock` read |
+| `layout` (whole page, 42 KB) | 15.6 µs | 11.9 µs | one `Reserve` splice sizes the buffer for the stylesheet and body; the head is no longer a separate `Markup` copied in |
+| `table`, 1 000 rows | 45.2 µs | 41.7 µs | none kept (see below) |
+| `paged_table`, page 20 of 1 000 | 4.9 µs | 4.2 µs | page numbers and page links render through `Display` straight into the buffer; carried pairs borrow instead of cloning |
+| `UiState::from_request` | 884 ns | 596 ns | keys are checked before decoding, and `decode` borrows when there is no `%` or `+` |
+
+`Caps` from the cookie is a fixed loop over the flags into a bitset: nothing to do. Maud's
+`html!` already starts from `String::with_capacity(<template literal size>)`, so a size hint
+only pays where splices dwarf the literals, which is the page shell. A hint on the 1 000-row
+table made it 12% *slower*: the estimate overshot, touching pages it never filled, while a
+growing `String` above a page reallocates in place (`mremap`) without copying. Not kept.

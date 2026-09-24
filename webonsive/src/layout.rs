@@ -27,7 +27,7 @@
 //! assert!(page.into_string().contains("--wo-accent: #7a3b1e"));
 //! ```
 
-use maud::{DOCTYPE, Markup, PreEscaped, html};
+use maud::{DOCTYPE, Markup, PreEscaped, Render, html};
 
 use crate::{Caps, Theme, caps, enhance, stylesheet};
 
@@ -127,10 +127,20 @@ pub fn layout_with(caps: &Caps, title: &str, theme: Theme, tokens: &Tokens, body
 }
 
 fn page(caps: &Caps, title: &str, theme: Theme, tokens: Option<&Tokens>, body: Markup) -> Markup {
+    // The stylesheet is most of the page: size the buffer once instead of doubling into it.
+    let size = stylesheet().len() + body.0.len() + 2048;
     html! {
+        (Reserve(size))
         (DOCTYPE)
         html lang="en" data-theme=(theme.as_str()) {
-            (head_blocking(title, tokens))
+            head {
+                (meta(title))
+                // Hold a cross-document view transition until `#main` is parsed. Streamed
+                // pages must not: their parse ends only when the last slot has filled.
+                link rel="expect" href="#main" blocking="render";
+                style { (PreEscaped(stylesheet())) }
+                @if let Some(t) = tokens { style class="wo-tokens" { (PreEscaped(t.css())) } }
+            }
             body {
                 (header())
                 main id="main" { (body) }
@@ -144,28 +154,29 @@ fn page(caps: &Caps, title: &str, theme: Theme, tokens: Option<&Tokens>, body: M
 /// `<head>`: charset, viewport, title and the inline stylesheet. `stream` reuses it.
 pub fn head(title: &str) -> Markup {
     html! {
+        (Reserve(stylesheet().len() + 256))
         head {
-            meta charset="utf-8";
-            meta name="viewport" content="width=device-width, initial-scale=1";
-            title { (title) }
+            (meta(title))
             style { (PreEscaped(stylesheet())) }
         }
     }
 }
 
-/// `<head>` plus `<link rel="expect" blocking="render">` on `#main`, so a cross-document view
-/// transition starts only once the whole page is parsed. `layout` uses it; streamed pages must
-/// not, because their parse ends only when the last slot has filled.
-fn head_blocking(title: &str, tokens: Option<&Tokens>) -> Markup {
+fn meta(title: &str) -> Markup {
     html! {
-        head {
-            meta charset="utf-8";
-            meta name="viewport" content="width=device-width, initial-scale=1";
-            title { (title) }
-            link rel="expect" href="#main" blocking="render";
-            style { (PreEscaped(stylesheet())) }
-            @if let Some(t) = tokens { style class="wo-tokens" { (PreEscaped(t.css())) } }
-        }
+        meta charset="utf-8";
+        meta name="viewport" content="width=device-width, initial-scale=1";
+        title { (title) }
+    }
+}
+
+/// Grows the buffer `html!` is writing into by `.0` bytes and writes nothing: a size hint
+/// for a template whose splices dwarf its literals.
+pub(crate) struct Reserve(pub(crate) usize);
+
+impl Render for Reserve {
+    fn render_to(&self, buffer: &mut String) {
+        buffer.reserve(self.0);
     }
 }
 
