@@ -372,8 +372,11 @@ Done before M21 so the primitives are born in this look.
   Noted, kept: shadcn centres its preview in a tall box, the demo stage is left-aligned
   because it carries explanatory text; toasts only appear after a POST, so Firefox cannot
   shoot them (the Blitz toast shot covers them); the wizard has no shadcn counterpart.
-- [ ] README (screenshot, theming section) and FINDINGS updated; clippy, tests,
+- [x] README (screenshot, theming section) and FINDINGS updated; clippy, tests,
   `scripts/verify.sh` green; local commit.
+  Done: `docs/screenshot.png` (the table demo split light/dark, from Firefox) heads the README;
+  the theming bullet names the derived radius/shadow/overlay tokens, the font properties and
+  `scripts/look.sh`; FINDINGS has an M20 section.
 
 ## M21 · Primitives
 The owner found the library "in the middle of nowhere": 30 components, but no button (buttons

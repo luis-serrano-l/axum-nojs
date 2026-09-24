@@ -506,3 +506,24 @@ body if nothing can be shown early, and the head still goes out first.
 only pays where splices dwarf the literals, which is the page shell. A hint on the 1 000-row
 table made it 12% *slower*: the estimate overshot, touching pages it never filled, while a
 growing `String` above a page reallocates in place (`mremap`) without copying. Not kept.
+
+### M20 · The shadcn look
+
+Every component now takes shadcn/ui's neutral theme through tokens alone: the palette grew to
+shadcn's roles (`card`, `popover`, `secondary`, `accent` as the hover surface, `primary` as the
+brand, `input`, `ring`), and `Tokens::css()` derives the small/large radii, two shadows and the
+backdrop overlay, so component CSS still names no colour. Three things learned on the way:
+
+- **The colour-literal test reads comments too.** It greps all component CSS for `#hex`,
+  `rgb(`, and colour words, and a comment saying a border "turns red" or a backdrop is
+  "black/50" fails it. Kept as is: rewording a comment is cheaper than parsing CSS.
+- **Tabs' moving mark became shadcn's raised chip.** It is the same element carrying the view
+  transition name, now inset 3px inside the open summary instead of a 2px underline; Blitz
+  lays it out correctly and the test checks the inset.
+- **What `scripts/look.sh` cannot see.** Toasts only exist after a POST, so a Firefox
+  `--screenshot` of a URL never shows one; the Blitz toast shot is the only picture. The
+  demo stage is left-aligned where shadcn centres its preview, on purpose, because it carries
+  prose. No new Blitz gaps. The sticky header is still the known one
+  ([#389](https://github.com/DioxusLabs/blitz/issues/389)); the 2 px black grid
+  ([#386](https://github.com/DioxusLabs/blitz/issues/386)) no longer shows on `/table`, because
+  the framed table now uses `border-collapse: separate` with row rules only.

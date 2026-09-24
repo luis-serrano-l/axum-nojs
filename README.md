@@ -9,6 +9,8 @@ optional 10 KB script (`/nojs/enhance.js`) makes the same markup update in place
 script works" below. Every page works identically with the script blocked; that is the only
 `<script>` tag allowed, and a test enforces it.
 
+![The table demo, light on the left and dark on the right](docs/screenshot.png)
+
 ```rust
 use axum::{Form, Router, routing::get};
 use axum_nojs::prelude::*;
@@ -104,10 +106,14 @@ component gives the HTML to another template engine.
 - CSS lives beside its component as `const CSS`. Theming is via `--nojs-*` custom properties only
   (shadcn/ui's roles: `bg`, `fg`, `muted`, `line`, `surface`, `card`, `popover`, `secondary`,
   `accent`, `on-accent`, `primary`, `on-primary`, `input`, `ring`, `danger`, `ok`, `warn`, `radius`, `space`;
-  the default is shadcn's neutral zinc theme).
+  the default is shadcn's neutral zinc theme, with system fonts and Radix step-11 status colours).
+  `Tokens::css()` also derives `--nojs-radius-sm`/`-lg`, `--nojs-shadow-xs`/`-lg` and
+  `--nojs-overlay` from them; `--nojs-font-sans` and `--nojs-font-mono` can be overridden on `:root`.
   `layout::Tokens` holds them for light and dark, `ui.page(..).tokens(&t)` applies another set
   once per page, and `docs/theming.md` says what each one affects and which pairs must keep contrast.
   `/?palette=linen` in the demo is the same index under a second palette.
+  `scripts/look.sh` shoots every demo page (light and dark, 1280 and 420 wide) beside the
+  matching shadcn docs page, for comparing the look by eye.
   A test fails if any component CSS names a colour instead of a token.
 
 ## How the script works
