@@ -118,20 +118,45 @@ pub struct Form<'a> {
 impl Ui {
     /// A form posting to `action`; add fields with [`Form::text`] and friends.
     pub fn form<'a>(&self, action: &'a str) -> Form<'a> {
-        Form { action: Some(action), ..self.fields() }
+        Form {
+            action: Some(action),
+            ..self.fields()
+        }
     }
 
     /// Fields with no `<form>` around them, for a form built elsewhere (a wizard step, a
     /// dialog's confirm form).
     pub fn fields<'a>(&self) -> Form<'a> {
-        Form { action: None, groups: vec![(None, Vec::new())], submit: "Submit", inline: false, values: &[], errors: &[], id: None }
+        Form {
+            action: None,
+            groups: vec![(None, Vec::new())],
+            submit: "Submit",
+            inline: false,
+            values: &[],
+            errors: &[],
+            id: None,
+        }
     }
 }
 
 impl<'a> Form<'a> {
     fn add(mut self, name: &'a str, label: &'a str, kind: FieldKind<'a>) -> Self {
-        let field = Field { name, label, kind, value: "", error: None, required: false, help: None, maxlength: None, placeholder: None };
-        self.groups.last_mut().expect("a form always has a group").1.push(field);
+        let field = Field {
+            name,
+            label,
+            kind,
+            value: "",
+            error: None,
+            required: false,
+            help: None,
+            maxlength: None,
+            placeholder: None,
+        };
+        self.groups
+            .last_mut()
+            .expect("a form always has a group")
+            .1
+            .push(field);
         self
     }
 
@@ -177,7 +202,14 @@ impl<'a> Form<'a> {
     /// A file picker; `accept` lists MIME types or extensions (`image/*,.pdf`), empty for
     /// any. The form becomes `multipart/form-data`.
     pub fn file(self, name: &'a str, label: &'a str, accept: &'a str) -> Self {
-        self.add(name, label, FieldKind::File { accept, multiple: false })
+        self.add(
+            name,
+            label,
+            FieldKind::File {
+                accept,
+                multiple: false,
+            },
+        )
     }
 
     /// `type="date"`, bounds as `YYYY-MM-DD`; an empty bound is left out.
@@ -191,8 +223,17 @@ impl<'a> Form<'a> {
     }
 
     /// A `<select>` of `options`, each its own value and text.
-    pub fn select(self, name: &'a str, label: &'a str, options: impl IntoIterator<Item = &'a str>) -> Self {
-        self.add(name, label, FieldKind::Select(options.into_iter().collect()))
+    pub fn select(
+        self,
+        name: &'a str,
+        label: &'a str,
+        options: impl IntoIterator<Item = &'a str>,
+    ) -> Self {
+        self.add(
+            name,
+            label,
+            FieldKind::Select(options.into_iter().collect()),
+        )
     }
 
     /// A checkbox posting `true` when ticked and nothing when not (so a `bool` with
@@ -286,23 +327,39 @@ impl<'a> Form<'a> {
 
     /// Every field, with the values and errors filled in by name.
     pub(crate) fn filled(&self) -> impl Iterator<Item = (Option<&'a str>, Vec<Field<'a>>)> + '_ {
-        self.groups.iter().filter(|(legend, fs)| legend.is_some() || !fs.is_empty()).map(|(legend, fs)| {
-            let fs = fs.iter().map(|f| {
-                let value = if f.value.is_empty() {
-                    self.values.iter().find(|(n, _)| n == f.name).map_or("", |(_, v)| v.as_str())
-                } else {
-                    f.value
-                };
-                let error = f.error.or_else(|| self.errors.iter().find(|(n, _)| *n == f.name).map(|(_, m)| *m));
-                Field { value, error, ..f.clone() }
-            });
-            (*legend, fs.collect())
-        })
+        self.groups
+            .iter()
+            .filter(|(legend, fs)| legend.is_some() || !fs.is_empty())
+            .map(|(legend, fs)| {
+                let fs = fs.iter().map(|f| {
+                    let value = if f.value.is_empty() {
+                        self.values
+                            .iter()
+                            .find(|(n, _)| n == f.name)
+                            .map_or("", |(_, v)| v.as_str())
+                    } else {
+                        f.value
+                    };
+                    let error = f.error.or_else(|| {
+                        self.errors
+                            .iter()
+                            .find(|(n, _)| *n == f.name)
+                            .map(|(_, m)| *m)
+                    });
+                    Field {
+                        value,
+                        error,
+                        ..f.clone()
+                    }
+                });
+                (*legend, fs.collect())
+            })
     }
 
     /// Whether any field has a server message.
     pub(crate) fn has_errors(&self) -> bool {
-        self.filled().any(|(_, fs)| fs.iter().any(|f| f.error.is_some()))
+        self.filled()
+            .any(|(_, fs)| fs.iter().any(|f| f.error.is_some()))
     }
 
     fn fields(&self) -> Markup {
@@ -320,9 +377,19 @@ impl<'a> Form<'a> {
 
 impl Render for Form<'_> {
     fn render(&self) -> Markup {
-        let Some(action) = self.action else { return self.fields() };
-        let multipart = self.groups.iter().flat_map(|g| &g.1).any(|f| matches!(f.kind, FieldKind::File { .. }));
-        let class = if self.inline { "nojs-form nojs-form-inline" } else { "nojs-form" };
+        let Some(action) = self.action else {
+            return self.fields();
+        };
+        let multipart = self
+            .groups
+            .iter()
+            .flat_map(|g| &g.1)
+            .any(|f| matches!(f.kind, FieldKind::File { .. }));
+        let class = if self.inline {
+            "nojs-form nojs-form-inline"
+        } else {
+            "nojs-form"
+        };
         html! {
             form id=(enhance::swap_id("nojs-form", self.id.unwrap_or(action))) data-nojs="swap" class=(class) method="post" action=(action)
                 enctype=[multipart.then_some("multipart/form-data")] {
@@ -335,7 +402,10 @@ impl Render for Form<'_> {
 
 fn field(f: &Field) -> Markup {
     let id = format!("f-{}", f.name);
-    let help = f.help.or(match f.kind { FieldKind::Pattern { hint, .. } => Some(hint), _ => None });
+    let help = f.help.or(match f.kind {
+        FieldKind::Pattern { hint, .. } => Some(hint),
+        _ => None,
+    });
     let ids = [
         help.map(|_| format!("{id}-help")),
         f.maxlength.map(|_| format!("{id}-count")),
@@ -345,11 +415,27 @@ fn field(f: &Field) -> Markup {
     let described = (!described.is_empty()).then(|| described.join(" "));
     let bound = |s: &str| (!s.is_empty()).then(|| s.to_string());
     let (kind, min, max, pattern, accept, multiple) = match f.kind {
-        FieldKind::Text | FieldKind::Textarea { .. } | FieldKind::Select(_) => ("text", None, None, None, None, false),
+        FieldKind::Text | FieldKind::Textarea { .. } | FieldKind::Select(_) => {
+            ("text", None, None, None, None, false)
+        }
         FieldKind::Email => ("email", None, None, None, None, false),
-        FieldKind::Number { min, max } => ("number", Some(min.to_string()), Some(max.to_string()), None, None, false),
+        FieldKind::Number { min, max } => (
+            "number",
+            Some(min.to_string()),
+            Some(max.to_string()),
+            None,
+            None,
+            false,
+        ),
         FieldKind::Pattern { pattern, .. } => ("text", None, None, Some(pattern), None, false),
-        FieldKind::File { accept, multiple } => ("file", None, None, None, (!accept.is_empty()).then_some(accept), multiple),
+        FieldKind::File { accept, multiple } => (
+            "file",
+            None,
+            None,
+            None,
+            (!accept.is_empty()).then_some(accept),
+            multiple,
+        ),
         FieldKind::Date { min, max } => ("date", bound(min), bound(max), None, None, false),
         FieldKind::Time { min, max } => ("time", bound(min), bound(max), None, None, false),
         FieldKind::Checkbox | FieldKind::Hidden => ("", None, None, None, None, false),
@@ -435,24 +521,51 @@ mod tests {
     #[test]
     fn checkbox_and_hidden_fields() {
         let ui = Ui::default();
-        let fs = || ui.fields().hidden("tab", "1").checkbox("notify", "Email me");
+        let fs = || {
+            ui.fields()
+                .hidden("tab", "1")
+                .checkbox("notify", "Email me")
+        };
         let m = html(fs().checked(true));
-        assert!(m.starts_with(r#"<input type="hidden" name="tab" value="1">"#), "{m}");
-        assert!(m.contains(r#"type="checkbox" value="true" checked"#) && m.contains(" Email me</label>"), "{m}");
+        assert!(
+            m.starts_with(r#"<input type="hidden" name="tab" value="1">"#),
+            "{m}"
+        );
+        assert!(
+            m.contains(r#"type="checkbox" value="true" checked"#)
+                && m.contains(" Email me</label>"),
+            "{m}"
+        );
         assert!(!html(fs()).contains("checked"));
     }
 
     #[test]
     fn values_and_errors_fill_fields_by_name() {
         let ui = Ui::default();
-        let values = [("name".to_string(), "Ada".to_string()), ("email".to_string(), "posted@x.org".to_string()), ("bio".to_string(), "Hi".to_string())];
+        let values = [
+            ("name".to_string(), "Ada".to_string()),
+            ("email".to_string(), "posted@x.org".to_string()),
+            ("bio".to_string(), "Hi".to_string()),
+        ];
         let errors = [("name", "Too short."), ("bio", "Posted message.")];
-        let fs = |f: Form<'static>| f.text("name", "Name").email("email", "Email").value("own@x.org").textarea("bio", "Bio", 2).error("Own message.");
+        let fs = |f: Form<'static>| {
+            f.text("name", "Name")
+                .email("email", "Email")
+                .value("own@x.org")
+                .textarea("bio", "Bio", 2)
+                .error("Own message.")
+        };
         let m = html(fs(ui.form("/p")).values(&values).errors(&errors));
         assert!(m.contains(r#"name="name" type="text" value="Ada""#), "{m}");
-        assert!(m.contains(r#"value="own@x.org""#) && !m.contains("posted@x.org"), "a field's own value wins");
+        assert!(
+            m.contains(r#"value="own@x.org""#) && !m.contains("posted@x.org"),
+            "a field's own value wins"
+        );
         assert!(m.contains(">Too short.</p>") && m.contains(r#"aria-invalid="true""#));
-        assert!(m.contains("Own message.") && !m.contains("Posted message."), "a field's own error wins");
+        assert!(
+            m.contains("Own message.") && !m.contains("Posted message."),
+            "a field's own error wins"
+        );
         assert!(m.contains(">Hi</textarea>"));
         let bare = html(fs(ui.fields()).values(&values));
         assert!(!bare.contains("<form") && bare.contains(r#"value="Ada""#));
@@ -460,9 +573,18 @@ mod tests {
 
     #[test]
     fn help_counter_and_error_describe_the_field() {
-        let f = Ui::default().form("/p").textarea("bio", "Bio", 2).value("héllo").maxlength(10).help("Short.").error("Too dull.");
+        let f = Ui::default()
+            .form("/p")
+            .textarea("bio", "Bio", 2)
+            .value("héllo")
+            .maxlength(10)
+            .help("Short.")
+            .error("Too dull.");
         let m = html(f);
-        assert!(m.contains("aria-describedby=\"f-bio-help f-bio-count f-bio-error\""), "{m}");
+        assert!(
+            m.contains("aria-describedby=\"f-bio-help f-bio-count f-bio-error\""),
+            "{m}"
+        );
         assert!(m.contains("<output id=\"f-bio-count\" for=\"f-bio\" class=\"nojs-field-count\">5 / 10</output>"), "counts chars, not bytes");
         assert!(m.contains("aria-invalid=\"true\"") && m.contains(">héllo</textarea>"));
         assert!(!m.contains("<fieldset") && !m.contains("enctype"));
@@ -470,20 +592,35 @@ mod tests {
 
     #[test]
     fn kinds_map_to_attributes() {
-        let f = Ui::default().form("/p")
+        let f = Ui::default()
+            .form("/p")
             .group("G")
             .date("d", "D", "2026-01-01", "")
             .time("t", "T", "09:00", "17:00")
-            .file("f", "F", "").multiple().value("ignored")
+            .file("f", "F", "")
+            .multiple()
+            .value("ignored")
             .pattern("h", "H", "[a-z]+", "Lowercase.")
-            .text("p", "P").placeholder("Type")
+            .text("p", "P")
+            .placeholder("Type")
             .inline();
         let m = html(f);
-        assert!(m.contains("type=\"date\" value=\"\" min=\"2026-01-01\">"), "an empty bound is left out: {m}");
+        assert!(
+            m.contains("type=\"date\" value=\"\" min=\"2026-01-01\">"),
+            "an empty bound is left out: {m}"
+        );
         assert!(m.contains("type=\"time\" value=\"\" min=\"09:00\" max=\"17:00\""));
-        assert!(m.contains("type=\"file\" multiple") && !m.contains("ignored") && !m.contains("accept="));
-        assert!(m.contains("pattern=\"[a-z]+\" title=\"Lowercase.\"") && m.contains("id=\"f-h-help\""));
+        assert!(
+            m.contains("type=\"file\" multiple")
+                && !m.contains("ignored")
+                && !m.contains("accept=")
+        );
+        assert!(
+            m.contains("pattern=\"[a-z]+\" title=\"Lowercase.\"") && m.contains("id=\"f-h-help\"")
+        );
         assert!(m.contains("placeholder=\"Type\""));
-        assert!(m.contains("class=\"nojs-form nojs-form-inline\"") && m.contains("<legend>G</legend>"));
+        assert!(
+            m.contains("class=\"nojs-form nojs-form-inline\"") && m.contains("<legend>G</legend>")
+        );
     }
 }

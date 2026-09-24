@@ -52,14 +52,24 @@ pub struct Range<'a> {
 impl Ui {
     /// A range input named `name` at `value`.
     pub fn range<'a>(&self, name: &'a str, value: i64) -> Range<'a> {
-        Range { name, value: (value, None), min: 0, max: 100, step: 1, label: None }
+        Range {
+            name,
+            value: (value, None),
+            min: 0,
+            max: 100,
+            step: 1,
+            label: None,
+        }
     }
 
     /// Two thumbs over one track, named `<name>_min` and `<name>_max`, at `(low, high)` (put
     /// in order if they crossed).
     pub fn range_pair<'a>(&self, name: &'a str, (a, b): (i64, i64)) -> Range<'a> {
         let (lo, hi) = order(a, b);
-        Range { value: (lo, Some(hi)), ..self.range(name, lo) }
+        Range {
+            value: (lo, Some(hi)),
+            ..self.range(name, lo)
+        }
     }
 }
 
@@ -91,7 +101,14 @@ impl<'a> Range<'a> {
 
 impl Render for Range<'_> {
     fn render(&self) -> Markup {
-        let Range { name, value, min, max, step, label } = *self;
+        let Range {
+            name,
+            value,
+            min,
+            max,
+            step,
+            label,
+        } = *self;
         let control = match value {
             (value, None) => {
                 let (list, id) = (format!("{name}-ticks"), format!("f-{name}"));
@@ -121,7 +138,11 @@ impl Render for Range<'_> {
             }
         };
         // A pair's label names the group; it points at the low thumb.
-        let id = if value.1.is_some() { format!("f-{name}_min") } else { format!("f-{name}") };
+        let id = if value.1.is_some() {
+            format!("f-{name}_min")
+        } else {
+            format!("f-{name}")
+        };
         crate::labelled(label, &id, control)
     }
 }

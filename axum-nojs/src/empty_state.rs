@@ -40,7 +40,10 @@ pub struct EmptyState<'a> {
 impl Ui {
     /// An empty state saying `title`: what is missing.
     pub fn empty_state<'a>(&self, title: &'a str) -> EmptyState<'a> {
-        EmptyState { title, ..EmptyState::default() }
+        EmptyState {
+            title,
+            ..EmptyState::default()
+        }
     }
 }
 

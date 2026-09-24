@@ -91,22 +91,38 @@ impl<'a> Column<'a> {
     /// A column whose header sorts the table.
     #[cfg(test)]
     pub const fn sortable(key: &'a str, label: &'a str) -> Column<'a> {
-        Column { key, label, sortable: true, numeric: false, width: None }
+        Column {
+            key,
+            label,
+            sortable: true,
+            numeric: false,
+            width: None,
+        }
     }
 
     /// A column with a plain header.
     pub const fn plain(key: &'a str, label: &'a str) -> Column<'a> {
-        Column { key, label, sortable: false, numeric: false, width: None }
+        Column {
+            key,
+            label,
+            sortable: false,
+            numeric: false,
+            width: None,
+        }
     }
 
     /// A sortable column of numbers: right-aligned, tabular figures.
     #[cfg(test)]
     pub const fn numeric(key: &'a str, label: &'a str) -> Column<'a> {
-        Column { key, label, sortable: true, numeric: true, width: None }
+        Column {
+            key,
+            label,
+            sortable: true,
+            numeric: true,
+            width: None,
+        }
     }
-
 }
-
 
 /// One row: its cells, and optionally a key (for selection and its menu id), a detail
 /// block opened from the first cell, and an action menu in a last column.
@@ -121,7 +137,12 @@ pub struct Row<'a> {
 impl<'a> Row<'a> {
     /// A row of cells, one per column (a hidden column's cell is skipped).
     pub fn new(cells: impl IntoIterator<Item = Markup>) -> Self {
-        Row { cells: cells.into_iter().collect(), key: None, detail: None, menu: Vec::new() }
+        Row {
+            cells: cells.into_iter().collect(),
+            key: None,
+            detail: None,
+            menu: Vec::new(),
+        }
     }
     /// The value posted for this row when its checkbox is ticked; also names its menu.
     pub const fn key(mut self, key: &'a str) -> Self {
@@ -169,13 +190,20 @@ impl TableQuery {
             sort: ui.param("sort").map(str::to_string),
             desc: ui.param("dir") == Some("desc"),
             filter: ui.param("q").unwrap_or("").trim().to_string(),
-            page: ui.param("page").and_then(|v| v.parse().ok()).filter(|&n| n > 0),
+            page: ui
+                .param("page")
+                .and_then(|v| v.parse().ok())
+                .filter(|&n| n > 0),
             cols: ui.param("cols").map(str::to_string),
         }
     }
     /// The sort as `(key, descending)`, only for a sortable column of `columns`.
     pub fn sort<'c>(&self, columns: &[Column<'c>]) -> Option<(&'c str, bool)> {
-        sort_from_query(columns, self.sort.as_deref(), Some(if self.desc { "desc" } else { "asc" }))
+        sort_from_query(
+            columns,
+            self.sort.as_deref(),
+            Some(if self.desc { "desc" } else { "asc" }),
+        )
     }
     /// The visible column keys, only those `columns` has; `None` means every column.
     pub fn cols<'c>(&self, columns: &[Column<'c>]) -> Option<Vec<&'c str>> {
@@ -185,7 +213,11 @@ impl TableQuery {
 
 /// Parse `?sort=<key>&dir=<asc|desc>` into `(key, descending)`. Unknown keys give `None`,
 /// so a hand-edited URL cannot ask for a column that is not there.
-pub(crate) fn sort_from_query<'a>(columns: &[Column<'a>], sort: Option<&str>, dir: Option<&str>) -> Option<(&'a str, bool)> {
+pub(crate) fn sort_from_query<'a>(
+    columns: &[Column<'a>],
+    sort: Option<&str>,
+    dir: Option<&str>,
+) -> Option<(&'a str, bool)> {
     let key = sort?;
     let col = columns.iter().find(|c| c.sortable && c.key == key)?;
     Some((col.key, dir == Some("desc")))
@@ -193,9 +225,16 @@ pub(crate) fn sort_from_query<'a>(columns: &[Column<'a>], sort: Option<&str>, di
 
 /// Parse `?cols=a,b` into the visible keys, keeping only keys the table has and only when at
 /// least one is left; `None` means every column.
-pub(crate) fn cols_from_query<'a>(columns: &[Column<'a>], cols: Option<&str>) -> Option<Vec<&'a str>> {
+pub(crate) fn cols_from_query<'a>(
+    columns: &[Column<'a>],
+    cols: Option<&str>,
+) -> Option<Vec<&'a str>> {
     let wanted = cols?;
-    let keys: Vec<&str> = columns.iter().filter(|c| wanted.split(',').any(|w| w == c.key)).map(|c| c.key).collect();
+    let keys: Vec<&str> = columns
+        .iter()
+        .filter(|c| wanted.split(',').any(|w| w == c.key))
+        .map(|c| c.key)
+        .collect();
     (!keys.is_empty()).then_some(keys)
 }
 
@@ -227,7 +266,17 @@ pub(crate) struct TableOptions<'a> {
 
 impl Default for TableOptions<'_> {
     fn default() -> Self {
-        TableOptions { sort: None, filter: "", keep: &[], cols: None, choose_columns: false, bulk: None, csv: None, empty: "No rows match.", loading: false }
+        TableOptions {
+            sort: None,
+            filter: "",
+            keep: &[],
+            cols: None,
+            choose_columns: false,
+            bulk: None,
+            csv: None,
+            empty: "No rows match.",
+            loading: false,
+        }
     }
 }
 
@@ -268,19 +317,50 @@ impl<'a> TableOptions<'a> {
 
 /// `rows` are already sorted and filtered by the caller; `options` says how, so the links
 /// and the filter box reflect it.
-pub(crate) fn table_with(caps: &Caps, id: &str, href: &str, columns: &[Column], rows: &[Row], options: TableOptions) -> Markup {
+pub(crate) fn table_with(
+    caps: &Caps,
+    id: &str,
+    href: &str,
+    columns: &[Column],
+    rows: &[Row],
+    options: TableOptions,
+) -> Markup {
     table_in(caps, id, href, columns, rows, options, true)
 }
 
 /// [`table_with`], as a swap root or not: inside a paged table the pager's root is the swap
 /// root, so a sort also refreshes the page links.
-pub(crate) fn table_in(caps: &Caps, id: &str, href: &str, columns: &[Column], rows: &[Row], options: TableOptions, swap: bool) -> Markup {
-    let TableOptions { sort, filter, keep, cols, choose_columns, bulk, csv, empty, loading } = options;
+pub(crate) fn table_in(
+    caps: &Caps,
+    id: &str,
+    href: &str,
+    columns: &[Column],
+    rows: &[Row],
+    options: TableOptions,
+    swap: bool,
+) -> Markup {
+    let TableOptions {
+        sort,
+        filter,
+        keep,
+        cols,
+        choose_columns,
+        bulk,
+        csv,
+        empty,
+        loading,
+    } = options;
     let root = enhance::swap_id("nojs-table", id);
     let bulk_id = format!("{root}-bulk");
-    let vt = caps.has(Cap::ViewTransitions).then(|| format!("view-transition-name: nojs-table-{id}"));
+    let vt = caps
+        .has(Cap::ViewTransitions)
+        .then(|| format!("view-transition-name: nojs-table-{id}"));
     let shown = |c: &Column| cols.is_none_or(|v| v.contains(&c.key));
-    let visible: Vec<(usize, &Column)> = columns.iter().enumerate().filter(|(_, c)| shown(c)).collect();
+    let visible: Vec<(usize, &Column)> = columns
+        .iter()
+        .enumerate()
+        .filter(|(_, c)| shown(c))
+        .collect();
     let cols_value = cols.map(|v| v.join(","));
     // Query pairs every link and form carries besides the sort: filter, extras, columns.
     let mut carried: Vec<(&str, &str)> = Vec::new();
@@ -291,20 +371,43 @@ pub(crate) fn table_in(caps: &Caps, id: &str, href: &str, columns: &[Column], ro
     if let Some(v) = &cols_value {
         carried.push(("cols", v));
     }
-    let sort_pairs = |s: Option<(&str, bool)>| s.map(|(k, d)| format!("sort={k}&dir={}", if d { "desc" } else { "asc" }));
+    let sort_pairs = |s: Option<(&str, bool)>| {
+        s.map(|(k, d)| format!("sort={k}&dir={}", if d { "desc" } else { "asc" }))
+    };
     let query = |s: Option<(&str, bool)>, pairs: &[(&str, &str)]| {
-        let all: Vec<String> = sort_pairs(s).into_iter().chain(pairs.iter().map(|(k, v)| format!("{}={}", encode(k), encode(v)))).collect();
-        if all.is_empty() { String::new() } else { format!("?{}", all.join("&")) }
+        let all: Vec<String> = sort_pairs(s)
+            .into_iter()
+            .chain(
+                pairs
+                    .iter()
+                    .map(|(k, v)| format!("{}={}", encode(k), encode(v))),
+            )
+            .collect();
+        if all.is_empty() {
+            String::new()
+        } else {
+            format!("?{}", all.join("&"))
+        }
     };
     let cols_link = |key: &str| -> String {
-        let current: Vec<&str> = cols.map(|v| v.to_vec()).unwrap_or_else(|| columns.iter().map(|c| c.key).collect());
+        let current: Vec<&str> = cols
+            .map(|v| v.to_vec())
+            .unwrap_or_else(|| columns.iter().map(|c| c.key).collect());
         let next: Vec<&str> = if current.contains(&key) {
             current.iter().copied().filter(|k| *k != key).collect()
         } else {
-            columns.iter().map(|c| c.key).filter(|k| current.contains(k) || *k == key).collect()
+            columns
+                .iter()
+                .map(|c| c.key)
+                .filter(|k| current.contains(k) || *k == key)
+                .collect()
         };
         let joined = next.join(",");
-        let mut pairs: Vec<(&str, &str)> = carried.iter().copied().filter(|(k, _)| *k != "cols").collect();
+        let mut pairs: Vec<(&str, &str)> = carried
+            .iter()
+            .copied()
+            .filter(|(k, _)| *k != "cols")
+            .collect();
         pairs.push(("cols", &joined));
         format!("{href}{}", query(sort, &pairs))
     };
@@ -504,7 +607,11 @@ impl<'a> Table<'a> {
 
     /// A checkbox per row (rows need a [`Row::key`]) and a bar of `(value, label)` buttons
     /// posting to `action`: `row=<key>` per ticked row and `action=<value>`.
-    pub fn bulk(mut self, action: &'a str, buttons: impl IntoIterator<Item = (&'a str, &'a str)>) -> Self {
+    pub fn bulk(
+        mut self,
+        action: &'a str,
+        buttons: impl IntoIterator<Item = (&'a str, &'a str)>,
+    ) -> Self {
         self.bulk = Some((action, buttons.into_iter().collect()));
         self
     }
@@ -539,7 +646,9 @@ impl<'a> Table<'a> {
 
     /// The keys of the columns to show, in table order.
     pub fn visible(&self) -> Vec<&'a str> {
-        self.query.cols(&self.columns).unwrap_or_else(|| self.columns.iter().map(|c| c.key).collect())
+        self.query
+            .cols(&self.columns)
+            .unwrap_or_else(|| self.columns.iter().map(|c| c.key).collect())
     }
 
     /// The requested page, 1-based.
@@ -549,7 +658,10 @@ impl<'a> Table<'a> {
 
     /// Rows per page: the visitor's remembered choice, or 10.
     pub fn per_page(&self) -> usize {
-        self.ui.state.per_page(self.id).unwrap_or(crate::paged_table::PAGE_SIZES[1])
+        self.ui
+            .state
+            .per_page(self.id)
+            .unwrap_or(crate::paged_table::PAGE_SIZES[1])
     }
 }
 
@@ -561,7 +673,10 @@ impl Render for Table<'_> {
             filter: self.filter(),
             cols: cols.as_deref(),
             choose_columns: self.choose_columns,
-            bulk: self.bulk.as_ref().map(|(action, buttons)| (*action, buttons.as_slice())),
+            bulk: self
+                .bulk
+                .as_ref()
+                .map(|(action, buttons)| (*action, buttons.as_slice())),
             csv: self.csv,
             empty: self.empty,
             loading: self.loading,
@@ -569,10 +684,30 @@ impl Render for Table<'_> {
         };
         match self.total {
             Some(total) => {
-                let paged = PagedTableOptions { table: options, query: Some(&self.query), state: Some(&self.ui.state), ..PagedTableOptions::default() };
-                paged_table_with(&self.ui.caps, self.id, self.href, &self.columns, &self.rows, total, paged)
+                let paged = PagedTableOptions {
+                    table: options,
+                    query: Some(&self.query),
+                    state: Some(&self.ui.state),
+                    ..PagedTableOptions::default()
+                };
+                paged_table_with(
+                    &self.ui.caps,
+                    self.id,
+                    self.href,
+                    &self.columns,
+                    &self.rows,
+                    total,
+                    paged,
+                )
             }
-            None => table_with(&self.ui.caps, self.id, self.href, &self.columns, &self.rows, options),
+            None => table_with(
+                &self.ui.caps,
+                self.id,
+                self.href,
+                &self.columns,
+                &self.rows,
+                options,
+            ),
         }
     }
 }
@@ -591,7 +726,9 @@ impl std::fmt::Display for Encoded<'_> {
         use std::fmt::Write;
         for b in self.0.bytes() {
             match b {
-                b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'_' | b'.' | b'~' => f.write_char(b as char)?,
+                b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'_' | b'.' | b'~' => {
+                    f.write_char(b as char)?
+                }
                 b' ' => f.write_char('+')?,
                 _ => write!(f, "%{b:02X}")?,
             }
@@ -645,35 +782,84 @@ mod tests {
 
     #[test]
     fn links_flip_direction_and_keep_the_filter() {
-        let cols = [Column::sortable("name", "Name"), Column::plain("note", "Note")];
-        let opts = TableOptions::default().sort(Some(("name", false))).filter("a b").keep(&[("per", "5")]);
+        let cols = [
+            Column::sortable("name", "Name"),
+            Column::plain("note", "Note"),
+        ];
+        let opts = TableOptions::default()
+            .sort(Some(("name", false)))
+            .filter("a b")
+            .keep(&[("per", "5")]);
         let m = table_with(&Caps::NONE, "t", "/t", &cols, &[], opts).into_string();
-        assert!(m.contains("href=\"/t?sort=name&amp;dir=desc&amp;q=a+b&amp;per=5\""), "{m}");
+        assert!(
+            m.contains("href=\"/t?sort=name&amp;dir=desc&amp;q=a+b&amp;per=5\""),
+            "{m}"
+        );
         assert!(m.contains("name=\"per\" value=\"5\""));
-        assert!(m.contains("href=\"/t?sort=name&amp;dir=asc&amp;per=5\""), "clear link");
+        assert!(
+            m.contains("href=\"/t?sort=name&amp;dir=asc&amp;per=5\""),
+            "clear link"
+        );
         assert!(m.contains("aria-sort=\"ascending\""));
         assert!(m.contains("No rows match."));
         assert!(!m.contains("view-transition-name"));
         assert_eq!(sort_from_query(&cols, Some("note"), None), None);
-        assert_eq!(sort_from_query(&cols, Some("name"), Some("desc")), Some(("name", true)));
+        assert_eq!(
+            sort_from_query(&cols, Some("name"), Some("desc")),
+            Some(("name", true))
+        );
     }
 
     #[test]
     fn columns_links_toggle_one_key_in_table_order() {
-        let cols = [Column::sortable("a", "A"), Column::numeric("b", "B"), Column::plain("c", "C")];
-        assert_eq!(cols_from_query(&cols, Some("c,zzz,a")), Some(vec!["a", "c"]));
+        let cols = [
+            Column::sortable("a", "A"),
+            Column::numeric("b", "B"),
+            Column::plain("c", "C"),
+        ];
+        assert_eq!(
+            cols_from_query(&cols, Some("c,zzz,a")),
+            Some(vec!["a", "c"])
+        );
         assert_eq!(cols_from_query(&cols, Some("zzz")), None);
-        let m = table_with(&Caps::NONE, "t", "/t", &cols, &[], TableOptions::default().cols(Some(&["a", "c"])).filter("x")).into_string();
-        assert!(m.contains("href=\"/t?q=x&amp;cols=c\" aria-pressed=\"true\""), "a shown column links to hiding it: {m}");
-        assert!(m.contains("href=\"/t?q=x&amp;cols=a%2Cb%2Cc\" aria-pressed=\"false\""), "a hidden one links to showing it in place");
-        assert!(m.contains("name=\"cols\" value=\"a,c\""), "the filter form keeps the columns");
+        let m = table_with(
+            &Caps::NONE,
+            "t",
+            "/t",
+            &cols,
+            &[],
+            TableOptions::default().cols(Some(&["a", "c"])).filter("x"),
+        )
+        .into_string();
+        assert!(
+            m.contains("href=\"/t?q=x&amp;cols=c\" aria-pressed=\"true\""),
+            "a shown column links to hiding it: {m}"
+        );
+        assert!(
+            m.contains("href=\"/t?q=x&amp;cols=a%2Cb%2Cc\" aria-pressed=\"false\""),
+            "a hidden one links to showing it in place"
+        );
+        assert!(
+            m.contains("name=\"cols\" value=\"a,c\""),
+            "the filter form keeps the columns"
+        );
         assert!(!m.contains(">B<"));
     }
 
     #[test]
     fn loading_and_bulk_states() {
         let cols = [Column::sortable("a", "A")];
-        let m = table_with(&Caps::NONE, "t", "/t", &cols, &[], TableOptions::default().loading(true).bulk("/b", &[("x", "X")])).into_string();
+        let m = table_with(
+            &Caps::NONE,
+            "t",
+            "/t",
+            &cols,
+            &[],
+            TableOptions::default()
+                .loading(true)
+                .bulk("/b", &[("x", "X")]),
+        )
+        .into_string();
         assert!(m.contains("aria-busy=\"true\"") && m.contains("nojs-table-skeleton"));
         assert!(m.contains("<form method=\"post\" action=\"/b\" id=\"nojs-table-t-bulk\""));
         assert!(m.contains("<button type=\"submit\" name=\"action\" value=\"x\">X</button>"));

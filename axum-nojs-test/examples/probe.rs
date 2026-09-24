@@ -10,7 +10,11 @@ fn main() {
     let out = args.next().expect("output png");
     let mut page = Page::from_html(html);
     for selector in args {
-        println!("{selector:24} display={:?} bbox={:?}", page.display(&selector), page.bbox(&selector));
+        println!(
+            "{selector:24} display={:?} bbox={:?}",
+            page.display(&selector),
+            page.bbox(&selector)
+        );
     }
     page.screenshot(&out).unwrap();
     println!("wrote {out}");

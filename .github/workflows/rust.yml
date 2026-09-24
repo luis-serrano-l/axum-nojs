@@ -22,9 +22,11 @@ jobs:
     - uses: actions/checkout@v4
     - uses: dtolnay/rust-toolchain@stable
       with:
-        components: clippy
+        components: clippy, rustfmt
     - uses: Swatinem/rust-cache@v2
 
+    - name: Format
+      run: cargo fmt --all --check
     - name: Clippy
       run: cargo clippy --workspace --all-targets
     # The library must build clean with no features and with only `http`.

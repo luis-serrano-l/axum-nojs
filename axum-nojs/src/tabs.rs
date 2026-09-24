@@ -80,21 +80,35 @@ pub struct Tabs<'a> {
 impl Ui {
     /// An empty strip named `name` (the key in `?tab.<name>=`); add tabs with [`Tabs::tab`].
     pub fn tabs<'a>(&'a self, name: &'a str) -> Tabs<'a> {
-        Tabs { ui: self, name, tabs: Vec::new(), vertical: false, select_below: false }
+        Tabs {
+            ui: self,
+            name,
+            tabs: Vec::new(),
+            vertical: false,
+            select_below: false,
+        }
     }
 }
 
 impl<'a> Tabs<'a> {
     /// A tab titled `title` with its panel.
     pub fn tab(mut self, title: &'a str, body: Markup) -> Self {
-        self.tabs.push(Tab { title, body: Body::Ready(body), badge: None });
+        self.tabs.push(Tab {
+            title,
+            body: Body::Ready(body),
+            badge: None,
+        });
         self
     }
 
     /// A tab whose panel is rendered only when it is the open one: an expensive panel costs
     /// nothing until the round trip that opens it.
     pub fn lazy(mut self, title: &'a str, body: impl Fn() -> Markup + 'a) -> Self {
-        self.tabs.push(Tab { title, body: Body::Lazy(Box::new(body)), badge: None });
+        self.tabs.push(Tab {
+            title,
+            body: Body::Lazy(Box::new(body)),
+            badge: None,
+        });
         self
     }
 
@@ -121,7 +135,13 @@ impl<'a> Tabs<'a> {
 
 impl Render for Tabs<'_> {
     fn render(&self) -> Markup {
-        let Tabs { ui, name, ref tabs, vertical, select_below } = *self;
+        let Tabs {
+            ui,
+            name,
+            ref tabs,
+            vertical,
+            select_below,
+        } = *self;
         let s = &ui.state;
         let strip = ui.has(Cap::DetailsContent);
         let active = s.tab(name);
@@ -229,10 +249,17 @@ mod tests {
     #[test]
     fn a_lazy_tab_renders_only_when_open() {
         let calls = Cell::new(0);
-        let render = || { calls.set(calls.get() + 1); html! { p { "Changelog body" } } };
+        let render = || {
+            calls.set(calls.get() + 1);
+            html! { p { "Changelog body" } }
+        };
         let strip = |query: &str| {
             let ui = Ui::from_request("/docs", query, "");
-            ui.tabs("docs").tab("Install", html! { "cargo add" }).lazy("Changelog", render).render().into_string()
+            ui.tabs("docs")
+                .tab("Install", html! { "cargo add" })
+                .lazy("Changelog", render)
+                .render()
+                .into_string()
         };
         let closed = strip("");
         assert!(!closed.contains("Changelog body") && closed.contains("nojs-tabs-lazy"));

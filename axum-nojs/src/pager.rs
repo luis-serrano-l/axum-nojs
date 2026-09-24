@@ -49,8 +49,19 @@ impl Ui {
     /// A list of `total` rows whose "Load more" link goes to `href?page=n`; the page shown
     /// is this request's `?page=`.
     pub fn pager<'a>(&self, href: &'a str, total: usize) -> Pager<'a> {
-        let page = self.param("page").and_then(|p| p.parse().ok()).unwrap_or(1).max(1);
-        Pager { caps: self.caps, href, total, page, per_page: 10, row: None }
+        let page = self
+            .param("page")
+            .and_then(|p| p.parse().ok())
+            .unwrap_or(1)
+            .max(1);
+        Pager {
+            caps: self.caps,
+            href,
+            total,
+            page,
+            per_page: 10,
+            row: None,
+        }
     }
 }
 
@@ -75,7 +86,14 @@ impl<'a> Pager<'a> {
 
 impl Render for Pager<'_> {
     fn render(&self) -> Markup {
-        let Pager { caps, href, total, page, per_page, ref row } = *self;
+        let Pager {
+            caps,
+            href,
+            total,
+            page,
+            per_page,
+            ref row,
+        } = *self;
         let vt = caps.has(Cap::ViewTransitions);
         let shown = self.shown();
         let first_new = (page - 1) * per_page;

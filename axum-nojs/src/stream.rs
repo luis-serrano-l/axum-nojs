@@ -106,7 +106,12 @@ impl Streamed {
             format!("{open}<body>{}", inner.into_string())
         };
         let suffix = format!("{}</body></html>", enhance::script_tag().into_string());
-        Streamed { dsd, prefix, suffix, fills: Vec::new() }
+        Streamed {
+            dsd,
+            prefix,
+            suffix,
+            fills: Vec::new(),
+        }
     }
 
     /// Register the content for slot `id`. It is awaited while the response streams.
@@ -129,16 +134,21 @@ impl Streamed {
     /// The first chunk is always the document up to `</head>`, so the browser parses the
     /// stylesheet while the rest is still being written and while slow fills wait.
     pub fn into_stream(mut self) -> Pin<Box<dyn Stream<Item = String> + Send + 'static>> {
-        let head_end = self.prefix.find("</head>").map_or(0, |i| i + "</head>".len());
+        let head_end = self
+            .prefix
+            .find("</head>")
+            .map_or(0, |i| i + "</head>".len());
         let head = self.prefix[..head_end].to_string();
         self.prefix.drain(..head_end);
         let head = stream::once(async { head });
         if self.dsd {
-            let fills: FuturesUnordered<_> = self
-                .fills
-                .into_iter()
-                .map(|(id, fut)| async move { html! { div slot=(id) { (fut.await) } }.into_string() })
-                .collect();
+            let fills: FuturesUnordered<_> =
+                self.fills
+                    .into_iter()
+                    .map(|(id, fut)| async move {
+                        html! { div slot=(id) { (fut.await) } }.into_string()
+                    })
+                    .collect();
             let chunks = stream::once(async { self.prefix })
                 .chain(fills)
                 .chain(stream::once(async { self.suffix }));
@@ -149,7 +159,10 @@ impl Streamed {
         let mut pieces: Vec<Piece> = Vec::new();
         let mut rest = self.prefix.as_str();
         while let Some(start) = rest.find("<!--nojs-slot:") {
-            let end = rest[start..].find("-->").map(|e| start + e + 3).unwrap_or(rest.len());
+            let end = rest[start..]
+                .find("-->")
+                .map(|e| start + e + 3)
+                .unwrap_or(rest.len());
             pieces.push(Piece::Text(rest[..start].to_string()));
             let id = &rest[start + "<!--nojs-slot:".len()..end - 3];
             if let Some(fut) = fills.remove(id) {
@@ -176,10 +189,18 @@ enum Piece {
 #[cfg(feature = "axum")]
 impl axum::response::IntoResponse for Streamed {
     fn into_response(self) -> axum::response::Response {
-        let chunks = self.into_stream().map(|s| Ok::<bytes::Bytes, std::convert::Infallible>(s.into()));
+        let chunks = self
+            .into_stream()
+            .map(|s| Ok::<bytes::Bytes, std::convert::Infallible>(s.into()));
         (
             // `X-Accel-Buffering: no` asks a proxy in front (nginx) to pass chunks on as they come.
-            [(http::header::CONTENT_TYPE, "text/html; charset=utf-8"), (http::header::HeaderName::from_static("x-accel-buffering"), "no")],
+            [
+                (http::header::CONTENT_TYPE, "text/html; charset=utf-8"),
+                (
+                    http::header::HeaderName::from_static("x-accel-buffering"),
+                    "no",
+                ),
+            ],
             axum::body::Body::from_stream(chunks),
         )
             .into_response()

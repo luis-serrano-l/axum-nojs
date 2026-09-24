@@ -69,7 +69,9 @@ impl Level {
     }
 
     fn parse(s: &str) -> Option<Level> {
-        [Level::Info, Level::Ok, Level::Warn, Level::Danger].into_iter().find(|l| l.as_str() == s)
+        [Level::Info, Level::Ok, Level::Warn, Level::Danger]
+            .into_iter()
+            .find(|l| l.as_str() == s)
     }
 }
 
@@ -79,16 +81,25 @@ pub fn parse(text: &str) -> Vec<(Level, &str)> {
     text.lines()
         .map(str::trim)
         .filter(|l| !l.is_empty())
-        .map(|line| match line.split_once(':').and_then(|(p, m)| Level::parse(p).map(|l| (l, m.trim()))) {
-            Some(pair) => pair,
-            None => (Level::Info, line),
+        .map(|line| {
+            match line
+                .split_once(':')
+                .and_then(|(p, m)| Level::parse(p).map(|l| (l, m.trim())))
+            {
+                Some(pair) => pair,
+                None => (Level::Info, line),
+            }
         })
         .collect()
 }
 
 /// Join messages into the text the flash cookie carries: `stack(&[(Level::Ok, "Saved.")])` is `"ok:Saved."`.
 pub fn stack(messages: &[(Level, &str)]) -> String {
-    messages.iter().map(|(l, m)| format!("{}:{m}", l.as_str())).collect::<Vec<_>>().join("\n")
+    messages
+        .iter()
+        .map(|(l, m)| format!("{}:{m}", l.as_str()))
+        .collect::<Vec<_>>()
+        .join("\n")
 }
 
 /// The request's flash messages as a stack of banners, made by [`Ui::flash`]; nothing when
@@ -103,7 +114,11 @@ pub struct Flash<'a> {
 impl Ui {
     /// The flash messages a [`Ui::redirect`] left for this page.
     pub fn flash(&self) -> Flash<'_> {
-        Flash { ui: self, dismiss: false, auto_hide: false }
+        Flash {
+            ui: self,
+            dismiss: false,
+            auto_hide: false,
+        }
     }
 }
 
@@ -173,8 +188,18 @@ mod tests {
     #[test]
     fn parse_levels_and_plain_lines() {
         assert_eq!(parse("Saved."), vec![(Level::Info, "Saved.")]);
-        assert_eq!(parse("ok:Saved.\n\nwarn: Look.\nnote: kept"), vec![(Level::Ok, "Saved."), (Level::Warn, "Look."), (Level::Info, "note: kept")]);
-        assert_eq!(parse(&stack(&[(Level::Danger, "No: really")])), vec![(Level::Danger, "No: really")]);
+        assert_eq!(
+            parse("ok:Saved.\n\nwarn: Look.\nnote: kept"),
+            vec![
+                (Level::Ok, "Saved."),
+                (Level::Warn, "Look."),
+                (Level::Info, "note: kept")
+            ]
+        );
+        assert_eq!(
+            parse(&stack(&[(Level::Danger, "No: really")])),
+            vec![(Level::Danger, "No: really")]
+        );
         assert!(parse("  \n").is_empty());
     }
 
@@ -182,6 +207,10 @@ mod tests {
     fn danger_is_an_alert_and_never_auto_hides() {
         let ui = Ui::from_request("/", "", "nojs-flash=danger:Failed.");
         let m = ui.flash().auto_hide().render().into_string();
-        assert!(m.contains(r#"role="alert""#) && !m.contains("nojs-flash-auto") && !m.contains("nojs-flash-dismiss"));
+        assert!(
+            m.contains(r#"role="alert""#)
+                && !m.contains("nojs-flash-auto")
+                && !m.contains("nojs-flash-dismiss")
+        );
     }
 }

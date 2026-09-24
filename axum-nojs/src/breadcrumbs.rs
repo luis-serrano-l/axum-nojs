@@ -60,7 +60,15 @@ impl Render for Breadcrumbs<'_> {
     fn render(&self) -> Markup {
         let before = &self.trail[..];
         let fold = before.len() > 3;
-        let (head, middle, tail) = if fold { (&before[..1], &before[1..before.len() - 1], &before[before.len() - 1..]) } else { (before, &before[..0], &before[..0]) };
+        let (head, middle, tail) = if fold {
+            (
+                &before[..1],
+                &before[1..before.len() - 1],
+                &before[before.len() - 1..],
+            )
+        } else {
+            (before, &before[..0], &before[..0])
+        };
         html! {
             nav class="nojs-breadcrumbs" aria-label="Breadcrumb" {
                 ol {

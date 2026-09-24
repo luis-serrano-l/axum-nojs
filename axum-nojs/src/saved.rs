@@ -34,8 +34,14 @@
 //! here, check them like any other input, and keep anything that must not be forged on the
 //! server.
 
-use axum::{extract::FromRequestParts, http::{header, request::Parts}};
-use serde::{Deserializer, Serialize, de::{DeserializeOwned, Visitor}};
+use axum::{
+    extract::FromRequestParts,
+    http::{header, request::Parts},
+};
+use serde::{
+    Deserializer, Serialize,
+    de::{DeserializeOwned, Visitor},
+};
 
 use crate::state::{decode, encode};
 use crate::ui::Redirect;
@@ -48,7 +54,13 @@ pub struct Saved<T>(pub T);
 /// is `nojs-wizard-data`.
 pub fn cookie_name<T>() -> String {
     let full = std::any::type_name::<T>();
-    let name = full.split('<').next().unwrap_or(full).rsplit("::").next().unwrap_or(full);
+    let name = full
+        .split('<')
+        .next()
+        .unwrap_or(full)
+        .rsplit("::")
+        .next()
+        .unwrap_or(full);
     let mut out = String::from("nojs");
     for c in name.chars() {
         if c.is_ascii_uppercase() || !out.ends_with(|p: char| p.is_ascii_alphanumeric()) {
@@ -72,7 +84,12 @@ impl<S: Send + Sync, T: DeserializeOwned + Default> FromRequestParts<S> for Save
             .flat_map(|h| h.split(';'))
             .filter_map(|pair| pair.trim().split_once('='))
             .find(|(k, _)| *k == name)
-            .and_then(|(_, v)| T::deserialize(Form(serde_urlencoded::Deserializer::new(form_urlencoded::parse(decode(v).as_bytes())))).ok());
+            .and_then(|(_, v)| {
+                T::deserialize(Form(serde_urlencoded::Deserializer::new(
+                    form_urlencoded::parse(decode(v).as_bytes()),
+                )))
+                .ok()
+            });
         Ok(Saved(value.unwrap_or_default()))
     }
 }
@@ -92,7 +109,11 @@ impl<'de> Deserializer<'de> for Form<'de> {
         self.0.deserialize_seq(visitor)
     }
 
-    fn deserialize_newtype_struct<V: Visitor<'de>>(self, _: &'static str, visitor: V) -> Result<V::Value, Self::Error> {
+    fn deserialize_newtype_struct<V: Visitor<'de>>(
+        self,
+        _: &'static str,
+        visitor: V,
+    ) -> Result<V::Value, Self::Error> {
         visitor.visit_newtype_struct(self)
     }
 
@@ -107,14 +128,21 @@ impl Redirect {
     /// form-encoded (a nested struct, a list inside a field) is not saved.
     pub fn save<T: Serialize>(self, value: &T) -> Self {
         match serde_urlencoded::to_string(value) {
-            Ok(v) => self.cookie(format!("{}={}; Path=/; Max-Age=31536000; SameSite=Lax; HttpOnly", cookie_name::<T>(), encode(&v))),
+            Ok(v) => self.cookie(format!(
+                "{}={}; Path=/; Max-Age=31536000; SameSite=Lax; HttpOnly",
+                cookie_name::<T>(),
+                encode(&v)
+            )),
             Err(_) => self,
         }
     }
 
     /// Remove what [`Redirect::save`] kept for `T`.
     pub fn forget<T>(self) -> Self {
-        self.cookie(format!("{}=; Path=/; Max-Age=0; SameSite=Lax; HttpOnly", cookie_name::<T>()))
+        self.cookie(format!(
+            "{}=; Path=/; Max-Age=0; SameSite=Lax; HttpOnly",
+            cookie_name::<T>()
+        ))
     }
 }
 
@@ -126,28 +154,84 @@ mod tests {
     use serde::Deserialize;
 
     #[derive(Debug, Default, Deserialize, Serialize, PartialEq)]
-    struct WizardData { name: String, notify: bool, age: Option<u8> }
+    struct WizardData {
+        name: String,
+        notify: bool,
+        age: Option<u8>,
+    }
 
     #[tokio::test]
     async fn a_saved_value_comes_back_on_the_next_request() {
         assert_eq!(cookie_name::<WizardData>(), "nojs-wizard-data");
-        let value = WizardData { name: "Ada L".into(), notify: true, age: None };
-        let set = Ui::default().redirect("/").save(&value).set_cookies().remove(0);
+        let value = WizardData {
+            name: "Ada L".into(),
+            notify: true,
+            age: None,
+        };
+        let set = Ui::default()
+            .redirect("/")
+            .save(&value)
+            .set_cookies()
+            .remove(0);
         let pair = set.split(';').next().unwrap().to_string();
-        let (mut parts, ()) = Request::builder().header("cookie", format!("a=b; {pair}")).body(()).unwrap().into_parts();
-        let Saved(back) = Saved::<WizardData>::from_request_parts(&mut parts, &()).await.unwrap();
+        let (mut parts, ()) = Request::builder()
+            .header("cookie", format!("a=b; {pair}"))
+            .body(())
+            .unwrap()
+            .into_parts();
+        let Saved(back) = Saved::<WizardData>::from_request_parts(&mut parts, &())
+            .await
+            .unwrap();
         assert_eq!(back, value);
-        let (mut bare, ()) = Request::builder().header("cookie", "nojs-wizard-data=%%%").body(()).unwrap().into_parts();
-        assert_eq!(Saved::<WizardData>::from_request_parts(&mut bare, &()).await.unwrap().0, WizardData::default(), "garbage is the default");
+        let (mut bare, ()) = Request::builder()
+            .header("cookie", "nojs-wizard-data=%%%")
+            .body(())
+            .unwrap()
+            .into_parts();
+        assert_eq!(
+            Saved::<WizardData>::from_request_parts(&mut bare, &())
+                .await
+                .unwrap()
+                .0,
+            WizardData::default(),
+            "garbage is the default"
+        );
         let pairs: Vec<(String, String)> = vec![("topics".into(), "rust, html".into())];
-        assert!(Ui::default().redirect("/").save(&pairs).set_cookies()[0].starts_with("nojs-vec="), "a list of pairs saves");
+        assert!(
+            Ui::default().redirect("/").save(&pairs).set_cookies()[0].starts_with("nojs-vec="),
+            "a list of pairs saves"
+        );
         #[derive(Debug, Default, Deserialize, Serialize, PartialEq)]
         struct Notes(Vec<(String, String)>);
-        let notes = Notes(vec![("note".into(), "one".into()), ("note".into(), "two & 3".into())]);
-        let set = Ui::default().redirect("/").save(&notes).set_cookies().remove(0);
+        let notes = Notes(vec![
+            ("note".into(), "one".into()),
+            ("note".into(), "two & 3".into()),
+        ]);
+        let set = Ui::default()
+            .redirect("/")
+            .save(&notes)
+            .set_cookies()
+            .remove(0);
         assert!(set.starts_with("nojs-notes="), "{set}");
-        let (mut parts, ()) = Request::builder().header("cookie", set.split(';').next().unwrap()).body(()).unwrap().into_parts();
-        assert_eq!(Saved::<Notes>::from_request_parts(&mut parts, &()).await.unwrap().0, notes, "a newtype over pairs round-trips");
-        assert!(Ui::default().redirect("/").forget::<WizardData>().set_cookies()[0].contains("Max-Age=0"));
+        let (mut parts, ()) = Request::builder()
+            .header("cookie", set.split(';').next().unwrap())
+            .body(())
+            .unwrap()
+            .into_parts();
+        assert_eq!(
+            Saved::<Notes>::from_request_parts(&mut parts, &())
+                .await
+                .unwrap()
+                .0,
+            notes,
+            "a newtype over pairs round-trips"
+        );
+        assert!(
+            Ui::default()
+                .redirect("/")
+                .forget::<WizardData>()
+                .set_cookies()[0]
+                .contains("Max-Age=0")
+        );
     }
 }

@@ -48,7 +48,6 @@
 
 // docs.rs builds with nightly and `--cfg docsrs`: feature-gated items get a "requires feature" badge.
 #![cfg_attr(docsrs, feature(doc_auto_cfg))]
-
 #![warn(missing_docs)]
 
 pub mod accordion;
@@ -101,23 +100,33 @@ pub use ui::{Page, Redirect, Ui};
 
 /// Everything a handler needs, in one import: `use axum_nojs::prelude::*;`.
 pub mod prelude {
-    pub use crate::{Cap, Caps, MenuItem, Page, Redirect, Theme, Ui};
     #[cfg(feature = "axum")]
     pub use crate::Saved;
+    pub use crate::{Cap, Caps, MenuItem, Page, Redirect, Theme, Ui};
     pub use maud::{Markup, Render, html};
 }
 
 /// A key made safe for an `id`: anything but letters, digits, `-` and `_` becomes `-`, and
 /// ASCII letters are lowercased, so `"Account"` gives `account`.
 pub(crate) fn slug(key: &str) -> String {
-    key.chars().map(|c| if c.is_ascii_alphanumeric() || c == '-' || c == '_' { c.to_ascii_lowercase() } else { '-' }).collect()
+    key.chars()
+        .map(|c| {
+            if c.is_ascii_alphanumeric() || c == '-' || c == '_' {
+                c.to_ascii_lowercase()
+            } else {
+                '-'
+            }
+        })
+        .collect()
 }
 
 /// A control under its label in a `div.nojs-field`, as the form component lays out its
 /// fields; the control alone when there is no label. `id` is the control's id.
 pub(crate) fn labelled(label: Option<&str>, id: &str, control: maud::Markup) -> maud::Markup {
     match label {
-        Some(text) => maud::html! { div class="nojs-field" { label for=(id) { (text) } (control) } },
+        Some(text) => {
+            maud::html! { div class="nojs-field" { label for=(id) { (text) } (control) } }
+        }
         None => control,
     }
 }
@@ -174,7 +183,12 @@ pub fn minify_css(css: &str) -> String {
             }
             _ => {
                 let tight = |p: char| "{};,>".contains(p);
-                if space && !out.is_empty() && !tight(c) && c != ')' && !out.ends_with(|p: char| tight(p) || p == '(' || p == ':') {
+                if space
+                    && !out.is_empty()
+                    && !tight(c)
+                    && c != ')'
+                    && !out.ends_with(|p: char| tight(p) || p == '(' || p == ':')
+                {
                     out.push(' ');
                 }
                 space = false;
@@ -228,10 +242,22 @@ mod tests {
     fn tuples_build_the_same_items_as_the_constructors() {
         let ui = Ui::from(Caps::all());
         let render = |r: &dyn Render| r.render().into_string();
-        assert_eq!(MenuItem::from(("Profile", "/p")), MenuItem::link("Profile", "/p"));
+        assert_eq!(
+            MenuItem::from(("Profile", "/p")),
+            MenuItem::link("Profile", "/p")
+        );
         let sizes = [("s", "Small", "🐭")];
-        assert_eq!(render(&ui.select("size", "s").options(sizes)), render(&ui.select("size", "s").options([select::SelectOption::new("s", "Small").icon("🐭")])));
-        assert_eq!(render(&ui.menu("M").submenu("Sub", [("A", "/a")])), render(&ui.menu("M").submenu("Sub", [MenuItem::link("A", "/a")])));
+        assert_eq!(
+            render(&ui.select("size", "s").options(sizes)),
+            render(
+                &ui.select("size", "s")
+                    .options([select::SelectOption::new("s", "Small").icon("🐭")])
+            )
+        );
+        assert_eq!(
+            render(&ui.menu("M").submenu("Sub", [("A", "/a")])),
+            render(&ui.menu("M").submenu("Sub", [MenuItem::link("A", "/a")]))
+        );
     }
 
     #[test]
@@ -245,13 +271,32 @@ mod tests {
 
     #[test]
     fn minified_stylesheet_keeps_every_rule() {
-        let css = minify_css("/* note */ .a  .b > p ,\n a:hover { margin: 0  8px ; content: \"  ← \" }\n@media (min-width: 60rem) and (x) { .c { top: calc(1px + 2px); } }");
-        assert_eq!(css, r#".a .b>p,a:hover{margin:0 8px;content:"  ← "}@media (min-width:60rem) and (x){.c{top:calc(1px + 2px)}}"#);
-        let full = [layout::Tokens::default().css().as_str(), &COMPONENT_CSS.concat(), &caps::beacon_css()].concat();
+        let css = minify_css(
+            "/* note */ .a  .b > p ,\n a:hover { margin: 0  8px ; content: \"  ← \" }\n@media (min-width: 60rem) and (x) { .c { top: calc(1px + 2px); } }",
+        );
+        assert_eq!(
+            css,
+            r#".a .b>p,a:hover{margin:0 8px;content:"  ← "}@media (min-width:60rem) and (x){.c{top:calc(1px + 2px)}}"#
+        );
+        let full = [
+            layout::Tokens::default().css().as_str(),
+            &COMPONENT_CSS.concat(),
+            &caps::beacon_css(),
+        ]
+        .concat();
         let min = stylesheet();
-        assert!(min.len() * 10 < full.len() * 9, "at least a tenth smaller: {} of {}", min.len(), full.len());
+        assert!(
+            min.len() * 10 < full.len() * 9,
+            "at least a tenth smaller: {} of {}",
+            min.len(),
+            full.len()
+        );
         for pair in [('{', '}'), ('(', ')')] {
-            assert_eq!(min.matches(pair.0).count(), min.matches(pair.1).count(), "balanced {pair:?}");
+            assert_eq!(
+                min.matches(pair.0).count(),
+                min.matches(pair.1).count(),
+                "balanced {pair:?}"
+            );
         }
         assert!(!min.contains("/*"), "no comments left");
         assert_eq!(minify_css(min), min, "minifying twice changes nothing");
@@ -264,15 +309,27 @@ mod tests {
         for css in COMPONENT_CSS {
             for line in css.lines() {
                 let hex = line.char_indices().any(|(i, c)| {
-                    c == '#' && line[i + 1..].chars().take_while(|c| c.is_ascii_hexdigit()).count() >= 3
+                    c == '#'
+                        && line[i + 1..]
+                            .chars()
+                            .take_while(|c| c.is_ascii_hexdigit())
+                            .count()
+                            >= 3
                 });
-                let func = ["rgb(", "rgba(", "hsl(", "hsla(", "oklch(", "light-dark("].iter().any(|f| line.contains(f));
+                let func = ["rgb(", "rgba(", "hsl(", "hsla(", "oklch(", "light-dark("]
+                    .iter()
+                    .any(|f| line.contains(f));
                 // `white-space` is a property, not a colour.
                 let named = line
                     .replace("white-space", "")
                     .split(|c: char| !c.is_ascii_alphabetic())
-                    .any(|w| ["white", "black", "gray", "grey", "red", "blue", "green"].contains(&w));
-                assert!(!hex && !func && !named, "colour literal in component CSS: {line}");
+                    .any(|w| {
+                        ["white", "black", "gray", "grey", "red", "blue", "green"].contains(&w)
+                    });
+                assert!(
+                    !hex && !func && !named,
+                    "colour literal in component CSS: {line}"
+                );
             }
         }
     }
@@ -281,7 +338,11 @@ mod tests {
     #[test]
     fn components_render_and_stringify() {
         let ui = Ui::from_request("/", "", "nojs-flash=hi");
-        let parts: [&dyn Render; 3] = [&ui.flash(), &ui.counter("/counter", 3), &ui.theme_toggle("/theme")];
+        let parts: [&dyn Render; 3] = [
+            &ui.flash(),
+            &ui.counter("/counter", 3),
+            &ui.theme_toggle("/theme"),
+        ];
         for part in parts {
             let nested = html! { (part) }.into_string();
             assert!(nested.starts_with('<') && nested == part.render().into_string());

@@ -207,7 +207,21 @@ impl<'a> Dialog<'a> {
 
 impl Render for Dialog<'_> {
     fn render(&self) -> Markup {
-        let Dialog { ui, ref id, trigger, ref body, open, title, size, danger, confirm, returns_to, close, cancel, closedby } = *self;
+        let Dialog {
+            ui,
+            ref id,
+            trigger,
+            ref body,
+            open,
+            title,
+            size,
+            danger,
+            confirm,
+            returns_to,
+            close,
+            cancel,
+            closedby,
+        } = *self;
         let open = open || ui.state.dialog() == Some(id);
         let returns_to = returns_to.unwrap_or(ui.state.path());
         let returns_to = (!returns_to.is_empty()).then_some(returns_to);
@@ -312,13 +326,23 @@ mod tests {
         let ui = Ui::from_request("/dialog", "dialog=confirm", "");
         let with = |id: &str, to: Option<&str>| {
             let d = ui.dialog("Open").id(id).confirm("Go", "/go");
-            to.map_or(d.clone(), |to| d.returns_to(to)).render().into_string()
+            to.map_or(d.clone(), |to| d.returns_to(to))
+                .render()
+                .into_string()
         };
         let named = with("confirm", None);
         assert!(named.contains(" open>") && named.contains(r#"name="returns_to" value="/dialog""#));
         assert!(!with("other", None).contains(" open>"));
         let explicit = with("confirm", Some("/home"));
         assert!(explicit.contains(r#"value="/home""#) && !explicit.contains(r#"value="/dialog""#));
-        assert!(!Ui::default().dialog("Open").confirm("Go", "/go").render().into_string().contains("returns_to"), "no request, no return path");
+        assert!(
+            !Ui::default()
+                .dialog("Open")
+                .confirm("Go", "/go")
+                .render()
+                .into_string()
+                .contains("returns_to"),
+            "no request, no return path"
+        );
     }
 }

@@ -42,7 +42,10 @@ pub struct Toasts<'a> {
 impl Ui {
     /// The flash messages a [`Ui::redirect`] left for this page, as toasts.
     pub fn toasts(&self) -> Toasts<'_> {
-        Toasts { ui: self, dismiss: false }
+        Toasts {
+            ui: self,
+            dismiss: false,
+        }
     }
 }
 

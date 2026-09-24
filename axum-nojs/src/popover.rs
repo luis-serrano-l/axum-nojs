@@ -101,7 +101,14 @@ pub struct MenuItem<'a> {
 
 impl<'a> MenuItem<'a> {
     const fn new(kind: Kind<'a>, text: &'a str) -> Self {
-        MenuItem { kind, text, icon: None, shortcut: None, disabled: false, danger: false }
+        MenuItem {
+            kind,
+            text,
+            icon: None,
+            shortcut: None,
+            disabled: false,
+            danger: false,
+        }
     }
 
     /// A link.
@@ -143,7 +150,13 @@ pub struct Menu<'a> {
 impl Ui {
     /// A menu behind a button labelled `label`; its id is the label's slug.
     pub fn menu<'a>(&self, label: &'a str) -> Menu<'a> {
-        Menu { caps: self.caps, id: slug(label), label, items: Vec::new(), placement: Placement::default() }
+        Menu {
+            caps: self.caps,
+            id: slug(label),
+            label,
+            items: Vec::new(),
+            placement: Placement::default(),
+        }
     }
 }
 
@@ -182,8 +195,15 @@ impl<'a> Menu<'a> {
 
     /// A nested menu of `items` ([`MenuItem`]s or `(text, href)` links); its id is this
     /// menu's id and the text's slug.
-    pub fn submenu<I: Into<MenuItem<'a>>>(self, text: &'a str, items: impl IntoIterator<Item = I>) -> Self {
-        self.push(MenuItem::new(Kind::Submenu(items.into_iter().map(Into::into).collect()), text))
+    pub fn submenu<I: Into<MenuItem<'a>>>(
+        self,
+        text: &'a str,
+        items: impl IntoIterator<Item = I>,
+    ) -> Self {
+        self.push(MenuItem::new(
+            Kind::Submenu(items.into_iter().map(Into::into).collect()),
+            text,
+        ))
     }
 
     /// A glyph or emoji before the item's text (decorative, hidden from assistive tech).
@@ -227,12 +247,24 @@ impl<'a> Menu<'a> {
 
 impl Render for Menu<'_> {
     fn render(&self) -> Markup {
-        menu(&self.caps, &self.id, self.label, &self.items, self.placement)
+        menu(
+            &self.caps,
+            &self.id,
+            self.label,
+            &self.items,
+            self.placement,
+        )
     }
 }
 
 /// A button labelled `label` that toggles a menu of `items`; also a table row's menu.
-pub(crate) fn menu(caps: &Caps, id: &str, label: &str, items: &[MenuItem], placement: Placement) -> Markup {
+pub(crate) fn menu(
+    caps: &Caps,
+    id: &str,
+    label: &str,
+    items: &[MenuItem],
+    placement: Placement,
+) -> Markup {
     let popover = caps.has(Cap::Popover);
     let anchor = caps.has(Cap::Anchor);
     let list = html! { ul role="menu" { @for it in items { (item(id, it, popover, anchor)) } } };
@@ -257,7 +289,19 @@ pub(crate) fn menu(caps: &Caps, id: &str, label: &str, items: &[MenuItem], place
 }
 
 fn item(menu_id: &str, it: &MenuItem, popover: bool, anchor: bool) -> Markup {
-    let class = format!("nojs-popover-item{}{}", if it.danger { " nojs-popover-danger" } else { "" }, if it.disabled { " nojs-popover-disabled" } else { "" });
+    let class = format!(
+        "nojs-popover-item{}{}",
+        if it.danger {
+            " nojs-popover-danger"
+        } else {
+            ""
+        },
+        if it.disabled {
+            " nojs-popover-disabled"
+        } else {
+            ""
+        }
+    );
     let inner = html! {
         @if let Some(i) = it.icon { span class="nojs-popover-icon" aria-hidden="true" { (i) } }
         span class="nojs-popover-text" { (it.text) }

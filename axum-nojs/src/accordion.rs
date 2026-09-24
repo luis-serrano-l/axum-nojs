@@ -70,14 +70,25 @@ impl Ui {
     /// An empty accordion named `group` (the key in `?open.<group>=`); add sections with
     /// [`Accordion::item`].
     pub fn accordion<'a>(&'a self, group: &'a str) -> Accordion<'a> {
-        Accordion { ui: self, group, items: Vec::new(), multi: false, controls: false }
+        Accordion {
+            ui: self,
+            group,
+            items: Vec::new(),
+            multi: false,
+            controls: false,
+        }
     }
 }
 
 impl<'a> Accordion<'a> {
     /// A section titled `title` with its body.
     pub fn item(mut self, title: &'a str, body: Markup) -> Self {
-        self.items.push(Item { title, body, icon: None, summary: None });
+        self.items.push(Item {
+            title,
+            body,
+            icon: None,
+            summary: None,
+        });
         self
     }
 
@@ -113,11 +124,22 @@ impl<'a> Accordion<'a> {
 
 impl Render for Accordion<'_> {
     fn render(&self) -> Markup {
-        let Accordion { ui, group, ref items, multi, controls } = *self;
+        let Accordion {
+            ui,
+            group,
+            ref items,
+            multi,
+            controls,
+        } = *self;
         let s = &ui.state;
         let open: Vec<usize> = s.opens(group);
         let key = format!("open.{group}");
-        let list = |ix: &[usize]| ix.iter().map(usize::to_string).collect::<Vec<_>>().join(",");
+        let list = |ix: &[usize]| {
+            ix.iter()
+                .map(usize::to_string)
+                .collect::<Vec<_>>()
+                .join(",")
+        };
         let toggled = |i: usize| -> String {
             if open.contains(&i) {
                 list(&open.iter().copied().filter(|&o| o != i).collect::<Vec<_>>())

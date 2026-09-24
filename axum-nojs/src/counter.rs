@@ -54,7 +54,15 @@ pub struct Counter<'a> {
 impl Ui {
     /// A counter showing `value`, its buttons posting to `action`.
     pub fn counter<'a>(&self, action: &'a str, value: i64) -> Counter<'a> {
-        Counter { caps: self.caps, action, value, min: None, max: None, step: 1, typed: false }
+        Counter {
+            caps: self.caps,
+            action,
+            value,
+            min: None,
+            max: None,
+            step: 1,
+            typed: false,
+        }
     }
 }
 
@@ -99,8 +107,18 @@ impl Counter<'_> {
 
 impl Render for Counter<'_> {
     fn render(&self) -> Markup {
-        let Counter { caps, action, value, min, max, step, typed } = *self;
-        let vt = caps.has(Cap::ViewTransitions).then_some("view-transition-name: nojs-counter");
+        let Counter {
+            caps,
+            action,
+            value,
+            min,
+            max,
+            step,
+            typed,
+        } = *self;
+        let vt = caps
+            .has(Cap::ViewTransitions)
+            .then_some("view-transition-name: nojs-counter");
         let at_min = min.is_some_and(|m| value <= m);
         let at_max = max.is_some_and(|m| value >= m);
         html! {
@@ -149,7 +167,11 @@ mod tests {
         let ui = Ui::from(Caps::NONE);
         let c = |n| ui.counter("/c", n).min(0).max(10).step(3);
         let m = c(0).render().into_string();
-        assert!(m.contains("aria-label=\"decrement\" disabled") && !m.contains("aria-label=\"increment\" disabled"), "{m}");
+        assert!(
+            m.contains("aria-label=\"decrement\" disabled")
+                && !m.contains("aria-label=\"increment\" disabled"),
+            "{m}"
+        );
         assert!(m.contains("0 to 10, in steps of 3"));
         assert_eq!(c(9).apply("inc", None), 10);
         assert_eq!(c(1).apply("dec", None), 0);

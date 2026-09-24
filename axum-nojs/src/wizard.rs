@@ -102,7 +102,17 @@ pub struct Wizard<'a> {
 impl Ui {
     /// A wizard `id` whose steps post to `action`; add steps with [`Wizard::step`].
     pub fn wizard<'a>(&'a self, id: &'a str, action: &'a str) -> Wizard<'a> {
-        Wizard { ui: self, id, action, steps: Vec::new(), values: &[], errors: &[], at: None, finish: "Finish", progress: true }
+        Wizard {
+            ui: self,
+            id,
+            action,
+            steps: Vec::new(),
+            values: &[],
+            errors: &[],
+            at: None,
+            finish: "Finish",
+            progress: true,
+        }
     }
 }
 
@@ -120,7 +130,10 @@ impl Posted {
     /// `step=<n>` and `skip=1` from a form post parsed as pairs.
     pub fn from_pairs(pairs: &[(String, String)]) -> Posted {
         let get = |k: &str| pairs.iter().find(|(n, _)| n == k).map(|(_, v)| v.as_str());
-        Posted { step: get("step").and_then(|v| v.parse().ok()).unwrap_or(0), skip: get("skip") == Some("1") }
+        Posted {
+            step: get("step").and_then(|v| v.parse().ok()).unwrap_or(0),
+            skip: get("skip") == Some("1"),
+        }
     }
 }
 
@@ -128,14 +141,22 @@ impl<'a> Wizard<'a> {
     /// A step titled `title` showing `body`: `ui.fields()…` (which the review lists) or any
     /// markup.
     pub fn step(mut self, title: &'a str, body: impl Into<StepBody<'a>>) -> Self {
-        self.steps.push(Step { title, body: body.into().0, optional: false });
+        self.steps.push(Step {
+            title,
+            body: body.into().0,
+            optional: false,
+        });
         self
     }
 
     /// The last step: every field of the steps before it as a `<dl>`, each value with an
     /// "Edit" link to its step; an empty value reads "(skipped)".
     pub fn review(mut self, title: &'a str) -> Self {
-        self.steps.push(Step { title, body: Body::Review, optional: false });
+        self.steps.push(Step {
+            title,
+            body: Body::Review,
+            optional: false,
+        });
         self
     }
 
@@ -182,13 +203,17 @@ impl<'a> Wizard<'a> {
 
     /// The step this request shows, 0-based.
     pub fn current(&self) -> usize {
-        self.at.unwrap_or_else(|| self.ui.state.step(self.id)).min(self.steps.len().saturating_sub(1))
+        self.at
+            .unwrap_or_else(|| self.ui.state.step(self.id))
+            .min(self.steps.len().saturating_sub(1))
     }
 
     /// The link to step `n`, keeping the rest of the page's state: where a handler redirects
     /// after a valid post.
     pub fn link(&self, n: usize) -> String {
-        self.ui.state.link(&format!("step.{}", self.id), &n.to_string())
+        self.ui
+            .state
+            .link(&format!("step.{}", self.id), &n.to_string())
     }
 
     /// Whether step `n` is the last one.
@@ -199,7 +224,11 @@ impl<'a> Wizard<'a> {
     /// A step's fields with the wizard's values and messages filled in.
     fn filled(&self, form: &Form<'a>) -> Form<'a> {
         let form = form.clone().errors(self.errors);
-        if self.values.is_empty() { form } else { form.values(self.values) }
+        if self.values.is_empty() {
+            form
+        } else {
+            form.values(self.values)
+        }
     }
 
     fn review_list(&self, upto: usize) -> Markup {
@@ -225,7 +254,15 @@ impl<'a> Wizard<'a> {
 
 impl Render for Wizard<'_> {
     fn render(&self) -> Markup {
-        let Wizard { ui, id, action, ref steps, finish, progress, .. } = *self;
+        let Wizard {
+            ui,
+            id,
+            action,
+            ref steps,
+            finish,
+            progress,
+            ..
+        } = *self;
         if steps.is_empty() {
             return html! {};
         }
@@ -234,7 +271,9 @@ impl Render for Wizard<'_> {
         let current = self.current();
         let last = self.is_last(current);
         let step = &steps[current];
-        let failed = |i: usize| i == current && matches!(&steps[i].body, Body::Fields(f) if self.filled(f).has_errors());
+        let failed = |i: usize| {
+            i == current && matches!(&steps[i].body, Body::Fields(f) if self.filled(f).has_errors())
+        };
         html! {
             div id=(enhance::swap_id("nojs-wizard", id)) data-nojs="swap" class="nojs-wizard" {
                 @if current > 0 && state.remembered(&key) {
@@ -316,21 +355,34 @@ mod tests {
     use super::*;
 
     fn three<'a>(ui: &'a Ui) -> Wizard<'a> {
-        ui.wizard("x", "/w").step("A", html! {}).step("B", ui.fields().text("b", "B")).optional().step("C", html! {})
+        ui.wizard("x", "/w")
+            .step("A", html! {})
+            .step("B", ui.fields().text("b", "B"))
+            .optional()
+            .step("C", html! {})
     }
 
     #[test]
     fn step_list_marks_done_current_and_todo() {
         let ui = Ui::from_request("/w", "step.x=1", "");
         let m = three(&ui).finish("Done").render().into_string();
-        assert!(m.contains("class=\"nojs-wizard-done\"><a href=\"/w?step.x=0\">A</a>"), "{m}");
+        assert!(
+            m.contains("class=\"nojs-wizard-done\"><a href=\"/w?step.x=0\">A</a>"),
+            "{m}"
+        );
         assert!(m.contains("aria-current=\"step\"><span>B</span>"));
         assert!(m.contains("value=\"1\"") && m.contains(">Next<") && !m.contains(">Done<"));
-        assert!(!m.contains("nojs-wizard-resume"), "the step came from the query");
+        assert!(
+            !m.contains("nojs-wizard-resume"),
+            "the step came from the query"
+        );
         let end = Ui::from_request("/w", "step.x=9", "");
         let m = three(&end).finish("Done").render().into_string();
         assert!(m.contains(">Done<") && m.contains("href=\"/w?step.x=1\">Back<"));
-        assert_eq!((three(&end).current(), three(&end).link(2)), (2, "/w?step.x=2".to_string()));
+        assert_eq!(
+            (three(&end).current(), three(&end).link(2)),
+            (2, "/w?step.x=2".to_string())
+        );
     }
 
     #[test]
@@ -338,13 +390,37 @@ mod tests {
         let ui = Ui::from_request("/w", "", "nojs-ui=step.x=1");
         let errors = [("b", "Say more.")];
         let m = three(&ui).errors(&errors).render().into_string();
-        assert!(m.contains("class=\"nojs-wizard-current nojs-wizard-error\" aria-current=\"step\""), "{m}");
+        assert!(
+            m.contains("class=\"nojs-wizard-current nojs-wizard-error\" aria-current=\"step\""),
+            "{m}"
+        );
         assert!(m.contains("<fieldset aria-invalid=\"true\">") && m.contains("Say more."));
         assert!(m.contains("name=\"skip\" value=\"1\" formnovalidate"));
-        assert!(m.contains("class=\"nojs-wizard-resume\"") && m.contains("href=\"/w?step.x=0\">Start over"));
-        assert!(m.contains("value=\"1\" max=\"2\""), "progress: one of two steps done");
-        assert!(!three(&ui).progress(false).render().into_string().contains("<progress"));
-        let pairs = [("step".to_string(), "2".to_string()), ("skip".to_string(), "1".to_string())];
-        assert_eq!(Posted::from_pairs(&pairs), Posted { step: 2, skip: true });
+        assert!(
+            m.contains("class=\"nojs-wizard-resume\"")
+                && m.contains("href=\"/w?step.x=0\">Start over")
+        );
+        assert!(
+            m.contains("value=\"1\" max=\"2\""),
+            "progress: one of two steps done"
+        );
+        assert!(
+            !three(&ui)
+                .progress(false)
+                .render()
+                .into_string()
+                .contains("<progress")
+        );
+        let pairs = [
+            ("step".to_string(), "2".to_string()),
+            ("skip".to_string(), "1".to_string()),
+        ];
+        assert_eq!(
+            Posted::from_pairs(&pairs),
+            Posted {
+                step: 2,
+                skip: true
+            }
+        );
     }
 }

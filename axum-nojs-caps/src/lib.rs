@@ -44,7 +44,6 @@
 
 // docs.rs builds with nightly and `--cfg docsrs`: feature-gated items get a "requires feature" badge.
 #![cfg_attr(docsrs, feature(doc_auto_cfg))]
-
 #![warn(missing_docs)]
 
 use maud::{Markup, html};
@@ -215,7 +214,11 @@ impl Caps {
             .filter_map(|(name, _)| name.trim().strip_prefix(COOKIE_PREFIX))
             .filter_map(Cap::parse)
             .fold(Caps::NONE, Caps::with);
-        if caps.has(Cap::Probed) { caps } else { Caps::ASSUMED }
+        if caps.has(Cap::Probed) {
+            caps
+        } else {
+            Caps::ASSUMED
+        }
     }
 
     /// Read a forced set out of a raw query string: `caps=popover,anchor` (names from
@@ -247,7 +250,9 @@ fn query_param<'a>(query: &'a str, name: &str) -> Option<&'a str> {
 /// flag (answer 404). Either way answer without a body and with `Cache-Control: no-store`, so
 /// every page view re-fires the beacons until the cookie exists.
 pub fn beacon_cookie(query: &str) -> Option<String> {
-    query_param(query, "flag").and_then(Cap::parse).map(cookie_for)
+    query_param(query, "flag")
+        .and_then(Cap::parse)
+        .map(cookie_for)
 }
 
 /// The `@supports` rules. Each one gives a beacon element a background image whose URL is the
@@ -376,9 +381,17 @@ mod tests {
         assert_eq!(Caps::from_query(""), None);
         assert_eq!(
             Caps::from_query("page=2&caps=popover,anchor,bogus"),
-            Some(Caps::NONE.with(Cap::Probed).with(Cap::Popover).with(Cap::Anchor))
+            Some(
+                Caps::NONE
+                    .with(Cap::Probed)
+                    .with(Cap::Popover)
+                    .with(Cap::Anchor)
+            )
         );
-        assert_eq!(Caps::from_query("caps="), Some(Caps::NONE.with(Cap::Probed)));
+        assert_eq!(
+            Caps::from_query("caps="),
+            Some(Caps::NONE.with(Cap::Probed))
+        );
         assert_eq!(beacon_cookie("flag=anchor"), Some(cookie_for(Cap::Anchor)));
         assert_eq!(beacon_cookie("flag=nope"), None);
         assert_eq!(beacon_cookie(""), None);

@@ -5,6 +5,7 @@
 use std::convert::Infallible;
 use std::net::SocketAddr;
 
+use axum_nojs_caps::{BEACON_PATH, Cap, Caps, beacon_cookie, beacon_css, beacons};
 use http_body_util::Full;
 use hyper::body::{Bytes, Incoming};
 use hyper::server::conn::http1;
@@ -12,7 +13,6 @@ use hyper::service::service_fn;
 use hyper::{Method, Request, Response, StatusCode, header};
 use hyper_util::rt::TokioIo;
 use tokio::net::TcpListener;
-use axum_nojs_caps::{BEACON_PATH, Cap, Caps, beacon_cookie, beacon_css, beacons};
 
 async fn handle(req: Request<Incoming>) -> Result<Response<Full<Bytes>>, Infallible> {
     let query = req.uri().query().unwrap_or("");
@@ -21,7 +21,9 @@ async fn handle(req: Request<Incoming>) -> Result<Response<Full<Bytes>>, Infalli
         (&Method::GET, BEACON_PATH) => {
             let res = Response::builder().header(header::CACHE_CONTROL, "no-store");
             match beacon_cookie(query) {
-                Some(c) => res.status(StatusCode::NO_CONTENT).header(header::SET_COOKIE, c),
+                Some(c) => res
+                    .status(StatusCode::NO_CONTENT)
+                    .header(header::SET_COOKIE, c),
                 None => res.status(StatusCode::NOT_FOUND),
             }
             .body(Full::default())
@@ -36,18 +38,29 @@ async fn handle(req: Request<Incoming>) -> Result<Response<Full<Bytes>>, Infalli
                 .filter_map(|v| v.to_str().ok())
                 .collect::<Vec<_>>()
                 .join("; ");
-            let caps = Caps::from_query(query).unwrap_or_else(|| Caps::from_cookie_header(&cookies));
+            let caps =
+                Caps::from_query(query).unwrap_or_else(|| Caps::from_cookie_header(&cookies));
             let probed = caps.has(Cap::Probed);
             let mut lines = String::new();
             for cap in Cap::ALL {
-                let answer = if caps.has(cap) { "yes" } else if probed { "no" } else { "unknown" };
+                let answer = if caps.has(cap) {
+                    "yes"
+                } else if probed {
+                    "no"
+                } else {
+                    "unknown"
+                };
                 lines += &format!("<li><code>{}</code>: {answer}</li>", cap.name());
             }
             let page = format!(
                 "<!DOCTYPE html><meta charset=utf-8><title>axum-nojs-caps</title><style>{}</style>\
                  <h1>What this browser can do</h1><p>{}</p><ul>{lines}</ul>{}",
                 beacon_css(),
-                if probed { "Beacons have fired." } else { "First view: reload once the beacons have fired." },
+                if probed {
+                    "Beacons have fired."
+                } else {
+                    "First view: reload once the beacons have fired."
+                },
                 beacons(&caps).into_string()
             );
             Response::builder()
@@ -55,7 +68,10 @@ async fn handle(req: Request<Incoming>) -> Result<Response<Full<Bytes>>, Infalli
                 .body(Full::new(Bytes::from(page)))
                 .unwrap()
         }
-        _ => Response::builder().status(StatusCode::NOT_FOUND).body(Full::default()).unwrap(),
+        _ => Response::builder()
+            .status(StatusCode::NOT_FOUND)
+            .body(Full::default())
+            .unwrap(),
     };
     Ok(reply)
 }
@@ -68,7 +84,10 @@ async fn main() {
     loop {
         let (stream, _) = listener.accept().await.unwrap();
         tokio::spawn(async move {
-            if let Err(e) = http1::Builder::new().serve_connection(TokioIo::new(stream), service_fn(handle)).await {
+            if let Err(e) = http1::Builder::new()
+                .serve_connection(TokioIo::new(stream), service_fn(handle))
+                .await
+            {
                 eprintln!("connection error: {e}");
             }
         });

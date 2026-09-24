@@ -16,6 +16,7 @@
 use std::convert::Infallible;
 use std::net::SocketAddr;
 
+use axum_nojs::{Ui, caps, enhance};
 use http_body_util::{BodyExt, Full};
 use hyper::body::{Bytes, Incoming};
 use hyper::service::service_fn;
@@ -24,7 +25,6 @@ use hyper_util::rt::{TokioExecutor, TokioIo};
 use hyper_util::server::conn::auto;
 use maud::html;
 use tokio::net::TcpListener;
-use axum_nojs::{Ui, caps, enhance};
 
 type Reply = Response<Full<Bytes>>;
 
@@ -52,10 +52,15 @@ async fn handle(req: Request<Incoming>) -> Result<Reply, Infallible> {
         .filter_map(|v| v.to_str().ok())
         .collect::<Vec<_>>()
         .join("; ");
-    let (path, query) = (req.uri().path().to_string(), req.uri().query().unwrap_or("").to_string());
+    let (path, query) = (
+        req.uri().path().to_string(),
+        req.uri().query().unwrap_or("").to_string(),
+    );
     // Caps (`?caps=` first, then the cookies), theme and UI state: the whole of the Axum extractor.
     let ui = Ui::from_request(&path, &query, &cookies);
-    let count: i64 = cookie(&cookies, "count").and_then(|v| v.parse().ok()).unwrap_or(0);
+    let count: i64 = cookie(&cookies, "count")
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(0);
 
     let reply = match (req.method(), path.as_str()) {
         (&Method::GET, "/") => {
@@ -74,16 +79,28 @@ async fn handle(req: Request<Incoming>) -> Result<Reply, Infallible> {
             html_reply(page.set_cookies().to_vec(), page.into_string())
         }
         (&Method::POST, "/counter") => {
-            let body = req.into_body().collect().await.map(|b| b.to_bytes()).unwrap_or_default();
-            let op = cookie(&String::from_utf8_lossy(&body).replace('&', ";"), "op").unwrap_or("").to_string();
+            let body = req
+                .into_body()
+                .collect()
+                .await
+                .map(|b| b.to_bytes())
+                .unwrap_or_default();
+            let op = cookie(&String::from_utf8_lossy(&body).replace('&', ";"), "op")
+                .unwrap_or("")
+                .to_string();
             let next = ui.counter("/counter", count).apply(&op, None);
-            ui.redirect("/").flash("Counted.").cookie(format!("count={next}; Path=/; SameSite=Lax")).into_http()
+            ui.redirect("/")
+                .flash("Counted.")
+                .cookie(format!("count={next}; Path=/; SameSite=Lax"))
+                .into_http()
         }
         (&Method::GET, caps::BEACON_PATH) => {
             // The beacon route: 204 + Set-Cookie for a known flag, 404 otherwise, never cached.
             let mut res = Response::builder().header(header::CACHE_CONTROL, "no-store");
             res = match caps::beacon_cookie(&query) {
-                Some(c) => res.status(StatusCode::NO_CONTENT).header(header::SET_COOKIE, c),
+                Some(c) => res
+                    .status(StatusCode::NO_CONTENT)
+                    .header(header::SET_COOKIE, c),
                 None => res.status(StatusCode::NOT_FOUND),
             };
             res.body(Full::default()).unwrap()
@@ -93,7 +110,10 @@ async fn handle(req: Request<Incoming>) -> Result<Reply, Infallible> {
             .header(header::CACHE_CONTROL, "public, max-age=31536000, immutable")
             .body(Full::new(Bytes::from_static(enhance::served().as_bytes())))
             .unwrap(),
-        _ => Response::builder().status(StatusCode::NOT_FOUND).body(Full::default()).unwrap(),
+        _ => Response::builder()
+            .status(StatusCode::NOT_FOUND)
+            .body(Full::default())
+            .unwrap(),
     };
     Ok(reply)
 }
@@ -108,7 +128,10 @@ async fn main() {
         tokio::spawn(async move {
             // HTTP/1.1 or HTTP/2 (h2c), chosen per connection by what the client sends first.
             let builder = auto::Builder::new(TokioExecutor::new());
-            if let Err(e) = builder.serve_connection(TokioIo::new(stream), service_fn(handle)).await {
+            if let Err(e) = builder
+                .serve_connection(TokioIo::new(stream), service_fn(handle))
+                .await
+            {
                 eprintln!("connection error: {e}");
             }
         });

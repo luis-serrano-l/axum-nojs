@@ -37,7 +37,11 @@ pub struct Skeleton<'a> {
 impl Ui {
     /// `lines` bars, announced as "Loading".
     pub fn skeleton<'a>(&self, lines: usize) -> Skeleton<'a> {
-        Skeleton { lines, label: "Loading", heading: false }
+        Skeleton {
+            lines,
+            label: "Loading",
+            heading: false,
+        }
     }
 }
 

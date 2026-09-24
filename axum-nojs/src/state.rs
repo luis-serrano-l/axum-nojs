@@ -54,7 +54,10 @@ pub struct UiState {
 }
 
 fn is_state_key(key: &str) -> bool {
-    key == "dialog" || ["tab.", "open.", "step.", "per."].iter().any(|p| key.starts_with(p))
+    key == "dialog"
+        || ["tab.", "open.", "step.", "per."]
+            .iter()
+            .any(|p| key.starts_with(p))
 }
 
 /// Parse `a=b&c=d` pairs, keeping only state keys. Understands `%XX` and `+`. The key is
@@ -80,15 +83,13 @@ pub(crate) fn decode(s: &str) -> Cow<'_, str> {
     while i < bytes.len() {
         match bytes[i] {
             b'+' => out.push(b' '),
-            b'%' if i + 2 < bytes.len() => {
-                match u8::from_str_radix(&s[i + 1..i + 3], 16) {
-                    Ok(b) => {
-                        out.push(b);
-                        i += 2;
-                    }
-                    Err(_) => out.push(b'%'),
+            b'%' if i + 2 < bytes.len() => match u8::from_str_radix(&s[i + 1..i + 3], 16) {
+                Ok(b) => {
+                    out.push(b);
+                    i += 2;
                 }
-            }
+                Err(_) => out.push(b'%'),
+            },
             b => out.push(b),
         }
         i += 1;
@@ -101,7 +102,9 @@ pub(crate) fn encode(s: &str) -> String {
     let mut out = String::with_capacity(s.len());
     for b in s.bytes() {
         match b {
-            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'_' | b'.' | b'~' => out.push(b as char),
+            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'_' | b'.' | b'~' => {
+                out.push(b as char)
+            }
             _ => {
                 let _ = write!(out, "%{b:02X}");
             }
@@ -140,7 +143,9 @@ impl UiState {
     pub fn set_cookies(&self) -> Vec<String> {
         let mut out = Vec::new();
         if let Some(value) = self.cookie_value() {
-            out.push(format!("{UI_COOKIE}={value}; Path=/; Max-Age=2592000; SameSite=Lax"));
+            out.push(format!(
+                "{UI_COOKIE}={value}; Path=/; Max-Age=2592000; SameSite=Lax"
+            ));
         }
         if self.flash.is_some() {
             out.push(format!("{FLASH_COOKIE}=; Path=/; Max-Age=0; SameSite=Lax"));
@@ -166,12 +171,17 @@ impl UiState {
 
     /// Merged value for `key`: query wins over cookie.
     pub fn get(&self, key: &str) -> Option<&str> {
-        self.from_query.get(key).or_else(|| self.from_cookie.get(key)).map(String::as_str)
+        self.from_query
+            .get(key)
+            .or_else(|| self.from_cookie.get(key))
+            .map(String::as_str)
     }
 
     /// Open tab index for the tab group `name`; `0` when unknown.
     pub fn tab(&self, name: &str) -> usize {
-        self.get(&format!("tab.{name}")).and_then(|v| v.parse().ok()).unwrap_or(0)
+        self.get(&format!("tab.{name}"))
+            .and_then(|v| v.parse().ok())
+            .unwrap_or(0)
     }
 
     /// First open section index for the accordion `group`; `None` when unknown or closed.
@@ -189,7 +199,9 @@ impl UiState {
 
     /// Current step (0-based) of the wizard `id`; `0` when unknown.
     pub fn step(&self, id: &str) -> usize {
-        self.get(&format!("step.{id}")).and_then(|v| v.parse().ok()).unwrap_or(0)
+        self.get(&format!("step.{id}"))
+            .and_then(|v| v.parse().ok())
+            .unwrap_or(0)
     }
 
     /// Whether `key` comes from the `nojs-ui` cookie alone, not from this request's query: the
@@ -200,7 +212,9 @@ impl UiState {
 
     /// Rows per page remembered for the paged table `id` (`per.<id>`); `None` when unknown.
     pub fn per_page(&self, id: &str) -> Option<usize> {
-        self.get(&format!("per.{id}")).and_then(|v| v.parse().ok()).filter(|&n| n > 0)
+        self.get(&format!("per.{id}"))
+            .and_then(|v| v.parse().ok())
+            .filter(|&n| n > 0)
     }
 
     /// Id of the dialog to render open, if any.
@@ -223,21 +237,32 @@ impl UiState {
     pub fn link(&self, key: &str, value: &str) -> String {
         let mut entries = self.entries();
         entries.insert(key, value);
-        let query: Vec<String> = entries.iter().map(|(k, v)| format!("{}={}", encode(k), encode(v))).collect();
-        if query.is_empty() { self.path.clone() } else { format!("{}?{}", self.path, query.join("&")) }
+        let query: Vec<String> = entries
+            .iter()
+            .map(|(k, v)| format!("{}={}", encode(k), encode(v)))
+            .collect();
+        if query.is_empty() {
+            self.path.clone()
+        } else {
+            format!("{}?{}", self.path, query.join("&"))
+        }
     }
 
     /// Whether the query changed something the cookie should now remember. `dialog` is never
     /// remembered: a dialog opened by a link is open on that page view only.
     pub fn changed(&self) -> bool {
-        self.from_query.iter().any(|(k, v)| k != "dialog" && self.from_cookie.get(k) != Some(v))
+        self.from_query
+            .iter()
+            .any(|(k, v)| k != "dialog" && self.from_cookie.get(k) != Some(v))
     }
 
     /// Value for the `nojs-ui` cookie: the merged state, or `None` when nothing changed.
     pub fn cookie_value(&self) -> Option<String> {
         self.changed().then(|| {
             let kept = self.entries().into_iter().filter(|(k, _)| *k != "dialog");
-            kept.map(|(k, v)| format!("{}={}", encode(k), encode(v))).collect::<Vec<_>>().join("&")
+            kept.map(|(k, v)| format!("{}={}", encode(k), encode(v)))
+                .collect::<Vec<_>>()
+                .join("&")
         })
     }
 }
@@ -263,7 +288,11 @@ mod axum_glue {
                 .filter_map(|v| v.to_str().ok())
                 .collect::<Vec<_>>()
                 .join("; ");
-            Ok(UiState::from_request(parts.uri.path(), parts.uri.query().unwrap_or(""), &cookies))
+            Ok(UiState::from_request(
+                parts.uri.path(),
+                parts.uri.query().unwrap_or(""),
+                &cookies,
+            ))
         }
     }
 
@@ -273,7 +302,8 @@ mod axum_glue {
 
         fn into_response_parts(self, mut res: ResponseParts) -> Result<ResponseParts, Self::Error> {
             for c in self.set_cookies() {
-                res.headers_mut().append(header::SET_COOKIE, HeaderValue::from_str(&c).unwrap());
+                res.headers_mut()
+                    .append(header::SET_COOKIE, HeaderValue::from_str(&c).unwrap());
             }
             Ok(res)
         }
@@ -289,7 +319,10 @@ mod tests {
         assert!(matches!(decode("open.faq"), Cow::Borrowed("open.faq")));
         assert_eq!(decode("a%2Cb+c"), "a,b c");
         let state = UiState::parse("/", "page=3&q=a+b&tab.x=1", "per.t=25&sort=name");
-        assert_eq!((state.tab("x"), state.link("tab.x", "2")), (1, "/?per.t=25&tab.x=2".to_string()));
+        assert_eq!(
+            (state.tab("x"), state.link("tab.x", "2")),
+            (1, "/?per.t=25&tab.x=2".to_string())
+        );
     }
 
     #[test]
@@ -297,12 +330,25 @@ mod tests {
         let s = UiState::parse("/p", "tab.a=2&q=x", "tab.a=1&open.faq=0&dialog=confirm");
         assert_eq!(s.tab("a"), 2);
         assert_eq!(s.open("faq"), Some(0));
-        assert_eq!(UiState::parse("/p", "open.faq=2,0", "").opens("faq"), vec![2, 0]);
-        assert_eq!(UiState::parse("/p", "open.faq=", "").opens("faq"), Vec::<usize>::new());
+        assert_eq!(
+            UiState::parse("/p", "open.faq=2,0", "").opens("faq"),
+            vec![2, 0]
+        );
+        assert_eq!(
+            UiState::parse("/p", "open.faq=", "").opens("faq"),
+            Vec::<usize>::new()
+        );
         assert_eq!(s.dialog(), Some("confirm"));
-        assert_eq!(s.link("open.faq", ""), "/p?dialog=confirm&open.faq=&tab.a=2", "an empty value stays explicit so it beats the cookie");
+        assert_eq!(
+            s.link("open.faq", ""),
+            "/p?dialog=confirm&open.faq=&tab.a=2",
+            "an empty value stays explicit so it beats the cookie"
+        );
         let closed = UiState::parse("/p", "open.faq=", "open.faq=0,2");
-        assert!(closed.opens("faq").is_empty() && closed.changed(), "the explicit empty wins and is remembered");
+        assert!(
+            closed.opens("faq").is_empty() && closed.changed(),
+            "the explicit empty wins and is remembered"
+        );
         assert!(s.changed());
         assert_eq!(s.cookie_value().as_deref(), Some("open.faq=0&tab.a=2"));
         let same = UiState::parse("/p", "tab.a=1", "tab.a=1");
@@ -311,13 +357,29 @@ mod tests {
 
     #[test]
     fn request_and_response_by_hand() {
-        let s = UiState::from_request("/p", "tab.a=2", "theme=dark; nojs-ui=tab.a=1; nojs-flash=Saved%20it");
+        let s = UiState::from_request(
+            "/p",
+            "tab.a=2",
+            "theme=dark; nojs-ui=tab.a=1; nojs-flash=Saved%20it",
+        );
         assert_eq!(s.flash(), Some("Saved it"));
         let cookies = s.set_cookies();
-        assert_eq!(cookies[0], "nojs-ui=tab.a=2; Path=/; Max-Age=2592000; SameSite=Lax");
+        assert_eq!(
+            cookies[0],
+            "nojs-ui=tab.a=2; Path=/; Max-Age=2592000; SameSite=Lax"
+        );
         assert!(cookies[1].starts_with("nojs-flash=; ") && cookies[1].contains("Max-Age=0"));
-        assert!(UiState::from_request("/p", "", "nojs-ui=tab.a=1").set_cookies().is_empty());
-        assert!(UiState::from_request("/p", "dialog=d", "").set_cookies().is_empty(), "an open dialog is not remembered");
+        assert!(
+            UiState::from_request("/p", "", "nojs-ui=tab.a=1")
+                .set_cookies()
+                .is_empty()
+        );
+        assert!(
+            UiState::from_request("/p", "dialog=d", "")
+                .set_cookies()
+                .is_empty(),
+            "an open dialog is not remembered"
+        );
     }
 
     #[test]

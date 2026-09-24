@@ -50,10 +50,15 @@ pub struct Rect {
 impl Page {
     /// GET `path` from `router` with a raw `Cookie` header and render the response.
     pub async fn render(router: Router, path: &str, cookie: &str) -> Page {
-        let req = Request::get(path).header("cookie", cookie).body(Body::empty()).unwrap();
+        let req = Request::get(path)
+            .header("cookie", cookie)
+            .body(Body::empty())
+            .unwrap();
         let res = router.oneshot(req).await.unwrap();
         assert_eq!(res.status(), 200, "{path}");
-        let bytes = axum::body::to_bytes(res.into_body(), usize::MAX).await.unwrap();
+        let bytes = axum::body::to_bytes(res.into_body(), usize::MAX)
+            .await
+            .unwrap();
         Page::from_html(String::from_utf8(bytes.to_vec()).unwrap())
     }
 
@@ -77,7 +82,9 @@ impl Page {
 
     /// First node matching a CSS selector. Panics on a selector syntax error.
     pub fn node(&self, selector: &str) -> Option<NodeId> {
-        self.doc.query_selector(selector).unwrap_or_else(|e| panic!("bad selector {selector}: {e:?}"))
+        self.doc
+            .query_selector(selector)
+            .unwrap_or_else(|e| panic!("bad selector {selector}: {e:?}"))
     }
 
     /// Whether any element matches `selector`.
@@ -87,7 +94,10 @@ impl Page {
 
     /// Number of elements matching `selector`.
     pub fn count(&self, selector: &str) -> usize {
-        self.doc.query_selector_all(selector).map(|v| v.len()).unwrap_or(0)
+        self.doc
+            .query_selector_all(selector)
+            .map(|v| v.len())
+            .unwrap_or(0)
     }
 
     /// Text content of the first match, whitespace collapsed.
@@ -102,18 +112,29 @@ impl Page {
     pub fn bbox(&self, selector: &str) -> Option<Rect> {
         let id = self.node(selector)?;
         let r = self.doc.get_client_bounding_rect(id)?;
-        Some(Rect { x: r.x, y: r.y, width: r.width, height: r.height })
+        Some(Rect {
+            x: r.x,
+            y: r.y,
+            width: r.width,
+            height: r.height,
+        })
     }
 
     /// Visible means: has a box with non-zero area, is not `visibility: hidden`, and has no
     /// `opacity: 0` on itself.
     pub fn is_visible(&self, selector: &str) -> bool {
-        let Some(id) = self.node(selector) else { return false };
-        let Some(rect) = self.bbox(selector) else { return false };
+        let Some(id) = self.node(selector) else {
+            return false;
+        };
+        let Some(rect) = self.bbox(selector) else {
+            return false;
+        };
         if rect.width <= 0.0 || rect.height <= 0.0 {
             return false;
         }
-        let Some(node) = self.doc.get_node(id) else { return false };
+        let Some(node) = self.doc.get_node(id) else {
+            return false;
+        };
         match node.primary_styles() {
             Some(style) => {
                 let visibility = format!("{:?}", style.clone_visibility());

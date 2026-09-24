@@ -65,7 +65,12 @@ pub struct SelectOption<'a> {
 impl<'a> SelectOption<'a> {
     /// An option with a plain label.
     pub const fn new(value: &'a str, text: &'a str) -> Self {
-        SelectOption { value, text, icon: None, content: None }
+        SelectOption {
+            value,
+            text,
+            icon: None,
+            content: None,
+        }
     }
     /// An icon before the label.
     pub const fn icon(mut self, icon: &'a str) -> Self {
@@ -116,27 +121,53 @@ impl Ui {
     /// A select named `name` with `selected` chosen; add options with [`Select::options`] or
     /// [`Select::group`].
     pub fn select<'a>(&'a self, name: &'a str, selected: &'a str) -> Select<'a> {
-        Select { ui: self, name, selected, groups: Vec::new(), search: None, search_over: 15, label: None }
+        Select {
+            ui: self,
+            name,
+            selected,
+            groups: Vec::new(),
+            search: None,
+            search_over: 15,
+            label: None,
+        }
     }
 }
 
 impl<'a> Select<'a> {
     /// Options with no `<optgroup>`: [`SelectOption`]s or `(value, label)` and
     /// `(value, label, icon)` tuples.
-    pub fn options<O: Into<SelectOption<'a>>>(mut self, options: impl IntoIterator<Item = O>) -> Self {
-        self.groups.push(Group { label: None, options: options.into_iter().map(Into::into).collect() });
+    pub fn options<O: Into<SelectOption<'a>>>(
+        mut self,
+        options: impl IntoIterator<Item = O>,
+    ) -> Self {
+        self.groups.push(Group {
+            label: None,
+            options: options.into_iter().map(Into::into).collect(),
+        });
         self
     }
 
     /// Options under `<optgroup label>`.
-    pub fn group<O: Into<SelectOption<'a>>>(mut self, label: &'a str, options: impl IntoIterator<Item = O>) -> Self {
-        self.groups.push(Group { label: Some(label), options: options.into_iter().map(Into::into).collect() });
+    pub fn group<O: Into<SelectOption<'a>>>(
+        mut self,
+        label: &'a str,
+        options: impl IntoIterator<Item = O>,
+    ) -> Self {
+        self.groups.push(Group {
+            label: Some(label),
+            options: options.into_iter().map(Into::into).collect(),
+        });
         self
     }
 
     /// Several labelled groups at once: `(label, options)` pairs.
-    pub fn groups<O: Into<SelectOption<'a>>, G: IntoIterator<Item = O>>(self, groups: impl IntoIterator<Item = (&'a str, G)>) -> Self {
-        groups.into_iter().fold(self, |s, (label, options)| s.group(label, options))
+    pub fn groups<O: Into<SelectOption<'a>>, G: IntoIterator<Item = O>>(
+        self,
+        groups: impl IntoIterator<Item = (&'a str, G)>,
+    ) -> Self {
+        groups
+            .into_iter()
+            .fold(self, |s, (label, options)| s.group(label, options))
     }
 
     /// A filter box submitting `<name>-q` to `action` with GET; the options shown are those
@@ -161,40 +192,60 @@ impl<'a> Select<'a> {
 
 impl Render for Select<'_> {
     fn render(&self) -> Markup {
-        let Select { ui, name, selected, ref groups, search, search_over, label } = *self;
+        let Select {
+            ui,
+            name,
+            selected,
+            ref groups,
+            search,
+            search_over,
+            label,
+        } = *self;
         let rich = ui.has(Cap::BaseSelect);
         let total: usize = groups.iter().map(|g| g.options.len()).sum();
         let search = search.filter(|_| total > search_over);
         let q = ui.param(&format!("{name}-q")).unwrap_or("");
-        let query = if search.is_some() { q.trim().to_lowercase() } else { String::new() };
-        let shown = |o: &SelectOption| query.is_empty() || o.value == selected || o.text.to_lowercase().contains(&query);
-        let option = |o: &SelectOption| html! {
-            option value=(o.value) selected[o.value == selected] {
-                @if let Some(i) = o.icon { span class="nojs-select-icon" aria-hidden="true" { (i) } " " }
-                @match (&o.content, rich) { (Some(c), true) => (c), _ => (o.text) }
+        let query = if search.is_some() {
+            q.trim().to_lowercase()
+        } else {
+            String::new()
+        };
+        let shown = |o: &SelectOption| {
+            query.is_empty() || o.value == selected || o.text.to_lowercase().contains(&query)
+        };
+        let option = |o: &SelectOption| {
+            html! {
+                option value=(o.value) selected[o.value == selected] {
+                    @if let Some(i) = o.icon { span class="nojs-select-icon" aria-hidden="true" { (i) } " " }
+                    @match (&o.content, rich) { (Some(c), true) => (c), _ => (o.text) }
+                }
             }
         };
-        crate::labelled(label, name, html! {
-            span class="nojs-select" {
-                @if let Some(action) = search {
-                    span class="nojs-select-search" {
-                        input type="search" name={ (name) "-q" } value=(q) placeholder="Filter" aria-label="Filter options";
-                        button type="submit" formmethod="get" formaction=(action) formnovalidate { "Filter" }
+        crate::labelled(
+            label,
+            name,
+            html! {
+                span class="nojs-select" {
+                    @if let Some(action) = search {
+                        span class="nojs-select-search" {
+                            input type="search" name={ (name) "-q" } value=(q) placeholder="Filter" aria-label="Filter options";
+                            button type="submit" formmethod="get" formaction=(action) formnovalidate { "Filter" }
+                        }
                     }
-                }
-                select id=(name) name=(name) {
-                    @if rich { button type="button" { selectedcontent {} } }
-                    @for g in groups {
-                        @let visible: Vec<&SelectOption> = g.options.iter().filter(|o| shown(o)).collect();
-                        @if let (Some(label), false) = (g.label, visible.is_empty()) {
-                            optgroup label=(label) { @for o in &visible { (option(o)) } }
-                        } @else {
-                            @for o in &visible { (option(o)) }
+                    select id=(name) name=(name) {
+                        @if rich { button type="button" { selectedcontent {} } }
+                        @for g in groups {
+                            @let visible: Vec<&SelectOption> = g.options.iter().filter(|o| shown(o)).collect();
+                            @if let (Some(label), false) = (g.label, visible.is_empty()) {
+                                optgroup label=(label) { @for o in &visible { (option(o)) } }
+                            } @else {
+                                @for o in &visible { (option(o)) }
+                            }
                         }
                     }
                 }
-            }
-        })
+            },
+        )
     }
 }
 /// Styles for this component; included in [`crate::stylesheet`].

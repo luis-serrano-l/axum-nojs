@@ -322,13 +322,19 @@ addEventListener("popstate", function (e) {
 pub fn served() -> &'static str {
     static SERVED: std::sync::OnceLock<String> = std::sync::OnceLock::new();
     SERVED.get_or_init(|| {
-        JS.lines().map(str::trim_start).filter(|l| !l.is_empty() && !l.starts_with("//")).collect::<Vec<_>>().join("\n")
+        JS.lines()
+            .map(str::trim_start)
+            .filter(|l| !l.is_empty() && !l.starts_with("//"))
+            .collect::<Vec<_>>()
+            .join("\n")
     })
 }
 
 /// FNV-1a hash of [`JS`]: the cache-busting version in [`script_url`].
 fn version() -> String {
-    let hash = JS.bytes().fold(0xcbf2_9ce4_8422_2325_u64, |h, b| (h ^ u64::from(b)).wrapping_mul(0x0100_0000_01b3));
+    let hash = JS.bytes().fold(0xcbf2_9ce4_8422_2325_u64, |h, b| {
+        (h ^ u64::from(b)).wrapping_mul(0x0100_0000_01b3)
+    });
     format!("{hash:016x}")
 }
 
@@ -354,7 +360,9 @@ pub fn slim_html(html: &str) -> String {
         if done + start >= head_end {
             break;
         }
-        let Some(len) = rest[start..].find("</style>") else { break };
+        let Some(len) = rest[start..].find("</style>") else {
+            break;
+        };
         out.push_str(&rest[..start]);
         let skip = start + len + "</style>".len();
         done += skip;
@@ -367,7 +375,10 @@ pub fn slim_html(html: &str) -> String {
 /// Build a swap-root id from a component prefix and a key such as a form action.
 /// `swap_id("nojs-counter", "/counter")` is `nojs-counter--counter`.
 pub fn swap_id(prefix: &str, key: &str) -> String {
-    let key: String = key.chars().map(|c| if c.is_ascii_alphanumeric() { c } else { '-' }).collect();
+    let key: String = key
+        .chars()
+        .map(|c| if c.is_ascii_alphanumeric() { c } else { '-' })
+        .collect();
     format!("{prefix}-{key}")
 }
 
@@ -391,11 +402,17 @@ mod axum_glue {
     pub async fn slim(req: Request, next: Next) -> Response {
         let enhanced = req.headers().contains_key("nojs-enhance");
         let mut res = next.run(req).await;
-        let html = res.headers().get(header::CONTENT_TYPE).is_some_and(|v| v.as_bytes().starts_with(b"text/html"));
+        let html = res
+            .headers()
+            .get(header::CONTENT_TYPE)
+            .is_some_and(|v| v.as_bytes().starts_with(b"text/html"));
         if !html {
             return res;
         }
-        res.headers_mut().append(header::VARY, HeaderValue::from_static("nojs-enhance, cookie"));
+        res.headers_mut().append(
+            header::VARY,
+            HeaderValue::from_static("nojs-enhance, cookie"),
+        );
         if !enhanced || res.body().size_hint().exact().is_none() {
             return res;
         }
@@ -410,15 +427,18 @@ mod axum_glue {
 
     /// Serves [`served`] at [`SCRIPT_PATH`], immutable for a year (the URL carries a hash).
     pub fn router() -> Router {
-        Router::new().route(SCRIPT_PATH, get(|| async {
-            (
-                [
-                    (header::CONTENT_TYPE, "text/javascript; charset=utf-8"),
-                    (header::CACHE_CONTROL, "public, max-age=31536000, immutable"),
-                ],
-                served(),
-            )
-        }))
+        Router::new().route(
+            SCRIPT_PATH,
+            get(|| async {
+                (
+                    [
+                        (header::CONTENT_TYPE, "text/javascript; charset=utf-8"),
+                        (header::CACHE_CONTROL, "public, max-age=31536000, immutable"),
+                    ],
+                    served(),
+                )
+            }),
+        )
     }
 }
 #[cfg(feature = "axum")]
@@ -430,8 +450,16 @@ mod tests {
 
     #[test]
     fn script_is_small_and_plain() {
-        assert!(served().len() < 10240, "enhance.js is {} bytes served", served().len());
-        assert!(JS.len() < 12288, "enhance.js source is {} bytes; trim before adding comments", JS.len());
+        assert!(
+            served().len() < 10240,
+            "enhance.js is {} bytes served",
+            served().len()
+        );
+        assert!(
+            JS.len() < 12288,
+            "enhance.js source is {} bytes; trim before adding comments",
+            JS.len()
+        );
         assert!(!JS.contains("eval(") && !JS.contains("innerHTML"));
         assert!(script_url().starts_with("/nojs/enhance.js?v="));
         assert_eq!(swap_id("nojs-form", "/sign-up"), "nojs-form--sign-up");
@@ -440,7 +468,10 @@ mod tests {
     #[test]
     fn slim_drops_head_styles_only() {
         let page = "<html><head><title>T</title><style>a{}</style><style class=\"nojs-tokens\">b{}</style></head><body><style>c{}</style><p id=x>hi</p></body></html>";
-        assert_eq!(slim_html(page), "<html><head><title>T</title></head><body><style>c{}</style><p id=x>hi</p></body></html>");
+        assert_eq!(
+            slim_html(page),
+            "<html><head><title>T</title></head><body><style>c{}</style><p id=x>hi</p></body></html>"
+        );
         assert_eq!(slim_html("<p>no head</p>"), "<p>no head</p>");
     }
 }

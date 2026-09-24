@@ -88,20 +88,35 @@ impl Ui {
     /// A palette `#palette` whose searches go to `action`; add destinations with
     /// [`Palette::command`].
     pub fn palette<'a>(&'a self, action: &'a str) -> Palette<'a> {
-        Palette { ui: self, id: "palette", action, commands: Vec::new(), group: "", label: "Search", key: 'k' }
+        Palette {
+            ui: self,
+            id: "palette",
+            action,
+            commands: Vec::new(),
+            group: "",
+            label: "Search",
+            key: 'k',
+        }
     }
 }
 
 impl<'a> Palette<'a> {
     /// A destination: what the visitor types or picks, and where it goes.
     pub fn command(mut self, label: &'a str, href: &'a str) -> Self {
-        self.commands.push(Command { label, href, group: self.group, keywords: "" });
+        self.commands.push(Command {
+            label,
+            href,
+            group: self.group,
+            keywords: "",
+        });
         self
     }
 
     /// Several `(label, href)` destinations at once.
     pub fn commands(self, commands: impl IntoIterator<Item = (&'a str, &'a str)>) -> Self {
-        commands.into_iter().fold(self, |p, (label, href)| p.command(label, href))
+        commands
+            .into_iter()
+            .fold(self, |p, (label, href)| p.command(label, href))
     }
 
     /// Extra words that find the command added last, space-separated; never shown.
@@ -145,7 +160,15 @@ impl<'a> Palette<'a> {
 
 impl Render for Palette<'_> {
     fn render(&self) -> Markup {
-        let Palette { ui, id, action, ref commands, label, key, .. } = *self;
+        let Palette {
+            ui,
+            id,
+            action,
+            ref commands,
+            label,
+            key,
+            ..
+        } = *self;
         let query = ui.param("q").filter(|q| !q.trim().is_empty());
         let list_id = format!("{id}-list");
         let shortcut = format!("Alt+Shift+{}", key.to_ascii_uppercase());

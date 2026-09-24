@@ -47,7 +47,11 @@ pub struct Color<'a> {
 impl Ui {
     /// A colour input named `name` holding the `#rrggbb` `value`.
     pub fn color<'a>(&self, name: &'a str, value: &'a str) -> Color<'a> {
-        Color { name, value, ..Color::default() }
+        Color {
+            name,
+            value,
+            ..Color::default()
+        }
     }
 }
 
@@ -73,36 +77,49 @@ impl<'a> Color<'a> {
 
 /// `#rrggbb` plus an opacity percent as `#rrggbbaa`.
 pub fn hex_alpha(hex: &str, percent: u8) -> String {
-    format!("{hex}{:02x}", (u32::from(percent.min(100)) * 255 + 50) / 100)
+    format!(
+        "{hex}{:02x}",
+        (u32::from(percent.min(100)) * 255 + 50) / 100
+    )
 }
 
 impl Render for Color<'_> {
     fn render(&self) -> Markup {
-        let Color { name, value, presets, alpha, label } = *self;
+        let Color {
+            name,
+            value,
+            presets,
+            alpha,
+            label,
+        } = *self;
         let id = format!("f-{name}");
         let pct = alpha.unwrap_or(100);
-        crate::labelled(label, &id, html! {
-            div class="nojs-color" {
-                input type="color" id=(id) name=(name) value=(value);
-                span class="nojs-color-swatch" style={ "--nojs-color-value: " (value) "; --nojs-color-alpha: " (pct) "%" } aria-hidden="true" {}
-                code { @if pct < 100 { (hex_alpha(value, pct)) } @else { (value) } }
-                @if alpha.is_some() {
-                    label class="nojs-color-alpha" {
-                        "Opacity "
-                        input type="range" id={ (id) "-alpha" } name={ (name) "-alpha" } min="0" max="100" value=(pct);
-                        span { output for={ (id) "-alpha" } { (pct) } "%" }
+        crate::labelled(
+            label,
+            &id,
+            html! {
+                div class="nojs-color" {
+                    input type="color" id=(id) name=(name) value=(value);
+                    span class="nojs-color-swatch" style={ "--nojs-color-value: " (value) "; --nojs-color-alpha: " (pct) "%" } aria-hidden="true" {}
+                    code { @if pct < 100 { (hex_alpha(value, pct)) } @else { (value) } }
+                    @if alpha.is_some() {
+                        label class="nojs-color-alpha" {
+                            "Opacity "
+                            input type="range" id={ (id) "-alpha" } name={ (name) "-alpha" } min="0" max="100" value=(pct);
+                            span { output for={ (id) "-alpha" } { (pct) } "%" }
+                        }
                     }
-                }
-                @if !presets.is_empty() {
-                    span class="nojs-color-presets" role="group" aria-label="Presets" {
-                        @for p in presets {
-                            button type="submit" name={ (name) "-preset" } value=(p) aria-label={ "Use " (p) }
-                                aria-pressed=(if p.eq_ignore_ascii_case(value) { "true" } else { "false" }) style={ "--nojs-color-value: " (p) } {}
+                    @if !presets.is_empty() {
+                        span class="nojs-color-presets" role="group" aria-label="Presets" {
+                            @for p in presets {
+                                button type="submit" name={ (name) "-preset" } value=(p) aria-label={ "Use " (p) }
+                                    aria-pressed=(if p.eq_ignore_ascii_case(value) { "true" } else { "false" }) style={ "--nojs-color-value: " (p) } {}
+                            }
                         }
                     }
                 }
-            }
-        })
+            },
+        )
     }
 }
 /// Styles for this component; included in [`crate::stylesheet`].

@@ -60,7 +60,16 @@ impl Palette {
     fn declarations(&self) -> String {
         format!(
             "  --nojs-bg: {}; --nojs-fg: {}; --nojs-muted: {}; --nojs-line: {};\n  --nojs-surface: {}; --nojs-accent: {}; --nojs-on-accent: {};\n  --nojs-danger: {}; --nojs-ok: {}; --nojs-warn: {};\n",
-            self.bg, self.fg, self.muted, self.line, self.surface, self.accent, self.on_accent, self.danger, self.ok, self.warn
+            self.bg,
+            self.fg,
+            self.muted,
+            self.line,
+            self.surface,
+            self.accent,
+            self.on_accent,
+            self.danger,
+            self.ok,
+            self.warn
         )
     }
 }
@@ -84,12 +93,28 @@ impl Default for Tokens {
     fn default() -> Self {
         Tokens {
             light: Palette {
-                bg: "#eef1ec", fg: "#14201a", muted: "#566158", line: "#c9d2cb", surface: "#ffffff",
-                accent: "#1f6f5f", on_accent: "#ffffff", danger: "#b3261e", ok: "#2f7a3a", warn: "#8a5a00",
+                bg: "#eef1ec",
+                fg: "#14201a",
+                muted: "#566158",
+                line: "#c9d2cb",
+                surface: "#ffffff",
+                accent: "#1f6f5f",
+                on_accent: "#ffffff",
+                danger: "#b3261e",
+                ok: "#2f7a3a",
+                warn: "#8a5a00",
             },
             dark: Palette {
-                bg: "#0f1512", fg: "#e4ebe6", muted: "#97a59c", line: "#2b3630", surface: "#171f1b",
-                accent: "#62c9a8", on_accent: "#08110d", danger: "#ff8a80", ok: "#7bd389", warn: "#e6b450",
+                bg: "#0f1512",
+                fg: "#e4ebe6",
+                muted: "#97a59c",
+                line: "#2b3630",
+                surface: "#171f1b",
+                accent: "#62c9a8",
+                on_accent: "#08110d",
+                danger: "#ff8a80",
+                ok: "#7bd389",
+                warn: "#e6b450",
             },
             radius: "6px",
             space: "8px",
@@ -121,7 +146,13 @@ pub fn layout(caps: &Caps, title: &str, theme: Theme, body: Markup) -> Markup {
 
 /// [`layout`] under a different set of [`Tokens`]: the overrides are emitted once, in a
 /// `<style>` right after the stylesheet, so every component on the page picks them up.
-pub fn layout_with(caps: &Caps, title: &str, theme: Theme, tokens: &Tokens, body: Markup) -> Markup {
+pub fn layout_with(
+    caps: &Caps,
+    title: &str,
+    theme: Theme,
+    tokens: &Tokens,
+    body: Markup,
+) -> Markup {
     page(caps, title, theme, Some(tokens), body)
 }
 

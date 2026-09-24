@@ -44,8 +44,8 @@ use maud::{Markup, html};
 
 use std::fmt::{self, Write};
 
-use crate::table::{Column, Encoded, Row, TableOptions, TableQuery, table_in};
 use crate::enhance;
+use crate::table::{Column, Encoded, Row, TableOptions, TableQuery, table_in};
 use crate::{Caps, UiState};
 
 /// Page sizes offered in the select.
@@ -75,7 +75,15 @@ pub(crate) struct PagedTableOptions<'a> {
 
 impl Default for PagedTableOptions<'_> {
     fn default() -> Self {
-        PagedTableOptions { sort: None, filter: "", page: 1, per_page: PAGE_SIZES[1], table: TableOptions::default(), state: None, query: None }
+        PagedTableOptions {
+            sort: None,
+            filter: "",
+            page: 1,
+            per_page: PAGE_SIZES[1],
+            table: TableOptions::default(),
+            state: None,
+            query: None,
+        }
     }
 }
 
@@ -106,7 +114,6 @@ impl<'a> PagedTableOptions<'a> {
         self
     }
 
-
     /// Name the page-size parameter `per.<id>` so the `nojs-ui` cookie remembers it, and read
     /// the remembered size back.
     pub fn state(mut self, state: &'a UiState) -> Self {
@@ -124,15 +131,51 @@ impl<'a> PagedTableOptions<'a> {
 /// `rows` are either every row (`rows.len() == total`), and the component shows the current
 /// page of them, or the rows of the current page only, for data too large to build in full;
 /// `total` is the full row count after filtering, which sizes the page links.
-pub(crate) fn paged_table_with(caps: &Caps, id: &str, href: &str, columns: &[Column], rows: &[Row], total: usize, options: PagedTableOptions) -> Markup {
-    let PagedTableOptions { sort, filter, page, per_page, table: inner, state, query } = options;
+pub(crate) fn paged_table_with(
+    caps: &Caps,
+    id: &str,
+    href: &str,
+    columns: &[Column],
+    rows: &[Row],
+    total: usize,
+    options: PagedTableOptions,
+) -> Markup {
+    let PagedTableOptions {
+        sort,
+        filter,
+        page,
+        per_page,
+        table: inner,
+        state,
+        query,
+    } = options;
     let sort = sort.or_else(|| query.and_then(|q| q.sort(columns)));
-    let filter = if filter.is_empty() { query.map_or("", |q| q.filter.as_str()) } else { filter };
-    let page = query.and_then(|q| q.page).filter(|_| page == 1).unwrap_or(page);
-    let cols = inner.cols.is_none().then(|| query.and_then(|q| q.cols(columns))).flatten();
-    let inner = TableOptions { cols: inner.cols.or(cols.as_deref()), ..inner };
-    let per_key = if state.is_some() { format!("per.{id}") } else { "per".to_string() };
-    let remembered = state.and_then(|s| s.per_page(id)).map(|n| n.min(PAGE_SIZES[PAGE_SIZES.len() - 1]));
+    let filter = if filter.is_empty() {
+        query.map_or("", |q| q.filter.as_str())
+    } else {
+        filter
+    };
+    let page = query
+        .and_then(|q| q.page)
+        .filter(|_| page == 1)
+        .unwrap_or(page);
+    let cols = inner
+        .cols
+        .is_none()
+        .then(|| query.and_then(|q| q.cols(columns)))
+        .flatten();
+    let inner = TableOptions {
+        cols: inner.cols.or(cols.as_deref()),
+        ..inner
+    };
+    let per_key = if state.is_some() {
+        format!("per.{id}")
+    } else {
+        "per".to_string()
+    };
+    let remembered = state
+        .and_then(|s| s.per_page(id))
+        .map(|n| n.min(PAGE_SIZES[PAGE_SIZES.len() - 1]));
     let per_page = remembered.unwrap_or(per_page).max(1);
     let pages = total.div_ceil(per_page).max(1);
     let page = page.clamp(1, pages);
@@ -142,7 +185,11 @@ pub(crate) fn paged_table_with(caps: &Caps, id: &str, href: &str, columns: &[Col
         rows
     };
     let per = per_page.to_string();
-    let first = if total == 0 { 0 } else { (page - 1) * per_page + 1 };
+    let first = if total == 0 {
+        0
+    } else {
+        (page - 1) * per_page + 1
+    };
     let last = (page * per_page).min(total);
     let dir = |d: bool| if d { "desc" } else { "asc" };
     let cols_value = inner.cols.map(|c| c.join(","));
@@ -152,16 +199,26 @@ pub(crate) fn paged_table_with(caps: &Caps, id: &str, href: &str, columns: &[Col
         if let Some((k, d)) = sort {
             pairs.extend([("sort", k), ("dir", dir(d))]);
         }
-        if !filter.is_empty() { pairs.push(("q", filter)); }
-        if let Some(c) = &cols_value { pairs.push(("cols", c)); }
-        if skip != per_key { pairs.push((per_key.as_str(), &per)); }
+        if !filter.is_empty() {
+            pairs.push(("q", filter));
+        }
+        if let Some(c) = &cols_value {
+            pairs.push(("cols", c));
+        }
+        if skip != per_key {
+            pairs.push((per_key.as_str(), &per));
+        }
         pairs
     };
     let mut base = String::new();
     for (k, v) in carried("") {
         let _ = write!(base, "{}={}&", Encoded(k), Encoded(v));
     }
-    let link = |n: usize| PageLink { href, base: &base, n };
+    let link = |n: usize| PageLink {
+        href,
+        base: &base,
+        n,
+    };
     let keep = [(per_key.as_str(), per.as_str())];
     html! {
         div id=(enhance::swap_id("nojs-paged-table", id)) data-nojs="swap" class="nojs-paged-table" {
@@ -222,9 +279,13 @@ fn window(page: usize, pages: usize) -> Vec<Option<usize>> {
         p => (p - 1, p + 1),
     };
     let mut out = vec![Some(1)];
-    if lo > 2 { out.push(None); }
+    if lo > 2 {
+        out.push(None);
+    }
     out.extend((lo..=hi).map(Some));
-    if hi < pages - 1 { out.push(None); }
+    if hi < pages - 1 {
+        out.push(None);
+    }
     out.push(Some(pages));
     out
 }
@@ -244,11 +305,15 @@ impl fmt::Display for Thousands {
             digits[len] = b'0' + (n % 10) as u8;
             len += 1;
             n /= 10;
-            if n == 0 { break; }
+            if n == 0 {
+                break;
+            }
         }
         for i in (0..len).rev() {
             f.write_char(digits[i] as char)?;
-            if i > 0 && i % 3 == 0 { f.write_char(',')?; }
+            if i > 0 && i % 3 == 0 {
+                f.write_char(',')?;
+            }
         }
         Ok(())
     }
@@ -288,20 +353,45 @@ mod tests {
     #[test]
     fn links_keep_sort_filter_and_size() {
         let cols = [Column::sortable("n", "N")];
-        let opts = PagedTableOptions::default().sort(Some(("n", true))).filter("x").page(2).per_page(5);
+        let opts = PagedTableOptions::default()
+            .sort(Some(("n", true)))
+            .filter("x")
+            .page(2)
+            .per_page(5);
         let m = paged_table_with(&Caps::NONE, "t", "/t", &cols, &[], 12, opts).into_string();
-        assert!(m.contains("href=\"/t?sort=n&amp;dir=desc&amp;q=x&amp;per=5&amp;page=3\""), "{m}");
+        assert!(
+            m.contains("href=\"/t?sort=n&amp;dir=desc&amp;q=x&amp;per=5&amp;page=3\""),
+            "{m}"
+        );
         assert!(m.contains("rel=\"prev\"") && m.contains("rel=\"next\""));
         assert!(m.contains("6–10 of 12"));
         assert!(m.contains("value=\"5\" selected"));
-        let empty = paged_table_with(&Caps::NONE, "t", "/t", &cols, &[], 0, PagedTableOptions::default().page(9)).into_string();
+        let empty = paged_table_with(
+            &Caps::NONE,
+            "t",
+            "/t",
+            &cols,
+            &[],
+            0,
+            PagedTableOptions::default().page(9),
+        )
+        .into_string();
         assert!(empty.contains("0–0 of 0") && !empty.contains("rel="));
-        assert!(!empty.contains("nojs-paged-table-jump"), "no jump form for a single page");
+        assert!(
+            !empty.contains("nojs-paged-table-jump"),
+            "no jump form for a single page"
+        );
     }
 
     #[test]
     fn window_and_separators() {
-        let w = |p, n| window(p, n).iter().map(|s| s.map_or("…".into(), |n| n.to_string())).collect::<Vec<_>>().join(" ");
+        let w = |p, n| {
+            window(p, n)
+                .iter()
+                .map(|s| s.map_or("…".into(), |n| n.to_string()))
+                .collect::<Vec<_>>()
+                .join(" ")
+        };
         assert_eq!(w(3, 7), "1 2 3 4 5 6 7");
         assert_eq!(w(1, 20), "1 2 3 4 5 … 20");
         assert_eq!(w(10, 20), "1 … 9 10 11 … 20");
@@ -316,8 +406,20 @@ mod tests {
     #[test]
     fn state_names_the_size_per_table() {
         let state = UiState::parse("/t", "per.t=5", "");
-        let opts = PagedTableOptions::default().per_page(state.per_page("t").unwrap()).page(2).state(&state);
-        let m = paged_table_with(&Caps::NONE, "t", "/t", &[Column::plain("n", "N")], &[], 40, opts).into_string();
+        let opts = PagedTableOptions::default()
+            .per_page(state.per_page("t").unwrap())
+            .page(2)
+            .state(&state);
+        let m = paged_table_with(
+            &Caps::NONE,
+            "t",
+            "/t",
+            &[Column::plain("n", "N")],
+            &[],
+            40,
+            opts,
+        )
+        .into_string();
         assert!(m.contains("href=\"/t?per.t=5&amp;page=8\">Last"), "{m}");
         assert!(m.contains("href=\"/t?per.t=5&amp;page=1\">First"));
         assert!(m.contains("<input type=\"number\" name=\"page\" min=\"1\" max=\"8\" value=\"2\""));
@@ -327,16 +429,49 @@ mod tests {
     #[test]
     fn the_query_state_and_all_rows_are_enough() {
         let cols = [Column::sortable("n", "N"), Column::plain("x", "X")];
-        let rows: Vec<Row> = (1..=12).map(|n| Row::new(vec![html! { "row " (n) }, html! {}])).collect();
-        let query = TableQuery::from_ui(&crate::Ui::from_request("/t", "sort=n&dir=desc&q=r%C3%A9&page=3&cols=n&other=1", ""));
+        let rows: Vec<Row> = (1..=12)
+            .map(|n| Row::new(vec![html! { "row " (n) }, html! {}]))
+            .collect();
+        let query = TableQuery::from_ui(&crate::Ui::from_request(
+            "/t",
+            "sort=n&dir=desc&q=r%C3%A9&page=3&cols=n&other=1",
+            "",
+        ));
         assert_eq!(query.filter, "r\u{e9}");
         let state = UiState::parse("/t", "per.t=5", "");
-        let m = paged_table_with(&Caps::NONE, "t", "/t", &cols, &rows, 12, PagedTableOptions::default().query(&query).state(&state)).into_string();
+        let m = paged_table_with(
+            &Caps::NONE,
+            "t",
+            "/t",
+            &cols,
+            &rows,
+            12,
+            PagedTableOptions::default().query(&query).state(&state),
+        )
+        .into_string();
         assert!(m.contains("11–12 of 12"), "{m}");
-        assert!(m.contains("row 11") && m.contains("row 12") && !m.contains("row 10<"), "sliced to page 3");
-        assert!(m.contains("sort=n&amp;dir=desc&amp;q=r%C3%A9&amp;cols=n&amp;per.t=5&amp;page=2"), "{m}");
+        assert!(
+            m.contains("row 11") && m.contains("row 12") && !m.contains("row 10<"),
+            "sliced to page 3"
+        );
+        assert!(
+            m.contains("sort=n&amp;dir=desc&amp;q=r%C3%A9&amp;cols=n&amp;per.t=5&amp;page=2"),
+            "{m}"
+        );
         let huge = UiState::parse("/t", "per.t=100000", "");
-        let m = paged_table_with(&Caps::NONE, "t", "/t", &cols, &rows, 12, PagedTableOptions::default().state(&huge)).into_string();
-        assert!(m.contains("<option value=\"50\" selected"), "a remembered size is capped");
+        let m = paged_table_with(
+            &Caps::NONE,
+            "t",
+            "/t",
+            &cols,
+            &rows,
+            12,
+            PagedTableOptions::default().state(&huge),
+        )
+        .into_string();
+        assert!(
+            m.contains("<option value=\"50\" selected"),
+            "a remembered size is capped"
+        );
     }
 }

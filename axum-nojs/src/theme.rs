@@ -74,14 +74,20 @@ pub struct ThemeToggle<'a> {
 impl Ui {
     /// Auto, light and dark, posted to `action`; the request's theme is pressed.
     pub fn theme_toggle<'a>(&self, action: &'a str) -> ThemeToggle<'a> {
-        ThemeToggle { action, current: self.theme }
+        ThemeToggle {
+            action,
+            current: self.theme,
+        }
     }
 }
 
 impl Redirect {
     /// Remember `theme` for this visitor: what the handler behind [`Ui::theme_toggle`] sends.
     pub fn theme(self, theme: Theme) -> Self {
-        self.cookie(format!("{THEME_COOKIE}={}; Path=/; Max-Age=31536000; SameSite=Lax", theme.as_str()))
+        self.cookie(format!(
+            "{THEME_COOKIE}={}; Path=/; Max-Age=31536000; SameSite=Lax",
+            theme.as_str()
+        ))
     }
 }
 

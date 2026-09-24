@@ -54,7 +54,16 @@ impl Ui {
     /// A drawer opened by a button labelled `label`; its id is the label's slug, and
     /// `?dialog=<id>` renders it open.
     pub fn drawer<'a>(&'a self, label: &'a str) -> Drawer<'a> {
-        Drawer { ui: self, id: slug(label), label, nav: Markup::default(), body: Markup::default(), title: None, sidebar: false, open: false }
+        Drawer {
+            ui: self,
+            id: slug(label),
+            label,
+            nav: Markup::default(),
+            body: Markup::default(),
+            title: None,
+            sidebar: false,
+            open: false,
+        }
     }
 }
 
@@ -98,7 +107,16 @@ impl<'a> Drawer<'a> {
 
 impl Render for Drawer<'_> {
     fn render(&self) -> Markup {
-        let Drawer { ui, ref id, label, ref nav, ref body, title, sidebar, open } = *self;
+        let Drawer {
+            ui,
+            ref id,
+            label,
+            ref nav,
+            ref body,
+            title,
+            sidebar,
+            open,
+        } = *self;
         let invokers = ui.has(Cap::Invokers);
         let open = open || ui.state.dialog() == Some(id);
         let title = title.unwrap_or(label);

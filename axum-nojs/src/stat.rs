@@ -56,7 +56,11 @@ pub struct Stat<'a> {
 impl Ui {
     /// A card showing `value` under `label`.
     pub fn stat<'a>(&self, label: &'a str, value: &'a str) -> Stat<'a> {
-        Stat { label, value, ..Stat::default() }
+        Stat {
+            label,
+            value,
+            ..Stat::default()
+        }
     }
 }
 
@@ -96,7 +100,9 @@ impl Trend {
     /// sign or every digit is zero.
     pub fn of(delta: &str) -> Trend {
         let t = delta.trim_start();
-        if !t.chars().any(|c| c.is_ascii_digit() && c != '0') { return Trend::Flat; }
+        if !t.chars().any(|c| c.is_ascii_digit() && c != '0') {
+            return Trend::Flat;
+        }
         match t.chars().next() {
             Some('+') => Trend::Up,
             Some('-' | '\u{2212}') => Trend::Down,
@@ -166,7 +172,12 @@ mod tests {
         let ui = Ui::default();
         let inferred = ui.stat("Orders", "0").delta("-3").render().into_string();
         assert!(inferred.contains("down") && inferred.contains("nojs-stat-bad"));
-        let forced = ui.stat("Orders", "0").delta("-3").trend(Trend::Flat).render().into_string();
+        let forced = ui
+            .stat("Orders", "0")
+            .delta("-3")
+            .trend(Trend::Flat)
+            .render()
+            .into_string();
         assert!(forced.contains("unchanged"));
     }
 }

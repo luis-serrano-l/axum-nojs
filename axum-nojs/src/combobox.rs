@@ -90,7 +90,8 @@ impl<'a> Combobox<'a> {
 
     /// Suggestions under `<optgroup label>`.
     pub fn group(mut self, label: &'a str, values: impl IntoIterator<Item = &'a str>) -> Self {
-        self.suggestions.push((Some(label), values.into_iter().collect()));
+        self.suggestions
+            .push((Some(label), values.into_iter().collect()));
         self
     }
 
@@ -129,14 +130,28 @@ impl<'a> Combobox<'a> {
 
 impl Render for Combobox<'_> {
     fn render(&self) -> Markup {
-        let Combobox { ui, name, action, ref suggestions, ref results, multi, create, label, placeholder } = *self;
+        let Combobox {
+            ui,
+            name,
+            action,
+            ref suggestions,
+            ref results,
+            multi,
+            create,
+            label,
+            placeholder,
+        } = *self;
         let query = ui.param(name).unwrap_or("");
         let selected: Vec<&str> = ui.params("sel").collect();
         let needle = query.trim().to_lowercase();
         let results: Vec<&str> = match results {
             Some(r) => r.clone(),
             None if needle.is_empty() => Vec::new(),
-            None => suggestions.iter().flat_map(|(_, v)| v.iter().copied()).filter(|v| v.to_lowercase().contains(&needle)).collect(),
+            None => suggestions
+                .iter()
+                .flat_map(|(_, v)| v.iter().copied())
+                .filter(|v| v.to_lowercase().contains(&needle))
+                .collect(),
         };
         let list_id = format!("{name}-options");
         let results_id = format!("{name}-results");
