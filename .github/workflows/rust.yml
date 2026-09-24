@@ -24,6 +24,9 @@ jobs:
       with:
         components: clippy, rustfmt
     - uses: Swatinem/rust-cache@v2
+    # Blitz (axum-nojs-test) finds fonts through fontconfig.
+    - name: System libraries
+      run: sudo apt-get update && sudo apt-get install -y libfontconfig1-dev
 
     - name: Format
       run: cargo fmt --all --check
