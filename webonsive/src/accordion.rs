@@ -10,6 +10,9 @@
 //! `interpolate-size: allow-keywords` (Chrome 129 only) animate the height between `0` and
 //! `auto`; without `interpolate-size` the panel snaps.
 //!
+//! **What it does not do without script:** arrow keys between summaries (the WAI-ARIA accordion
+//! pattern); remembering which section was open across reloads needs `UiState` or `?open=`.
+//!
 //! **Fallback:** `<details>` alone (baseline 2020) still toggles; only the exclusivity and the
 //! animation are lost. No `Caps` branch is needed; the markup is the same everywhere.
 //!

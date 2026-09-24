@@ -12,6 +12,9 @@
 //!   (Chrome 125, Firefox 147, Safari 26) to place the menu under its button, at its end, or
 //!   to its right (`Placement`).
 //!
+//! **What it does not do without script:** position itself against the opener where anchor
+//! positioning is missing; it is centred instead.
+//!
 //! **Fallback:** without `Caps::Anchor` the popover is UA-centred, which is still usable.
 //! Without `Caps::Popover` the menu is a `<details>` dropdown (a submenu a nested one): it
 //! opens and closes on click but has no light dismiss.

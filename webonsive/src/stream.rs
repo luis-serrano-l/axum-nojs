@@ -14,6 +14,9 @@
 //!   is that stream for any server (`http` feature); the `axum` feature turns it into a
 //!   response with `IntoResponse`.
 //!
+//! **What it does not do without script:** fill slots out of order where declarative shadow DOM
+//! streaming is missing; the fallback keeps document order.
+//!
 //! **Fallback:** without `Caps::StreamingDsd`, `slot` leaves an HTML comment marker and the
 //! response is streamed *in document order*: the bytes up to the first marker go out at once,
 //! then each section as soon as it and everything before it are ready. Every browser renders

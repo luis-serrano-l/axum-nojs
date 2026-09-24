@@ -18,6 +18,9 @@
 //! - `<output>` for the range, so assistive tech announces it as a result. Counts use a comma
 //!   every three digits.
 //!
+//! **What it does not do without script:** load the next page on scroll; paging, sorting and
+//! filtering are each a navigation.
+//!
 //! **Fallback:** none needed. Every control is a link or a form.
 //!
 //! **Server state:** with a `UiState` in the options the page size is `per.<id>`, a state key,

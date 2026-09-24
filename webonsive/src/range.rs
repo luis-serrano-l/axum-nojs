@@ -11,6 +11,10 @@
 //! only the thumbs take it (`::-webkit-slider-thumb`, `::-moz-range-thumb`), so either thumb
 //! can be dragged. Each has its own `<output>`.
 //!
+//! **What it does not do without script:** show the value while dragging (the `<output>` holds
+//! the value the server last saw), or stop the two thumbs of a pair crossing; the server
+//! reorders them with `range::order`.
+//!
 //! **Fallback:** none needed. Without `list` support the ticks are simply not drawn. A pair
 //! whose thumbs cross posts a low above the high; [`order`] swaps them back on the server.
 //!

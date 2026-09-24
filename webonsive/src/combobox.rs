@@ -16,6 +16,10 @@
 //!   result is a link that adds it to the selection (or replaces it, unless `multi`), every
 //!   chip has a link that removes it, and the "create" row is a plain post form.
 //!
+//! **What it does not do without script:** filter as you type against the server or move
+//! through results with arrow keys and a live `aria-activedescendant`; suggestions come from
+//! the `<datalist>` sent with the page.
+//!
 //! **Fallback:** none needed; `Caps` is accepted for uniformity and unused.
 //!
 //! **Without script:** results update per round trip and the arrow keys do not move into

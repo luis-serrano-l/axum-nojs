@@ -7,6 +7,8 @@
 //! carries its direction in words for screen readers (`<span class="wo-sr">`) as well as an
 //! arrow and a colour; the grid is `repeat(auto-fit, minmax(12rem, 1fr))`, so no media query.
 //!
+//! **What it does not do without script:** update live; the number is as fresh as the page.
+//!
 //! **Fallback:** none needed.
 //!
 //! ```rust

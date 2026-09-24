@@ -52,7 +52,7 @@ scripts/verify.sh                  # everything above plus a <script> grep and t
 1. One component = one file `webonsive/src/<name>.rs`, registered in `lib.rs` as `pub mod` and
    re-exported with `pub use`.
 2. File starts with a `//!` header: what it does, **Platform features** (with browser baseline
-   versions), **Fallback**, and a runnable ```` ```rust ```` usage example (these are doctests).
+   versions), **What it does not do without script**, **Fallback**, and a runnable ```` ```rust ```` usage example (these are doctests).
 3. CSS lives beside the component as `pub const CSS: &str` and must be appended to the array in
    `stylesheet()` in `lib.rs`; `layout()` inlines that once per page. Theming only through
    `--wo-*` custom properties defined in `layout.rs`.

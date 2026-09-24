@@ -22,6 +22,9 @@
 //! - Post/Redirect/Get for success; on error the server re-renders the form with values and
 //!   messages.
 //!
+//! **What it does not do without script:** validate against the server as you type, or warn
+//! about unsaved changes on leaving the page.
+//!
 //! **Fallback:** without `field-sizing` a textarea keeps its `rows` and can be resized by
 //! hand. Without the script the counter shows the length of the last submitted value and
 //! `maxlength` still stops input at the limit. `Caps` is unused.

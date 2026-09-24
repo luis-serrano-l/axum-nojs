@@ -20,6 +20,9 @@
 //! - `<progress>` (baseline 2015) for the steps done out of the total.
 //! - [`summary`] renders the review as a `<dl>` with an "Edit" link per value.
 //!
+//! **What it does not do without script:** keep the step inputs when the browser drops the form
+//! on back; state travels in hidden fields and the query.
+//!
 //! **Fallback:** none needed. Everything is a link or a form; `Caps` is unused.
 //!
 //! **Finding:** the entered values are the app's data, not UI state, so they do not belong

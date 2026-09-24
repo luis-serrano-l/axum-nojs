@@ -6,6 +6,9 @@
 //! CSS custom properties. The toggle is a `<form method="post">`; the server stores the choice
 //! in a cookie and sets `data-theme` on `<html>`.
 //!
+//! **What it does not do without script:** follow a change of the OS preference while a cookie
+//! choice is set; the cookie wins until reset to auto.
+//!
 //! **Fallback:** none needed. Without a cookie the OS preference wins. Colours are switched by
 //! a media query and `data-theme`, so `light-dark()` support (`Caps::LightDark`) is only
 //! reported, never required. The form is a swap root: the [`crate::enhance`] script applies

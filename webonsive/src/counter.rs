@@ -10,6 +10,9 @@
 //! value can be typed into an `<input type="number">` with `min`, `max`, `step` (baseline 2015), posted
 //! with `op=set`; the browser refuses a typed value off the bounds or the step.
 //!
+//! **What it does not do without script:** change the number without a round trip; each step is
+//! a POST and a redirect.
+//!
 //! **Fallback:** without view transitions the page simply reloads.
 //!
 //! **Enhanced:** the form is a swap root (`data-wo="swap"`), so with the [`crate::enhance`]

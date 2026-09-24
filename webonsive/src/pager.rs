@@ -11,6 +11,9 @@
 //!   reads as a green block sliding down over the fresh rows.
 //! - `scroll-margin` + fragment `#more` keeps the viewport on the new rows after navigation.
 //!
+//! **What it does not do without script:** infinite scroll or keeping the scroll position
+//! across pages.
+//!
 //! **Fallback:** without `Caps::ViewTransitions` the transition names are omitted and the page
 //! navigates normally; the `#more` fragment still scrolls to the new rows.
 //!

@@ -7,6 +7,9 @@
 //! item marked `aria-current="page"`; separators drawn by CSS `::before` so screen readers do
 //! not read them; the folded middle is a `<details>` element.
 //!
+//! **What it does not do without script:** collapse to fit the width as it changes; the fold is
+//! decided by item count on the server.
+//!
 //! **Fallback:** none needed.
 //!
 //! ```rust

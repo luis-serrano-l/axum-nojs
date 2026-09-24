@@ -474,6 +474,13 @@ mod tests {
             let head = header(source);
             assert!(head.contains("**Platform features:**"), "{}: no Platform features line", c.module);
             assert!(head.contains("**Fallback:**"), "{}: no Fallback line", c.module);
+            if !["enhance", "layout", "caps", "state"].contains(&c.module) {
+                assert!(
+                    head.contains("**What it does not do without script:**"),
+                    "{}: no \"What it does not do without script\" paragraph",
+                    c.module
+                );
+            }
             assert!(head.contains("```rust"), "{}: no usage example", c.module);
             for ft in c.features {
                 assert!(head.contains(ft.name), "{}: header does not mention `{}`", c.module, ft.name);

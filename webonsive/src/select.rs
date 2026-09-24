@@ -16,6 +16,9 @@
 //!   form without saving it. The server renders only the options whose text contains the
 //!   query, and always the selected one.
 //!
+//! **What it does not do without script:** type-ahead search beyond what the browser offers;
+//! long lists get a server-side filter box instead.
+//!
 //! **Fallback:** without `Caps::BaseSelect` a plain `<select>` with plain options (icons as
 //! text before the label). Older parsers also drop a `<button>` inside `<select>`, so the
 //! enhanced markup is only emitted when the browser is known to want it.

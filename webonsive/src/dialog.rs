@@ -14,6 +14,9 @@
 //! - Focus: the close control sits last in the markup, so the dialog's own focusing steps land
 //!   on the first field in the body, then on the confirm button.
 //!
+//! **What it does not do without script:** return focus to the opener in the `:target`
+//! fallback, trap focus there, or post a form and close without reloading.
+//!
 //! **Fallback:** when `Caps` lacks `Invokers`, the opener is a link to `#id` and a `:target`
 //! rule shows the dialog as a fixed overlay; links to `#` close and cancel it. Only one variant
 //! is ever in the markup.

@@ -15,6 +15,9 @@
 //!   the new tab, across documents through the layout's `@view-transition` rule and in place
 //!   with the enhancement script.
 //!
+//! **What it does not do without script:** arrow keys between tabs (the WAI-ARIA tabs pattern);
+//! each tab is a `<summary>` reached by Tab.
+//!
 //! **Fallback:** without `Caps::DetailsContent` the same `<details>` render as a stacked
 //! accordion, reusing the accordion styles. Without `name` support exclusivity is lost.
 //!

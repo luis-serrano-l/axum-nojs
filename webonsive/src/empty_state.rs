@@ -6,6 +6,8 @@
 //! **Platform features:** plain HTML; the action is an `<a>` or, for something that changes
 //! data, a `<form method="post">` button, so it works with nothing else.
 //!
+//! **What it does not do without script:** nothing; it is static content.
+//!
 //! **Fallback:** none needed.
 //!
 //! ```rust

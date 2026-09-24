@@ -25,6 +25,9 @@
 //! - `aria-busy` on a loading body, drawn as skeleton bars, for a table filled by a later
 //!   stream chunk.
 //!
+//! **What it does not do without script:** resize or reorder columns, or keep row selection
+//! across sorts.
+//!
 //! **Fallback:** none needed. Without `Caps::ViewTransitions` the transition name is
 //! omitted; sorting, filtering, choosing columns and the bulk form are plain navigations and
 //! posts either way.
