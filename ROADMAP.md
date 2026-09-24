@@ -466,6 +466,19 @@ script, proven in CI, with server-side flows included.
 - [ ] Comparison page in docs (`docs/comparison.md`): maud-ui, htmx + hand-written Maud,
   Leptos/Dioxus on required JS, CSP, no-script proof, API shape (builder vs `Props`), server
   state; side-by-side of `ui.button("Ship it").primary()` vs `button::render(button::Props {..})`.
+- [ ] API shape stays builders (asked and answered after the owner weighed maud-ui's
+  `Props { .., ..Default::default() }`; M11 tried options structs and M18 removed them). Why:
+  components read their input from `ui` (params, state, caps, swap ids), which a detached
+  struct cannot; list adders with last-item modifiers (`.tab(..).badge(3)`) beat nested
+  `vec![Item { .., ..Default::default() }]`; short calls stay short inside `html!`; setters
+  carry meaning (no-arg switches on, `bool` from a condition, `.id()` derived by `slug`).
+  Take the two things Props does better:
+  - [ ] Builders are plain data: every builder derives `Clone` and `Debug` so a route can
+    build one in a loop, keep it in a variable, or pass it around; a test or clippy-style
+    check fails on a builder missing either.
+  - [ ] Every option discoverable in one place: each component's rustdoc groups its setters
+    (required call, switches, conditions, list adders and their modifiers) on the builder
+    type, and `docs/comparison.md` shows the builder next to the equivalent Props call.
 - [ ] Complete flows, not just widgets: a demo "app" section with sign-in with server
   validation errors, create/edit/delete via PRG with flash, a filterable paged table, and a
   multi-step wizard, all with script off; each a Blitz test.
