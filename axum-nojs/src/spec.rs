@@ -227,6 +227,19 @@ pub const SPECS: &[ComponentSpec] = &[
         ),
     },
     ComponentSpec {
+        name: "Date picker",
+        module: "date_picker",
+        features: &[
+            f("popover", b("114", "125", "17")),
+            f("anchor-name", b("125", "147", "26")),
+            f("<input type=\"date\">", b("20", "57", "14.1")),
+        ],
+        fallback: "without popover the calendar is laid out in the form; .native() is the browser's own control",
+        needs_js: NeedsJs::Partial(
+            "writing the picked day onto the button before the form is sent needs script",
+        ),
+    },
+    ComponentSpec {
         name: "Dialog",
         module: "dialog",
         features: &[
@@ -625,6 +638,7 @@ mod tests {
         ("grid", include_str!("grid.rs")),
         ("split", include_str!("split.rs")),
         ("calendar", include_str!("calendar.rs")),
+        ("date_picker", include_str!("date_picker.rs")),
         ("dialog", include_str!("dialog.rs")),
         ("popover", include_str!("popover.rs")),
         ("tabs", include_str!("tabs.rs")),

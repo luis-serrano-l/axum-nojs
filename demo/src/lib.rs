@@ -1335,6 +1335,14 @@ async fn calendar_page(ui: Ui) -> Page {
                 Some(d) => { "You picked " (d) ". Weekends cannot be picked; a dot marks an event." },
                 None => { "Pick a weekday. The month links and the days are ordinary links: the page comes back with " code { "?day=" } " set." },
             } }
+            h2 { "In a form" }
+            form class="nojs-stack" method="get" action="/calendar" {
+                // code: /calendar
+                (ui.date_picker("due", "Due date").required().disabled(|d| d.weekday() >= 5))
+                (ui.date_picker("born", "Born").native().max("2026-12-31"))
+                (ui.button("Save").primary())
+                // end code
+            }
         },
     )
 }

@@ -519,8 +519,15 @@ The showcase for "wait, this needs no JS?".
   adder form of `.events`), `.sunday_first()` (Monday by default), `.radio()` and
   `.required()`. `Ui::link_with(key, value)` builds the "this URL with one parameter changed"
   links. Demo `/calendar` (weekends off, two events); in `PATHS`, `COMPONENTS` and `SPECS`.
-- [ ] `date_picker.rs`: calendar inside a popover (no popover → inline grid) writing a form
+- [x] `date_picker.rs`: calendar inside a popover (no popover → inline grid) writing a form
   field; native `input type=date` when the caller asks for `.native()`.
+  Done: `ui.date_picker(name, label)` with `.value/.min/.max/.disabled/.required/.native`.
+  The popover holds the calendar in radio mode (checked radio = the posted value), anchored
+  under the button where anchor positioning exists. After a month link the calendar comes
+  back laid out in the page, since a popover cannot arrive open. The button shows the saved
+  date ("24 September 2026"); without script it does not follow a new pick until the form is
+  sent. `Calendar::value()` added so a form's saved date shows. Demo: a GET form on
+  `/calendar`; the browser check opens the popover and picks a day.
 - [ ] `table` upgrades: row selection with bulk actions (checkboxes + one form), inline edit
   row via PRG, sticky header.
 - [ ] `upload.rs`: file input with a preview list after the round trip; progress only through

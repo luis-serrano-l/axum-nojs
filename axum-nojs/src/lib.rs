@@ -61,6 +61,7 @@ pub mod cluster;
 pub mod color;
 pub mod combobox;
 pub mod counter;
+pub mod date_picker;
 pub mod dialog;
 pub mod drawer;
 pub mod empty_state;
@@ -243,6 +244,7 @@ pub const COMPONENT_CSS: &[&str] = &[
     grid::CSS,
     split::CSS,
     calendar::CSS,
+    date_picker::CSS,
     dialog::CSS,
     popover::CSS,
     tabs::CSS,

@@ -148,8 +148,18 @@ impl Date {
         Date { year, month, day }
     }
 
+    /// `"24 September 2026"`, the date as a button or a sentence shows it.
+    pub(crate) fn long(self) -> String {
+        format!(
+            "{} {} {}",
+            self.day,
+            MONTHS[usize::from(self.month - 1)],
+            self.year
+        )
+    }
+
     /// `"Thursday, 24 September 2026"`, what a screen reader says for the day.
-    fn spoken(self) -> String {
+    pub(crate) fn spoken(self) -> String {
         format!(
             "{}, {} {} {}",
             WEEKDAYS[usize::from(self.weekday())],
@@ -194,6 +204,7 @@ pub struct Calendar<'a> {
     sunday_first: bool,
     radio: bool,
     required: bool,
+    value: Option<Date>,
 }
 
 impl Ui {
@@ -211,6 +222,7 @@ impl Ui {
             sunday_first: false,
             radio: false,
             required: false,
+            value: None,
         }
     }
 }
@@ -263,6 +275,13 @@ impl<'a> Calendar<'a> {
         self
     }
 
+    /// The picked day (`YYYY-MM-DD`) when it does not come from the query string: a saved
+    /// value, the form's own state.
+    pub fn value(mut self, date: &str) -> Self {
+        self.value = Date::parse(date);
+        self
+    }
+
     /// In radio mode, a day must be picked before the form submits.
     pub fn required(mut self) -> Self {
         self.required = true;
@@ -282,9 +301,9 @@ impl Render for Calendar<'_> {
         let name = self.name;
         let month_key = format!("month.{name}");
         let today = self.today.unwrap_or_else(Date::today);
-        let picked = ui
-            .param(name)
-            .and_then(Date::parse)
+        let picked = self
+            .value
+            .or_else(|| ui.param(name).and_then(Date::parse))
             .filter(|&d| !self.off(d));
         let shown = ui
             .param(&month_key)
@@ -423,7 +442,7 @@ a.nojs-calendar-day:hover, label.nojs-calendar-day:not(.nojs-calendar-off):hover
 .nojs-calendar-picked, a.nojs-calendar-picked:hover { background: var(--nojs-primary); color: var(--nojs-on-primary); }
 .nojs-calendar-day:has(.nojs-calendar-radio:checked) { background: var(--nojs-primary); color: var(--nojs-on-primary); }
 .nojs-calendar-off { color: var(--nojs-muted); opacity: 0.5; cursor: not-allowed; }
-.nojs-calendar-radio { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: inherit; }
+.nojs-calendar-day .nojs-calendar-radio { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: inherit; }
 .nojs-calendar-day:has(.nojs-calendar-radio:focus-visible) { outline: 3px solid color-mix(in srgb, var(--nojs-ring) 50%, transparent); }
 .nojs-calendar-dots { position: absolute; bottom: 3px; display: flex; gap: 2px; }
 .nojs-calendar-dots span { width: 4px; height: 4px; border-radius: 50%; background: currentColor; }

@@ -288,6 +288,14 @@ try {
   assert(await js("return document.activeElement.matches('.nojs-button-primary:focus-visible')"), "button: reached by Tab, :focus-visible");
   assert(await js("return getComputedStyle(document.activeElement).outlineWidth") === "3px", "button: the focus ring is a 3px outline");
 
+  // Date picker: the button opens the calendar popover; a day is a radio the form posts.
+  await go("/calendar?due=2026-09-24");
+  await click("#f-due");
+  await until(async () => await js("return document.querySelector('#f-due-calendar').matches(':popover-open')"), "date picker: popover opens");
+  assert(true, "date picker: the button opens the calendar");
+  await click("#f-due-calendar label:has(input[value='2026-09-25'])");
+  assert(await js("return document.querySelector(\"#f-due-calendar input[value='2026-09-25']\").checked"), "date picker: clicking a day checks its radio");
+
   // Theme: applied in place.
   await click(".nojs-theme button[value=dark]");
   await until(async () => (await js("return document.documentElement.dataset.theme")) === "dark", "theme");

@@ -154,6 +154,18 @@
       "needs_js_note": "changing month in place and arrow-key moves between days need script"
     },
     {
+      "name": "Date picker",
+      "module": "date_picker",
+      "features": [
+        { "name": "popover", "baseline": { "chrome": "114", "firefox": "125", "safari": "17" } },
+        { "name": "anchor-name", "baseline": { "chrome": "125", "firefox": "147", "safari": "26" } },
+        { "name": "<input type=\"date\">", "baseline": { "chrome": "20", "firefox": "57", "safari": "14.1" } }
+      ],
+      "fallback": "without popover the calendar is laid out in the form; .native() is the browser's own control",
+      "needs_js": "partial",
+      "needs_js_note": "writing the picked day onto the button before the form is sent needs script"
+    },
+    {
       "name": "Dialog",
       "module": "dialog",
       "features": [
