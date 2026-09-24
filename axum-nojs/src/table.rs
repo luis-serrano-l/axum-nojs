@@ -772,7 +772,9 @@ pub const CSS: &str = r#"
 .nojs-table th a:hover { color: var(--nojs-fg); }
 .nojs-table th.nojs-table-sorted { color: var(--nojs-fg); }
 .nojs-table-arrow { font-size: 0.75em; margin-left: 0.25em; }
-.nojs-table-num { text-align: right; font-variant-numeric: tabular-nums; }
+/* Code in a cell is plain monospace text, so a long path wraps without a broken box. */
+.nojs-table td code { background: none; border: 0; padding: 0; }
+.nojs-table-num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .nojs-table-select { width: 2.5rem; text-align: center; }
 .nojs-table-menu { width: 3.5rem; text-align: center; text-wrap: nowrap; }
 .nojs-table-select input { margin: 0; }

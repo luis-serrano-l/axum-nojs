@@ -275,7 +275,7 @@ impl Render for Dialog<'_> {
 
 /// Styles for this component; included in [`crate::stylesheet`].
 pub const CSS: &str = r#"
-.nojs-dialog { display: inline-flex; gap: var(--nojs-space); align-items: center; }
+.nojs-dialog { display: inline-flex; flex-wrap: wrap; gap: var(--nojs-space); align-items: center; }
 /* shadcn Dialog: popover surface, rounded-lg, p-6, shadow-lg, the --nojs-overlay backdrop. */
 .nojs-dialog dialog {
   background: var(--nojs-popover); color: var(--nojs-fg);
@@ -313,6 +313,12 @@ pub const CSS: &str = r#"
   color: var(--nojs-fg); background: none; border: 0; box-shadow: none; border-radius: var(--nojs-radius-sm); text-decoration: none;
 }
 .nojs-dialog-close:hover { opacity: 1; background: var(--nojs-accent); }
+
+/* Narrow screens: the footer stacks, full width, confirm on top (shadcn's flex-col-reverse). */
+@media (max-width: 40rem) {
+  .nojs-dialog-actions { flex-direction: column-reverse; align-items: stretch; }
+  .nojs-dialog-actions > * { width: 100%; }
+}
 
 /* :target fallback: a dialog that is the URL fragment renders as a fixed overlay. */
 .nojs-dialog dialog:target {

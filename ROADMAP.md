@@ -362,9 +362,16 @@ Done before M21 so the primitives are born in this look.
   Done: index groups are grids of cards (the title link stretches over the card), "built on"
   items are outline badges, the stage is a preview box over a `--nojs-surface` code block, and
   the seven `nojs-hl-*` classes use danger/ok/warn/muted/fg (GitHub-like, still tokens only).
-- [ ] Side-by-side check: for each component, a Firefox screenshot of the demo (light and dark,
+- [x] Side-by-side check: for each component, a Firefox screenshot of the demo (light and dark,
   1280 and 420 wide) next to the shadcn docs page for the same component; mismatches fixed
   or noted. `tests/shots/` refreshed; the colour-literal test still passes.
+  Done with `scripts/look.sh` (17 pages × light/dark × 1280/420, plus the shadcn docs page,
+  into `target/look/`). Fixed: the dialog footer now stacks full width under 40rem (confirm
+  on top, as shadcn's `flex-col-reverse`) and the dialog wraps under its trigger instead of
+  squeezing beside it; table number cells no longer wrap and `code` in cells is plain text.
+  Noted, kept: shadcn centres its preview in a tall box, the demo stage is left-aligned
+  because it carries explanatory text; toasts only appear after a POST, so Firefox cannot
+  shoot them (the Blitz toast shot covers them); the wizard has no shadcn counterpart.
 - [ ] README (screenshot, theming section) and FINDINGS updated; clippy, tests,
   `scripts/verify.sh` green; local commit.
 
@@ -432,4 +439,39 @@ The React idea worth keeping: a component model users extend, not a closed catal
   (primitives → components → widgets → yours), then a comparison with Leptos, Dioxus and
   htmx + hand-written Maud.
 - [ ] Demo index grouped by layer.
-- [ ] M13 (Publish) happens after M25.
+- [ ] M13 (Publish) happens after M26.
+
+## M26 · Compete on the guarantee, not the catalogue
+`maud-ui` (crates.io, MIT, 0.20.3 on 2026-09-23) already ships the same stack and look: Maud,
+shadcn styling, 84 components, 31 blocks, 15 JS widget shells. It needs htmx plus an 89 KB
+(24 KB gzip) script and 313 KB (44 KB gzip) of CSS, its no-script claim is untested (its docs
+say the no-JS browser check "was not run"), and its API is `Props { .., ..Default::default() }`.
+Do not chase its breadth or wrap JS widgets. Win on what it cannot promise: zero required
+script, proven in CI, with server-side flows included.
+- [ ] Name: `maud-ui` rules out a generic `*-ui`; the differentiator belongs in the name.
+  Proposed `nojs-ui` (+ `nojs-ui-caps`, `nojs-ui-test`, Axum stays the `axum` feature; free
+  on crates.io as of 2026-09-24), or keep `axum-nojs`. Ask the owner before renaming; the
+  `nojs-*` classes, `--nojs-*` tokens and `/nojs/` routes stay either way.
+- [ ] Measure and publish: bytes shipped per demo page (HTML, CSS, script = 0 required),
+  `stylesheet()` size raw and gzip, next to maud-ui's numbers; a bench or test keeps them
+  from regressing.
+- [ ] Strict CSP: the demo sends `Content-Security-Policy: script-src 'none'` (and `'self'`
+  only when the enhancement script is on); a test asserts every route renders under it and
+  README documents the header.
+- [ ] README badge line: "0 KB JavaScript required · verified by a script-less renderer (Blitz)
+  in CI", linking the only-one-script test and the Blitz suite.
+- [ ] Comparison page in docs (`docs/comparison.md`): maud-ui, htmx + hand-written Maud,
+  Leptos/Dioxus on required JS, CSP, no-script proof, API shape (builder vs `Props`), server
+  state; side-by-side of `ui.button("Ship it").primary()` vs `button::render(button::Props {..})`.
+- [ ] Complete flows, not just widgets: a demo "app" section with sign-in with server
+  validation errors, create/edit/delete via PRG with flash, a filterable paged table, and a
+  multi-step wizard, all with script off; each a Blitz test.
+- [ ] Close the shadcn must-have gaps M21 does not cover: `tooltip` (popover `hint` /
+  `title` fallback), `alert`, `progress`/`meter`, `separator`, `textarea` field. Then stop:
+  no JS widget shells (editors, grids, maps).
+- [ ] Audience pages in docs: public-sector / GOV.UK-style services, strict-CSP environments,
+  low bandwidth and old devices, Tor Browser "Safest", internal tools, each with the
+  guarantee it relies on.
+- [ ] Launch material: live demo host, a post "shadcn look, zero JavaScript, verified",
+  crates.io keywords `no-js`, `progressive-enhancement`, `maud`, `ssr`, `components`.
+  Posting to r/rust / This Week in Rust and hosting are outward actions: ask the owner first.
