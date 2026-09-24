@@ -6,17 +6,35 @@ on:
   pull_request:
     branches: [ "main" ]
 
+# A new push to the same branch or PR cancels the run still going.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   CARGO_TERM_COLOR: always
+  RUSTFLAGS: -D warnings
 
 jobs:
-  build:
-
+  check:
     runs-on: ubuntu-latest
-
     steps:
     - uses: actions/checkout@v4
-    - name: Build
-      run: cargo build --verbose
-    - name: Run tests
-      run: cargo test --verbose
+    - uses: dtolnay/rust-toolchain@stable
+      with:
+        components: clippy
+    - uses: Swatinem/rust-cache@v2
+
+    - name: Clippy
+      run: cargo clippy --workspace --all-targets
+    # The library must build clean with no features and with only `http`.
+    - name: Clippy (feature levels)
+      run: |
+        cargo clippy -p axum-nojs --all-targets
+        cargo clippy -p axum-nojs --features http --all-targets
+    - name: Tests
+      run: cargo test --workspace
+    - name: Rustdoc
+      run: cargo doc --no-deps -p axum-nojs-caps -p axum-nojs --all-features
+      env:
+        RUSTDOCFLAGS: -D warnings
