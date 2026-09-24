@@ -26,6 +26,7 @@
 //! let m = range(&Caps::all(), "volume", 40);
 //! let m = range_with(&Caps::all(), "volume", 40, RangeOptions::default().min(0).max(100).step(5));
 //! assert!(m.into_string().contains("<output"));
+//! // A pair posted the wrong way round is put back in order.
 //! let (lo, hi) = order(80, 20);
 //! let m = range_pair_with(&Caps::all(), "price", (lo, hi), RangeOptions::default().step(10)).into_string();
 //! assert!(m.contains("name=\"price_min\"") && m.contains("name=\"price_max\""));

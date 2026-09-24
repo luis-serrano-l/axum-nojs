@@ -28,7 +28,7 @@
 //! let m = drawer(&Caps::all(), "Menu", nav.clone(), html! { p { "Page" } }).into_string();
 //! assert!(m.contains(r#"command="show-modal" commandfor="menu""#) && m.contains(r#"closedby="any""#));
 //! let m = drawer_with(&Caps::all(), "site", "Menu", nav, html! { p { "Page" } },
-//!     DrawerOptions::default().title("Browse").sidebar(true).open(true)).into_string();
+//!     DrawerOptions::default().title("Browse").sidebar().open(true)).into_string();
 //! assert!(m.contains("wo-drawer-sidebar") && m.contains(" open>"));
 //! ```
 
@@ -54,8 +54,8 @@ impl<'a> DrawerOptions<'a> {
         self
     }
     /// Sidebar on wide screens.
-    pub fn sidebar(mut self, on: bool) -> Self {
-        self.sidebar = on;
+    pub fn sidebar(mut self) -> Self {
+        self.sidebar = true;
         self
     }
     /// Open on arrival.

@@ -67,7 +67,10 @@ scripts/verify.sh                  # everything above plus a <script> grep and t
    `layout_with`: `<name>(caps, required…)` for the common case with no options (required text
    first; an id the caller does not care about is derived from its label with `crate::slug`),
    and `<name>_with(caps, …, options)` for everything else. The doc header shows the short
-   form first and one full `_with` form. Branch on `caps.has(Cap::X)` and emit only one variant, never both.
+   form first and one full `_with` form. Setter names follow the HTML attribute or element
+   they set (`.maxlength()`, `.placeholder()`, `.closedby()`). A setter with no argument
+   switches something on (`.required()`, `.danger()`, `.multi()`); one that takes a `bool` is
+   one a route sets from a condition (`.open(..)`, `.loading(..)`, a step's `.error(..)`). Branch on `caps.has(Cap::X)` and emit only one variant, never both.
    A root that should update in place gets `id=(enhance::swap_id(prefix, key))` and
    `data-wo="swap"`; the markup must behave identically without the script.
 6. Server-held state (theme, counter, active tab) travels via cookie or `?query=`; mutations use

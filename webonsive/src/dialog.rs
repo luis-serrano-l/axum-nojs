@@ -41,7 +41,7 @@
 //!     DialogOptions::default()
 //!         .title("Delete account?")
 //!         .size(DialogSize::Sm)
-//!         .danger(true)
+//!         .danger()
 //!         .confirm("Delete", "/account/delete")
 //!         .returns_to("/settings")
 //!         .cancel_label("Keep it")
@@ -153,8 +153,8 @@ impl<'a> DialogOptions<'a> {
     }
 
     /// Destructive styling.
-    pub fn danger(mut self, danger: bool) -> Self {
-        self.danger = danger;
+    pub fn danger(mut self) -> Self {
+        self.danger = true;
         self
     }
 

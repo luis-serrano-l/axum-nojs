@@ -264,3 +264,27 @@ Things that were changed or left alone:
   (`scripts/browser-check.mjs` follows).
 - `pager` is unchanged: its route builds rows up to the current page in three lines, so a
   closure-based source would not make the call shorter.
+
+## Done: names that read like HTML
+
+- **Flags take no argument.** A setter that was always called with `true` now just switches
+  its setting on:
+  - `Field::required()`
+  - `DialogOptions::danger()`, `MenuItem::danger()` and `MenuItem::disabled()`
+  - the `multi()` setters on the combobox and the accordion
+  - `AccordionOptions::controls()`
+  - `TabsOptions::vertical()` and `TabsOptions::select_below()`
+  - `TableOptions::choose_columns()`
+  - `FlashOptions::auto_hide()`
+  - `StatOptions::down_is_good()`
+  - `SkeletonOptions::heading()`
+  - `CounterOptions::typed()`
+  - `DrawerOptions::sidebar()`
+  - `Step::optional()`
+- **A `bool` stays where a route passes a condition.** These are `open(..)`, `loading(..)`,
+  a wizard step's `error(..)` and `progress(..)`.
+- **`Field::max_len` is now `Field::maxlength`**, the attribute it sets.
+- **`Field::error` takes the message** (`.error("Too short.")`) rather than an `Option`.
+  Messages that come from the server go through `FormOptions::errors` instead.
+- **Doc examples** say in a comment what a literal means where the reader would otherwise
+  have to look in another file: `(key, descending)`, `(label, value, step)`, `open.faq=0,2`.

@@ -46,11 +46,12 @@
 //! let rows = vec![Row::new(vec![html!{"a.txt"}, html!{"1 KB"}, html!{"—"}])];
 //! let m = table(&Caps::all(), "files", "/table", &cols, &rows);
 //!
-//! let menu = [MenuItem::link("Open", "/files/a.txt"), MenuItem::action("Delete", "/files/a.txt/delete").danger(true)];
+//! let menu = [MenuItem::link("Open", "/files/a.txt"), MenuItem::action("Delete", "/files/a.txt/delete").danger()];
 //! let rows = vec![Row::new(vec![html!{"a.txt"}, html!{"1 KB"}, html!{"—"}]).key("a.txt").detail(html!{ p { "Modified today." } }).menu(&menu)];
 //! let m = table_with(&Caps::all(), "files", "/table", &cols, &rows, TableOptions::default()
-//!     .sort(Some(("name", false))).filter("a").keep(&[("per", "5")])
-//!     .cols(Some(&["name", "size"])).choose_columns(true)
+//!     .sort(Some(("name", false))) // (column key, descending)
+//!     .filter("a").keep(&[("per", "5")])
+//!     .cols(Some(&["name", "size"])).choose_columns()
 //!     .bulk("/files/bulk", &[("archive", "Archive"), ("delete", "Delete")])
 //!     .csv("/table.csv")
 //!     .empty("No files yet."));
@@ -266,8 +267,8 @@ impl<'a> TableOptions<'a> {
         self
     }
     /// Show the "Columns" chooser.
-    pub fn choose_columns(mut self, choose: bool) -> Self {
-        self.choose_columns = choose;
+    pub fn choose_columns(mut self) -> Self {
+        self.choose_columns = true;
         self
     }
     /// A bulk post action with its buttons.

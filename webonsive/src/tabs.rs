@@ -42,7 +42,7 @@
 //!     Tab::new("Install", html! { p { "cargo add" } }),
 //!     Tab::new("Use", html! { p { "html!" } }).badge(3),
 //!     Tab::lazy_with("Changelog", &|| html! { p { "(long)" } }),
-//! ], TabsOptions::default().state(&state).vertical(true).select_below(true));
+//! ], TabsOptions::default().state(&state).vertical().select_below());
 //! let html = m.into_string();
 //! assert!(html.contains("href=\"/docs?tab.docs=0\""));
 //! assert!(html.contains("view-transition-name: wo-tabs-docs"));
@@ -118,13 +118,13 @@ impl<'a> TabsOptions<'a> {
         self
     }
     /// Titles in a column on the left.
-    pub fn vertical(mut self, vertical: bool) -> Self {
-        self.vertical = vertical;
+    pub fn vertical(mut self) -> Self {
+        self.vertical = true;
         self
     }
     /// Collapse to a `<select>` on narrow screens.
-    pub fn select_below(mut self, select: bool) -> Self {
-        self.select_below = select;
+    pub fn select_below(mut self) -> Self {
+        self.select_below = true;
         self
     }
 }

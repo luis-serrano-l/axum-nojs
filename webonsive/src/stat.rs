@@ -18,7 +18,7 @@
 //! // The sign of the delta says the direction: `+` up, `-` down, zero flat.
 //! let m = stat_with(&Caps::all(), "Error rate", "0.4%", StatOptions::default()
 //!     .delta("-0.2 pt")
-//!     .down_is_good(true)
+//!     .down_is_good()
 //!     .note("last 7 days")
 //!     .href("/errors")).into_string();
 //! assert!(m.contains("wo-stat-good") && m.contains("down") && m.contains(r#"href="/errors""#));
@@ -67,8 +67,8 @@ impl<'a> StatOptions<'a> {
         self
     }
     /// A fall is good news.
-    pub fn down_is_good(mut self, on: bool) -> Self {
-        self.down_is_good = on;
+    pub fn down_is_good(mut self) -> Self {
+        self.down_is_good = true;
         self
     }
     /// Small print under the value.

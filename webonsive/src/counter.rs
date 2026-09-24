@@ -24,7 +24,7 @@
 //! ```rust
 //! use webonsive::{Caps, counter, counter_with, counter::CounterOptions};
 //! let m = counter(&Caps::all(), "/counter", 3);
-//! let m = counter_with(&Caps::all(), "/counter", 10, CounterOptions::default().min(0).max(10).step(2).typed(true));
+//! let m = counter_with(&Caps::all(), "/counter", 10, CounterOptions::default().min(0).max(10).step(2).typed());
 //! let html = m.into_string();
 //! assert!(html.contains("value=\"inc\" aria-label=\"increment\" disabled"));
 //! assert!(html.contains("type=\"number\" name=\"value\" min=\"0\" max=\"10\" step=\"2\" value=\"10\""));
@@ -70,8 +70,8 @@ impl CounterOptions {
         self
     }
     /// Offer a number field to type the value.
-    pub fn typed(mut self, typed: bool) -> Self {
-        self.typed = typed;
+    pub fn typed(mut self) -> Self {
+        self.typed = true;
         self
     }
     /// Apply a posted `op` (`inc`, `dec`, `reset`, `set` with `typed`) to `value`, clamped to

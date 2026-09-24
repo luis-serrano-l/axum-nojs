@@ -33,7 +33,7 @@
 //!
 //! // Two at once, one of them an error, with a dismiss link and auto-hide.
 //! let text = stack(&[(Level::Ok, "Saved."), (Level::Danger, "Avatar too large.")]);
-//! let m = flash_with(&caps, Some(&text), FlashOptions::default().dismiss("/settings").auto_hide(true)).into_string();
+//! let m = flash_with(&caps, Some(&text), FlashOptions::default().dismiss("/settings").auto_hide()).into_string();
 //! assert!(m.contains(r#"role="alert""#) && m.contains("wo-flash-auto"));
 //! assert_eq!(m.matches("wo-flash-dismiss").count(), 2);
 //! ```
@@ -106,8 +106,8 @@ impl<'a> FlashOptions<'a> {
         self
     }
     /// Fade calm messages out; reduced motion keeps them.
-    pub fn auto_hide(mut self, on: bool) -> Self {
-        self.auto_hide = on;
+    pub fn auto_hide(mut self) -> Self {
+        self.auto_hide = true;
         self
     }
 }
@@ -176,7 +176,7 @@ mod tests {
 
     #[test]
     fn danger_is_an_alert_and_never_auto_hides() {
-        let m = flash_with(&Caps::all(), Some("danger:Failed."), FlashOptions::default().auto_hide(true)).into_string();
+        let m = flash_with(&Caps::all(), Some("danger:Failed."), FlashOptions::default().auto_hide()).into_string();
         assert!(m.contains(r#"role="alert""#) && !m.contains("wo-flash-auto") && !m.contains("wo-flash-dismiss"));
     }
 }

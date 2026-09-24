@@ -33,12 +33,13 @@
 //!     AccordionItem::new("Why?", html! { p { "B" } }),
 //! ]);
 //!
+//! // Items 0 and 2 of "faq" were left open, as the URL records it.
 //! let state = UiState::parse("/help", "open.faq=0,2", "");
 //! let m = accordion_with(&Caps::all(), "faq", &[
 //!     AccordionItem::new("Install", html! { p { "cargo add" } }).icon("\u{1F4E6}").summary("One line."),
 //!     AccordionItem::new("Use", html! { p { "html!" } }),
 //!     AccordionItem::new("More", accordion_with(&Caps::all(), "faq-more", &[AccordionItem::new("Nested", html! { p { "Own group." } })], AccordionOptions::default().state(&state))),
-//! ], AccordionOptions::default().state(&state).multi(true).controls(true));
+//! ], AccordionOptions::default().state(&state).multi().controls());
 //! let html = m.into_string();
 //! assert!(html.contains("href=\"/help?open.faq=2\">Install"), "open item's link removes itself from the list");
 //! assert!(html.contains("href=\"/help?open.faq=0%2C1%2C2\">Expand all"));
@@ -100,13 +101,13 @@ impl<'a> AccordionOptions<'a> {
         self
     }
     /// Let several sections stay open.
-    pub fn multi(mut self, multi: bool) -> Self {
-        self.multi = multi;
+    pub fn multi(mut self) -> Self {
+        self.multi = true;
         self
     }
     /// Show the expand/collapse links.
-    pub fn controls(mut self, controls: bool) -> Self {
-        self.controls = controls;
+    pub fn controls(mut self) -> Self {
+        self.controls = true;
         self
     }
 }

@@ -172,7 +172,7 @@ async fn dialog_page(ui: Ui) -> Markup {
         (dialog_with(&ui, "confirm", "Delete account", html! {
             p { "This cannot be undone. Everything you wrote goes with it." }
             label { "Tell us why (optional)" input name="reason" placeholder="Moving on"; }
-        }, DialogOptions::default().title("Delete account?").size(DialogSize::Sm).danger(true)
+        }, DialogOptions::default().title("Delete account?").size(DialogSize::Sm).danger()
             .confirm("Delete account", "/dialog/delete").cancel_label("Keep it").state(&ui.state)))
         p class="wo-note" { "Opened by an invoker button; the footer is a real form posting to " code { "/dialog/delete" } " with a hidden " code { "returns_to" } " so the server comes back here. Server-opened: " a href="/dialog?dialog=confirm" { "?dialog=confirm" } }
     })
@@ -197,11 +197,11 @@ async fn popover_page(ui: Ui) -> Markup {
                 MenuItem::heading("Signed in as Ada"),
                 MenuItem::link("Profile", "/popover").icon("@").shortcut("g p"),
                 MenuItem::link("Settings", "/settings").icon("\u{2699}").shortcut("g s"),
-                MenuItem::link("Billing", "/popover").icon("$").disabled(true),
+                MenuItem::link("Billing", "/popover").icon("$").disabled(),
                 MenuItem::separator(),
                 MenuItem::submenu("Theme", "account-theme", THEME).icon("\u{25d0}"),
                 MenuItem::separator(),
-                MenuItem::action("Sign out", "/popover/signout").icon("\u{2192}").danger(true),
+                MenuItem::action("Sign out", "/popover/signout").icon("\u{2192}").danger(),
             ]))
             (popover_menu_with(&ui, "more", "More", &[
                 MenuItem::link("Documentation", "/").icon("?"),
@@ -225,14 +225,14 @@ async fn tabs_page(ui: Ui) -> (Ui, Markup) {
             Tab::new("Use", html! { p { "Call a function, get " code { "Markup" } ", send it." } }).badge(3),
             // Lazy: the body is rendered only by the request that opens the tab.
             Tab::lazy_with("Why", &|| html! { p { "Because the platform can do this without script now. (Rendered on demand.)" } }),
-        ], TabsOptions::default().state(&ui.state).select_below(true))) }
+        ], TabsOptions::default().state(&ui.state).select_below())) }
         p class="wo-note" { "Deep link: " a href="/tabs?tab.demo=2" { "?tab.demo=2" } ". Leave and come back: the tab is remembered. The third tab is lazy; under 40rem the strip becomes a select." }
         h2 { "Vertical" }
         (tabs_with(&ui, "side", &[
             Tab::new("General", html! { p { "Titles stack on the left; the open panel sits beside them." } }),
             Tab::new("Members", html! { p { "Twelve members." } }).badge(12),
             Tab::new("Danger zone", html! { p { "Nothing here is destructive." } }),
-        ], TabsOptions::default().state(&ui.state).vertical(true)))
+        ], TabsOptions::default().state(&ui.state).vertical()))
     });
     (ui, body)
 }
@@ -251,7 +251,7 @@ async fn accordion_page(ui: Ui) -> (Ui, Markup) {
                     AccordionItem::new("Exclusive", html! { p { "This inner group opens one at a time." } }),
                 ], AccordionOptions::default().state(&ui.state)))
             }).icon("\u{1F4DA}").summary("Lists, links and a nested accordion."),
-        ], AccordionOptions::default().state(&ui.state).multi(true).controls(true)))
+        ], AccordionOptions::default().state(&ui.state).multi().controls()))
         p class="wo-note" { "Deep link: " a href="/accordion?open.faq=0,2" { "?open.faq=0,2" } ". Leave and come back: the open sections are remembered." }
     });
     (ui, body)
@@ -280,7 +280,7 @@ async fn combobox_page(ui: Ui, Query(pairs): Query<Vec<(String, String)>>) -> (U
         // One swap root around the form and its results: the script searches as you type.
         div id="langs" data-wo="swap" {
             (combobox_with(&ui, "q", "/combobox", ComboboxOptions::default()
-                .query(&q).suggestions(&LANGS).results(&hits).selected(&sel).multi(true)
+                .query(&q).suggestions(&LANGS).results(&hits).selected(&sel).multi()
                 .create("/combobox/new").label("Language").placeholder("Type a language")))
         }
         p class="wo-note" { "Pick several: each result adds a chip, each chip's \u{d7} removes it, and the chips ride along with the next search. Type a language that is not here to get a Create row." }
@@ -338,11 +338,11 @@ fn files(sort: Option<(&str, bool)>, q: &str) -> Vec<(String, u32, &'static str)
 async fn table_page(ui: Ui, RawQuery(raw): RawQuery, Query(l): Query<Loading>) -> (Ui, Markup) {
     let t = TableQuery::parse(raw.as_deref().unwrap_or(""));
     let files = files(t.sort(&FILE_COLS), &t.filter.to_lowercase());
-    const MENU: [MenuItem; 2] = [MenuItem::link("Open", "/table"), MenuItem::action("Delete", "/table/bulk").danger(true)];
+    const MENU: [MenuItem; 2] = [MenuItem::link("Open", "/table"), MenuItem::action("Delete", "/table/bulk").danger()];
     let rows: Vec<Row> = files.iter()
         .map(|f| Row::new(vec![html! { code { (f.0) } }, html! { (paged_table::thousands(f.1 as usize / 1024)) " KB" }, html! { (f.2) }])
             .key(&f.0).detail(html! { p { "A " (f.2) " of " (f.1) " bytes, in " code { (f.0.split('/').next().unwrap_or("")) } "." } }).menu(&MENU)).collect();
-    let options = TableOptions::default().choose_columns(true).bulk("/table/bulk", &[("archive", "Archive"), ("delete", "Delete")])
+    let options = TableOptions::default().choose_columns().bulk("/table/bulk", &[("archive", "Archive"), ("delete", "Delete")])
         .csv("/table.csv").empty("No files match this filter.").loading(l.loading == Some(1));
     let body = page(&ui, "Table", html! {
         (ui.flash())
@@ -392,14 +392,14 @@ fn wizard_check(step: usize, data: &[(String, String)]) -> Vec<(&'static str, &'
 }
 
 fn wizard_steps(state: &UiState, data: &[(String, String)], errors: &[(&str, &str)]) -> [Step; 3] {
-    const ACCOUNT: [Field; 2] = [Field::new("name", "Name", FieldKind::Text).required(true), Field::new("email", "Email", FieldKind::Email).required(true)];
+    const ACCOUNT: [Field; 2] = [Field::new("name", "Name", FieldKind::Text).required(), Field::new("email", "Email", FieldKind::Email).required()];
     let get = |k: &str| data.iter().find(|(n, _)| n == k).map(|(_, v)| v.as_str()).unwrap_or("");
     [
         Step::new("Account", fields(&[FieldGroup::plain(&ACCOUNT)], FormOptions::default().values(data).errors(errors))).error(!errors.is_empty()),
         Step::new("Newsletter", html! {
             label { "Digest" select name="digest" { @for d in ["daily", "weekly", "never"] { option value=(d) selected[get("digest") == d] { (d) } } } }
             label { "Topics" input type="text" name="topics" value=(get("topics")) placeholder="rust, html"; }
-        }).optional(true),
+        }).optional(),
         Step::new("Review", wizard::summary(state, "signup", &[
             ("Name", get("name"), 0), ("Email", get("email"), 0), ("Digest", get("digest"), 1), ("Topics", get("topics"), 1),
         ])),
@@ -457,13 +457,13 @@ impl SignUp {
 
 fn form_view(ui: &Ui, inline: bool, v: &SignUp, errors: &[(&str, &str)]) -> Markup {
     let account = [
-        Field::new("name", "Name", FieldKind::Text).required(true),
-        Field::new("email", "Email", FieldKind::Email).required(true),
-        Field::new("age", "Age", FieldKind::Number { min: 13, max: 120 }).required(true),
-        Field::new("handle", "Handle", FieldKind::Pattern { pattern: "[a-z0-9_]{3,16}", hint: "3–16 lowercase letters, digits or _" }).required(true),
+        Field::new("name", "Name", FieldKind::Text).required(),
+        Field::new("email", "Email", FieldKind::Email).required(),
+        Field::new("age", "Age", FieldKind::Number { min: 13, max: 120 }).required(),
+        Field::new("handle", "Handle", FieldKind::Pattern { pattern: "[a-z0-9_]{3,16}", hint: "3–16 lowercase letters, digits or _" }).required(),
     ];
     let profile = [
-        Field::new("bio", "Bio", FieldKind::Textarea { rows: 3 }).max_len(160).help("Grows as you type where the browser supports it."),
+        Field::new("bio", "Bio", FieldKind::Textarea { rows: 3 }).maxlength(160).help("Grows as you type where the browser supports it."),
         Field::new("avatar", "Avatar", FieldKind::File { accept: "image/png,image/jpeg", multiple: false }).help("PNG or JPEG."),
         Field::new("start", "Start date", FieldKind::Date { min: "2026-01-01", max: "2027-12-31" }),
         Field::new("call", "Best time to call", FieldKind::Time { min: "09:00", max: "17:00" }).help("Office hours, 09:00 to 17:00."),
@@ -583,11 +583,11 @@ async fn settings_page(ui: Ui, jar: CookieJar) -> (Ui, Markup) {
     let Settings { name, notify } = settings_of(&jar);
     let (tab, here) = (ui.state.tab("settings").to_string(), format!("/settings?tab.settings={}", ui.state.tab("settings")));
     let values = [("tab".to_string(), tab), ("name".to_string(), name), ("notify".to_string(), notify.to_string())];
-    const PROFILE: [Field; 2] = [Field::new("tab", "", FieldKind::Hidden), Field::new("name", "Display name", FieldKind::Text).required(true)];
+    const PROFILE: [Field; 2] = [Field::new("tab", "", FieldKind::Hidden), Field::new("name", "Display name", FieldKind::Text).required()];
     const NOTIFY: [Field; 3] = [Field::new("tab", "", FieldKind::Hidden), Field::new("name", "", FieldKind::Hidden), Field::new("notify", "Email me about releases", FieldKind::Checkbox)];
     let save = |id, fields| form_with(&ui, "/settings", &[FieldGroup::plain(fields)], FormOptions::default().submit("Save").values(&values).id(id));
     let body = page(&ui, "Settings", html! {
-        (flash_with(&ui, ui.state.flash(), FlashOptions::default().dismiss(&here).auto_hide(true)))
+        (flash_with(&ui, ui.state.flash(), FlashOptions::default().dismiss(&here).auto_hide()))
         (tabs_with(&ui, "settings", &[Tab::new("Profile", save("profile", &PROFILE)), Tab::new("Notifications", save("notify", &NOTIFY))], TabsOptions::default().state(&ui.state)))
         p class="wo-note" { "Go to " a href="/" { "the index" } " and come back: the open tab and the values are remembered. Saving with notifications off stacks a warning under the confirmation; the name " code { "admin" } " is refused with an alert. The confirmation fades after six seconds unless reduced motion is on." }
     });
@@ -712,7 +712,7 @@ async fn nav_page(ui: Ui) -> Markup {
         p { "A long trail folds its middle so both ends stay readable:" }
         (breadcrumbs(&ui, &[("Home", "/"), ("Projects", "/nav"), ("Webonsive", "/nav"), ("Components", "/"), ("Navigation", "/nav"), ("Breadcrumbs", "")]))
         p class="wo-note" { "Server-opened: " a href="/nav?dialog=site" { "?dialog=site" } }
-    }, DrawerOptions::default().title("Webonsive").sidebar(true).open(ui.state.dialog() == Some("site"))))
+    }, DrawerOptions::default().title("Webonsive").sidebar().open(ui.state.dialog() == Some("site"))))
 }
 
 #[derive(Deserialize)]
@@ -725,8 +725,8 @@ async fn dashboard_page(ui: Ui, Query(q): Query<DashboardQuery>) -> Markup {
         div class="wo-stat-grid" {
             (stat_with(&ui, "Visitors", "12,480", StatOptions::default().delta("+8.2%").note("last 7 days")))
             (stat_with(&ui, "Orders", if none { "0" } else { "3" }, StatOptions::default().delta(if none { "-3" } else { "0" })))
-            (stat_with(&ui, "Error rate", "0.4%", StatOptions::default().delta("-0.2 pt").down_is_good(true).href("/table")))
-            (stat_with(&ui, "p95 latency", "38 ms", StatOptions::default().delta("+6 ms").down_is_good(true)))
+            (stat_with(&ui, "Error rate", "0.4%", StatOptions::default().delta("-0.2 pt").down_is_good().href("/table")))
+            (stat_with(&ui, "p95 latency", "38 ms", StatOptions::default().delta("+6 ms").down_is_good()))
         }
         h2 { "Recent orders" }
         @if none {
@@ -776,7 +776,7 @@ async fn stream_page(ui: Ui) -> Streamed {
             @else { "This browser has no declarative shadow DOM: sections stream in document order." } }
         @for (id, ms) in sections {
             (slot(&ui, id, html! { section class="wo-stream-section wo-stream-pending" {
-                (skeleton_with(&ui, 2, SkeletonOptions::default().label(&format!("Loading {id} ({ms} ms)")).heading(true)))
+                (skeleton_with(&ui, 2, SkeletonOptions::default().label(&format!("Loading {id} ({ms} ms)")).heading()))
             } }))
         }
     });

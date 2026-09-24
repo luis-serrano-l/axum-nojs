@@ -17,7 +17,7 @@
 //! use webonsive::{Caps, skeleton, skeleton_with, skeleton::SkeletonOptions};
 //! let m = skeleton(&Caps::all(), 3).into_string();
 //! assert_eq!(m.matches("wo-skeleton-line").count(), 3);
-//! let m = skeleton_with(&Caps::all(), 2, SkeletonOptions::default().label("Loading orders").heading(true)).into_string();
+//! let m = skeleton_with(&Caps::all(), 2, SkeletonOptions::default().label("Loading orders").heading()).into_string();
 //! assert!(m.contains("Loading orders") && m.contains("wo-skeleton-heading"));
 //! ```
 
@@ -47,8 +47,8 @@ impl<'a> SkeletonOptions<'a> {
         self
     }
     /// Start with a heading bar.
-    pub fn heading(mut self, on: bool) -> Self {
-        self.heading = on;
+    pub fn heading(mut self) -> Self {
+        self.heading = true;
         self
     }
 }

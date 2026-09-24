@@ -31,14 +31,16 @@
 //! ```rust
 //! use maud::html;
 //! use webonsive::{Caps, UiState, wizard, wizard_with, wizard::{Step, WizardOptions, summary}};
+//! // The request is on step 2 (0-based): the review.
 //! let state = UiState::parse("/wizard", "step.signup=2", "");
 //! let steps = [
 //!     Step::new("Account", html! { input name="email"; }),
-//!     Step::new("Newsletter", html! { input name="topics"; }).optional(true),
+//!     Step::new("Newsletter", html! { input name="topics"; }).optional(),
+//!     // Each summary row is (label, value, the step that edits it).
 //!     Step::new("Review", summary(&state, "signup", &[("Email", "a@b.c", 0), ("Topics", "", 1)])),
 //! ];
 //! let m = wizard(&Caps::all(), "signup", "/wizard", &steps, &state);
-//! let m = wizard_with(&Caps::all(), "signup", "/wizard", &steps, &state, WizardOptions::default().finish("Create account").progress(true));
+//! let m = wizard_with(&Caps::all(), "signup", "/wizard", &steps, &state, WizardOptions::default().finish("Create account"));
 //! let html = m.into_string();
 //! assert!(html.contains("aria-current=\"step\""));
 //! assert!(html.contains("<progress class=\"wo-wizard-progress\" value=\"2\" max=\"2\""));
@@ -67,8 +69,8 @@ impl Step {
         Step { title, body, optional: false, error: false }
     }
     /// Offer a "Skip" button on this step.
-    pub fn optional(mut self, optional: bool) -> Self {
-        self.optional = optional;
+    pub fn optional(mut self) -> Self {
+        self.optional = true;
         self
     }
     /// Mark this step as failed server validation.
@@ -241,7 +243,7 @@ mod tests {
 
     #[test]
     fn errors_skip_and_resume() {
-        let steps = [Step::new("A", html! {}), Step::new("B", html! {}).optional(true).error(true), Step::new("C", html! {})];
+        let steps = [Step::new("A", html! {}), Step::new("B", html! {}).optional().error(true), Step::new("C", html! {})];
         let state = UiState::parse("/w", "", "step.x=1");
         let m = wizard(&Caps::NONE, "x", "/w", &steps, &state).into_string();
         assert!(m.contains("class=\"wo-wizard-current wo-wizard-error\" aria-current=\"step\""), "{m}");

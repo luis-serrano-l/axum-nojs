@@ -35,7 +35,7 @@
 //!     .suggestions(&[OptionGroup::new("Systems", &["Rust", "Zig"]), OptionGroup::flat(&["Ruby"])])
 //!     .results(&["Rust", "Ruby"])
 //!     .selected(&["Zig"])
-//!     .multi(true)
+//!     .multi()
 //!     .create("/langs/new")
 //!     .label("Language")
 //!     .placeholder("Type a language"));
@@ -131,8 +131,8 @@ impl<'a> ComboboxOptions<'a> {
         self
     }
     /// Keep several values.
-    pub fn multi(mut self, multi: bool) -> Self {
-        self.multi = multi;
+    pub fn multi(mut self) -> Self {
+        self.multi = true;
         self
     }
     /// Post action for the "Create" row.

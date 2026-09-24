@@ -37,11 +37,11 @@
 //!
 //! ```rust
 //! use webonsive::{Caps, form, form_with, Field, FieldKind, form::{FieldGroup, FormLayout, FormOptions}};
-//! let fields = [Field::new("email", "Email", FieldKind::Email).required(true)];
+//! let fields = [Field::new("email", "Email", FieldKind::Email).required()];
 //! let m = form(&Caps::all(), "/form", &[FieldGroup::plain(&fields)]);
 //!
 //! let about = [
-//!     Field::new("bio", "Bio", FieldKind::Textarea { rows: 3 }).max_len(280).value("Hi").help("Shown on your profile."),
+//!     Field::new("bio", "Bio", FieldKind::Textarea { rows: 3 }).maxlength(280).value("Hi").help("Shown on your profile."),
 //!     Field::new("avatar", "Avatar", FieldKind::File { accept: "image/png,image/jpeg", multiple: false }),
 //!     Field::new("born", "Born", FieldKind::Date { min: "1900-01-01", max: "2026-12-31" }),
 //! ];
@@ -130,13 +130,13 @@ pub struct Field<'a> {
     /// Help text under the field.
     pub help: Option<&'a str>,
     /// `maxlength`, shown as a character counter in an `<output>`.
-    pub max_len: Option<usize>,
+    pub maxlength: Option<usize>,
 }
 
 impl<'a> Field<'a> {
     /// An empty, optional field.
     pub const fn new(name: &'a str, label: &'a str, kind: FieldKind) -> Self {
-        Field { name, label, kind, value: "", error: None, required: false, help: None, max_len: None }
+        Field { name, label, kind, value: "", error: None, required: false, help: None, maxlength: None }
     }
     /// Current value.
     pub const fn value(mut self, value: &'a str) -> Self {
@@ -144,13 +144,13 @@ impl<'a> Field<'a> {
         self
     }
     /// Server-side error message.
-    pub const fn error(mut self, error: Option<&'a str>) -> Self {
-        self.error = error;
+    pub const fn error(mut self, message: &'a str) -> Self {
+        self.error = Some(message);
         self
     }
     /// Required field.
-    pub const fn required(mut self, required: bool) -> Self {
-        self.required = required;
+    pub const fn required(mut self) -> Self {
+        self.required = true;
         self
     }
     /// Help text under the field.
@@ -159,8 +159,8 @@ impl<'a> Field<'a> {
         self
     }
     /// `maxlength` with a character counter.
-    pub const fn max_len(mut self, max: usize) -> Self {
-        self.max_len = Some(max);
+    pub const fn maxlength(mut self, max: usize) -> Self {
+        self.maxlength = Some(max);
         self
     }
 }
@@ -310,7 +310,7 @@ fn field(f: &Field) -> Markup {
     let help = f.help.or(match f.kind { FieldKind::Pattern { hint, .. } => Some(hint), _ => None });
     let ids = [
         help.map(|_| format!("{id}-help")),
-        f.max_len.map(|_| format!("{id}-count")),
+        f.maxlength.map(|_| format!("{id}-count")),
         f.error.map(|_| format!("{id}-error")),
     ];
     let described: Vec<&str> = ids.iter().flatten().map(String::as_str).collect();
@@ -348,16 +348,16 @@ fn field(f: &Field) -> Markup {
         div class="wo-field" {
             label for=(id) { (f.label) @if f.required { " *" } }
             @if let FieldKind::Textarea { rows } = f.kind {
-                textarea id=(id) name=(f.name) rows=(rows) required[f.required] maxlength=[f.max_len]
+                textarea id=(id) name=(f.name) rows=(rows) required[f.required] maxlength=[f.maxlength]
                     aria-invalid=[invalid] aria-describedby=[described.as_deref()] { (f.value) }
             } @else {
                 input id=(id) name=(f.name) type=(kind) value=[(kind != "file").then_some(f.value)]
                     required[f.required] min=[min] max=[max] pattern=[pattern] title=[pattern.and(help)]
-                    accept=[accept] multiple[multiple] maxlength=[f.max_len]
+                    accept=[accept] multiple[multiple] maxlength=[f.maxlength]
                     aria-invalid=[invalid] aria-describedby=[described.as_deref()];
             }
             @if let Some(h) = help { small id={ (id) "-help" } class="wo-field-help" { (h) } }
-            @if let Some(max) = f.max_len {
+            @if let Some(max) = f.maxlength {
                 output id={ (id) "-count" } for=(id) class="wo-field-count" { (f.value.chars().count()) " / " (max) }
             }
             @if let Some(e) = f.error { p id={ (id) "-error" } class="wo-error" role="alert" { (e) } }
@@ -412,7 +412,7 @@ mod tests {
         let fs = [
             Field::new("name", "Name", FieldKind::Text),
             Field::new("email", "Email", FieldKind::Email).value("own@x.org"),
-            Field::new("bio", "Bio", FieldKind::Textarea { rows: 2 }).error(Some("Own message.")),
+            Field::new("bio", "Bio", FieldKind::Textarea { rows: 2 }).error("Own message."),
         ];
         let values = [("name".to_string(), "Ada".to_string()), ("email".to_string(), "posted@x.org".to_string()), ("bio".to_string(), "Hi".to_string())];
         let errors = [("name", "Too short."), ("bio", "Posted message.")];
@@ -428,7 +428,7 @@ mod tests {
 
     #[test]
     fn help_counter_and_error_describe_the_field() {
-        let fields = [Field::new("bio", "Bio", FieldKind::Textarea { rows: 2 }).value("héllo").max_len(10).help("Short.").error(Some("Too dull."))];
+        let fields = [Field::new("bio", "Bio", FieldKind::Textarea { rows: 2 }).value("héllo").maxlength(10).help("Short.").error("Too dull.")];
         let m = form(&Caps::NONE, "/p", &[FieldGroup::plain(&fields)]).into_string();
         assert!(m.contains("aria-describedby=\"f-bio-help f-bio-count f-bio-error\""), "{m}");
         assert!(m.contains("<output id=\"f-bio-count\" for=\"f-bio\" class=\"wo-field-count\">5 / 10</output>"), "counts chars, not bytes");

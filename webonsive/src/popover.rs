@@ -31,11 +31,11 @@
 //! let m = popover_menu_with(&Caps::all(), "acct", "Account", &[
 //!     MenuItem::heading("Signed in as Ada"),
 //!     MenuItem::link("Profile", "/profile").icon("@").shortcut("g p"),
-//!     MenuItem::link("Billing", "/billing").disabled(true),
+//!     MenuItem::link("Billing", "/billing").disabled(),
 //!     MenuItem::separator(),
 //!     MenuItem::submenu("Theme", "acct-theme", &[MenuItem::link("Light", "/?t=light"), MenuItem::link("Dark", "/?t=dark")]),
 //!     MenuItem::separator(),
-//!     MenuItem::action("Sign out", "/logout").danger(true),
+//!     MenuItem::action("Sign out", "/logout").danger(),
 //! ], PopoverOptions::default().placement(Placement::BottomEnd));
 //! let html = m.into_string();
 //! assert!(html.contains("<form method=\"post\" action=\"/logout\""));
@@ -147,13 +147,13 @@ impl<'a> MenuItem<'a> {
         self
     }
     /// Shown but not usable: a link without `href`, a button with `disabled`.
-    pub const fn disabled(mut self, disabled: bool) -> Self {
-        self.disabled = disabled;
+    pub const fn disabled(mut self) -> Self {
+        self.disabled = true;
         self
     }
     /// Destructive: coloured with `--wo-danger`.
-    pub const fn danger(mut self, danger: bool) -> Self {
-        self.danger = danger;
+    pub const fn danger(mut self) -> Self {
+        self.danger = true;
         self
     }
 }

@@ -229,7 +229,7 @@ form, and the old form kept only where removing it would break a published signa
   values), move that work into the component as an option so the route makes one call; the
   refactor should show how much a single component call can do, with the demo shrinking as
   proof and each moved piece covered by a test in the component's file.
-- [ ] Names read like HTML: option and setter names match the attribute or element they set
+- [x] Names read like HTML: option and setter names match the attribute or element they set
   (`.required()`, `.placeholder()`, `.open()`), one word where one word says it; a pass over
   every doc example so each reads top to bottom without jumping to another file.
 - [ ] Docs: `docs/ergonomics.md` shows before/after for each changed call site; README's
