@@ -52,6 +52,7 @@
 
 pub mod accordion;
 pub mod breadcrumbs;
+pub mod button;
 pub mod color;
 pub mod combobox;
 pub mod counter;
@@ -206,6 +207,7 @@ pub fn minify_css(css: &str) -> String {
 /// `var(--nojs-*)` only; a test below checks that no literal slips in.
 pub const COMPONENT_CSS: &[&str] = &[
     layout::CSS,
+    button::CSS,
     dialog::CSS,
     popover::CSS,
     tabs::CSS,

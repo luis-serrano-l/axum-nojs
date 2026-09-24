@@ -385,10 +385,18 @@ other. A "React for Rust" was discussed and rejected: client-side reactivity con
 no-script rule, and Leptos/Dioxus/Yew own that space. Chosen direction (asked and answered): a
 layered design system: primitives → existing components rebuilt on them → flagship widgets
 → a documented way to write your own. The first thing a user looks for is a button.
-- [ ] `button.rs`: `ui.button(text)` with `.primary()/.danger()/.ghost()/.small()/.icon()`,
+- [x] `button.rs`: `ui.button(text)` with `.primary()/.danger()/.ghost()/.small()/.icon()`,
   `.submit()/.reset()`, `.command(cmd, target)` (invoker), `.popovertarget()`, `.form(id)`,
   `.name().value()`, `.disabled()`, `.loading(bool)`; `ui.link_button(text, href)` with the
   same look. The global `button {}` CSS in `layout.rs` moves into `button::CSS` as `.nojs-button`.
+  Done: modifiers are `nojs-button-{primary,danger,ghost,small,icon}`; bare `button` and
+  `button.nojs-primary`/`.nojs-danger` keep the same rules (same specificity as before) so
+  hand-written and not-yet-migrated buttons look unchanged until M22. The button submits by
+  default and becomes `type="button"` with a command or popover target; without invoker
+  commands a popover command falls back to `popovertarget`/`popovertargetaction`. Also
+  `.label()` (aria-label, for icon buttons) and `.class()` (a component's part name, for M22).
+  A loading button is `disabled` + `aria-busy` with a CSS spinner; a disabled link loses its
+  `href`.
 - [ ] `input.rs`: `ui.input(name, label)`, one labelled field (label, hint, error,
   `aria-describedby`), same setters as form fields; `ui.checkbox`, `ui.radio_group`,
   `ui.switch` (checkbox with `role=switch`).

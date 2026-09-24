@@ -307,22 +307,10 @@ code {
   background: var(--nojs-surface); border: 1px solid var(--nojs-line); border-radius: var(--nojs-radius-sm); padding: 0.05em 0.35em;
 }
 /* Controls, shadcn sizes: 2.25rem tall, px-3 inputs and px-4 buttons, 1px --nojs-input
-   border, shadow-xs. The plain button is shadcn's "outline" variant; hover is the accent
-   surface. Focus is a 3px ring at 50% plus a ring-coloured border; aria-invalid turns both
-   to --nojs-danger. */
+   border, shadow-xs (the button rules live in button.rs). Focus is a 3px ring at 50% plus a
+   ring-coloured border; aria-invalid turns both to --nojs-danger. */
 button, input, select, textarea { font: inherit; font-size: 0.875rem; line-height: 1.25rem; color: inherit; }
 button, label { font-weight: 500; }
-button {
-  display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
-  min-height: 2.25rem; padding: 0.375rem 1rem; white-space: nowrap; cursor: pointer;
-  background: var(--nojs-bg); border: 1px solid var(--nojs-input); border-radius: var(--nojs-radius-sm);
-  box-shadow: var(--nojs-shadow-xs); transition: background-color 0.15s, color 0.15s, box-shadow 0.15s;
-}
-button:hover { background: var(--nojs-accent); color: var(--nojs-on-accent); }
-button.nojs-primary { background: var(--nojs-primary); color: var(--nojs-on-primary); border-color: transparent; }
-button.nojs-primary:hover { background: color-mix(in srgb, var(--nojs-primary) 90%, transparent); }
-button.nojs-danger { background: var(--nojs-danger); color: var(--nojs-on-primary); border-color: transparent; }
-button.nojs-danger:hover { background: color-mix(in srgb, var(--nojs-danger) 90%, transparent); }
 input, select, textarea {
   min-height: 2.25rem; padding: 0.375rem 0.75rem; min-width: 0;
   background: transparent; border: 1px solid var(--nojs-input); border-radius: var(--nojs-radius-sm);
