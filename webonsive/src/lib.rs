@@ -125,8 +125,61 @@ pub fn stylesheet() -> &'static str {
         let mut parts = vec![tokens.as_str()];
         parts.extend(COMPONENT_CSS);
         parts.push(beacons.as_str());
-        parts.join("\n")
+        minify_css(&parts.join("\n"))
     })
+}
+
+/// Strip comments and collapse whitespace in a stylesheet, leaving quoted strings alone. A
+/// space survives only where CSS needs one: between two words (`0 8px`, `.a .b`, `and (`),
+/// never next to `{ } ; , >`, never after `(` or `:` and never before `)`. A space before
+/// `:` stays, since `.a :focus` and `.a:focus` differ. [`stylesheet`] applies it once.
+pub fn minify_css(css: &str) -> String {
+    let mut out = String::with_capacity(css.len());
+    let mut chars = css.chars().peekable();
+    let mut space = false;
+    while let Some(c) = chars.next() {
+        match c {
+            '/' if chars.peek() == Some(&'*') => {
+                chars.next();
+                let mut prev = ' ';
+                for c in chars.by_ref() {
+                    if prev == '*' && c == '/' {
+                        break;
+                    }
+                    prev = c;
+                }
+                space = true;
+            }
+            c if c.is_whitespace() => space = true,
+            '"' | '\'' => {
+                if space && !out.is_empty() && !out.ends_with(|p: char| "{};,>(:".contains(p)) {
+                    out.push(' ');
+                }
+                space = false;
+                out.push(c);
+                let mut escaped = false;
+                for d in chars.by_ref() {
+                    out.push(d);
+                    if d == c && !escaped {
+                        break;
+                    }
+                    escaped = d == '\\' && !escaped;
+                }
+            }
+            _ => {
+                let tight = |p: char| "{};,>".contains(p);
+                if space && !out.is_empty() && !tight(c) && c != ')' && !out.ends_with(|p: char| tight(p) || p == '(' || p == ':') {
+                    out.push(' ');
+                }
+                space = false;
+                if c == '}' && out.ends_with(';') {
+                    out.pop();
+                }
+                out.push(c);
+            }
+        }
+    }
+    out
 }
 
 /// Every component's `CSS`, in the order the stylesheet includes them. Colours in here are
@@ -163,6 +216,20 @@ pub const COMPONENT_CSS: &[&str] = &[
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn minified_stylesheet_keeps_every_rule() {
+        let css = minify_css("/* note */ .a  .b > p ,\n a:hover { margin: 0  8px ; content: \"  ← \" }\n@media (min-width: 60rem) and (x) { .c { top: calc(1px + 2px); } }");
+        assert_eq!(css, r#".a .b>p,a:hover{margin:0 8px;content:"  ← "}@media (min-width:60rem) and (x){.c{top:calc(1px + 2px)}}"#);
+        let full = [layout::Tokens::default().css().as_str(), &COMPONENT_CSS.concat(), &caps::beacon_css()].concat();
+        let min = stylesheet();
+        assert!(min.len() * 10 < full.len() * 9, "at least a tenth smaller: {} of {}", min.len(), full.len());
+        for pair in [('{', '}'), ('(', ')')] {
+            assert_eq!(min.matches(pair.0).count(), min.matches(pair.1).count(), "balanced {pair:?}");
+        }
+        assert!(!min.contains("/*"), "no comments left");
+        assert_eq!(minify_css(min), min, "minifying twice changes nothing");
+    }
 
     /// Theming is tokens only: every colour in component CSS is a `var(--wo-*)`, so a palette
     /// passed to `layout_with` reaches everything. Literals live in `layout::Tokens` alone.

@@ -179,7 +179,7 @@ in FINDINGS.md (`hyperfine` against the demo, Firefox navigation timing from
   hash on `/wo/caps` beacon images and `/wo/enhance.js` verified; gzip/br on the demo through
   `tower-http` `CompressionLayer`; release profile with `lto = "fat"`, `codegen-units = 1`,
   `panic = "abort"` for the demo binary.
-- [ ] Cheap wins, page: the inline stylesheet minified (whitespace and comments stripped at
+- [x] Cheap wins, page: the inline stylesheet minified (whitespace and comments stripped at
   build time, a test proves it still parses); beacons `loading="lazy"` and `fetchpriority="low"`
   so they never delay first paint; `<script defer>` stays last; `<link rel="preconnect">` not
   needed (no third party) and recorded as such; the caps cookie small enough to fit one

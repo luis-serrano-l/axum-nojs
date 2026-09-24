@@ -411,3 +411,23 @@ while the cookie lacks the flag, so they cost nothing after the first visit.
 Pages are about 80 % inline stylesheet, so compression shrinks them to a fifth; br at
 `tower-http`'s default quality comes out slightly larger than gzip here. Firefox on loopback
 barely notices the bytes; on a real network the fifth-size page is the win that counts.
+
+**Page cheap wins.** `stylesheet()` now runs through `minify_css` once per process: comments
+out, whitespace collapsed outside quoted strings, a space kept only between two words and
+before a `:` (so `.a :focus` keeps its meaning). A test checks a sample byte for byte, that
+braces and parentheses stay balanced, that no comment survives and that minifying twice
+changes nothing; the Blitz layout assertions and the Firefox browser check pass on the
+minified sheet, which is the proof that it still parses. `/` goes from 48 906 to 41 847 bytes
+(8 806 gzipped, was 10 479) and `/table` from 58 140 to 51 081 (9 419 gzipped, was 11 103).
+
+The rest of the box, checked and left as is:
+- The beacons are CSS `background-image`s on 1px `<i>` elements inside `@supports`, not
+  `<img>`, so `loading="lazy"` and `fetchpriority` do not apply. Background images never block
+  first paint, browsers fetch them at low priority after layout, and the whole block is gone
+  once `wo-cap-probed` is set.
+- `<script src="/wo/enhance.js?v=…" defer>` is the last element of `<body>` (unchanged).
+- `<link rel="preconnect">` is not needed: the page has no third-party origin.
+- Caps travel as one cookie per flag (`wo-cap-<name>=1`, nine flags, about 170 bytes on every
+  request once all are set), and each beacon answer is exactly one `Set-Cookie`. Folding them
+  into a single bitset cookie would need the server to merge flags, and the beacons fire in
+  parallel, so two answers would race and one flag would be lost; the per-flag cookies stay.
