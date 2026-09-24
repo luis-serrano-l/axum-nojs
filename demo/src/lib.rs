@@ -8,6 +8,7 @@ use axum::{
     response::{IntoResponse, Response},
     routing::{get, post},
 };
+pub mod pricing;
 use axum_nojs::calendar::Date;
 use axum_nojs::layout::{Palette, Tokens};
 use axum_nojs::prelude::*;
@@ -16,6 +17,7 @@ use axum_nojs::{
     table::Table,
     wizard::{Posted, Wizard},
 };
+use pricing::{PRICING_CSS, PricingExt};
 use serde::{Deserialize, Serialize};
 use std::{
     sync::{LazyLock, Mutex},
@@ -27,7 +29,7 @@ use tower_http::compression::{
 };
 
 /// Every demo path the no-script test and the screenshot test visit.
-pub const PATHS: [&str; 29] = [
+pub const PATHS: [&str; 30] = [
     "/",
     "/caps",
     "/button?loading=1",
@@ -37,6 +39,7 @@ pub const PATHS: [&str; 29] = [
     "/calendar?month.day=2026-09&day=2026-09-17",
     "/upload",
     "/kanban",
+    "/pricing?billing=yearly",
     "/stream",
     "/settings",
     "/dialog?dialog=confirm",
@@ -75,6 +78,7 @@ pub fn router() -> Router {
         .route("/upload/remove", post(upload_remove))
         .route("/upload/file/{n}", get(upload_file))
         .route("/kanban", get(kanban_page).post(kanban_move))
+        .route("/pricing", get(pricing_page))
         .route("/dialog", get(dialog_page))
         .route("/dialog/delete", post(dialog_delete))
         .route("/popover", get(popover_page))
@@ -121,7 +125,14 @@ impl Predicate for WholeBody {
 
 /// Every component in the index: path, title (what each route passes to `page`), group, the
 /// platform features it is built on, and what it is for in plain words.
-const COMPONENTS: [(&str, &str, &str, &str, &str); 26] = [
+const COMPONENTS: [(&str, &str, &str, &str, &str); 27] = [
+    (
+        "/pricing",
+        "Pricing card",
+        "Your own",
+        "ui.card, ui.badge, ui.link_button, Icon, ui.grid, Page::css",
+        "A component written in the demo crate, from the public primitives only.",
+    ),
     (
         "/kanban",
         "Kanban",
@@ -305,7 +316,7 @@ const COMPONENTS: [(&str, &str, &str, &str, &str); 26] = [
         "Update one part of the page without reloading it.",
     ),
 ];
-const GROUPS: [&str; 7] = [
+const GROUPS: [&str; 8] = [
     "Primitives",
     "Overlays",
     "Disclosure",
@@ -313,6 +324,7 @@ const GROUPS: [&str; 7] = [
     "Input",
     "Feedback",
     "Server state",
+    "Your own",
 ];
 
 /// The second palette from `docs/theming.md`: warm paper, copper primary, amber in the dark.
@@ -1627,6 +1639,39 @@ async fn kanban_move(ui: Ui, Saved(mut board): Saved<Board>, Form(m): Form<Move>
         board.0.push((m.card, m.to));
     }
     ui.redirect("/kanban").save(&board)
+}
+
+/// Three tiers from `pricing.rs`, a component written outside the library; monthly or yearly
+/// is a link that changes one parameter.
+async fn pricing_page(ui: Ui) -> Page {
+    let yearly = ui.param("billing") == Some("yearly");
+    let (period, [hobby, pro, team]) = if yearly {
+        ("/year", ["$0", "$120", "$480"])
+    } else {
+        ("/month", ["$0", "$12", "$48"])
+    };
+    let (by_month, by_year) = (
+        ui.link_without("billing"),
+        ui.link_with("billing", "yearly"),
+    );
+    let pick = |text, href, on| {
+        let b = ui.link_button(text, href).small().current(on);
+        if on { b } else { b.ghost() }
+    };
+    page(&ui, "Pricing card", html! { (ui.stack(html! {
+        (ui.cluster(html! { (pick("Monthly", &by_month, !yearly)) (pick("Yearly", &by_year, yearly)) }).gap(1))
+        // code: /pricing
+        (ui.grid("14rem", html! {
+            (ui.pricing_card("Hobby", hobby).period(period).blurb("For a side project.")
+                .feature("1 project").feature("Community support").cta("Start free", "/pricing"))
+            (ui.pricing_card("Pro", pro).period(period).blurb("For a small team shipping weekly.").featured()
+                .feature("10 projects").feature("Email support").feature("Custom domain").cta("Upgrade to Pro", "/pricing"))
+            (ui.pricing_card("Team", team).period(period).blurb("For a company.")
+                .feature("Unlimited projects").feature("SSO").feature("Audit log").cta("Talk to us", "/pricing"))
+        }))
+        // end code
+        p class="nojs-note" { "The card lives in " code { "demo/src/pricing.rs" } ": an extension trait on " code { "Ui" } ", a builder, " code { "impl Render" } " and a CSS const added with " code { "Page::css" } ". See " code { "docs/components.md" } "." }
+    }).gap(6)) }).css(PRICING_CSS)
 }
 
 async fn button_page(ui: Ui) -> Page {

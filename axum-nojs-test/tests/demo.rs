@@ -1132,3 +1132,37 @@ async fn calendar_date_picker_upload_and_kanban() {
         "no arrow off the board"
     );
 }
+
+#[tokio::test]
+async fn a_component_written_outside_the_library() {
+    let page = Page::render(demo::router(), "/pricing?billing=yearly", MODERN).await;
+    assert_eq!(
+        page.count(".demo-pricing .nojs-card"),
+        3,
+        "built from ui.card"
+    );
+    assert!(
+        page.html.contains("<style class=\"nojs-user\">")
+            && page.html.matches(".demo-pricing-cta{").count() == 1,
+        "Page::css inlines its CSS once"
+    );
+    let (a, b) = (
+        page.bbox("#demo-pricing-hobby").unwrap(),
+        page.bbox("#demo-pricing-pro").unwrap(),
+    );
+    assert!(
+        (a.y - b.y).abs() < 1.0 && (a.height - b.height).abs() < 1.0,
+        "tiers side by side, equal height"
+    );
+    assert!(
+        page.exists(".demo-pricing-featured a.nojs-button-primary"),
+        "the featured tier's button is primary"
+    );
+    assert!(
+        page.text("#demo-pricing-pro .demo-pricing-price")
+            .unwrap()
+            .contains("$120"),
+        "yearly prices"
+    );
+    assert!(page.exists("a.nojs-button[aria-current=page][href='/pricing?billing=yearly']"));
+}

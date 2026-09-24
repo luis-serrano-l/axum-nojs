@@ -583,7 +583,15 @@ The React idea worth keeping: a component model users extend, not a closed catal
   and `axum_nojs::caps` were already public. Added `Ui::link_with(key, value)` and
   `Ui::link_without(key)` (made public, with a doctest): the "same page, one parameter
   changed" links the calendar and table use, which a user component needs just as much.
-- [ ] A user-land `ui.pricing_card()` in the demo crate, built only from primitives.
+- [x] A user-land `ui.pricing_card()` in the demo crate, built only from primitives.
+  Done: `demo/src/pricing.rs` holds `PricingExt` (the extension trait), `PricingCard` (`.period`,
+  `.blurb`, `.feature` per line, `.cta(text, href)`, `.featured()`) and `PRICING_CSS` (classes
+  `demo-*`, tokens only). The card is `ui.card` with `ui.badge`, `ui.link_button`, `ui.stack`
+  and `Icon::Check`; nothing private is used. `/pricing` shows three tiers in `ui.grid`, a
+  monthly/yearly switch of `ui.link_with`/`link_without` links, and adds the CSS with
+  `Page::css`. It is the "Your own" group on the index. Blitz test
+  `a_component_written_outside_the_library`: three cards, equal heights, the CSS inlined once,
+  the featured button primary, yearly prices.
 
 ## M25 · Positioning for release
 - [ ] README opening: "the no-JS UI kit for Rust servers", a layers diagram first
