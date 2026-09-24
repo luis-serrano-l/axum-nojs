@@ -2,47 +2,47 @@
 //!
 //! Interactive HTML components for Rust servers that work with JavaScript turned off.
 //!
-//! Every component is a plain function that returns [`maud::Markup`]. Interactivity comes from
-//! the HTML and CSS platform (dialog, popover, invokers, `<details name>`, datalist, view
+//! A handler takes one [`Ui`] (what the browser supports, its theme, the page's UI state and
+//! query) and describes the page with it. Every component starts from `ui`, reads what it
+//! needs from the request itself, and renders where `html!` splices it. Interactivity comes
+//! from the HTML and CSS platform (dialog, popover, invokers, `<details name>`, datalist, view
 //! transitions) and from ordinary form round trips. No page produced by this crate needs a
 //! `<script>` tag; the one optional script in [`enhance`] only makes the same markup update
 //! in place.
 //!
-//! Every component takes `&Caps` first and emits only the markup that browser needs: the
-//! modern variant or the fallback, never both. See [`caps`] (the `axum-nojs-caps` crate) for how the
-//! server learns it.
-//!
-//! One component lives in one file. Each file starts with a doc header that lists the platform
-//! features it relies on, the browser baseline, and the fallback for older browsers.
-//!
 //! ```rust
-//! use maud::html;
-//! use axum_nojs::{Caps, layout, dialog, Theme};
+//! use axum_nojs::prelude::*;
 //!
-//! // `Caps` says what the browser supports; the demo reads it from a cookie set by beacons.
-//! let caps = Caps::all();
-//! let page = layout(&caps, "Hello", Theme::Auto, html! {
-//!     (dialog(&caps, "hi", "Say hi", html! { p { "Hello from a <dialog>." } }))
+//! // In Axum, `ui: Ui` is an extractor; anywhere else, build it from the request.
+//! let ui = Ui::from_request("/", "", "");
+//! let page = ui.page("Hello", html! {
+//!     (ui.dialog("Say hi").body(html! { p { "Hello from a <dialog>." } }))
+//!     (ui.tabs("intro")
+//!         .tab("One", html! { p { "First." } })
+//!         .tab("Two", html! { p { "Second." } }))
 //! });
 //! // The only script is the optional enhancement tag; the page works without it.
 //! assert_eq!(page.into_string().matches("<script").count(), 1);
 //! ```
 //!
+//! Each component emits only the markup that browser needs: the modern variant or the
+//! fallback, never both. See [`caps`] (the `axum-nojs-caps` crate) for how the server learns
+//! it. One component lives in one file; each file starts with a doc header that lists the
+//! platform features it relies on, the browser baseline, and the fallback.
+//!
 //! ## Without Maud templates
 //!
-//! [`maud::Markup`] is `PreEscaped<String>`: it implements [`maud::Render`] for nesting in
-//! `html!`, and `.into_string()` (or `.0`) hands the HTML to anything else: another template
-//! engine, a plain `String` body in any server, a file. [`stylesheet`] is a `String` too, so a
-//! page can be assembled by concatenation with no `html!` anywhere.
+//! A component renders to [`maud::Markup`], which is `PreEscaped<String>`: `.render()` then
+//! `.into_string()` hands the HTML to anything else (another template engine, a plain
+//! `String` body in any server, a file). [`stylesheet`] is a `String` too.
 //!
 //! ```rust
-//! use axum_nojs::{Caps, Theme, flash, stylesheet, theme_toggle};
+//! use axum_nojs::{prelude::*, stylesheet};
 //!
-//! let caps = Caps::all();
-//! let body: String = flash(&caps, Some("Saved.")).into_string()
-//!     + &theme_toggle(&caps, "/theme", Theme::Auto).into_string();
+//! let ui = Ui::from_request("/", "", "nojs-flash=Saved.");
+//! let body = ui.flash().render().into_string() + &ui.theme_toggle("/theme").render().into_string();
 //! let page = format!("<!DOCTYPE html><style>{}</style><main>{body}</main>", stylesheet());
-//! assert!(page.contains("class=\"nojs-theme\""));
+//! assert!(page.contains("class=\"nojs-theme\"") && page.contains("Saved."));
 //! assert!(!page.contains("<script"));
 //! ```
 
@@ -68,6 +68,8 @@ pub mod pager;
 pub mod palette;
 pub mod popover;
 pub mod range;
+#[cfg(feature = "axum")]
+pub mod saved;
 pub mod select;
 pub mod skeleton;
 pub mod spec;
@@ -86,42 +88,38 @@ pub mod wizard;
 /// keeps working.
 pub use axum_nojs_caps as caps;
 
-pub use accordion::{AccordionItem, AccordionOptions, accordion, accordion_with};
-pub use breadcrumbs::breadcrumbs;
 pub use axum_nojs_caps::{Cap, Caps};
-pub use color::{ColorOptions, color, color_with};
-pub use combobox::{ComboboxOptions, OptionGroup, combobox, combobox_with};
-pub use counter::{CounterOptions, counter, counter_with};
-pub use dialog::{DialogOptions, DialogSize, dialog, dialog_with};
-pub use drawer::{DrawerOptions, drawer, drawer_with};
-pub use empty_state::{EmptyOptions, empty_state, empty_state_with};
-pub use flash::{FlashOptions, flash, flash_with};
-pub use form::{Field, FieldGroup, FieldKind, FormLayout, FormOptions, form, form_with};
-pub use layout::{Tokens, layout, layout_with};
-pub use paged_table::{PagedTableOptions, paged_table, paged_table_with};
-pub use pager::{PagerOptions, pager, pager_with};
-pub use palette::{Command, PaletteOptions, command_palette, command_palette_with};
-pub use popover::{MenuItem, Placement, PopoverOptions, popover_menu, popover_menu_with};
-pub use range::{RangeOptions, range, range_pair, range_pair_with, range_with};
-pub use select::{SelectOptions, select, select_with};
-pub use skeleton::{SkeletonOptions, skeleton, skeleton_with};
-pub use stat::{StatOptions, Trend, stat, stat_with};
-#[cfg(feature = "http")]
-pub use state::prg;
+pub use popover::MenuItem;
+#[cfg(feature = "axum")]
+pub use saved::Saved;
 pub use state::UiState;
 #[cfg(feature = "http")]
-pub use stream::{Streamed, slot};
-pub use table::{Column, Row, TableOptions, TableQuery, cols_from_query, sort_from_query, table, table_with};
-pub use tabs::{Tab, TabsOptions, tabs, tabs_with};
-pub use theme::{Theme, theme_toggle};
-pub use ui::Ui;
-pub use toast::{ToastOptions, toasts, toasts_with};
-pub use wizard::{WizardOptions, wizard, wizard_with};
+pub use stream::Streamed;
+pub use table::Row;
+pub use theme::Theme;
+pub use ui::{Page, Redirect, Ui};
+
+/// Everything a handler needs, in one import: `use axum_nojs::prelude::*;`.
+pub mod prelude {
+    pub use crate::{Cap, Caps, MenuItem, Page, Redirect, Theme, Ui};
+    #[cfg(feature = "axum")]
+    pub use crate::Saved;
+    pub use maud::{Markup, Render, html};
+}
 
 /// A key made safe for an `id`: anything but letters, digits, `-` and `_` becomes `-`, and
 /// ASCII letters are lowercased, so `"Account"` gives `account`.
 pub(crate) fn slug(key: &str) -> String {
     key.chars().map(|c| if c.is_ascii_alphanumeric() || c == '-' || c == '_' { c.to_ascii_lowercase() } else { '-' }).collect()
+}
+
+/// A control under its label in a `div.nojs-field`, as the form component lays out its
+/// fields; the control alone when there is no label. `id` is the control's id.
+pub(crate) fn labelled(label: Option<&str>, id: &str, control: maud::Markup) -> maud::Markup {
+    match label {
+        Some(text) => maud::html! { div class="nojs-field" { label for=(id) { (text) } (control) } },
+        None => control,
+    }
 }
 
 /// All component stylesheets, concatenated once per process. `layout` inlines this once per page.
@@ -224,41 +222,25 @@ pub const COMPONENT_CSS: &[&str] = &[
 #[cfg(test)]
 mod tests {
     use super::*;
-    use maud::html;
+    use maud::{Render, html};
 
     #[test]
     fn tuples_build_the_same_items_as_the_constructors() {
-        use select::SelectOption;
-        let body = || html! { p { "Body" } };
+        let ui = Ui::from(Caps::all());
+        let render = |r: &dyn Render| r.render().into_string();
         assert_eq!(MenuItem::from(("Profile", "/p")), MenuItem::link("Profile", "/p"));
-        assert_eq!(Command::from(("Settings", "/s")), Command::new("Settings", "/s"));
-        assert_eq!(Column::from(("note", "Note")), Column::plain("note", "Note"));
-        let o = SelectOption::from(("m", "Medium", "🐕"));
-        assert_eq!((o.value, o.text, o.icon), ("m", "Medium", Some("🐕")));
-        let options = [o];
-        let g: select::Group = ("Sizes", &options[..]).into();
-        assert_eq!(g.label, Some("Sizes"));
-        // Items that hold markup: compare what they render.
-        let tabs_of = |t: Tab| tabs(&Caps::all(), "t", &[t]).into_string();
-        assert_eq!(tabs_of(("One", body()).into()), tabs_of(Tab::new("One", body())));
-        let acc_of = |a: AccordionItem| accordion(&Caps::all(), "a", &[a]).into_string();
-        assert_eq!(acc_of(("Q", body()).into()), acc_of(AccordionItem::new("Q", body())));
-        let fields = [Field::new("n", "Name", FieldKind::Text)];
-        let fg: FieldGroup = ("Account", &fields[..]).into();
-        assert_eq!(fg.legend, Some("Account"));
+        let sizes = [("s", "Small", "🐭")];
+        assert_eq!(render(&ui.select("size", "s").options(sizes)), render(&ui.select("size", "s").options([select::SelectOption::new("s", "Small").icon("🐭")])));
+        assert_eq!(render(&ui.menu("M").submenu("Sub", [("A", "/a")])), render(&ui.menu("M").submenu("Sub", [MenuItem::link("A", "/a")])));
     }
 
     #[test]
-    fn short_forms_are_the_full_forms_with_default_options() {
-        let caps = Caps::all();
-        let body = || html! { p { "Body" } };
-        assert_eq!(dialog(&caps, "d", "Open", body()).0, dialog_with(&caps, "d", "Open", body(), Default::default()).0);
-        assert_eq!(stat(&caps, "Visitors", "12").0, stat_with(&caps, "Visitors", "12", Default::default()).0);
-        assert_eq!(flash(&caps, Some("Saved.")).0, flash_with(&caps, Some("Saved."), Default::default()).0);
-        // An id the caller does not name is the label's slug.
-        let items = [MenuItem::link("Profile", "/p")];
-        assert_eq!(popover_menu(&caps, "My account", &items).0, popover_menu_with(&caps, "my-account", "My account", &items, Default::default()).0);
-        assert_eq!(drawer(&caps, "Menu", body(), body()).0, drawer_with(&caps, "menu", "Menu", body(), body(), Default::default()).0);
+    fn ids_come_from_labels() {
+        let ui = Ui::from(Caps::all());
+        let html = |r: &dyn Render| r.render().into_string();
+        assert!(html(&ui.menu("My account")).contains(r#"id="my-account""#));
+        assert!(html(&ui.drawer("Menu")).contains(r#"id="menu""#));
+        assert!(html(&ui.dialog("Delete account").id("confirm")).contains(r#"id="confirm""#));
     }
 
     #[test]
@@ -293,19 +275,14 @@ mod tests {
         }
     }
 
-    /// Every component's return type nests in `html!` and converts to a plain `String`.
+    /// Every component nests in `html!` and converts to a plain `String`.
     #[test]
     fn components_render_and_stringify() {
-        fn renders<T: maud::Render>(_: &T) {}
-        let caps = Caps::all();
-        let parts = [
-            flash(&caps, Some("hi")),
-            counter(&caps, "/counter", 3),
-            theme_toggle(&caps, "/theme", Theme::Auto),
-        ];
-        for part in &parts {
-            renders(part);
-            assert!(part.clone().into_string().starts_with('<'));
+        let ui = Ui::from_request("/", "", "nojs-flash=hi");
+        let parts: [&dyn Render; 3] = [&ui.flash(), &ui.counter("/counter", 3), &ui.theme_toggle("/theme")];
+        for part in parts {
+            let nested = html! { (part) }.into_string();
+            assert!(nested.starts_with('<') && nested == part.render().into_string());
         }
     }
 }

@@ -4,18 +4,18 @@
 //! (`info`, `ok`, `warn`, `danger`), several at once stacked in arrival order, an optional
 //! dismiss link, and an optional auto-hide for the calm levels.
 //!
-//! **Platform features:** a cookie with `Max-Age=60` set by [`crate::state::prg`] on the
-//! redirect, read on the next request through `UiState`, and cleared by returning that
-//! `UiState` with the response. `role="status"` announces info, ok and warn politely;
+//! **Platform features:** a cookie with `Max-Age=60` set by [`crate::Ui::redirect`] on the
+//! redirect, read on the next request through `UiState`, and cleared by the next
+//! [`crate::Ui::page`] that shows it. `role="status"` announces info, ok and warn politely;
 //! `role="alert"` announces danger at once. Auto-hide is a CSS animation
 //! (`@keyframes`, `animation-fill-mode: forwards`) that `prefers-reduced-motion: reduce`
 //! switches off, so the message then stays until the next page.
 //!
 //! The cookie value is plain text: one message per line, each optionally prefixed with its
-//! level (`ok:Saved.`). A line without a known prefix is `info`, so `prg(to, Some("Saved."))`
-//! keeps working. [`stack`] builds that text.
+//! level (`ok:Saved.`). A line without a known prefix is `info`. `ui.redirect(to).ok(..)`
+//! writes it; [`stack`] builds the same text by hand.
 //!
-//! **Dismiss:** a link back to the page (`FlashOptions::dismiss`). Reading the flash already
+//! **Dismiss:** a link back to the page (`.dismiss()`). Reading the flash already
 //! queued the cookie's deletion on that response, so following the link renders the page
 //! without it; with `/nojs/enhance.js` inside a swap root it updates in place.
 //!
@@ -25,22 +25,23 @@
 //! **Fallback:** without CSS animations the message stays; nothing else differs.
 //!
 //! ```rust
-//! use axum_nojs::{Caps, flash, flash_with, flash::{FlashOptions, Level, stack}};
-//! let caps = Caps::all();
-//! let m = flash(&caps, Some("Saved.")).into_string();
+//! use axum_nojs::prelude::*;
+//! let ui = Ui::from_request("/settings", "", "nojs-flash=Saved.");
+//! let m = ui.flash().render().into_string();
 //! assert!(m.contains("nojs-flash-info") && m.contains("Saved."));
-//! assert_eq!(flash(&caps, None).into_string(), "");
+//! assert_eq!(Ui::default().flash().render().into_string(), "", "no message, no banner");
 //!
-//! // Two at once, one of them an error, with a dismiss link and auto-hide.
-//! let text = stack(&[(Level::Ok, "Saved."), (Level::Danger, "Avatar too large.")]);
-//! let m = flash_with(&caps, Some(&text), FlashOptions::default().dismiss("/settings").auto_hide()).into_string();
+//! // What `ui.redirect("/settings").ok("Saved.").danger("Avatar too large.")` sends, shown
+//! // with a dismiss link and auto-hide.
+//! let ui = Ui::from_request("/settings", "", "nojs-flash=ok%3ASaved.%0Adanger%3AAvatar%20too%20large.");
+//! let m = ui.flash().dismiss().auto_hide().render().into_string();
 //! assert!(m.contains(r#"role="alert""#) && m.contains("nojs-flash-auto"));
-//! assert_eq!(m.matches("nojs-flash-dismiss").count(), 2);
+//! assert_eq!(m.matches(r#"href="/settings""#).count(), 2);
 //! ```
 
-use maud::{Markup, html};
+use maud::{Markup, Render, html};
 
-use crate::Caps;
+use crate::Ui;
 
 /// How much a message matters: sets its colour and how it is announced.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -85,52 +86,56 @@ pub fn parse(text: &str) -> Vec<(Level, &str)> {
         .collect()
 }
 
-/// Join messages into the text `prg` carries: `stack(&[(Level::Ok, "Saved.")])` is `"ok:Saved."`.
+/// Join messages into the text the flash cookie carries: `stack(&[(Level::Ok, "Saved.")])` is `"ok:Saved."`.
 pub fn stack(messages: &[(Level, &str)]) -> String {
     messages.iter().map(|(l, m)| format!("{}:{m}", l.as_str())).collect::<Vec<_>>().join("\n")
 }
 
-/// Options for [`flash`].
-#[derive(Clone, Debug, Default)]
-pub struct FlashOptions<'a> {
-    /// Where the dismiss link goes, normally the page's own URL; `None` shows no link.
-    pub dismiss: Option<&'a str>,
-    /// Fade info and ok messages out after a few seconds (not warn or danger).
-    pub auto_hide: bool,
+/// The request's flash messages as a stack of banners, made by [`Ui::flash`]; nothing when
+/// there are none.
+#[derive(Clone, Debug)]
+pub struct Flash<'a> {
+    ui: &'a Ui,
+    dismiss: bool,
+    auto_hide: bool,
 }
 
-impl<'a> FlashOptions<'a> {
-    /// Show a dismiss link to `href`.
-    pub fn dismiss(mut self, href: &'a str) -> Self {
-        self.dismiss = Some(href);
+impl Ui {
+    /// The flash messages a [`Ui::redirect`] left for this page.
+    pub fn flash(&self) -> Flash<'_> {
+        Flash { ui: self, dismiss: false, auto_hide: false }
+    }
+}
+
+impl Flash<'_> {
+    /// A dismiss link on each message, back to this page (which no longer has the flash).
+    pub fn dismiss(mut self) -> Self {
+        self.dismiss = true;
         self
     }
-    /// Fade calm messages out; reduced motion keeps them.
+
+    /// Fade calm messages out after a few seconds; reduced motion keeps them.
     pub fn auto_hide(mut self) -> Self {
         self.auto_hide = true;
         self
     }
 }
 
-/// A flash banner with the default level.
-/// [`flash_with`] takes the options.
-pub fn flash(caps: &Caps, text: Option<&str>) -> Markup {
-    flash_with(caps, text, Default::default())
-}
-
-/// Render the messages in `text` (see [`parse`]) as a stack of banners; nothing when there are none.
-pub fn flash_with(_caps: &Caps, text: Option<&str>, options: FlashOptions) -> Markup {
-    let messages = text.map(parse).unwrap_or_default();
-    html! {
-        @if !messages.is_empty() {
-            div class="nojs-flash" {
-                @for (level, message) in &messages {
-                    @let hide = options.auto_hide && matches!(level, Level::Info | Level::Ok);
-                    p class={ "nojs-flash-item nojs-flash-" (level.as_str()) @if hide { " nojs-flash-auto" } }
-                        role=(if *level == Level::Danger { "alert" } else { "status" }) {
-                        span class="nojs-flash-text" { (message) }
-                        @if let Some(href) = options.dismiss {
-                            " " a class="nojs-flash-dismiss" href=(href) aria-label={ "Dismiss: " (message) } { "Dismiss" }
+impl Render for Flash<'_> {
+    fn render(&self) -> Markup {
+        let messages = self.ui.state.flash().map(parse).unwrap_or_default();
+        let dismiss = self.dismiss.then(|| self.ui.state.path());
+        html! {
+            @if !messages.is_empty() {
+                div class="nojs-flash" {
+                    @for (level, message) in &messages {
+                        @let hide = self.auto_hide && matches!(level, Level::Info | Level::Ok);
+                        p class={ "nojs-flash-item nojs-flash-" (level.as_str()) @if hide { " nojs-flash-auto" } }
+                            role=(if *level == Level::Danger { "alert" } else { "status" }) {
+                            span class="nojs-flash-text" { (message) }
+                            @if let Some(href) = dismiss {
+                                " " a class="nojs-flash-dismiss" href=(href) aria-label={ "Dismiss: " (message) } { "Dismiss" }
+                            }
                         }
                     }
                 }
@@ -138,7 +143,6 @@ pub fn flash_with(_caps: &Caps, text: Option<&str>, options: FlashOptions) -> Ma
         }
     }
 }
-
 /// Styles for this component; included in [`crate::stylesheet`].
 pub const CSS: &str = r#"
 .nojs-flash { display: grid; gap: calc(var(--nojs-space) * 1); margin-block: calc(var(--nojs-space) * 2); }
@@ -176,7 +180,8 @@ mod tests {
 
     #[test]
     fn danger_is_an_alert_and_never_auto_hides() {
-        let m = flash_with(&Caps::all(), Some("danger:Failed."), FlashOptions::default().auto_hide()).into_string();
+        let ui = Ui::from_request("/", "", "nojs-flash=danger:Failed.");
+        let m = ui.flash().auto_hide().render().into_string();
         assert!(m.contains(r#"role="alert""#) && !m.contains("nojs-flash-auto") && !m.contains("nojs-flash-dismiss"));
     }
 }

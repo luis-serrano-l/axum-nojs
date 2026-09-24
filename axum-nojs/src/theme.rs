@@ -15,13 +15,19 @@
 //! the new `data-theme` without a reload.
 //!
 //! ```rust
-//! use axum_nojs::{Caps, Theme, theme_toggle};
-//! let markup = theme_toggle(&Caps::all(), "/theme", Theme::Dark);
+//! use axum_nojs::prelude::*;
+//! let ui = Ui::from_request("/", "", "theme=dark");
+//! let m = ui.theme_toggle("/theme").render().into_string();
+//! assert!(m.contains(r#"value="dark" aria-pressed="true""#));
+//!
+//! // The handler the toggle posts to keeps the choice for a year.
+//! let r = ui.redirect("/").theme(Theme::parse("light"));
+//! assert!(r.set_cookies()[0].starts_with("theme=light;"));
 //! ```
 
-use maud::{Markup, html};
+use maud::{Markup, Render, html};
 
-use crate::Caps;
+use crate::{Redirect, Ui};
 
 /// Name of the cookie that remembers the chosen theme.
 pub const THEME_COOKIE: &str = "theme";
@@ -58,21 +64,41 @@ impl Theme {
     }
 }
 
-/// A three-button form that posts the chosen theme to `action`.
-pub fn theme_toggle(_caps: &Caps, action: &str, current: Theme) -> Markup {
-    let choices = [Theme::Auto, Theme::Light, Theme::Dark];
-    html! {
-        form id="nojs-theme" data-nojs="swap" class="nojs-theme" method="post" action=(action) {
-            @for choice in choices {
-                button type="submit" name="theme" value=(choice.as_str())
-                    aria-pressed=(if choice == current { "true" } else { "false" }) {
-                    (choice.as_str())
+/// A three-button form posting the chosen theme, made by [`Ui::theme_toggle`].
+#[derive(Clone, Debug)]
+pub struct ThemeToggle<'a> {
+    action: &'a str,
+    current: Theme,
+}
+
+impl Ui {
+    /// Auto, light and dark, posted to `action`; the request's theme is pressed.
+    pub fn theme_toggle<'a>(&self, action: &'a str) -> ThemeToggle<'a> {
+        ThemeToggle { action, current: self.theme }
+    }
+}
+
+impl Redirect {
+    /// Remember `theme` for this visitor: what the handler behind [`Ui::theme_toggle`] sends.
+    pub fn theme(self, theme: Theme) -> Self {
+        self.cookie(format!("{THEME_COOKIE}={}; Path=/; Max-Age=31536000; SameSite=Lax", theme.as_str()))
+    }
+}
+
+impl Render for ThemeToggle<'_> {
+    fn render(&self) -> Markup {
+        html! {
+            form id="nojs-theme" data-nojs="swap" class="nojs-theme" method="post" action=(self.action) {
+                @for choice in [Theme::Auto, Theme::Light, Theme::Dark] {
+                    button type="submit" name="theme" value=(choice.as_str())
+                        aria-pressed=(if choice == self.current { "true" } else { "false" }) {
+                        (choice.as_str())
+                    }
                 }
             }
         }
     }
 }
-
 /// Styles for this component; included in [`crate::stylesheet`].
 pub const CSS: &str = r#"
 .nojs-theme { display: inline-flex; gap: 0; border: 1px solid var(--nojs-line); border-radius: var(--nojs-radius); overflow: hidden; }

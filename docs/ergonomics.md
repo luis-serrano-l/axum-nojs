@@ -1,5 +1,9 @@
 # Ergonomics: how a call site reads
 
+> The M17 sections below describe the `name_with(&ui, …, XOptions)` API as it was. M18
+> replaced it with builders on `ui`; the last section, "M18: every component starts from
+> `ui`", is the current shape.
+
 M17 is about call sites a newcomer reads once and understands. This page starts with the
 audit (every public component signature and how the demo calls it), then the ten worst call
 sites with a proposed rewrite each. Later M17 boxes turn the proposals into code and add a
@@ -309,3 +313,73 @@ Theme::Auto, …)`, with no route and no server around it. Now it is a whole Axu
 `async fn hello(ui: Ui) -> Markup { ui.layout("Hello", html! { (dialog(&ui, …)) }) }`, followed
 by the router with the beacon and script routes. That is five lines a reader can paste, and
 none of them is plumbing. `axum-nojs/examples/axum_server.rs` follows the same shape.
+
+## M18: every component starts from `ui`
+
+After M17 the owner read the demo and found it still heavy: a 70-name import line,
+`x_with(&ui, …, XOptions::default()…)` on every call, `.state(&ui.state)` repeating `ui`, and
+cookies parsed by hand in half the handlers. M18 makes every component a method on `Ui` that
+returns a builder rendering inside `html!`, with one `use axum_nojs::prelude::*`.
+
+```rust
+// before
+use axum_nojs::{Ui, dialog_with, dialog::{DialogOptions, DialogSize}, prg, /* 60 more */};
+async fn dialog_page(ui: Ui) -> Markup {
+    page(&ui, "Dialog", html! {
+        (dialog_with(&ui, "confirm", "Delete account", body, DialogOptions::default()
+            .title("Delete account?").size(DialogSize::Sm).danger()
+            .confirm("Delete account", "/dialog/delete").cancel_label("Keep it").state(&ui.state)))
+    })
+}
+// after
+use axum_nojs::prelude::*;
+async fn dialog_page(ui: Ui) -> Page {
+    page(&ui, "Dialog", html! {
+        (ui.dialog("Delete account").id("confirm").title("Delete account?").small().danger()
+            .confirm("Delete account", "/dialog/delete").cancel("Keep it").body(body))
+    })
+}
+```
+
+Lists are built item by item, and a modifier applies to the item added last:
+
+```rust
+// before
+const ACCOUNT: [Field; 2] = [Field::new("name", "Name", FieldKind::Text).required(), Field::new("email", "Email", FieldKind::Email).required()];
+(form_with(&ui, "/signup", &[FieldGroup::plain(&ACCOUNT)], FormOptions::default().submit("Sign up")))
+(tabs_with(&ui, "demo", &[Tab::new("Install", a), Tab::new("Use", b).badge(3)], TabsOptions::default().state(&ui.state)))
+// after
+(ui.form("/signup").text("name", "Name").required().email("email", "Email").required().submit("Sign up"))
+(ui.tabs("demo").tab("Install", a).tab("Use", b).badge(3))
+```
+
+Handlers lose their cookie plumbing. `Page` writes back the UI state and clears a shown flash
+(no more `(ui, markup)` tuples); `Redirect` is Post/Redirect/Get with stacked messages;
+`Saved<T>` keeps a value in a cookie named after its type:
+
+```rust
+// before
+async fn counter_submit(jar: CookieJar, Form(f): Form<CounterOp>) -> (CookieJar, Redirect) {
+    let n: i64 = jar.get("count").and_then(|c| c.value().parse().ok()).unwrap_or(0);
+    let n = COUNTER.apply(n, &f.op, f.value);
+    (jar.add(Cookie::new("count", n.to_string())), Redirect::to("/counter"))
+}
+// after
+async fn counter_submit(ui: Ui, Saved(c): Saved<Count>, Form(f): Form<CounterOp>) -> Redirect {
+    let n = counter(&ui, c.n).apply(&f.op, f.value);
+    ui.redirect("/counter").save(&Count { n })
+}
+```
+
+Components read their own input from the request: the table its sort, filter, page and
+columns (`t.sort()`, `t.filter()` tell the route how to fetch), the combobox `?q` and `?sel`,
+the pager `?page`, the select its filter box, the palette whether `?q` names a command
+(`.exact()`), the dialog and drawer `?dialog=`. The table and its CSV export share one
+`files_table(&ui)`; the wizard's review step is generated from the steps' fields.
+
+| | Before | After |
+|---|---|---|
+| `demo/src/lib.rs` | 1011 lines | 915 lines (the 180 lines of tests unchanged) |
+| Import lines naming `axum_nojs` items | 1 line of about 70 names | `prelude::*` plus 3 lines for types a helper names |
+| Hand-parsed cookies (`settings`, `count`, `inputs`, `wizard`, `notes`) | 5 parsers | 0: `Saved<T>` |
+| `(ui, markup)` tuples and `prg::<Body>(..)` calls | 9 and 12 | 0 and 0 |

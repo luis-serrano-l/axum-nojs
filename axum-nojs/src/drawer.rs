@@ -14,91 +14,118 @@
 //!   and hides the menu button, so desktop gets a permanent sidebar with no request.
 //!
 //! **Fallback:** without `Caps` `Invokers`, the menu button is a link to `#id` and a `:target`
-//! rule shows the drawer; its close control is a link to `#`. `DrawerOptions::open` renders it
-//! open from the server (`UiState::dialog()` after `?dialog=<id>`).
+//! rule shows the drawer; its close control is a link to `#`. `?dialog=<id>` in the URL (or
+//! `.open(true)`) renders it open from the server.
 //!
 //! **What it does not do without script:** swipe to close; focus is not trapped in the
 //! `:target` fallback.
 //!
 //! ```rust
-//! use maud::html;
-//! use axum_nojs::{Caps, drawer, drawer_with, drawer::DrawerOptions};
+//! use axum_nojs::prelude::*;
+//! let ui = Ui::from(Caps::all());
 //! let nav = html! { ul { li { a href="/" { "Home" } } } };
-//! // The id is derived from the label: this drawer is `#menu`.
-//! let m = drawer(&Caps::all(), "Menu", nav.clone(), html! { p { "Page" } }).into_string();
+//! // The id is the label's slug: this drawer is `#menu`.
+//! let m = ui.drawer("Menu").nav(nav.clone()).body(html! { p { "Page" } }).render().into_string();
 //! assert!(m.contains(r#"command="show-modal" commandfor="menu""#) && m.contains(r#"closedby="any""#));
-//! let m = drawer_with(&Caps::all(), "site", "Menu", nav, html! { p { "Page" } },
-//!     DrawerOptions::default().title("Browse").sidebar().open(true)).into_string();
+//! // `?dialog=menu` opens it from the server.
+//! let ui = Ui::from_request("/", "dialog=menu", "");
+//! let m = ui.drawer("Menu").title("Browse").sidebar().nav(nav).render().into_string();
 //! assert!(m.contains("nojs-drawer-sidebar") && m.contains(" open>"));
 //! ```
 
-use maud::{Markup, html};
+use maud::{Markup, Render, html};
 
-use crate::{Cap, Caps};
+use crate::{Cap, Ui, slug};
 
-/// Options for [`drawer`].
-#[derive(Clone, Debug, Default)]
-pub struct DrawerOptions<'a> {
-    /// Heading at the top of the panel (also its accessible name).
-    pub title: Option<&'a str>,
-    /// Permanent sidebar above 60rem; a drawer below.
-    pub sidebar: bool,
-    /// Render it open (non-modal) from the server.
-    pub open: bool,
+/// Navigation in a drawer beside the page's content, made by [`Ui::drawer`].
+#[derive(Clone, Debug)]
+pub struct Drawer<'a> {
+    ui: &'a Ui,
+    id: String,
+    label: &'a str,
+    nav: Markup,
+    body: Markup,
+    title: Option<&'a str>,
+    sidebar: bool,
+    open: bool,
 }
 
-impl<'a> DrawerOptions<'a> {
-    /// Heading at the top of the panel.
+impl Ui {
+    /// A drawer opened by a button labelled `label`; its id is the label's slug, and
+    /// `?dialog=<id>` renders it open.
+    pub fn drawer<'a>(&'a self, label: &'a str) -> Drawer<'a> {
+        Drawer { ui: self, id: slug(label), label, nav: Markup::default(), body: Markup::default(), title: None, sidebar: false, open: false }
+    }
+}
+
+impl<'a> Drawer<'a> {
+    /// The navigation inside the drawer, usually a `ul` of links.
+    pub fn nav(mut self, nav: Markup) -> Self {
+        self.nav = nav;
+        self
+    }
+
+    /// The page's content, beside the drawer.
+    pub fn body(mut self, body: Markup) -> Self {
+        self.body = body;
+        self
+    }
+
+    /// The drawer's id instead of the label's slug.
+    pub fn id(mut self, id: &str) -> Self {
+        self.id = id.to_string();
+        self
+    }
+
+    /// A heading at the top of the panel (also its accessible name); the label by default.
     pub fn title(mut self, title: &'a str) -> Self {
         self.title = Some(title);
         self
     }
-    /// Sidebar on wide screens.
+
+    /// A permanent sidebar above 60rem; a drawer below.
     pub fn sidebar(mut self) -> Self {
         self.sidebar = true;
         self
     }
-    /// Open on arrival.
+
+    /// Render it open (non-modal) from the server.
     pub fn open(mut self, open: bool) -> Self {
         self.open = open;
         self
     }
 }
 
-/// A drawer whose id is derived from `label`; use [`drawer_with`] to name it.
-/// [`drawer_with`] takes the options.
-pub fn drawer(caps: &Caps, label: &str, nav: Markup, content: Markup) -> Markup {
-    drawer_with(caps, &crate::slug(label), label, nav, content, Default::default())
-}
-
-/// A navigation drawer `id` opened by a button labelled `label`, holding `nav`, beside `content`.
-pub fn drawer_with(caps: &Caps, id: &str, label: &str, nav: Markup, content: Markup, options: DrawerOptions) -> Markup {
-    let invokers = caps.has(Cap::Invokers);
-    let title = options.title.unwrap_or(label);
-    let title_id = format!("{id}-title");
-    html! {
-        div class={ "nojs-drawer" @if options.sidebar { " nojs-drawer-sidebar" } } {
-            @if invokers {
-                button type="button" class="nojs-drawer-open" command="show-modal" commandfor=(id) aria-haspopup="dialog" { "\u{2630} " (label) }
-            } @else {
-                a class="nojs-drawer-open" role="button" href={ "#" (id) } { "\u{2630} " (label) }
-            }
-            dialog id=(id) class="nojs-drawer-panel" closedby="any" aria-labelledby=(title_id) open[options.open] {
-                div class="nojs-drawer-head" {
-                    p id=(title_id) class="nojs-drawer-title" { (title) }
-                    @if invokers {
-                        button type="button" class="nojs-drawer-close" command="close" commandfor=(id) aria-label="Close" { "\u{d7}" }
-                    } @else {
-                        a href="#" class="nojs-drawer-close" aria-label="Close" { "\u{d7}" }
-                    }
+impl Render for Drawer<'_> {
+    fn render(&self) -> Markup {
+        let Drawer { ui, ref id, label, ref nav, ref body, title, sidebar, open } = *self;
+        let invokers = ui.has(Cap::Invokers);
+        let open = open || ui.state.dialog() == Some(id);
+        let title = title.unwrap_or(label);
+        let title_id = format!("{id}-title");
+        html! {
+            div class={ "nojs-drawer" @if sidebar { " nojs-drawer-sidebar" } } {
+                @if invokers {
+                    button type="button" class="nojs-drawer-open" command="show-modal" commandfor=(id) aria-haspopup="dialog" { "\u{2630} " (label) }
+                } @else {
+                    a class="nojs-drawer-open" role="button" href={ "#" (id) } { "\u{2630} " (label) }
                 }
-                nav aria-labelledby=(title_id) { (nav) }
+                dialog id=(id) class="nojs-drawer-panel" closedby="any" aria-labelledby=(title_id) open[open] {
+                    div class="nojs-drawer-head" {
+                        p id=(title_id) class="nojs-drawer-title" { (title) }
+                        @if invokers {
+                            button type="button" class="nojs-drawer-close" command="close" commandfor=(id) aria-label="Close" { "\u{d7}" }
+                        } @else {
+                            a href="#" class="nojs-drawer-close" aria-label="Close" { "\u{d7}" }
+                        }
+                    }
+                    nav aria-labelledby=(title_id) { (nav) }
+                }
+                div class="nojs-drawer-content" { (body) }
             }
-            div class="nojs-drawer-content" { (content) }
         }
     }
 }
-
 /// Styles for this component; included in [`crate::stylesheet`].
 pub const CSS: &str = r#"
 .nojs-drawer { display: grid; gap: calc(var(--nojs-space) * 2); }

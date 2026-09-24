@@ -3,20 +3,15 @@
 
 use axum::{
     Form, Router,
-    extract::{Query, RawQuery},
-    http::HeaderMap,
-    response::{IntoResponse, Redirect},
+    extract::Query,
+    http::{HeaderMap, StatusCode},
+    response::{IntoResponse, Response},
     routing::{get, post},
 };
-use axum_extra::extract::cookie::{Cookie, CookieJar};
-use maud::{Markup, html};
-use serde::Deserialize;
-use axum_nojs::{
-    Ui, theme::THEME_COOKIE,
-    Cap, Caps, Field, FieldGroup, FieldKind, FormLayout, FormOptions, Streamed, Theme, UiState, accordion_with, accordion::{AccordionItem, AccordionOptions}, caps, color_with, combobox_with, combobox::{ComboboxOptions, OptionGroup}, counter_with, counter::CounterOptions, color::ColorOptions, select::{Group as SelectGroup, SelectOption, SelectOptions}, dialog_with, dialog::{DialogOptions, DialogSize}, flash_with, flash::{FlashOptions, Level, stack}, form_with, form::fields, layout, layout::{Palette, Tokens, layout_with}, paged_table, paged_table_with, paged_table::PagedTableOptions, pager_with, pager::PagerOptions, popover::{MenuItem, Placement, PopoverOptions}, popover_menu, popover_menu_with, prg, range, range_with, range::RangeOptions, select, select_with, slot, tabs::{Tab, TabsOptions},
-    table::{Column, Row, TableOptions, TableQuery}, tabs_with, theme_toggle, wizard, wizard_with, wizard::{Step, WizardOptions},
-    breadcrumbs, command_palette_with, drawer_with, empty_state_with, palette::{self, Command, PaletteOptions}, skeleton_with, skeleton::SkeletonOptions, stat_with, stat::StatOptions, toasts_with, toast::ToastOptions, drawer::DrawerOptions, empty_state::EmptyOptions,
-};
+use axum_nojs::layout::{Palette, Tokens};
+use axum_nojs::prelude::*;
+use axum_nojs::{Row, Streamed, table::Table, wizard::{Posted, Wizard}};
+use serde::{Deserialize, Serialize};
 use std::time::Duration;
 use tower_http::compression::{CompressionLayer, predicate::{DefaultPredicate, Predicate}};
 
@@ -57,7 +52,7 @@ pub fn router() -> Router {
         .route("/nav", get(nav_page))
         .route("/dashboard", get(dashboard_page))
         .route("/palette", get(palette_page))
-        .merge(caps::router())
+        .merge(axum_nojs::caps::router())
         .merge(axum_nojs::enhance::router())
         .layer(axum::middleware::from_fn(axum_nojs::enhance::slim))
         .layer(CompressionLayer::new().compress_when(DefaultPredicate::new().and(WholeBody)))
@@ -101,35 +96,6 @@ const COMPONENTS: [(&str, &str, &str, &str); 19] = [
 ];
 const GROUPS: [&str; 6] = ["Overlays", "Disclosure", "Navigation", "Input", "Feedback", "Server state"];
 
-/// The row above every title: the way back to the index (not on the index) and the theme switch.
-fn toolbar(caps: &Caps, theme: Theme, back: bool) -> Markup {
-    html! { nav class="nojs-toolbar" {
-        @if back { a class="nojs-back" href="/" { "All components" } } @else { span {} }
-        (theme_toggle(caps, "/theme", theme))
-    } }
-}
-
-/// Every page: the theme from its cookie, the toolbar, the title, what it is built on, the body.
-fn page(ui: &Ui, title: &str, body: Markup) -> Markup {
-    page_with(ui, title, None, body)
-}
-
-/// `page` under other [`Tokens`] (`/?palette=linen`), to show a theme is a value.
-fn page_with(ui: &Ui, title: &str, tokens: Option<&Tokens>, body: Markup) -> Markup {
-    let (caps, theme) = (&ui.caps, ui.theme);
-    let built = COMPONENTS.iter().find(|c| c.1 == title).map(|c| c.3);
-    let body = html! {
-        (toolbar(caps, theme, built.is_some()))
-        h1 { (title) }
-        @if let Some(feats) = built { p class="nojs-built" { "Built on " @for f in feats.split(", ") { code { (f) } " " } } }
-        (body)
-    };
-    match tokens {
-        Some(t) => layout_with(caps, title, theme, t, body),
-        None => layout(caps, title, theme, body),
-    }
-}
-
 /// The second palette from `docs/theming.md`: warm paper, copper accent, amber in the dark.
 const LINEN: Tokens = Tokens {
     light: Palette {
@@ -144,17 +110,37 @@ const LINEN: Tokens = Tokens {
     space: "8px",
 };
 
+/// The row above every title: the way back to the index (not on the index) and the theme switch.
+fn toolbar(ui: &Ui, back: bool) -> Markup {
+    html! { nav class="nojs-toolbar" {
+        @if back { a class="nojs-back" href="/" { "All components" } } @else { span {} }
+        (ui.theme_toggle("/theme"))
+    } }
+}
+
+/// What every page shows above its body: the toolbar, the title and what it is built on.
+fn shell(ui: &Ui, title: &str, body: Markup) -> Markup {
+    let built = COMPONENTS.iter().find(|c| c.1 == title).map(|c| c.3);
+    html! {
+        (toolbar(ui, built.is_some()))
+        h1 { (title) }
+        @if let Some(feats) = built { p class="nojs-built" { "Built on " @for f in feats.split(", ") { code { (f) } " " } } }
+        (body)
+    }
+}
+
+fn page(ui: &Ui, title: &str, body: Markup) -> Page {
+    ui.page(title, shell(ui, title, body))
+}
+
 // ---------- routes ----------
 
-#[derive(Deserialize)]
-struct IndexQuery { palette: Option<String> }
-
-async fn index(ui: Ui, Query(q): Query<IndexQuery>) -> Markup {
-    let tokens = (q.palette.as_deref() == Some("linen")).then_some(&LINEN);
-    page_with(&ui, "Components", tokens, html! {
+async fn index(ui: Ui) -> Page {
+    let linen = ui.param("palette") == Some("linen");
+    let page = page(&ui, "Components", html! {
         p class="nojs-lede" { (COMPONENTS.len()) " interactive components for Axum and Maud that work with JavaScript turned off. The HTML platform and plain form posts do the work. Each page loads one optional script, " code { "/nojs/enhance.js" } ", which updates the same markup in place instead of reloading. Block it and every page still works." }
         @if !ui.has(Cap::Probed) { p class="nojs-note" { "First visit: this page is the fallback variant. Reload and the server will know your browser." } }
-        p class="nojs-note" { "Theme: " @if tokens.is_some() { a href="/" { "ink and moss" } " · linen and copper" } @else { "ink and moss · " a href="/?palette=linen" { "linen and copper" } } ", see " code { "docs/theming.md" } }
+        p class="nojs-note" { "Theme: " @if linen { a href="/" { "ink and moss" } " · linen and copper" } @else { "ink and moss · " a href="/?palette=linen" { "linen and copper" } } ", see " code { "docs/theming.md" } }
         div class="nojs-index" { @for group in GROUPS {
             h2 { (group) }
             ul { @for (href, title, _, feats) in COMPONENTS.iter().filter(|c| c.2 == group) {
@@ -163,17 +149,19 @@ async fn index(ui: Ui, Query(q): Query<IndexQuery>) -> Markup {
         } }
         // Idle-time fetch of every component page, so the click is served from cache.
         @for (href, ..) in COMPONENTS { link rel="prefetch" href=(href); }
-    })
+    });
+    if linen { page.tokens(&LINEN) } else { page }
 }
 
-async fn dialog_page(ui: Ui) -> Markup {
+async fn dialog_page(ui: Ui) -> Page {
     page(&ui, "Dialog", html! {
         (ui.flash())
-        (dialog_with(&ui, "confirm", "Delete account", html! {
-            p { "This cannot be undone. Everything you wrote goes with it." }
-            label { "Tell us why (optional)" input name="reason" placeholder="Moving on"; }
-        }, DialogOptions::default().title("Delete account?").size(DialogSize::Sm).danger()
-            .confirm("Delete account", "/dialog/delete").cancel_label("Keep it").state(&ui.state)))
+        (ui.dialog("Delete account").id("confirm").title("Delete account?").small().danger()
+            .confirm("Delete account", "/dialog/delete").cancel("Keep it")
+            .body(html! {
+                p { "This cannot be undone. Everything you wrote goes with it." }
+                label { "Tell us why (optional)" input name="reason" placeholder="Moving on"; }
+            }))
         p class="nojs-note" { "Opened by an invoker button; the footer is a real form posting to " code { "/dialog/delete" } " with a hidden " code { "returns_to" } " so the server comes back here. Server-opened: " a href="/dialog?dialog=confirm" { "?dialog=confirm" } }
     })
 }
@@ -182,137 +170,102 @@ async fn dialog_page(ui: Ui) -> Markup {
 struct DeleteForm { #[serde(default)] reason: String, #[serde(default)] returns_to: String }
 
 /// The confirm form's target: only ever redirects to a local path from `returns_to`.
-async fn dialog_delete(Form(f): Form<DeleteForm>) -> axum::response::Response {
-    let back = if f.returns_to.starts_with('/') && !f.returns_to.starts_with("//") { f.returns_to.as_str() } else { "/dialog" };
+async fn dialog_delete(ui: Ui, Form(f): Form<DeleteForm>) -> Redirect {
+    let local = f.returns_to.starts_with('/') && !f.returns_to.starts_with("//");
     let msg = if f.reason.is_empty() { "Account deleted (not really)".to_string() } else { format!("Account deleted (not really). Reason: {}", f.reason) };
-    prg::<axum::body::Body>(back, Some(&msg))
+    ui.redirect(if local { &f.returns_to } else { "/dialog" }).flash(&msg)
 }
 
-async fn popover_page(ui: Ui) -> Markup {
-    const THEME: &[MenuItem] = &[MenuItem::link("Light", "/popover?theme=light"), MenuItem::link("Dark", "/popover?theme=dark")];
+async fn popover_page(ui: Ui) -> Page {
     page(&ui, "Popover menu", html! {
         (ui.flash())
         div class="nojs-popover-row" {
-            (popover_menu(&ui, "Account", &[
-                MenuItem::heading("Signed in as Ada"),
-                MenuItem::link("Profile", "/popover").icon("@").shortcut("g p"),
-                MenuItem::link("Settings", "/settings").icon("\u{2699}").shortcut("g s"),
-                MenuItem::link("Billing", "/popover").icon("$").disabled(),
-                MenuItem::separator(),
-                MenuItem::submenu("Theme", "account-theme", THEME).icon("\u{25d0}"),
-                MenuItem::separator(),
-                MenuItem::action("Sign out", "/popover/signout").icon("\u{2192}").danger(),
-            ]))
-            (popover_menu_with(&ui, "more", "More", &[
-                MenuItem::link("Documentation", "/").icon("?"),
-                MenuItem::action("Clear cache", "/popover/signout"),
-            ], PopoverOptions::default().placement(Placement::BottomEnd)))
+            (ui.menu("Account")
+                .heading("Signed in as Ada")
+                .link("Profile", "/popover").icon("@").shortcut("g p")
+                .link("Settings", "/settings").icon("\u{2699}").shortcut("g s")
+                .link("Billing", "/popover").icon("$").disabled()
+                .separator()
+                .submenu("Theme", [("Light", "/popover?theme=light"), ("Dark", "/popover?theme=dark")]).icon("\u{25d0}")
+                .separator()
+                .action("Sign out", "/popover/signout").icon("\u{2192}").danger())
+            (ui.menu("More").align_end()
+                .link("Documentation", "/").icon("?")
+                .action("Clear cache", "/popover/signout"))
         }
         p class="nojs-note" { "Links, a heading, a disabled item, a submenu that is another popover, and a " code { "<form method=\"post\">" } " action. Click outside or press Escape to close; the second menu opens end-aligned." }
     })
 }
 
 /// A menu action: Post/Redirect/Get back to the menu page with a flash.
-async fn popover_signout() -> axum::response::Response {
-    prg::<axum::body::Body>("/popover", Some("Signed out (not really)"))
+async fn popover_signout(ui: Ui) -> Redirect {
+    ui.redirect("/popover").flash("Signed out (not really)")
 }
 
-async fn tabs_page(ui: Ui) -> (Ui, Markup) {
-    let body = page(&ui, "Tabs", html! {
+async fn tabs_page(ui: Ui) -> Page {
+    page(&ui, "Tabs", html! {
         // Hovering or focusing a tab title fetches it early; the click reuses the answer.
-        div data-nojs-prefetch { (tabs_with(&ui, "demo", &[
-            Tab::new("Install", html! { p { code { "cargo add axum-nojs maud axum" } } }),
-            Tab::new("Use", html! { p { "Call a function, get " code { "Markup" } ", send it." } }).badge(3),
+        div data-nojs-prefetch { (ui.tabs("demo")
+            .tab("Install", html! { p { code { "cargo add axum-nojs maud axum" } } })
+            .tab("Use", html! { p { "Call a function, get " code { "Markup" } ", send it." } }).badge(3)
             // Lazy: the body is rendered only by the request that opens the tab.
-            Tab::lazy_with("Why", &|| html! { p { "Because the platform can do this without script now. (Rendered on demand.)" } }),
-        ], TabsOptions::default().state(&ui.state).select_below())) }
+            .lazy("Why", || html! { p { "Because the platform can do this without script now. (Rendered on demand.)" } })
+            .select_below()) }
         p class="nojs-note" { "Deep link: " a href="/tabs?tab.demo=2" { "?tab.demo=2" } ". Leave and come back: the tab is remembered. The third tab is lazy; under 40rem the strip becomes a select." }
         h2 { "Vertical" }
-        (tabs_with(&ui, "side", &[
-            Tab::new("General", html! { p { "Titles stack on the left; the open panel sits beside them." } }),
-            Tab::new("Members", html! { p { "Twelve members." } }).badge(12),
-            Tab::new("Danger zone", html! { p { "Nothing here is destructive." } }),
-        ], TabsOptions::default().state(&ui.state).vertical()))
-    });
-    (ui, body)
+        (ui.tabs("side").vertical()
+            .tab("General", html! { p { "Titles stack on the left; the open panel sits beside them." } })
+            .tab("Members", html! { p { "Twelve members." } }).badge(12)
+            .tab("Danger zone", html! { p { "Nothing here is destructive." } }))
+    })
 }
 
-async fn accordion_page(ui: Ui) -> (Ui, Markup) {
-    let body = page(&ui, "Accordion", html! {
-        (accordion_with(&ui, "faq", &[
-            AccordionItem::new("Does this need JavaScript?", html! { p { "No. Turn it off and reload: every control still works through links and form posts. The one script on the page only swaps the answer in place instead of reloading." } })
-                .icon("\u{1F50D}").summary("Every open and close is a link the server answers."),
-            AccordionItem::new("Does it animate?", html! { p { "Yes, via ::details-content transitions where supported." } })
-                .icon("\u{1F3AC}").summary("Height animates to auto in Chrome; elsewhere it snaps."),
-            AccordionItem::new("Can several be open?", html! {
+async fn accordion_page(ui: Ui) -> Page {
+    page(&ui, "Accordion", html! {
+        (ui.accordion("faq").multi().controls()
+            .item("Does this need JavaScript?", html! { p { "No. Turn it off and reload: every control still works through links and form posts. The one script on the page only swaps the answer in place instead of reloading." } })
+                .icon("\u{1F50D}").summary("Every open and close is a link the server answers.")
+            .item("Does it animate?", html! { p { "Yes, via ::details-content transitions where supported." } })
+                .icon("\u{1F3AC}").summary("Height animates to auto in Chrome; elsewhere it snaps.")
+            .item("Can several be open?", html! {
                 p { "Yes: this group is " code { "multi" } ", so " code { "?open.faq=0,2" } " keeps two open. A body can hold another group:" }
-                (accordion_with(&ui, "faq-more", &[
-                    AccordionItem::new("Nested", html! { p { "Its own key, " code { "open.faq-more" } "." } }),
-                    AccordionItem::new("Exclusive", html! { p { "This inner group opens one at a time." } }),
-                ], AccordionOptions::default().state(&ui.state)))
-            }).icon("\u{1F4DA}").summary("Lists, links and a nested accordion."),
-        ], AccordionOptions::default().state(&ui.state).multi().controls()))
+                (ui.accordion("faq-more")
+                    .item("Nested", html! { p { "Its own key, " code { "open.faq-more" } "." } })
+                    .item("Exclusive", html! { p { "This inner group opens one at a time." } }))
+            }).icon("\u{1F4DA}").summary("Lists, links and a nested accordion."))
         p class="nojs-note" { "Deep link: " a href="/accordion?open.faq=0,2" { "?open.faq=0,2" } ". Leave and come back: the open sections are remembered." }
-    });
-    (ui, body)
+    })
 }
 
-const LANGS: [OptionGroup; 3] = [
-    OptionGroup::new("Systems", &["Rust", "Zig", "Swift"]),
-    OptionGroup::new("Scripting", &["Ruby", "Python", "Racket"]),
-    OptionGroup::flat(&["Prolog", "Scala"]),
-];
-
-/// `?q=text&sel=a&sel=b`: the text and the repeated selection, in order.
-fn combobox_query(pairs: &[(String, String)]) -> (String, Vec<String>) {
-    let q = pairs.iter().find(|(k, _)| k == "q").map(|(_, v)| v.clone()).unwrap_or_default();
-    let sel = pairs.iter().filter(|(k, _)| k == "sel").map(|(_, v)| v.clone()).collect();
-    (q, sel)
-}
-
-async fn combobox_page(ui: Ui, Query(pairs): Query<Vec<(String, String)>>) -> (Ui, Markup) {
-    let (q, sel) = combobox_query(&pairs);
-    let sel: Vec<&str> = sel.iter().map(String::as_str).collect();
-    let hits: Vec<&str> = LANGS.iter().flat_map(|g| g.values().iter().copied())
-        .filter(|l| !q.is_empty() && l.to_lowercase().contains(&q.to_lowercase())).collect();
-    let body = page(&ui, "Combobox", html! {
+async fn combobox_page(ui: Ui) -> Page {
+    page(&ui, "Combobox", html! {
         (ui.flash())
         // One swap root around the form and its results: the script searches as you type.
         div id="langs" data-nojs="swap" {
-            (combobox_with(&ui, "q", "/combobox", ComboboxOptions::default()
-                .query(&q).suggestions(&LANGS).results(&hits).selected(&sel).multi()
-                .create("/combobox/new").label("Language").placeholder("Type a language")))
+            (ui.combobox("q", "/combobox").multi().create("/combobox/new")
+                .label("Language").placeholder("Type a language")
+                .group("Systems", ["Rust", "Zig", "Swift"])
+                .group("Scripting", ["Ruby", "Python", "Racket"])
+                .options(["Prolog", "Scala"]))
         }
         p class="nojs-note" { "Pick several: each result adds a chip, each chip's \u{d7} removes it, and the chips ride along with the next search. Type a language that is not here to get a Create row." }
-    });
-    (ui, body)
+    })
 }
 
 #[derive(Deserialize)]
 struct NewLang { name: String, #[serde(default)] sel: Vec<String> }
 
-async fn combobox_new(Form(f): Form<NewLang>) -> axum::response::Response {
+async fn combobox_new(ui: Ui, Form(f): Form<NewLang>) -> Redirect {
     let name = f.name.trim();
-    let mut to = String::from("/combobox?q=");
-    for s in f.sel.iter().map(String::as_str).chain([name]) { to.push_str(&format!("&sel={}", s)); }
-    prg::<axum::body::Body>(&to, Some(&format!("Added {name} (not really: the demo has no database).")))
+    let to: String = f.sel.iter().map(String::as_str).chain([name]).map(|s| format!("&sel={s}")).collect();
+    ui.redirect(&format!("/combobox?q={to}")).flash(&format!("Added {name} (not really: the demo has no database)."))
 }
 
-#[derive(Deserialize)]
-struct PageQuery { page: Option<usize> }
-
-async fn list_page(ui: Ui, Query(p): Query<PageQuery>) -> Markup {
-    const PER: usize = 8;
-    const TOTAL: usize = 50;
-    let current = p.page.unwrap_or(1).max(1);
-    let rows: Vec<Markup> = (1..=(current * PER).min(TOTAL))
-        .map(|n| html! { "Row " (n) })
-        .collect();
-    page(&ui, "Load-more list", html! { (pager_with(&ui, "/list", &rows, TOTAL, PagerOptions::default().page(current).per_page(PER))) })
+async fn list_page(ui: Ui) -> Page {
+    page(&ui, "Load-more list", html! {
+        (ui.pager("/list", 50).per_page(8).rows(|i| html! { "Row " (i + 1) }))
+    })
 }
-
-#[derive(Deserialize, Default)]
-struct Loading { loading: Option<u8> }
 
 const FILES: [(&str, u32, &str); 12] = [
     ("archive.tar", 40960, "backup"), ("build.rs", 1200, "script"), ("cargo.lock", 8800, "generated"),
@@ -320,14 +273,22 @@ const FILES: [(&str, u32, &str); 12] = [
     ("notes.md", 900, "text"), ("photo.jpg", 250000, "image"), ("readme.md", 4100, "text"),
     ("style.css", 1500, "stylesheet"), ("tests.rs", 7700, "source"), ("video.mp4", 9800000, "video"),
 ];
-const FILE_COLS: [Column; 3] = [Column::sortable("name", "Name"), Column::numeric("size", "Size").width("7rem"), Column::sortable("kind", "Kind").width("9rem")];
+
+/// The files table's columns; the page and the CSV both read their sort and filter from it.
+fn files_table(ui: &Ui) -> Table<'_> {
+    ui.table("files", "/table")
+        .column("name", "Name").sortable()
+        .column("size", "Size").sortable().numeric().width("7rem")
+        .column("kind", "Kind").sortable().width("9rem")
+}
 
 /// Thirty-six files sorted and filtered on the server, in one place for the page and the CSV.
-fn files(sort: Option<(&str, bool)>, q: &str) -> Vec<(String, u32, &'static str)> {
+fn files(t: &Table) -> Vec<(String, u32, &'static str)> {
+    let q = t.filter().to_lowercase();
     let mut files: Vec<(String, u32, &str)> = ["src", "docs", "old"].iter()
         .flat_map(|dir| FILES.iter().map(move |f| (format!("{dir}/{}", f.0), f.1 * (dir.len() as u32), f.2)))
-        .filter(|f| q.is_empty() || f.0.contains(q) || f.2.contains(q)).collect();
-    if let Some((key, desc)) = sort {
+        .filter(|f| q.is_empty() || f.0.contains(&q) || f.2.contains(&q)).collect();
+    if let Some((key, desc)) = t.sort() {
         files.sort_by(|a, b| match key { "size" => a.1.cmp(&b.1), "kind" => a.2.cmp(b.2), _ => a.0.cmp(&b.0) });
         if desc { files.reverse(); }
     }
@@ -335,29 +296,29 @@ fn files(sort: Option<(&str, bool)>, q: &str) -> Vec<(String, u32, &'static str)
 }
 
 /// The table only renders and links; a row can expand, has its own menu and can be selected.
-async fn table_page(ui: Ui, RawQuery(raw): RawQuery, Query(l): Query<Loading>) -> (Ui, Markup) {
-    let t = TableQuery::parse(raw.as_deref().unwrap_or(""));
-    let files = files(t.sort(&FILE_COLS), &t.filter.to_lowercase());
-    const MENU: [MenuItem; 2] = [MenuItem::link("Open", "/table"), MenuItem::action("Delete", "/table/bulk").danger()];
-    let rows: Vec<Row> = files.iter()
-        .map(|f| Row::new(vec![html! { code { (f.0) } }, html! { (paged_table::thousands(f.1 as usize / 1024)) " KB" }, html! { (f.2) }])
-            .key(&f.0).detail(html! { p { "A " (f.2) " of " (f.1) " bytes, in " code { (f.0.split('/').next().unwrap_or("")) } "." } }).menu(&MENU)).collect();
-    let options = TableOptions::default().choose_columns().bulk("/table/bulk", &[("archive", "Archive"), ("delete", "Delete")])
-        .csv("/table.csv").empty("No files match this filter.").loading(l.loading == Some(1));
-    let body = page(&ui, "Table", html! {
+async fn table_page(ui: Ui) -> Page {
+    let t = files_table(&ui);
+    let files = files(&t);
+    let rows = files.iter().map(|f| Row::new([html! { code { (f.0) } }, html! { (axum_nojs::paged_table::thousands(f.1 as usize / 1024)) " KB" }, html! { (f.2) }])
+        .key(&f.0)
+        .detail(html! { p { "A " (f.2) " of " (f.1) " bytes, in " code { (f.0.split('/').next().unwrap_or("")) } "." } })
+        .menu([MenuItem::link("Open", "/table"), MenuItem::action("Delete", "/table/bulk").danger()]));
+    let t = t.rows(rows).paged(files.len()).choose_columns().csv("/table.csv")
+        .bulk("/table/bulk", [("archive", "Archive"), ("delete", "Delete")])
+        .empty("No files match this filter.").loading(ui.param("loading") == Some("1"));
+    page(&ui, "Table", html! {
         (ui.flash())
         p { "Click a header to sort, again to flip. Type to filter. Hide columns, tick rows for the bulk form, open a row's menu or its detail. The page size you pick is remembered for your next visit. Every state is a URL, including " a href="/table?loading=1" { "the loading one" } "." }
-        (paged_table_with(&ui, "files", "/table", &FILE_COLS, &rows, files.len(), PagedTableOptions::default().query(&t).state(&ui.state).table(options)))
-    });
-    (ui, body)
+        (t)
+    })
 }
 
-/// The same rows as text/csv, for the sort and filter in the URL.
-async fn table_csv(RawQuery(raw): RawQuery) -> impl IntoResponse {
-    let t = TableQuery::parse(raw.as_deref().unwrap_or(""));
-    let cols = t.cols(&FILE_COLS).unwrap_or_else(|| FILE_COLS.iter().map(|c| c.key).collect());
+/// The same rows as text/csv, for the sort, filter and columns in the URL.
+async fn table_csv(ui: Ui) -> impl IntoResponse {
+    let t = files_table(&ui);
+    let cols = t.visible();
     let mut csv = cols.join(",") + "\n";
-    for f in files(t.sort(&FILE_COLS), &t.filter.to_lowercase()) {
+    for f in files(&t) {
         let cells = [("name", f.0.clone()), ("size", f.1.to_string()), ("kind", f.2.to_string())];
         csv += &cells.iter().filter(|(k, _)| cols.contains(k)).map(|(_, v)| v.as_str()).collect::<Vec<_>>().join(",");
         csv.push('\n');
@@ -366,188 +327,164 @@ async fn table_csv(RawQuery(raw): RawQuery) -> impl IntoResponse {
 }
 
 /// `row=<key>` per ticked box and `action=<value>` from the button: acknowledged with a flash.
-async fn table_bulk(Form(pairs): Form<Vec<(String, String)>>) -> axum::response::Response {
+async fn table_bulk(ui: Ui, Form(pairs): Form<Vec<(String, String)>>) -> Redirect {
     let rows = pairs.iter().filter(|(k, _)| k == "row").count();
-    let action = pairs.iter().find(|(k, _)| k == "action").map(|(_, v)| v.as_str()).unwrap_or("delete");
+    let action = pairs.iter().find(|(k, _)| k == "action").map_or("delete", |(_, v)| v.as_str());
     let msg = if rows == 0 { "Nothing selected: tick a row first.".to_string() } else { format!("{action}: {rows} file(s) (not really).") };
-    prg::<axum::body::Body>("/table", Some(&msg))
+    ui.redirect("/table").flash(&msg)
 }
 
-/// What the wizard has collected so far, kept in one `wizard` cookie as `k=v&k=v`.
-fn wizard_data(jar: &CookieJar) -> Vec<(String, String)> {
-    let raw = jar.get("wizard").map(|c| c.value().to_string()).unwrap_or_default();
-    raw.split('&').filter_map(|p| p.split_once('=')).map(|(k, v)| (k.to_string(), v.replace('+', " "))).collect()
+/// What the wizard has collected so far, as the steps posted it.
+#[derive(Default, Deserialize, Serialize)]
+struct Signup(Vec<(String, String)>);
+
+impl Signup {
+    fn get(&self, k: &str) -> &str {
+        self.0.iter().find(|(n, _)| n == k).map_or("", |(_, v)| v.trim())
+    }
+}
+
+fn signup<'a>(ui: &'a Ui, s: &'a Signup, errors: &'a [(&'a str, &'a str)]) -> Wizard<'a> {
+    ui.wizard("signup", "/wizard")
+        .step("Account", ui.fields().text("name", "Name").required().email("email", "Email").required())
+        .step("Newsletter", ui.fields()
+            .select("digest", "Digest", ["daily", "weekly", "never"])
+            .text("topics", "Topics").placeholder("rust, html")).optional()
+        .review("Review")
+        .values(&s.0).errors(errors).finish("Create account")
 }
 
 /// Server rules for a wizard step: `(field, message)` per problem.
-fn wizard_check(step: usize, data: &[(String, String)]) -> Vec<(&'static str, &'static str)> {
-    let get = |k: &str| data.iter().find(|(n, _)| n == k).map(|(_, v)| v.trim()).unwrap_or("");
-    let mut errors = Vec::new();
-    if step == 0 {
-        if get("name").is_empty() { errors.push(("name", "Enter your name.")); }
-        if !get("email").contains('@') { errors.push(("email", "Enter an email address with an @.")); }
-        else if get("email").ends_with("@example.com") { errors.push(("email", "example.com addresses are not accepted.")); }
+fn signup_errors(step: usize, s: &Signup) -> Vec<(&'static str, &'static str)> {
+    let (name, email) = (s.get("name"), s.get("email"));
+    match step {
+        0 if name.is_empty() => vec![("name", "Enter your name.")],
+        0 if !email.contains('@') => vec![("email", "Enter an email address with an @.")],
+        0 if email.ends_with("@example.com") => vec![("email", "example.com addresses are not accepted.")],
+        _ => Vec::new(),
     }
-    errors
 }
 
-fn wizard_steps(state: &UiState, data: &[(String, String)], errors: &[(&str, &str)]) -> [Step; 3] {
-    const ACCOUNT: [Field; 2] = [Field::new("name", "Name", FieldKind::Text).required(), Field::new("email", "Email", FieldKind::Email).required()];
-    let get = |k: &str| data.iter().find(|(n, _)| n == k).map(|(_, v)| v.as_str()).unwrap_or("");
-    [
-        Step::new("Account", fields(&[FieldGroup::plain(&ACCOUNT)], FormOptions::default().values(data).errors(errors))).error(!errors.is_empty()),
-        Step::new("Newsletter", html! {
-            label { "Digest" select name="digest" { @for d in ["daily", "weekly", "never"] { option value=(d) selected[get("digest") == d] { (d) } } } }
-            label { "Topics" input type="text" name="topics" value=(get("topics")) placeholder="rust, html"; }
-        }).optional(),
-        Step::new("Review", wizard::summary(state, "signup", &[
-            ("Name", get("name"), 0), ("Email", get("email"), 0), ("Digest", get("digest"), 1), ("Topics", get("topics"), 1),
-        ])),
-    ]
-}
-
-fn wizard_view(ui: &Ui, data: &[(String, String)], errors: &[(&str, &str)]) -> Markup {
+fn wizard_view(ui: &Ui, wizard: Wizard) -> Page {
     page(ui, "Wizard", html! {
         (ui.flash())
         p { "Three steps, one form each. The server checks every step; the second can be skipped. Close the tab and come back to " a href="/wizard" { "/wizard" } ": you resume where you left off." }
-        (wizard_with(ui, "signup", "/wizard", &wizard_steps(&ui.state, data, errors), &ui.state, WizardOptions::default().finish("Create account")))
+        (wizard)
     })
 }
 
-async fn wizard_page(ui: Ui, jar: CookieJar) -> (Ui, Markup) {
-    let body = wizard_view(&ui, &wizard_data(&jar), &[]);
-    (ui, body)
+async fn wizard_page(ui: Ui, Saved(s): Saved<Signup>) -> Page {
+    wizard_view(&ui, signup(&ui, &s, &[]))
 }
 
-/// Check this step: answer 422 with the same step and its messages, or merge the fields into
-/// the cookie (kept a week, so closing the browser loses nothing) and redirect to the next step.
-async fn wizard_submit(ui: Ui, jar: CookieJar, headers: HeaderMap, Form(fields): Form<Vec<(String, String)>>) -> axum::response::Response {
-    let field = |k: &str| fields.iter().find(|(n, _)| n == k).map(|(_, v)| v.as_str());
-    let step: usize = field("step").and_then(|v| v.parse().ok()).unwrap_or(0);
-    let skip = field("skip") == Some("1");
-    let cookie = headers.get("cookie").and_then(|v| v.to_str().ok()).unwrap_or("");
-    // The posted step, not the URL's, is the one being checked.
-    let ui = Ui { state: UiState::from_request("/wizard", &format!("step.signup={step}"), cookie), ..ui };
-    let mut data = wizard_data(&jar);
-    for (k, v) in fields.iter().filter(|(k, _)| !skip && k != "step" && k != "skip") {
-        data.retain(|(n, _)| n != k);
-        data.push((k.clone(), v.clone()));
+/// Check the posted step: answer 422 with the same step and its messages, or keep the fields
+/// (a year, so closing the browser loses nothing) and redirect to the next step.
+async fn wizard_submit(ui: Ui, Saved(mut s): Saved<Signup>, Form(pairs): Form<Vec<(String, String)>>) -> Response {
+    let posted = Posted::from_pairs(&pairs);
+    for (k, v) in pairs.into_iter().filter(|(k, _)| !posted.skip && k != "step" && k != "skip") {
+        s.0.retain(|(n, _)| *n != k);
+        s.0.push((k, v));
     }
-    let errors = if skip { Vec::new() } else { wizard_check(step, &data) };
+    let errors = if posted.skip { Vec::new() } else { signup_errors(posted.step, &s) };
+    let wizard = signup(&ui, &s, &errors).at(posted.step);
     if !errors.is_empty() {
-        return (axum::http::StatusCode::UNPROCESSABLE_ENTITY, wizard_view(&ui, &data, &errors)).into_response();
+        return (StatusCode::UNPROCESSABLE_ENTITY, wizard_view(&ui, wizard)).into_response();
     }
-    if step + 1 >= 3 {
-        return (jar.remove(Cookie::from("wizard")), prg::<axum::body::Body>(&ui.state.link("step.signup", "0"), Some("Account created (well, the cookie was cleared)."))).into_response();
+    if wizard.is_last(posted.step) {
+        return ui.redirect(&wizard.link(0)).flash("Account created (well, the cookie was cleared).").forget::<Signup>().into_response();
     }
-    let value: String = data.iter().map(|(k, v)| format!("{k}={}", v.replace(' ', "+"))).collect::<Vec<_>>().join("&");
-    let kept = Cookie::parse(format!("wizard={value}; Path=/; Max-Age=604800; SameSite=Lax")).expect("cookie");
-    (jar.add(kept), prg::<axum::body::Body>(&ui.state.link("step.signup", &(step + 1).to_string()), None)).into_response()
+    ui.redirect(&wizard.link(posted.step + 1)).save(&s).into_response()
 }
 
-/// The sign-up fields as posted: text values by name, and for each file field its name and size.
-#[derive(Default)]
-struct SignUp { values: Vec<(String, String)>, files: Vec<(String, usize)> }
-
-impl SignUp {
-    fn get(&self, k: &str) -> &str {
-        self.values.iter().find(|(n, _)| n == k).map(|(_, v)| v.as_str()).unwrap_or("")
-    }
-}
-
-fn form_view(ui: &Ui, inline: bool, v: &SignUp, errors: &[(&str, &str)]) -> Markup {
-    let account = [
-        Field::new("name", "Name", FieldKind::Text).required(),
-        Field::new("email", "Email", FieldKind::Email).required(),
-        Field::new("age", "Age", FieldKind::Number { min: 13, max: 120 }).required(),
-        Field::new("handle", "Handle", FieldKind::Pattern { pattern: "[a-z0-9_]{3,16}", hint: "3–16 lowercase letters, digits or _" }).required(),
-    ];
-    let profile = [
-        Field::new("bio", "Bio", FieldKind::Textarea { rows: 3 }).maxlength(160).help("Grows as you type where the browser supports it."),
-        Field::new("avatar", "Avatar", FieldKind::File { accept: "image/png,image/jpeg", multiple: false }).help("PNG or JPEG."),
-        Field::new("start", "Start date", FieldKind::Date { min: "2026-01-01", max: "2027-12-31" }),
-        Field::new("call", "Best time to call", FieldKind::Time { min: "09:00", max: "17:00" }).help("Office hours, 09:00 to 17:00."),
-    ];
-    let layout = if inline { FormLayout::Inline } else { FormLayout::Stacked };
+fn form_view(ui: &Ui, values: &[(String, String)], errors: &[(&str, &str)]) -> Page {
+    let inline = ui.param("layout") == Some("inline");
+    let form = ui.form("/form").submit("Sign up").values(values).errors(errors)
+        .group("Account")
+        .text("name", "Name").required()
+        .email("email", "Email").required()
+        .number("age", "Age", 13, 120).required()
+        .pattern("handle", "Handle", "[a-z0-9_]{3,16}", "3–16 lowercase letters, digits or _").required()
+        .select("plan", "Plan", ["Free", "Team", "Enterprise"])
+        .group("Profile")
+        .textarea("bio", "Bio", 3).maxlength(160).help("Grows as you type where the browser supports it.")
+        .file("avatar", "Avatar", "image/png,image/jpeg").help("PNG or JPEG.")
+        .date("start", "Start date", "2026-01-01", "2027-12-31")
+        .time("call", "Best time to call", "09:00", "17:00").help("Office hours, 09:00 to 17:00.");
     page(ui, "Validated form", html! {
         (ui.flash())
         p { "Labels " @if inline { "beside the fields. " a href="/form" { "Put them above" } } @else { "above the fields. " a href="/form?layout=inline" { "Put them beside" } } "." }
         @if !errors.is_empty() { p class="nojs-error" { "Server-side checks failed. Browser validation passed, these rules only live on the server." } }
-        (form_with(ui, "/form", &[FieldGroup::new("Account", &account), FieldGroup::new("Profile", &profile)],
-            FormOptions::default().submit("Sign up").layout(layout).values(&v.values).errors(errors)))
+        (if inline { form.inline() } else { form })
     })
 }
 
-#[derive(Deserialize)]
-struct FormQuery { layout: Option<String> }
-
-async fn form_page(ui: Ui, Query(q): Query<FormQuery>) -> (Ui, Markup) {
-    let body = form_view(&ui, q.layout.as_deref() == Some("inline"), &SignUp::default(), &[]);
-    (ui, body)
+async fn form_page(ui: Ui) -> Page {
+    form_view(&ui, &[], &[])
 }
 
 /// A multipart post (the avatar is a file): server rules, then PRG with a flash or the form again.
-async fn form_submit(ui: Ui, mut parts: axum::extract::Multipart) -> axum::response::Response {
-    let mut v = SignUp::default();
+async fn form_submit(ui: Ui, mut parts: axum::extract::Multipart) -> Response {
+    let (mut values, mut files) = (Vec::new(), Vec::new());
     while let Ok(Some(part)) = parts.next_field().await {
         let (name, file) = (part.name().unwrap_or("").to_string(), part.file_name().map(str::to_string));
         match file {
-            Some(f) => { let n = part.bytes().await.map(|b| b.len()).unwrap_or(0); if !f.is_empty() { v.files.push((f, n)); } }
-            None => v.values.push((name, part.text().await.unwrap_or_default())),
+            Some(f) => { let n = part.bytes().await.map_or(0, |b| b.len()); if !f.is_empty() { files.push(format!(" with {f} ({n} bytes)")); } }
+            None => values.push((name, part.text().await.unwrap_or_default())),
         }
     }
+    let get = |k: &str| values.iter().find(|(n, _)| n == k).map_or("", |(_, v)| v.as_str());
     let mut errors = Vec::new();
-    if v.get("handle") == "admin" { errors.push(("handle", "That handle is reserved.")); }
-    if v.get("email").ends_with("@example.com") { errors.push(("email", "example.com addresses are not accepted.")); }
+    if get("handle") == "admin" { errors.push(("handle", "That handle is reserved.")); }
+    if get("email").ends_with("@example.com") { errors.push(("email", "example.com addresses are not accepted.")); }
     if errors.is_empty() {
-        let got = v.files.iter().map(|(f, n)| format!(" with {f} ({n} bytes)")).collect::<String>();
-        return prg::<axum::body::Body>("/form", Some(&format!("Signed up as {}{got}.", v.get("handle")))).into_response();
+        return ui.redirect("/form").flash(&format!("Signed up as {}{}.", get("handle"), files.concat())).into_response();
     }
-    (axum::http::StatusCode::UNPROCESSABLE_ENTITY, form_view(&ui, false, &v, &errors)).into_response()
+    (StatusCode::UNPROCESSABLE_ENTITY, form_view(&ui, &values, &errors)).into_response()
 }
 
-const COUNTER: CounterOptions = CounterOptions { min: Some(0), max: Some(20), step: 2, typed: true };
+#[derive(Default, Deserialize, Serialize)]
+struct Count { n: i64 }
 
-async fn counter_page(ui: Ui, jar: CookieJar) -> Markup {
-    let n: i64 = jar.get("count").and_then(|c| c.value().parse().ok()).unwrap_or(0);
+/// The counter's rules, shared by the page (to render them) and the post (to apply them).
+fn counter(ui: &Ui, n: i64) -> axum_nojs::counter::Counter<'static> {
+    ui.counter("/counter", n).min(0).max(20).step(2).typed()
+}
+
+async fn counter_page(ui: Ui, Saved(c): Saved<Count>) -> Page {
     page(&ui, "Counter", html! {
         p { "Steps of two between 0 and 20. The buttons switch off at the ends; a typed value off the step or the bounds is refused by the browser and clamped by the server." }
-        (counter_with(&ui, "/counter", n, COUNTER))
+        (counter(&ui, c.n))
     })
 }
 
 #[derive(Deserialize)]
 struct CounterOp { op: String, value: Option<i64> }
 
-async fn counter_submit(jar: CookieJar, Form(f): Form<CounterOp>) -> (CookieJar, Redirect) {
-    let n: i64 = jar.get("count").and_then(|c| c.value().parse().ok()).unwrap_or(0);
-    let n = COUNTER.apply(n, &f.op, f.value);
-    (jar.add(Cookie::new("count", n.to_string())), Redirect::to("/counter"))
+async fn counter_submit(ui: Ui, Saved(c): Saved<Count>, Form(f): Form<CounterOp>) -> Redirect {
+    let n = counter(&ui, c.n).apply(&f.op, f.value);
+    ui.redirect("/counter").save(&Count { n })
 }
 
-#[derive(Deserialize)]
-struct SwapQuery { n: Option<u32> }
-
-fn notes_of(jar: &CookieJar) -> Vec<String> {
-    jar.get("notes").map(|c| c.value().split('|').filter(|s| !s.is_empty()).map(str::to_string).collect()).unwrap_or_default()
-}
+/// The notes added on the swap page, one `note=` pair each.
+#[derive(Default, Deserialize, Serialize)]
+struct Notes(Vec<(String, String)>);
 
 /// Two controls outside any swap root that name their target: the link swaps one `<span>`,
 /// the form appends to a list. The same requests are plain navigations without the script.
-async fn swap_page(ui: Ui, jar: CookieJar, Query(q): Query<SwapQuery>) -> Markup {
-    let n = q.n.unwrap_or(1);
+async fn swap_page(ui: Ui, Saved(notes): Saved<Notes>) -> Page {
+    let n: u32 = ui.param("n").and_then(|n| n.parse().ok()).unwrap_or(1);
     page(&ui, "Swap targets", html! {
         (ui.flash())
         p class="nojs-note" { "Neither control sits inside a swap root. " code { "data-nojs-target" } " names the root to update and " code { "data-nojs-swap" } " how; without the script both are ordinary navigations to the same URL." }
         p { "Count: " span id="count" data-nojs="swap" { (n) } " " a href={ "/swap?n=" (n + 1) } data-nojs-target="#count" { "Add one" }
             " · " a href={ "/swap?n=" (n + 10) } data-nojs-target="#count" data-nojs-push="false" { "Add ten, keep the URL" } }
-        p { "Notes so far: " span id="note-count" { (notes_of(&jar).len()) } }
+        p { "Notes so far: " span id="note-count" { (notes.0.len()) } }
         form method="post" action="/swap" data-nojs-target="#log" data-nojs-swap="append" data-nojs-indicator="#saving" {
             input name="note" required placeholder="A note" aria-label="Note" autocomplete="off";
             button type="submit" class="nojs-primary" { "Add note" }
             " " span id="saving" class="nojs-note" hidden { "Saving…" }
         }
-        ol id="log" data-nojs="swap" { @for note in notes_of(&jar) { li { (note) } } }
+        ol id="log" data-nojs="swap" { @for (_, note) in &notes.0 { li { (note) } } }
     })
 }
 
@@ -557,66 +494,52 @@ struct SwapForm { note: String }
 /// An enhanced request (`Nojs-Enhance: 1`) gets only the new `<li>` inside an `#log` to append,
 /// plus the note count marked `data-nojs-oob` so it updates wherever it is on the page; a plain
 /// one gets Post/Redirect/Get to the full page, which shows both anyway.
-async fn swap_submit(jar: CookieJar, headers: HeaderMap, Form(f): Form<SwapForm>) -> axum::response::Response {
-    let note = f.note.replace('|', " ");
-    let mut notes = notes_of(&jar);
-    notes.push(note.clone());
-    let jar = jar.add(Cookie::new("notes", notes.join("|")));
+async fn swap_submit(ui: Ui, headers: HeaderMap, Saved(mut notes): Saved<Notes>, Form(f): Form<SwapForm>) -> Response {
+    notes.0.push(("note".into(), f.note.clone()));
     if headers.contains_key("nojs-enhance") {
-        return (jar, html! { ol id="log" { li { (note) } } span id="note-count" data-nojs-oob { (notes.len()) } }).into_response();
+        let cookies = ui.redirect("/swap").save(&notes).set_cookies();
+        let set = cookies.into_iter().map(|c| (axum::http::header::SET_COOKIE, c));
+        return (axum::response::AppendHeaders(set), html! { ol id="log" { li { (f.note) } } span id="note-count" data-nojs-oob { (notes.0.len()) } }).into_response();
     }
-    (jar, prg::<axum::body::Body>("/swap", Some("Note added"))).into_response()
+    ui.redirect("/swap").flash("Note added").save(&notes).into_response()
 }
 
-#[derive(Deserialize, Default)]
+#[derive(Default, Deserialize, Serialize)]
 struct Settings { name: String, #[serde(default)] notify: bool }
 
-fn settings_of(jar: &CookieJar) -> Settings {
-    jar.get("settings").and_then(|c| c.value().split_once('|'))
-        .map(|(name, notify)| Settings { name: name.to_string(), notify: notify == "1" })
-        .unwrap_or_default()
-}
-
-/// Tabs + form + flash. Everything survives a full navigation: tab in the `nojs-ui` cookie,
-/// values in a `settings` cookie, flash in a one-shot cookie set by `prg`.
-async fn settings_page(ui: Ui, jar: CookieJar) -> (Ui, Markup) {
-    let Settings { name, notify } = settings_of(&jar);
-    let (tab, here) = (ui.state.tab("settings").to_string(), format!("/settings?tab.settings={}", ui.state.tab("settings")));
-    let values = [("tab".to_string(), tab), ("name".to_string(), name), ("notify".to_string(), notify.to_string())];
-    const PROFILE: [Field; 2] = [Field::new("tab", "", FieldKind::Hidden), Field::new("name", "Display name", FieldKind::Text).required()];
-    const NOTIFY: [Field; 3] = [Field::new("tab", "", FieldKind::Hidden), Field::new("name", "", FieldKind::Hidden), Field::new("notify", "Email me about releases", FieldKind::Checkbox)];
-    let save = |id, fields| form_with(&ui, "/settings", &[FieldGroup::plain(fields)], FormOptions::default().submit("Save").values(&values).id(id));
-    let body = page(&ui, "Settings", html! {
-        (flash_with(&ui, ui.state.flash(), FlashOptions::default().dismiss(&here).auto_hide()))
-        (tabs_with(&ui, "settings", &[Tab::new("Profile", save("profile", &PROFILE)), Tab::new("Notifications", save("notify", &NOTIFY))], TabsOptions::default().state(&ui.state)))
+/// Tabs + form + flash. Everything survives a full navigation: the tab in the `nojs-ui`
+/// cookie, the values in `nojs-settings`, the flash in a one-shot cookie.
+async fn settings_page(ui: Ui, Saved(s): Saved<Settings>) -> Page {
+    let form = |id| ui.form("/settings").id(id).submit("Save");
+    page(&ui, "Settings", html! {
+        (ui.flash().dismiss().auto_hide())
+        (ui.tabs("settings")
+            .tab("Profile", form("profile").text("name", "Display name").required().value(&s.name)
+                .hidden("notify", if s.notify { "true" } else { "false" }).render())
+            .tab("Notifications", form("notify").hidden("name", &s.name)
+                .checkbox("notify", "Email me about releases").checked(s.notify).render()))
         p class="nojs-note" { "Go to " a href="/" { "the index" } " and come back: the open tab and the values are remembered. Saving with notifications off stacks a warning under the confirmation; the name " code { "admin" } " is refused with an alert. The confirmation fades after six seconds unless reduced motion is on." }
-    });
-    (ui, body)
+    })
 }
-
-#[derive(Deserialize)]
-struct SettingsForm { name: String, #[serde(default)] notify: bool, tab: usize }
 
 /// Saves and says so; a warning stacks when notifications go off; `admin` is refused.
-async fn settings_submit(jar: CookieJar, Form(f): Form<SettingsForm>) -> (CookieJar, axum::response::Response) {
-    let to = format!("/settings?tab.settings={}", f.tab);
-    if f.name.trim().eq_ignore_ascii_case("admin") {
-        return (jar, prg(&to, Some(&stack(&[(Level::Danger, "The name admin is reserved; nothing was saved.")]))));
+async fn settings_submit(ui: Ui, Form(s): Form<Settings>) -> Redirect {
+    let back = ui.redirect("/settings");
+    if s.name.trim().eq_ignore_ascii_case("admin") {
+        return back.danger("The name admin is reserved; nothing was saved.");
     }
-    let value = format!("{}|{}", f.name.replace('|', ""), u8::from(f.notify));
-    let mut said = vec![(Level::Ok, "Settings saved.")];
-    if !f.notify { said.push((Level::Warn, "You will not hear about releases.")); }
-    (jar.add(Cookie::new("settings", value)), prg(&to, Some(&stack(&said))))
+    let back = back.ok("Settings saved.");
+    let back = if s.notify { back } else { back.warn("You will not hear about releases.") };
+    back.save(&s)
 }
 
-/// The inputs page's values: from the query while filtering (unsaved), else from the cookie.
-#[derive(Deserialize, Default)]
+/// The inputs page's values: from the query while filtering (unsaved), else saved.
+#[derive(Deserialize, Serialize, Default)]
 struct Inputs {
     size: Option<String>, volume: Option<i64>, accent: Option<String>,
     #[serde(rename = "accent-alpha")] alpha: Option<u8>,
     #[serde(rename = "accent-preset")] preset: Option<String>,
     price_min: Option<i64>, price_max: Option<i64>, country: Option<String>,
-    #[serde(rename = "country-q")] country_q: Option<String>,
 }
 
 const SIZES: [(&str, &str, &str); 3] = [("s", "Small", "🐭"), ("m", "Medium", "🐕"), ("l", "Large", "🐘")];
@@ -629,56 +552,43 @@ const COUNTRIES: [(&str, [Country; 7]); 3] = [
     ("Asia", [("jp", "Japan", "🇯🇵"), ("kr", "South Korea", "🇰🇷"), ("in", "India", "🇮🇳"), ("id", "Indonesia", "🇮🇩"), ("vn", "Vietnam", "🇻🇳"), ("th", "Thailand", "🇹🇭"), ("ph", "Philippines", "🇵🇭")]),
 ];
 
-/// The saved values: `size|volume|accent|alpha|price_min|price_max|country`.
-fn saved_inputs(jar: &CookieJar) -> Inputs {
-    let saved = jar.get("inputs").map(|c| c.value().to_string()).unwrap_or_default();
-    let p: Vec<&str> = saved.split('|').collect();
-    let at = |i: usize| p.get(i).filter(|v| !v.is_empty()).map(|v| v.to_string());
-    Inputs {
-        size: at(0), volume: at(1).and_then(|v| v.parse().ok()), accent: at(2), alpha: at(3).and_then(|v| v.parse().ok()),
-        price_min: at(4).and_then(|v| v.parse().ok()), price_max: at(5).and_then(|v| v.parse().ok()), country: at(6), ..Inputs::default()
-    }
-}
-
-/// Select, range and colour in one form; the chosen values live in an `inputs` cookie. The
-/// country filter is a GET through the same form, so its values come from the query.
-async fn inputs_page(ui: Ui, jar: CookieJar, Query(q): Query<Inputs>) -> (Ui, Markup) {
-    let v = if q.country_q.is_some() { q } else { saved_inputs(&jar) };
-    let accent = v.accent.as_deref().unwrap_or("#1f6f5f");
-    let (lo, hi) = range::order(v.price_min.unwrap_or(20), v.price_max.unwrap_or(80));
-    // `(value, label, icon)` tuples become options through `From`.
-    let sizes = SIZES.map(SelectOption::from);
-    let countries = COUNTRIES.map(|(group, cs)| (group, cs.map(SelectOption::from)));
-    let groups = countries.each_ref().map(|(group, cs)| SelectGroup::new(group, cs));
-    let body = page(&ui, "Select, range, colour", html! {
+/// Select, range and colour in one form, saved in `nojs-inputs`. The country filter is a GET
+/// through the same form, so while filtering the values come from the query.
+async fn inputs_page(ui: Ui, Query(q): Query<Inputs>, Saved(saved): Saved<Inputs>) -> Page {
+    let v = if ui.param("country-q").is_some() { q } else { saved };
+    page(&ui, "Select, range, colour", html! {
         (ui.flash())
         form id="inputs" data-nojs="swap" class="nojs-form" method="post" action="/inputs" {
-            div class="nojs-field" { label for="size" { "Size" } (select(&ui, "size", &[SelectGroup::flat(&sizes)], v.size.as_deref().unwrap_or("m"))) }
-            div class="nojs-field" { label for="country" { "Country" }
-                (select_with(&ui, "country", &groups, v.country.as_deref().unwrap_or("es"), SelectOptions::default().search("/inputs", v.country_q.as_deref().unwrap_or("")))) }
-            div class="nojs-field" { label for="f-volume" { "Volume" } (range_with(&ui, "volume", v.volume.unwrap_or(40), RangeOptions::default().step(5))) }
-            div class="nojs-field" { label for="f-price_min" { "Price" } (range::range_pair_with(&ui, "price", (lo, hi), RangeOptions::default().step(5))) }
-            div class="nojs-field" { label for="f-accent" { "Accent" } (color_with(&ui, "accent", accent, ColorOptions::default().presets(&ACCENTS).alpha(v.alpha.unwrap_or(100)))) }
+            (ui.select("size", v.size.as_deref().unwrap_or("m")).options(SIZES).label("Size"))
+            (ui.select("country", v.country.as_deref().unwrap_or("es")).groups(COUNTRIES).search("/inputs").label("Country"))
+            (ui.range("volume", v.volume.unwrap_or(40)).step(5).label("Volume"))
+            (ui.range_pair("price", (v.price_min.unwrap_or(20), v.price_max.unwrap_or(80))).step(5).label("Price"))
+            (ui.color("accent", v.accent.as_deref().unwrap_or("#1f6f5f")).presets(&ACCENTS).alpha(v.alpha.unwrap_or(100)).label("Accent"))
             button type="submit" class="nojs-primary" { "Save" }
         }
         p class="nojs-note" { "Without the enhancement script the outputs and the swatch show the last saved values and update on submit, and the country filter needs its button." }
-    });
-    (ui, body)
+    })
 }
 
-async fn inputs_submit(jar: CookieJar, Form(f): Form<Inputs>) -> (CookieJar, axum::response::Response) {
-    let size = SIZES.iter().find(|(v, ..)| Some(*v) == f.size.as_deref()).map(|(v, ..)| *v).unwrap_or("m");
-    let hex = |c: &Option<String>| c.as_deref().filter(|c| c.len() == 7 && c.starts_with('#')).map(str::to_string);
-    let accent = hex(&f.preset).or(hex(&f.accent)).unwrap_or_else(|| "#1f6f5f".into());
-    let country = COUNTRIES.iter().flat_map(|(_, cs)| cs).find(|c| Some(c.0) == f.country.as_deref()).map(|c| c.0).unwrap_or("es");
-    let (lo, hi) = range::order(f.price_min.unwrap_or(20).clamp(0, 100), f.price_max.unwrap_or(80).clamp(0, 100));
-    let value = format!("{size}|{}|{accent}|{}|{lo}|{hi}|{country}", f.volume.unwrap_or(40).clamp(0, 100), f.alpha.unwrap_or(100).min(100));
-    (jar.add(Cookie::new("inputs", value)), prg("/inputs", Some("Inputs saved.")))
+/// Only known sizes, countries and `#rrggbb` colours are kept; numbers are clamped.
+async fn inputs_submit(ui: Ui, Form(f): Form<Inputs>) -> Redirect {
+    let known = |v: &Option<String>, ok: &dyn Fn(&str) -> bool| v.clone().filter(|v| ok(v));
+    let hex = |c: &str| c.len() == 7 && c.starts_with('#');
+    let (lo, hi) = axum_nojs::range::order(f.price_min.unwrap_or(20).clamp(0, 100), f.price_max.unwrap_or(80).clamp(0, 100));
+    let clean = Inputs {
+        size: known(&f.size, &|s| SIZES.iter().any(|(v, ..)| *v == s)),
+        country: known(&f.country, &|c| COUNTRIES.iter().flat_map(|(_, cs)| cs).any(|(v, ..)| *v == c)),
+        accent: known(&f.preset, &hex).or(known(&f.accent, &hex)),
+        alpha: Some(f.alpha.unwrap_or(100).min(100)),
+        volume: Some(f.volume.unwrap_or(40).clamp(0, 100)),
+        price_min: Some(lo), price_max: Some(hi), preset: None,
+    };
+    ui.redirect("/inputs").flash("Inputs saved.").save(&clean)
 }
 
 /// Toasts come back from a post like a flash: the one-shot cookie, several at once.
-async fn toast_page(ui: Ui) -> (Ui, Markup) {
-    let body = page(&ui, "Toasts", html! {
+async fn toast_page(ui: Ui) -> Page {
+    page(&ui, "Toasts", html! {
         p { "Each button posts, the server redirects back, and the answer shows in the corner. Calm ones fade after five seconds (hover to keep them); errors stay until dismissed." }
         form method="post" action="/toast" {
             button type="submit" name="kind" value="ok" class="nojs-primary" { "Send invite" } " "
@@ -686,53 +596,56 @@ async fn toast_page(ui: Ui) -> (Ui, Markup) {
             button type="submit" name="kind" value="danger" { "Sync now" } " "
             button type="submit" name="kind" value="all" { "All three" }
         }
-        (toasts_with(&ui, ui.state.flash(), ToastOptions::default().dismiss("/toast")))
-    });
-    (ui, body)
+        (ui.toasts().dismiss())
+    })
 }
 
 #[derive(Deserialize)]
 struct ToastForm { kind: String }
 
-async fn toast_submit(Form(f): Form<ToastForm>) -> axum::response::Response {
-    let all = [(Level::Ok, "Invite sent to ada@example.org."), (Level::Warn, "Link copied; it expires in an hour."), (Level::Danger, "Sync failed: the server did not answer.")];
-    let picked: Vec<_> = all.into_iter().filter(|(l, _)| f.kind == "all" || l.as_str() == f.kind).collect();
-    prg("/toast", Some(&stack(&picked)))
+async fn toast_submit(ui: Ui, Form(f): Form<ToastForm>) -> Redirect {
+    let wants = |k: &str| f.kind == "all" || f.kind == k;
+    let mut back = ui.redirect("/toast");
+    if wants("ok") { back = back.ok("Invite sent to ada@example.org."); }
+    if wants("warn") { back = back.warn("Link copied; it expires in an hour."); }
+    if wants("danger") { back = back.danger("Sync failed: the server did not answer."); }
+    back
 }
 
 /// A sidebar on wide screens, a drawer on narrow ones, and breadcrumbs above the content.
-async fn nav_page(ui: Ui) -> Markup {
-    let links = html! { ul {
-        li { a href="/nav" aria-current="page" { "Overview" } }
-        li { a href="/table" { "Files" } } li { a href="/dashboard" { "Reports" } } li { a href="/settings" { "Settings" } }
-    } };
-    page(&ui, "Drawer and breadcrumbs", drawer_with(&ui, "site", "Menu", links, html! {
-        (breadcrumbs(&ui, &[("Home", "/"), ("Projects", "/nav"), ("axum-nojs", "")]))
-        p { "Wider than 60rem the navigation is a sidebar; narrower, the menu button opens it as a drawer. Escape or a click outside closes it." }
-        p { "A long trail folds its middle so both ends stay readable:" }
-        (breadcrumbs(&ui, &[("Home", "/"), ("Projects", "/nav"), ("axum-nojs", "/nav"), ("Components", "/"), ("Navigation", "/nav"), ("Breadcrumbs", "")]))
-        p class="nojs-note" { "Server-opened: " a href="/nav?dialog=site" { "?dialog=site" } }
-    }, DrawerOptions::default().title("axum-nojs").sidebar().open(ui.state.dialog() == Some("site"))))
+async fn nav_page(ui: Ui) -> Page {
+    page(&ui, "Drawer and breadcrumbs", html! {
+        (ui.drawer("Menu").id("site").title("axum-nojs").sidebar()
+            .nav(html! { ul {
+                li { a href="/nav" aria-current="page" { "Overview" } }
+                li { a href="/table" { "Files" } } li { a href="/dashboard" { "Reports" } } li { a href="/settings" { "Settings" } }
+            } })
+            .body(html! {
+                (ui.breadcrumbs().link("Home", "/").link("Projects", "/nav").here("axum-nojs"))
+                p { "Wider than 60rem the navigation is a sidebar; narrower, the menu button opens it as a drawer. Escape or a click outside closes it." }
+                p { "A long trail folds its middle so both ends stay readable:" }
+                (ui.breadcrumbs().link("Home", "/").link("Projects", "/nav").link("axum-nojs", "/nav")
+                    .link("Components", "/").link("Navigation", "/nav").here("Breadcrumbs"))
+                p class="nojs-note" { "Server-opened: " a href="/nav?dialog=site" { "?dialog=site" } }
+            }))
+    })
 }
 
-#[derive(Deserialize)]
-struct DashboardQuery { orders: Option<String> }
-
 /// Stat cards over a list that may be empty (`?orders=none`).
-async fn dashboard_page(ui: Ui, Query(q): Query<DashboardQuery>) -> Markup {
-    let none = q.orders.as_deref() == Some("none");
+async fn dashboard_page(ui: Ui) -> Page {
+    let none = ui.param("orders") == Some("none");
     page(&ui, "Stats and empty states", html! {
         div class="nojs-stat-grid" {
-            (stat_with(&ui, "Visitors", "12,480", StatOptions::default().delta("+8.2%").note("last 7 days")))
-            (stat_with(&ui, "Orders", if none { "0" } else { "3" }, StatOptions::default().delta(if none { "-3" } else { "0" })))
-            (stat_with(&ui, "Error rate", "0.4%", StatOptions::default().delta("-0.2 pt").down_is_good().href("/table")))
-            (stat_with(&ui, "p95 latency", "38 ms", StatOptions::default().delta("+6 ms").down_is_good()))
+            (ui.stat("Visitors", "12,480").delta("+8.2%").note("last 7 days"))
+            (ui.stat("Orders", if none { "0" } else { "3" }).delta(if none { "-3" } else { "0" }))
+            (ui.stat("Error rate", "0.4%").delta("-0.2 pt").down_is_good().href("/table"))
+            (ui.stat("p95 latency", "38 ms").delta("+6 ms").down_is_good())
         }
         h2 { "Recent orders" }
         @if none {
-            (empty_state_with(&ui, "No orders yet", EmptyOptions::default().icon("\u{1f4e6}")
+            (ui.empty_state("No orders yet").icon("\u{1f4e6}")
                 .text(html! { "Orders show up here as soon as a customer checks out." })
-                .link("Show sample orders", "/dashboard")))
+                .link("Show sample orders", "/dashboard"))
         } @else {
             ul { li { "#1042, Ada Lovelace, 3 items" } li { "#1041, Grace Hopper, 1 item" } li { "#1040, Alan Turing, 2 items" } }
             p class="nojs-note" { a href="/dashboard?orders=none" { "See the empty state" } }
@@ -740,46 +653,37 @@ async fn dashboard_page(ui: Ui, Query(q): Query<DashboardQuery>) -> Markup {
     })
 }
 
-/// Every demo page as a command, plus a few deep links.
-fn commands() -> Vec<Command<'static>> {
-    COMPONENTS.iter().map(|(href, title, ..)| Command::new(title, href).group("Components"))
-        .chain([
-            Command::new("Notification settings", "/settings?tab.settings=1").group("Shortcuts").keywords("email releases"),
-            Command::new("Largest files", "/table?sort=size&dir=desc").group("Shortcuts").keywords("sort size big"),
-            Command::new("Open the delete dialog", "/dialog?dialog=confirm").group("Shortcuts").keywords("account remove"),
-        ]).collect()
-}
-
-#[derive(Deserialize)]
-struct PaletteQuery { q: Option<String> }
-
-/// An exact command name redirects; anything else lists the matches.
-async fn palette_page(ui: Ui, Query(p): Query<PaletteQuery>) -> axum::response::Response {
-    let cmds = commands();
-    let q = p.q.as_deref().filter(|q| !q.trim().is_empty());
-    if let Some(c) = q.and_then(|q| palette::exact(&cmds, q)) { return Redirect::to(c.href).into_response(); }
-    let options = q.map_or(PaletteOptions::default(), |q| PaletteOptions::default().query(q));
+/// Every demo page as a command, plus a few deep links. An exact command name redirects;
+/// anything else lists the matches.
+async fn palette_page(ui: Ui) -> Response {
+    let palette = ui.palette("/palette").id("cmd")
+        .group("Components").commands(COMPONENTS.iter().map(|c| (c.1, c.0)))
+        .group("Shortcuts")
+        .command("Notification settings", "/settings?tab.settings=1").keywords("email releases")
+        .command("Largest files", "/table?sort=size&dir=desc").keywords("sort size big")
+        .command("Open the delete dialog", "/dialog?dialog=confirm").keywords("account remove");
+    if let Some(href) = palette.exact() {
+        return ui.redirect(href).into_response();
+    }
     page(&ui, "Command palette", html! {
         p { "Open it with the button or the access key, type, pick a suggestion and press Enter. An exact name goes straight to the page; anything else lists what matches." }
-        (command_palette_with(&ui, "cmd", "/palette", &cmds, options))
+        (palette)
     }).into_response()
 }
 
 /// Three sections declared slowest first, so out-of-order arrival is visible.
 async fn stream_page(ui: Ui) -> Streamed {
     let sections = [("slow", 2000), ("medium", 800), ("fast", 100)];
-    let theme = ui.theme;
-    let page = Streamed::page(&ui, "Streaming", theme, html! {
-        (toolbar(&ui, theme, true))
-        h1 { "Streaming" }
+    let body = html! {
         p { @if ui.has(Cap::StreamingDsd) { "Sections arrive out of order into named slots." }
             @else { "This browser has no declarative shadow DOM: sections stream in document order." } }
         @for (id, ms) in sections {
-            (slot(&ui, id, html! { section class="nojs-stream-section nojs-stream-pending" {
-                (skeleton_with(&ui, 2, SkeletonOptions::default().label(&format!("Loading {id} ({ms} ms)")).heading()))
+            (ui.slot(id, html! { section class="nojs-stream-section nojs-stream-pending" {
+                (ui.skeleton(2).label(&format!("Loading {id} ({ms} ms)")).heading())
             } }))
         }
-    });
+    };
+    let page = ui.stream("Streaming", shell(&ui, "Streaming", body));
     sections.into_iter().fold(page, |page, (id, ms)| page.fill(id, section(id, ms)))
 }
 
@@ -789,7 +693,7 @@ async fn section(id: &'static str, ms: u64) -> Markup {
 }
 
 /// What the server believes about this browser, one row per capability.
-async fn caps_page(ui: Ui) -> Markup {
+async fn caps_page(ui: Ui) -> Page {
     let probed = ui.has(Cap::Probed);
     page(&ui, "Capabilities", html! {
         @if probed { p { "Beacons have fired. Rows below drive which markup every component emits." } }
@@ -813,9 +717,9 @@ async fn caps_page(ui: Ui) -> Markup {
 #[derive(Deserialize)]
 struct ThemeForm { theme: String }
 
-async fn theme_submit(jar: CookieJar, headers: HeaderMap, Form(f): Form<ThemeForm>) -> (CookieJar, Redirect) {
-    let theme = Theme::parse(&f.theme);
-    (jar.add(Cookie::new(THEME_COOKIE, theme.as_str().to_string())), Redirect::to(&back_to(&headers)))
+/// Keep the picked theme and go back to the page the toggle was on.
+async fn theme_submit(ui: Ui, headers: HeaderMap, Form(f): Form<ThemeForm>) -> Redirect {
+    ui.redirect(&back_to(&headers)).theme(Theme::parse(&f.theme))
 }
 
 /// The path of the page a form was posted from (same-origin `Referer`), or `/`.
@@ -964,17 +868,17 @@ mod tests {
 
     #[tokio::test]
     async fn state_round_trip_through_prg_and_cookies() {
-        // POST → 303 with a flash cookie and the tab in the redirect.
+        // POST → 303 with a flash cookie and the values saved; the tab is in the nojs-ui cookie.
         let req = Request::post("/settings").header("content-type", "application/x-www-form-urlencoded")
-            .body(Body::from("name=Ada&notify=true&tab=1")).unwrap();
+            .body(Body::from("name=Ada&notify=true")).unwrap();
         let res = router().oneshot(req).await.unwrap();
         assert_eq!(res.status(), 303);
-        assert_eq!(res.headers().get("location").unwrap(), "/settings?tab.settings=1");
+        assert_eq!(res.headers().get("location").unwrap(), "/settings");
         let cookies: Vec<String> = res.headers().get_all("set-cookie").iter().map(|v| v.to_str().unwrap().to_string()).collect();
         assert!(cookies.iter().any(|c| c.starts_with("nojs-flash=ok%3ASettings%20saved.")), "{cookies:?}");
-        assert!(cookies.iter().any(|c| c.starts_with("settings=Ada")), "{cookies:?}");
+        assert!(cookies.iter().any(|c| c.starts_with("nojs-settings=name%3DAda%26notify%3Dtrue;")), "{cookies:?}");
         // GET the redirect target: flash shown and cleared, tab persisted to nojs-ui, values filled in.
-        let req = Request::get("/settings?tab.settings=1").header("cookie", "nojs-flash=Settings%20saved.; settings=Ada|1").body(Body::empty()).unwrap();
+        let req = Request::get("/settings?tab.settings=1").header("cookie", "nojs-flash=Settings%20saved.; nojs-settings=name%3DAda%26notify%3Dtrue").body(Body::empty()).unwrap();
         let res = router().oneshot(req).await.unwrap();
         let cookies: Vec<String> = res.headers().get_all("set-cookie").iter().map(|v| v.to_str().unwrap().to_string()).collect();
         assert!(cookies.iter().any(|c| c.starts_with("nojs-ui=tab.settings=1;")), "{cookies:?}");

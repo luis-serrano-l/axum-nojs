@@ -11,158 +11,148 @@
 //! `auto`; without `interpolate-size` the panel snaps.
 //!
 //! **What it does not do without script:** arrow keys between summaries (the WAI-ARIA accordion
-//! pattern); remembering which section was open across reloads needs `UiState` or `?open=`.
+//! pattern).
 //!
 //! **Fallback:** `<details>` alone (baseline 2020) still toggles; only the exclusivity and the
 //! animation are lost. No `Caps` branch is needed; the markup is the same everywhere.
 //!
-//! **Server persistence:** with a `UiState`, the open sections come from `state.opens(group)`
-//! (`?open.<group>=0,2`, a comma list) and each title is a link that toggles its own index in
+//! **Server persistence:** the open sections come from the request's `?open.<group>=0,2` (a
+//! comma list, see [`crate::UiState::opens`]) and each title is a link that toggles its own index in
 //! that list, so the choice survives navigation. "Expand all" links to every index, "Collapse
-//! all" to `open.<group>=` (which removes the key). The group is then a swap root for the
+//! all" to `open.<group>=` (which removes the key). The group is a swap root for the
 //! [`crate::enhance`] script. A nested accordion is its own group with its own key.
 //!
-//! **Without script:** nothing is lost. Without a state the sections toggle natively and
-//! remember nothing, and the expand/collapse links are not rendered (there is no link target).
+//! **Without script:** nothing is lost.
 //!
 //! ```rust
-//! use maud::html;
-//! use axum_nojs::{Caps, UiState, accordion, accordion_with, accordion::{AccordionItem, AccordionOptions}};
-//! let m = accordion(&Caps::all(), "faq", &[
-//!     AccordionItem::new("What?", html! { p { "A" } }),
-//!     AccordionItem::new("Why?", html! { p { "B" } }),
-//! ]);
-//!
+//! use axum_nojs::prelude::*;
 //! // Items 0 and 2 of "faq" were left open, as the URL records it.
-//! let state = UiState::parse("/help", "open.faq=0,2", "");
-//! let m = accordion_with(&Caps::all(), "faq", &[
-//!     AccordionItem::new("Install", html! { p { "cargo add" } }).icon("\u{1F4E6}").summary("One line."),
-//!     AccordionItem::new("Use", html! { p { "html!" } }),
-//!     AccordionItem::new("More", accordion_with(&Caps::all(), "faq-more", &[AccordionItem::new("Nested", html! { p { "Own group." } })], AccordionOptions::default().state(&state))),
-//! ], AccordionOptions::default().state(&state).multi().controls());
-//! let html = m.into_string();
+//! let ui = Ui::from_request("/help", "open.faq=0,2", "");
+//! // `icon` and `summary` apply to the item added last.
+//! let m = ui.accordion("faq")
+//!     .item("Install", html! { p { "cargo add" } }).icon("\u{1F4E6}").summary("One line.")
+//!     .item("Use", html! { p { "html!" } })
+//!     .item("More", html! { (ui.accordion("faq-more").item("Nested", html! { p { "Own group." } })) })
+//!     .multi()
+//!     .controls();
+//! let html = m.render().into_string();
 //! assert!(html.contains("href=\"/help?open.faq=2\">Install"), "open item's link removes itself from the list");
 //! assert!(html.contains("href=\"/help?open.faq=0%2C1%2C2\">Expand all"));
 //! assert!(html.contains("class=\"nojs-accordion-summary\">One line."));
 //! ```
 
-use maud::{Markup, html};
+use maud::{Markup, Render, html};
 
-use crate::{Caps, UiState};
+use crate::Ui;
 
 /// One section: a title, a body, an optional icon before the title and summary line under it.
 #[derive(Clone, Debug)]
-pub struct AccordionItem<'a> {
+struct Item<'a> {
     title: &'a str,
     body: Markup,
     icon: Option<&'a str>,
     summary: Option<&'a str>,
 }
 
-impl<'a> AccordionItem<'a> {
-    /// A section with its title and body.
-    pub const fn new(title: &'a str, body: Markup) -> Self {
-        AccordionItem { title, body, icon: None, summary: None }
-    }
-    /// Text (an emoji or a glyph) shown before the title, hidden from assistive tech.
-    pub const fn icon(mut self, icon: &'a str) -> Self {
-        self.icon = Some(icon);
-        self
-    }
-    /// A muted line under the title, visible while the section is closed.
-    pub const fn summary(mut self, summary: &'a str) -> Self {
-        self.summary = Some(summary);
-        self
+/// Stacked sections, made by [`Ui::accordion`]: the open ones are `?open.<group>=` (or the
+/// cookie's memory of it), and each title links to toggle its own. One open at a time unless
+/// [`Accordion::multi`].
+#[derive(Clone, Debug)]
+pub struct Accordion<'a> {
+    ui: &'a Ui,
+    group: &'a str,
+    items: Vec<Item<'a>>,
+    multi: bool,
+    controls: bool,
+}
+
+impl Ui {
+    /// An empty accordion named `group` (the key in `?open.<group>=`); add sections with
+    /// [`Accordion::item`].
+    pub fn accordion<'a>(&'a self, group: &'a str) -> Accordion<'a> {
+        Accordion { ui: self, group, items: Vec::new(), multi: false, controls: false }
     }
 }
 
-/// `("Question", html! { … })`: a section, its title and its body.
-impl<'a> From<(&'a str, Markup)> for AccordionItem<'a> {
-    fn from((title, body): (&'a str, Markup)) -> Self {
-        AccordionItem::new(title, body)
-    }
-}
-
-/// Options for [`accordion`]; `Default::default()` is exclusive, unpersisted, without links.
-#[derive(Clone, Copy, Debug, Default)]
-pub struct AccordionOptions<'a> {
-    /// Server-held open sections and links to change them.
-    pub state: Option<&'a UiState>,
-    /// Several sections may be open at once (no `name` attribute; `open.<group>` is a list).
-    pub multi: bool,
-    /// "Expand all" and "Collapse all" links above the sections (needs `state` and `multi`).
-    pub controls: bool,
-}
-
-impl<'a> AccordionOptions<'a> {
-    /// Server-held open sections and links to change them.
-    pub fn state(mut self, state: &'a UiState) -> Self {
-        self.state = Some(state);
+impl<'a> Accordion<'a> {
+    /// A section titled `title` with its body.
+    pub fn item(mut self, title: &'a str, body: Markup) -> Self {
+        self.items.push(Item { title, body, icon: None, summary: None });
         self
     }
-    /// Let several sections stay open.
+
+    /// Text (an emoji or a glyph) before the title of the section added last, hidden from
+    /// assistive tech.
+    pub fn icon(mut self, icon: &'a str) -> Self {
+        if let Some(it) = self.items.last_mut() {
+            it.icon = Some(icon);
+        }
+        self
+    }
+
+    /// A muted line under the title of the section added last, visible while it is closed.
+    pub fn summary(mut self, summary: &'a str) -> Self {
+        if let Some(it) = self.items.last_mut() {
+            it.summary = Some(summary);
+        }
+        self
+    }
+
+    /// Several sections may be open at once (`?open.<group>=0,2`).
     pub fn multi(mut self) -> Self {
         self.multi = true;
         self
     }
-    /// Show the expand/collapse links.
+
+    /// "Expand all" and "Collapse all" links above the sections (with `multi`).
     pub fn controls(mut self) -> Self {
         self.controls = true;
         self
     }
 }
 
-/// An exclusive accordion with no state and the default options.
-/// [`accordion_with`] takes the options.
-pub fn accordion(caps: &Caps, group: &str, items: &[AccordionItem]) -> Markup {
-    accordion_with(caps, group, items, Default::default())
-}
-
-/// Accordion `group`. Open sections are `state.opens(group)` (none without a state).
-pub fn accordion_with(_caps: &Caps, group: &str, items: &[AccordionItem], options: AccordionOptions) -> Markup {
-    let AccordionOptions { state, multi, controls } = options;
-    let open: Vec<usize> = state.map(|s| s.opens(group)).unwrap_or_default();
-    let key = format!("open.{group}");
-    let list = |ix: &[usize]| ix.iter().map(usize::to_string).collect::<Vec<_>>().join(",");
-    let toggled = |i: usize| -> String {
-        if open.contains(&i) {
-            list(&open.iter().copied().filter(|&o| o != i).collect::<Vec<_>>())
-        } else if multi {
-            let mut all: Vec<usize> = open.iter().copied().chain([i]).collect();
-            all.sort_unstable();
-            list(&all)
-        } else {
-            i.to_string()
-        }
-    };
-    html! {
-        div id=[state.map(|_| format!("nojs-accordion-{group}"))] data-nojs=[state.map(|_| "swap")] class="nojs-accordion" {
-            @if let (Some(s), true, true) = (state, multi, controls) {
-                p class="nojs-accordion-controls" {
-                    a href=(s.link(&key, &list(&(0..items.len()).collect::<Vec<_>>()))) { "Expand all" }
-                    a href=(s.link(&key, "")) { "Collapse all" }
-                }
+impl Render for Accordion<'_> {
+    fn render(&self) -> Markup {
+        let Accordion { ui, group, ref items, multi, controls } = *self;
+        let s = &ui.state;
+        let open: Vec<usize> = s.opens(group);
+        let key = format!("open.{group}");
+        let list = |ix: &[usize]| ix.iter().map(usize::to_string).collect::<Vec<_>>().join(",");
+        let toggled = |i: usize| -> String {
+            if open.contains(&i) {
+                list(&open.iter().copied().filter(|&o| o != i).collect::<Vec<_>>())
+            } else if multi {
+                let mut all: Vec<usize> = open.iter().copied().chain([i]).collect();
+                all.sort_unstable();
+                list(&all)
+            } else {
+                i.to_string()
             }
-            @for (i, item) in items.iter().enumerate() {
-                details name=[(!multi).then_some(group)] open[open.contains(&i)] {
-                    summary {
-                        @if let Some(icon) = item.icon { span class="nojs-accordion-icon" aria-hidden="true" { (icon) } }
-                        @let inner = html! {
-                            (item.title)
-                            @if let Some(line) = item.summary { span class="nojs-accordion-summary" { (line) } }
-                        };
-                        @match state {
-                            Some(s) => a href=(s.link(&key, &toggled(i))) { (inner) },
-                            None => span class="nojs-accordion-title" { (inner) },
-                        }
+        };
+        html! {
+            div id={ "nojs-accordion-" (group) } data-nojs="swap" class="nojs-accordion" {
+                @if multi && controls {
+                    p class="nojs-accordion-controls" {
+                        a href=(s.link(&key, &list(&(0..items.len()).collect::<Vec<_>>()))) { "Expand all" }
+                        a href=(s.link(&key, "")) { "Collapse all" }
                     }
-                    div class="nojs-accordion-body" { (item.body) }
+                }
+                @for (i, item) in items.iter().enumerate() {
+                    details name=[(!multi).then_some(group)] open[open.contains(&i)] {
+                        summary {
+                            @if let Some(icon) = item.icon { span class="nojs-accordion-icon" aria-hidden="true" { (icon) } }
+                            a href=(s.link(&key, &toggled(i))) {
+                                (item.title)
+                                @if let Some(line) = item.summary { span class="nojs-accordion-summary" { (line) } }
+                            }
+                        }
+                        div class="nojs-accordion-body" { (item.body) }
+                    }
                 }
             }
         }
     }
 }
-
 /// Styles for this component; included in [`crate::stylesheet`].
 pub const CSS: &str = r#"
 /* interpolate-size (Chrome 129) lets height animate to auto; elsewhere it snaps. */

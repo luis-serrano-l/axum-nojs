@@ -1,7 +1,7 @@
 //! # Skeleton
 //!
 //! Grey bars in the shape of content that is still coming: the placeholder for a streamed
-//! [`crate::slot`], a lazy panel, anything the server fills in later.
+//! [`crate::Ui::slot`], a lazy panel, anything the server fills in later.
 //!
 //! **Platform features:** `aria-busy="true"` and `role="status"` with a visually hidden
 //! label, so assistive technology hears "Loading" once instead of reading empty boxes; a
@@ -14,64 +14,61 @@
 //! when the real content arrives (a streamed slot, a swap, the next page).
 //!
 //! ```rust
-//! use axum_nojs::{Caps, skeleton, skeleton_with, skeleton::SkeletonOptions};
-//! let m = skeleton(&Caps::all(), 3).into_string();
-//! assert_eq!(m.matches("nojs-skeleton-line").count(), 3);
-//! let m = skeleton_with(&Caps::all(), 2, SkeletonOptions::default().label("Loading orders").heading()).into_string();
+//! use axum_nojs::prelude::*;
+//! let ui = Ui::from(Caps::all());
+//! assert_eq!(ui.skeleton(3).render().into_string().matches("nojs-skeleton-line").count(), 3);
+//! let m = ui.skeleton(2).label("Loading orders").heading().render().into_string();
 //! assert!(m.contains("Loading orders") && m.contains("nojs-skeleton-heading"));
 //! ```
 
-use maud::{Markup, html};
+use maud::{Markup, Render, html};
 
-use crate::Caps;
+use crate::Ui;
 
-/// Options for [`skeleton`].
+/// Placeholder bars, made by [`Ui::skeleton`]; the last one is shorter, like the end of a
+/// paragraph.
 #[derive(Clone, Debug)]
-pub struct SkeletonOptions<'a> {
-    /// What screen readers hear (default "Loading").
-    pub label: &'a str,
-    /// A wider, taller first bar standing in for a heading.
-    pub heading: bool,
+pub struct Skeleton<'a> {
+    lines: usize,
+    label: &'a str,
+    heading: bool,
 }
 
-impl Default for SkeletonOptions<'_> {
-    fn default() -> Self {
-        SkeletonOptions { label: "Loading", heading: false }
+impl Ui {
+    /// `lines` bars, announced as "Loading".
+    pub fn skeleton<'a>(&self, lines: usize) -> Skeleton<'a> {
+        Skeleton { lines, label: "Loading", heading: false }
     }
 }
 
-impl<'a> SkeletonOptions<'a> {
-    /// What screen readers hear.
+impl<'a> Skeleton<'a> {
+    /// What screen readers hear instead of "Loading".
     pub fn label(mut self, label: &'a str) -> Self {
         self.label = label;
         self
     }
-    /// Start with a heading bar.
+
+    /// Start with a wider, taller bar standing in for a heading.
     pub fn heading(mut self) -> Self {
         self.heading = true;
         self
     }
 }
 
-/// A skeleton of `lines` lines.
-/// [`skeleton_with`] takes the options.
-pub fn skeleton(caps: &Caps, lines: usize) -> Markup {
-    skeleton_with(caps, lines, Default::default())
-}
-
-/// `lines` placeholder bars; the last one is shorter, like the end of a paragraph.
-pub fn skeleton_with(_caps: &Caps, lines: usize, options: SkeletonOptions) -> Markup {
-    html! {
-        div class="nojs-skeleton" role="status" aria-busy="true" {
-            span class="nojs-sr" { (options.label) }
-            @if options.heading { span class="nojs-skeleton-heading" aria-hidden="true" {} }
-            @for i in 0..lines {
-                span class={ "nojs-skeleton-line" @if i + 1 == lines && lines > 1 { " nojs-skeleton-last" } } aria-hidden="true" {}
+impl Render for Skeleton<'_> {
+    fn render(&self) -> Markup {
+        let lines = self.lines;
+        html! {
+            div class="nojs-skeleton" role="status" aria-busy="true" {
+                span class="nojs-sr" { (self.label) }
+                @if self.heading { span class="nojs-skeleton-heading" aria-hidden="true" {} }
+                @for i in 0..lines {
+                    span class={ "nojs-skeleton-line" @if i + 1 == lines && lines > 1 { " nojs-skeleton-last" } } aria-hidden="true" {}
+                }
             }
         }
     }
 }
-
 /// Styles for this component; included in [`crate::stylesheet`].
 pub const CSS: &str = r#"
 .nojs-skeleton { display: grid; gap: calc(var(--nojs-space) * 1.25); padding-block: var(--nojs-space); }

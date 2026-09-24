@@ -173,8 +173,12 @@ URL; with the key gone the cookie's memory (`open.faq=0,2`) won and every sectio
 Closing the open section in an exclusive accordion had the same hole. The empty value now stays
 in the link as `open.faq=`: an explicit nothing beats the cookie and is remembered as such.
 
-**The cookie crate percent-encodes.** `axum-extra`'s `CookieJar` writes `Ada|1` as `Ada%7C1`
-and decodes it on the way back. Tests that look at raw `Set-Cookie` headers must expect that.
+**Saved values are percent-encoded twice.** `Saved<T>` form-encodes the value
+(`name=Ada&notify=true`) and then percent-encodes that for the cookie
+(`name%3DAda%26notify%3Dtrue`), so a `#` in a colour reads `%2523` in the raw header. Tests
+that look at raw `Set-Cookie` headers must expect that. `serde_urlencoded` writes a newtype
+(`struct Notes(Vec<(String, String)>)`) but refuses to read one back, so `Saved` reads through
+a small deserializer that unwraps newtypes (`saved.rs`).
 
 ### M4 · Blitz as the test engine
 
@@ -344,8 +348,8 @@ selection that survives paging without a form round trip, and "unsaved changes" 
 when leaving a wizard step.
 
 **A flash stack is one cookie.** Several messages travel as one `nojs-flash` value, one line
-each, prefixed with their level (`ok:Saved.\nwarn:Look.`); plain text stays `info`, so older
-`prg(to, Some("Saved."))` calls keep working. Dismiss is a link back to the page: reading the
+each, prefixed with their level (`ok:Saved.\nwarn:Look.`); plain text stays `info`, so a lone
+`ui.redirect(to).flash("Saved.")` sends the text as is. Dismiss is a link back to the page: reading the
 flash already queued the cookie's deletion, so the next render is clean. Auto-hide is a CSS
 animation on info and ok only (an error that vanishes before it is read is worse than one that
 stays), and `prefers-reduced-motion: reduce` turns it off. Blitz renders the first frame of an

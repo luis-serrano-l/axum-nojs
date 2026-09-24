@@ -3,31 +3,44 @@
 Interactive HTML components for Axum and Maud that work without JavaScript. The core is plain
 functions over strings, so it also works with any other Rust server.
 
-Every component is a plain function returning `Markup`. Interactivity comes from the HTML/CSS
-platform and ordinary form round trips. One optional 10 KB script (`/nojs/enhance.js`) makes the
-same markup update in place; see "How the script works" below. Every page works identically
-with the script blocked; that is the only `<script>` tag allowed, and a test enforces it.
+Every component starts from `ui`, the one value a handler extracts, and renders where `html!`
+splices it. Interactivity comes from the HTML/CSS platform and ordinary form round trips. One
+optional 10 KB script (`/nojs/enhance.js`) makes the same markup update in place; see "How the
+script works" below. Every page works identically with the script blocked; that is the only
+`<script>` tag allowed, and a test enforces it.
 
 ```rust
-use axum::{Router, routing::get};
-use maud::{Markup, html};
-use axum_nojs::{Ui, dialog};
+use axum::{Form, Router, routing::get};
+use axum_nojs::prelude::*;
+use serde::{Deserialize, Serialize};
+
+#[derive(Default, Deserialize, Serialize)]
+struct Settings { name: String }
 
 // `Ui` is what the server knows about this browser, its theme and the page's UI state.
-async fn hello(ui: Ui) -> Markup {
-    ui.layout("Hello", html! {
-        (dialog(&ui, "hi", "Say hi", html! { p { "Hello from a <dialog>." } }))
+async fn show(ui: Ui, Saved(s): Saved<Settings>) -> Page {
+    ui.page("Account", html! {
+        (ui.flash())
+        (ui.form("/account").text("name", "Name").required().value(&s.name).submit("Save"))
+        (ui.dialog("Delete account").danger().confirm("Delete", "/account/delete")
+            .body(html! { p { "This cannot be undone." } }))
     })
 }
 
+// Post/Redirect/Get: a 303 back, a flash, the value kept in a cookie.
+async fn save(ui: Ui, Form(s): Form<Settings>) -> Redirect {
+    ui.redirect("/account").ok("Saved.").save(&s)
+}
+
 let app = Router::new()
-    .route("/", get(hello))
+    .route("/account", get(show).post(save))
     .merge(axum_nojs::caps::router())     // the beacons that tell the server what the browser supports
     .merge(axum_nojs::enhance::router()); // the optional script
 ```
 
-With `axum-nojs = { features = ["axum"] }`. Without Axum, `dialog(&Caps::all(), …)` returns
-the same `Markup`; `axum-nojs/examples/hyper_server.rs` shows a raw hyper server.
+With `axum-nojs = { features = ["axum"] }`. Without Axum, `Ui::from_request(path, query,
+cookies)` or `Ui::from(Caps::all())` gives the same builders and `.render().into_string()` the
+HTML; `axum-nojs/examples/hyper_server.rs` shows a raw hyper server.
 
 ## Run the demo
 
@@ -54,8 +67,10 @@ thin wrapper over plain functions on strings, so any server can do the same in a
 |---|---|---|---|
 | What the browser supports | `Caps::from_query(query)` then `Caps::from_cookie_header(cookies)` | same | `caps: Caps` extractor |
 | The beacon route `GET /nojs/caps?flag=x` | `caps::beacon_cookie(query)` → 204 + `Set-Cookie`, or 404 | same | `caps::router()` |
-| Tab, accordion, dialog state | `UiState::from_request(path, query, cookies)`, `state.set_cookies()` | same | `state: UiState` extractor, return `(state, page)` |
-| Post/Redirect/Get with a flash | `state::prg_parts(to, flash)` → 303, `Location`, `Set-Cookie` | `prg(to, flash)` → `http::Response<B>` | `prg(to, flash)` → `Response` |
+| Caps, theme, tab/accordion/dialog state, query | `Ui::from_request(path, query, cookies)` | same | `ui: Ui` extractor |
+| A whole page | `ui.page(title, body).into_string()`, `page.set_cookies()` | same | return the `Page` |
+| Post/Redirect/Get with a flash | `ui.redirect(to).ok(msg)`: `.location()`, `.set_cookies()` | `.into_http()` → `http::Response<B>` | return the `Redirect` |
+| A value kept in a cookie | | | `Saved<T>` extractor, `redirect.save(&value)` |
 | Out-of-order streaming | | `Streamed::into_stream()` → chunks | `impl IntoResponse for Streamed` |
 | The optional script | serve `enhance::JS` at `enhance::SCRIPT_PATH` | same | `enhance::router()` |
 
@@ -67,11 +82,12 @@ component gives the HTML to another template engine.
 
 - One component = one file in `axum-nojs/src/`. Each starts with a `//!` header: what it does,
   the platform features it uses (with browser baseline), the fallback, a usage example.
-- Signatures are uniform: `name(&caps, ...required) -> Markup` for the common case and
-  `name_with(&caps, ...required, options)` for the rest, where options is a plain `XOptions`
-  struct with `Default` and one setter per field named after the attribute it sets
-  (`DialogOptions::default().danger().state(&ui.state)`). `&ui` works wherever `&caps` does.
-  No macros beyond `html!`.
+- One import, `use axum_nojs::prelude::*`. Every component is a method on `Ui` returning a
+  builder: required arguments in the call, everything else a chained setter named after what
+  it changes (`ui.dialog("Delete account").title("Delete account?").danger()`). Setters such as
+  `.required()`, `.icon()`, `.badge()` apply to the item added last (a field, a menu item, a
+  tab). Ids come from the label; state (`?tab.x=`, `?dialog=`, `?page=`, `?sort=`) is read
+  from `ui`, so a route passes only what the page says differently. No macros beyond `html!`.
 - `Caps` is server-side feature detection with no script: `@supports` beacons set one cookie per
   capability, and each component emits only the variant that browser needs (see `/caps`).
   `?caps=popover,anchor` on any URL forces a set. The protocol is three plain functions
@@ -79,8 +95,8 @@ component gives the HTML to another template engine.
 - Output HTML is semantic with one `nojs-<component>` class per root. `curl` any page and read it.
 - CSS lives beside its component as `const CSS`. Theming is via `--nojs-*` custom properties only
   (`bg`, `surface`, `fg`, `muted`, `line`, `accent`, `on-accent`, `danger`, `ok`, `warn`, `radius`, `space`).
-  `layout::Tokens` holds them for light and dark, `layout_with` applies another set once per
-  page, and `docs/theming.md` says what each one affects and which pairs must keep contrast.
+  `layout::Tokens` holds them for light and dark, `ui.page(..).tokens(&t)` applies another set
+  once per page, and `docs/theming.md` says what each one affects and which pairs must keep contrast.
   `/?palette=linen` in the demo is the same index under a second palette.
   A test fails if any component CSS names a colour instead of a token.
 
@@ -181,7 +197,7 @@ axum-nojs-caps/src/lib.rs          Caps bitset, @supports beacons, cookie parsin
 axum-nojs-caps/examples/hyper.rs   the beacons on raw hyper, one line per flag
 axum-nojs/src/layout.rs     page shell + base CSS + beacons
 axum-nojs/src/stream.rs     Streamed response: DSD slots out of order, in-order fallback (http feature)
-axum-nojs/src/state.rs      UiState (query + cookie), prg_parts()/prg() redirect with flash
+axum-nojs/src/state.rs      UiState (query + cookie), the flash cookie
 axum-nojs/src/ui.rs         Ui: caps, theme and UiState in one extractor; ui.flash(), ui.layout()
 axum-nojs/src/flash.rs      one-shot status banners: levels, stacked, dismiss, auto-hide
 axum-nojs/src/select.rs     <select> with <selectedcontent> where supported

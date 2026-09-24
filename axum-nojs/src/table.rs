@@ -17,7 +17,7 @@
 //!   bulk `<form method="post">` that sits after the table, so nothing nests and the row's
 //!   own menu can still post.
 //! - `<details>` (baseline 2020) in the first cell for a row's detail block; the row's menu
-//!   is a [`crate::popover_menu`].
+//!   is a [`crate::Ui::menu`].
 //! - `<colgroup>` widths and `font-variant-numeric: tabular-nums` (Chrome 52, Firefox 34,
 //!   Safari 9.1) for numeric columns.
 //! - `position: sticky` (Chrome 56, Firefox 32, Safari 13) on the header row.
@@ -40,37 +40,41 @@
 //! the links to ask for something else. That is what keeps it usable with `curl`.
 //!
 //! ```rust
-//! use maud::html;
-//! use axum_nojs::{Caps, MenuItem, table, table_with, table::{Column, Row, TableOptions}};
-//! let cols = [Column::sortable("name", "Name"), Column::numeric("size", "Size").width("6rem"), Column::plain("note", "Note")];
-//! let rows = vec![Row::new(vec![html!{"a.txt"}, html!{"1 KB"}, html!{"—"}])];
-//! let m = table(&Caps::all(), "files", "/table", &cols, &rows);
-//!
-//! let menu = [MenuItem::link("Open", "/files/a.txt"), MenuItem::action("Delete", "/files/a.txt/delete").danger()];
-//! let rows = vec![Row::new(vec![html!{"a.txt"}, html!{"1 KB"}, html!{"—"}]).key("a.txt").detail(html!{ p { "Modified today." } }).menu(&menu)];
-//! let m = table_with(&Caps::all(), "files", "/table", &cols, &rows, TableOptions::default()
-//!     .sort(Some(("name", false))) // (column key, descending)
-//!     .filter("a").keep(&[("per", "5")])
-//!     .cols(Some(&["name", "size"])).choose_columns()
-//!     .bulk("/files/bulk", &[("archive", "Archive"), ("delete", "Delete")])
+//! use axum_nojs::{prelude::*, table::Row};
+//! // The URL says: sorted by name, filtered to "a", only two columns shown.
+//! let ui = Ui::from_request("/table", "sort=name&dir=asc&q=a&cols=name,size", "");
+//! // `sortable`, `numeric` and `width` apply to the column added last.
+//! let files = ui.table("files", "/table")
+//!     .column("name", "Name").sortable()
+//!     .column("size", "Size").sortable().numeric().width("6rem")
+//!     .column("note", "Note")
+//!     .choose_columns()
+//!     .bulk("/files/bulk", [("archive", "Archive"), ("delete", "Delete")])
 //!     .csv("/table.csv")
-//!     .empty("No files yet."));
-//! let html = m.into_string();
+//!     .empty("No files yet.");
+//! // The route fetches its data with what the table read from the URL.
+//! assert_eq!((files.sort(), files.filter()), (Some(("name", false)), "a"));
+//! let row = Row::new([html! { "a.txt" }, html! { "1 KB" }, html! { "—" }])
+//!     .key("a.txt")
+//!     .detail(html! { p { "Modified today." } })
+//!     .menu([MenuItem::link("Open", "/files/a.txt"), MenuItem::action("Delete", "/files/a.txt/delete").danger()]);
+//! let html = files.rows([row]).render().into_string();
 //! assert!(html.contains("aria-sort=\"ascending\""));
 //! assert!(html.contains("<input type=\"checkbox\" name=\"row\" value=\"a.txt\" form=\"nojs-table-files-bulk\""));
-//! assert!(html.contains("href=\"/table.csv?sort=name&amp;dir=asc&amp;q=a&amp;per=5&amp;cols=name%2Csize\""));
+//! assert!(html.contains("href=\"/table.csv?sort=name&amp;dir=asc&amp;q=a&amp;cols=name%2Csize\""));
 //! assert!(!html.contains("<td>—</td>"), "a hidden column's cells are not rendered (its name stays in the chooser)");
 //! ```
 
-use maud::{Markup, html};
+use maud::{Markup, Render, html};
 
-use crate::popover::{MenuItem, Placement, PopoverOptions, popover_menu_with};
-use crate::{Cap, Caps, enhance, slug};
+use crate::paged_table::{PagedTableOptions, paged_table_with};
+use crate::popover::{MenuItem, Placement, menu};
+use crate::{Cap, Caps, Ui, enhance, slug};
 
 /// One column: the query key it sorts by, its header text, whether it can be sorted, how
 /// its cells align and how wide it is.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct Column<'a> {
+pub(crate) struct Column<'a> {
     /// Value of `?sort=` for this column, and its name in `?cols=`.
     pub key: &'a str,
     /// Header text.
@@ -85,6 +89,7 @@ pub struct Column<'a> {
 
 impl<'a> Column<'a> {
     /// A column whose header sorts the table.
+    #[cfg(test)]
     pub const fn sortable(key: &'a str, label: &'a str) -> Column<'a> {
         Column { key, label, sortable: true, numeric: false, width: None }
     }
@@ -95,23 +100,13 @@ impl<'a> Column<'a> {
     }
 
     /// A sortable column of numbers: right-aligned, tabular figures.
+    #[cfg(test)]
     pub const fn numeric(key: &'a str, label: &'a str) -> Column<'a> {
         Column { key, label, sortable: true, numeric: true, width: None }
     }
 
-    /// A fixed width for the column.
-    pub const fn width(mut self, width: &'a str) -> Column<'a> {
-        self.width = Some(width);
-        self
-    }
 }
 
-/// `("note", "Note")`: a plain column, its key and its header.
-impl<'a> From<(&'a str, &'a str)> for Column<'a> {
-    fn from((key, label): (&'a str, &'a str)) -> Self {
-        Column::plain(key, label)
-    }
-}
 
 /// One row: its cells, and optionally a key (for selection and its menu id), a detail
 /// block opened from the first cell, and an action menu in a last column.
@@ -120,13 +115,13 @@ pub struct Row<'a> {
     cells: Vec<Markup>,
     key: Option<&'a str>,
     detail: Option<Markup>,
-    menu: &'a [MenuItem<'a>],
+    menu: Vec<MenuItem<'a>>,
 }
 
 impl<'a> Row<'a> {
-    /// A row of cells, one per visible column.
-    pub const fn new(cells: Vec<Markup>) -> Self {
-        Row { cells, key: None, detail: None, menu: &[] }
+    /// A row of cells, one per column (a hidden column's cell is skipped).
+    pub fn new(cells: impl IntoIterator<Item = Markup>) -> Self {
+        Row { cells: cells.into_iter().collect(), key: None, detail: None, menu: Vec::new() }
     }
     /// The value posted for this row when its checkbox is ticked; also names its menu.
     pub const fn key(mut self, key: &'a str) -> Self {
@@ -139,8 +134,8 @@ impl<'a> Row<'a> {
         self
     }
     /// Items of the row's action menu (needs a `key`).
-    pub const fn menu(mut self, items: &'a [MenuItem<'a>]) -> Self {
-        self.menu = items;
+    pub fn menu(mut self, items: impl IntoIterator<Item = MenuItem<'a>>) -> Self {
+        self.menu = items.into_iter().collect();
         self
     }
 }
@@ -152,12 +147,9 @@ impl From<Vec<Markup>> for Row<'_> {
     }
 }
 
-/// A table's URL parameters, parsed once from the raw query string: `sort`, `dir`, `q`,
-/// `page` and `cols`. The route sorts and filters its data with them; the paged table reads
-/// the same value back through [`crate::PagedTableOptions::query`], so neither repeats the
-/// other's parsing.
+/// A table's URL parameters: `sort`, `dir`, `q`, `page` and `cols`.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
-pub struct TableQuery {
+pub(crate) struct TableQuery {
     /// `?sort=<key>`, checked against the columns by [`TableQuery::sort`].
     pub sort: Option<String>,
     /// `?dir=desc`.
@@ -171,21 +163,15 @@ pub struct TableQuery {
 }
 
 impl TableQuery {
-    /// Read the table's parameters from `a=1&b=2`; anything else in the string is ignored.
-    pub fn parse(query: &str) -> TableQuery {
-        let mut t = TableQuery::default();
-        for (k, v) in query.split('&').filter_map(|pair| pair.split_once('=')) {
-            let v = crate::state::decode(v);
-            match k {
-                "sort" => t.sort = Some(v.into_owned()),
-                "dir" => t.desc = v == "desc",
-                "q" => t.filter = v.trim().to_string(),
-                "page" => t.page = v.parse().ok().filter(|&n| n > 0),
-                "cols" => t.cols = Some(v.into_owned()),
-                _ => {}
-            }
+    /// Read the table's parameters from the request.
+    pub fn from_ui(ui: &Ui) -> TableQuery {
+        TableQuery {
+            sort: ui.param("sort").map(str::to_string),
+            desc: ui.param("dir") == Some("desc"),
+            filter: ui.param("q").unwrap_or("").trim().to_string(),
+            page: ui.param("page").and_then(|v| v.parse().ok()).filter(|&n| n > 0),
+            cols: ui.param("cols").map(str::to_string),
         }
-        t
     }
     /// The sort as `(key, descending)`, only for a sortable column of `columns`.
     pub fn sort<'c>(&self, columns: &[Column<'c>]) -> Option<(&'c str, bool)> {
@@ -197,9 +183,9 @@ impl TableQuery {
     }
 }
 
-/// Parse `?sort=<key>&dir=<asc|desc>` into what [`table`] takes: `(key, descending)`.
-/// Unknown keys give `None`, so a hand-edited URL cannot ask for a column that is not there.
-pub fn sort_from_query<'a>(columns: &[Column<'a>], sort: Option<&str>, dir: Option<&str>) -> Option<(&'a str, bool)> {
+/// Parse `?sort=<key>&dir=<asc|desc>` into `(key, descending)`. Unknown keys give `None`,
+/// so a hand-edited URL cannot ask for a column that is not there.
+pub(crate) fn sort_from_query<'a>(columns: &[Column<'a>], sort: Option<&str>, dir: Option<&str>) -> Option<(&'a str, bool)> {
     let key = sort?;
     let col = columns.iter().find(|c| c.sortable && c.key == key)?;
     Some((col.key, dir == Some("desc")))
@@ -207,16 +193,16 @@ pub fn sort_from_query<'a>(columns: &[Column<'a>], sort: Option<&str>, dir: Opti
 
 /// Parse `?cols=a,b` into the visible keys, keeping only keys the table has and only when at
 /// least one is left; `None` means every column.
-pub fn cols_from_query<'a>(columns: &[Column<'a>], cols: Option<&str>) -> Option<Vec<&'a str>> {
+pub(crate) fn cols_from_query<'a>(columns: &[Column<'a>], cols: Option<&str>) -> Option<Vec<&'a str>> {
     let wanted = cols?;
     let keys: Vec<&str> = columns.iter().filter(|c| wanted.split(',').any(|w| w == c.key)).map(|c| c.key).collect();
     (!keys.is_empty()).then_some(keys)
 }
 
-/// Options for [`table`]; `Default::default()` is unsorted, unfiltered, every column, no
+/// How the table renders; `Default::default()` is unsorted, unfiltered, every column, no
 /// selection, no CSV link.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct TableOptions<'a> {
+pub(crate) struct TableOptions<'a> {
     /// The current sort as `(key, descending)`, usually from [`sort_from_query`].
     pub sort: Option<(&'a str, bool)>,
     /// The current search text, echoed into the box and kept in the sort links.
@@ -245,6 +231,8 @@ impl Default for TableOptions<'_> {
     }
 }
 
+// Setters for the tests; the builder fills the struct directly.
+#[cfg(test)]
 impl<'a> TableOptions<'a> {
     /// The current sort as `(key, descending)`.
     pub fn sort(mut self, sort: Option<(&'a str, bool)>) -> Self {
@@ -266,24 +254,9 @@ impl<'a> TableOptions<'a> {
         self.cols = cols;
         self
     }
-    /// Show the "Columns" chooser.
-    pub fn choose_columns(mut self) -> Self {
-        self.choose_columns = true;
-        self
-    }
     /// A bulk post action with its buttons.
     pub fn bulk(mut self, action: &'a str, buttons: &'a [(&'a str, &'a str)]) -> Self {
         self.bulk = Some((action, buttons));
-        self
-    }
-    /// Base URL of the CSV download.
-    pub fn csv(mut self, href: &'a str) -> Self {
-        self.csv = Some(href);
-        self
-    }
-    /// Message of the empty body.
-    pub fn empty(mut self, message: &'a str) -> Self {
-        self.empty = message;
         self
     }
     /// Show skeleton rows instead of `rows`.
@@ -293,20 +266,14 @@ impl<'a> TableOptions<'a> {
     }
 }
 
-/// A table with no sort, filter or bulk form.
-/// [`table_with`] takes the options.
-pub fn table(caps: &Caps, id: &str, href: &str, columns: &[Column], rows: &[Row]) -> Markup {
-    table_with(caps, id, href, columns, rows, Default::default())
-}
-
 /// `rows` are already sorted and filtered by the caller; `options` says how, so the links
 /// and the filter box reflect it.
-pub fn table_with(caps: &Caps, id: &str, href: &str, columns: &[Column], rows: &[Row], options: TableOptions) -> Markup {
+pub(crate) fn table_with(caps: &Caps, id: &str, href: &str, columns: &[Column], rows: &[Row], options: TableOptions) -> Markup {
     table_in(caps, id, href, columns, rows, options, true)
 }
 
-/// [`table`], as a swap root or not: inside a [`crate::paged_table()`] the pager's root is the
-/// swap root, so a sort also refreshes the page links.
+/// [`table_with`], as a swap root or not: inside a paged table the pager's root is the swap
+/// root, so a sort also refreshes the page links.
 pub(crate) fn table_in(caps: &Caps, id: &str, href: &str, columns: &[Column], rows: &[Row], options: TableOptions, swap: bool) -> Markup {
     let TableOptions { sort, filter, keep, cols, choose_columns, bulk, csv, empty, loading } = options;
     let root = enhance::swap_id("nojs-table", id);
@@ -428,7 +395,7 @@ pub(crate) fn table_in(caps: &Caps, id: &str, href: &str, columns: &[Column], ro
                         @if has_menu {
                             td class="nojs-table-menu" {
                                 @if let (Some(k), false) = (row.key, row.menu.is_empty()) {
-                                    (popover_menu_with(caps, &format!("{root}-{}", slug(k)), "\u{22ef}", row.menu, PopoverOptions::default().placement(Placement::BottomEnd)))
+                                    (menu(caps, &format!("{root}-{}", slug(k)), "\u{22ef}", &row.menu, Placement::BottomEnd))
                                 }
                             }
                         }
@@ -441,6 +408,171 @@ pub(crate) fn table_in(caps: &Caps, id: &str, href: &str, columns: &[Column], ro
                     @for (value, label) in buttons { button type="submit" name="action" value=(value) { (label) } }
                 }
             }
+        }
+    }
+}
+
+/// A data table, made by [`Ui::table`]. It reads its sort, filter, page and visible columns
+/// from the request (`?sort=&dir=&q=&page=&cols=`), so a route asks it how to fetch the
+/// rows ([`Table::sort`], [`Table::filter`]) and hands them over with [`Table::rows`].
+#[derive(Clone, Debug)]
+pub struct Table<'a> {
+    ui: &'a Ui,
+    id: &'a str,
+    href: &'a str,
+    query: TableQuery,
+    columns: Vec<Column<'a>>,
+    rows: Vec<Row<'a>>,
+    total: Option<usize>,
+    choose_columns: bool,
+    bulk: Option<(&'a str, Vec<(&'a str, &'a str)>)>,
+    csv: Option<&'a str>,
+    empty: &'a str,
+    loading: bool,
+}
+
+impl Ui {
+    /// A table `id` whose links and forms go to `href`; add columns with [`Table::column`].
+    pub fn table<'a>(&'a self, id: &'a str, href: &'a str) -> Table<'a> {
+        Table {
+            ui: self,
+            id,
+            href,
+            query: TableQuery::from_ui(self),
+            columns: Vec::new(),
+            rows: Vec::new(),
+            total: None,
+            choose_columns: false,
+            bulk: None,
+            csv: None,
+            empty: "No rows match.",
+            loading: false,
+        }
+    }
+}
+
+impl<'a> Table<'a> {
+    fn last(mut self, change: impl FnOnce(&mut Column<'a>)) -> Self {
+        if let Some(c) = self.columns.last_mut() {
+            change(c);
+        }
+        self
+    }
+
+    /// A column: `key` names it in `?sort=` and `?cols=`, `label` is its header.
+    pub fn column(mut self, key: &'a str, label: &'a str) -> Self {
+        self.columns.push(Column::plain(key, label));
+        self
+    }
+
+    /// The column added last sorts the table: its header links to `?sort=<key>`.
+    pub fn sortable(self) -> Self {
+        self.last(|c| c.sortable = true)
+    }
+
+    /// The column added last holds numbers: right-aligned, tabular figures.
+    pub fn numeric(self) -> Self {
+        self.last(|c| c.numeric = true)
+    }
+
+    /// A CSS width for the column added last, such as `6rem` or `30%`.
+    pub fn width(self, width: &'a str) -> Self {
+        self.last(|c| c.width = Some(width))
+    }
+
+    /// The rows, already sorted and filtered as [`Table::sort`] and [`Table::filter`] say;
+    /// cells in column order.
+    pub fn rows(mut self, rows: impl IntoIterator<Item = Row<'a>>) -> Self {
+        self.rows = rows.into_iter().collect();
+        self
+    }
+
+    /// Page the rows: `total` is the row count after filtering. Given every row, the table
+    /// shows the current page of them; given only the current page's rows ([`Table::page`],
+    /// [`Table::per_page`]), it shows those. The page size the visitor picks is remembered
+    /// as `per.<id>`.
+    pub fn paged(mut self, total: usize) -> Self {
+        self.total = Some(total);
+        self
+    }
+
+    /// A "Columns" chooser: links that toggle `?cols=`.
+    pub fn choose_columns(mut self) -> Self {
+        self.choose_columns = true;
+        self
+    }
+
+    /// A checkbox per row (rows need a [`Row::key`]) and a bar of `(value, label)` buttons
+    /// posting to `action`: `row=<key>` per ticked row and `action=<value>`.
+    pub fn bulk(mut self, action: &'a str, buttons: impl IntoIterator<Item = (&'a str, &'a str)>) -> Self {
+        self.bulk = Some((action, buttons.into_iter().collect()));
+        self
+    }
+
+    /// A "Download CSV" link to `href` with the current sort, filter and columns appended.
+    pub fn csv(mut self, href: &'a str) -> Self {
+        self.csv = Some(href);
+        self
+    }
+
+    /// What the body says when there are no rows.
+    pub fn empty(mut self, message: &'a str) -> Self {
+        self.empty = message;
+        self
+    }
+
+    /// Skeleton rows with `aria-busy` instead of the rows: the data is still coming.
+    pub fn loading(mut self, loading: bool) -> Self {
+        self.loading = loading;
+        self
+    }
+
+    /// The requested sort as `(column key, descending)`, only for a sortable column.
+    pub fn sort(&self) -> Option<(&'a str, bool)> {
+        self.query.sort(&self.columns)
+    }
+
+    /// The requested search text, trimmed, as typed.
+    pub fn filter(&self) -> &str {
+        &self.query.filter
+    }
+
+    /// The keys of the columns to show, in table order.
+    pub fn visible(&self) -> Vec<&'a str> {
+        self.query.cols(&self.columns).unwrap_or_else(|| self.columns.iter().map(|c| c.key).collect())
+    }
+
+    /// The requested page, 1-based.
+    pub fn page(&self) -> usize {
+        self.query.page.unwrap_or(1)
+    }
+
+    /// Rows per page: the visitor's remembered choice, or 10.
+    pub fn per_page(&self) -> usize {
+        self.ui.state.per_page(self.id).unwrap_or(crate::paged_table::PAGE_SIZES[1])
+    }
+}
+
+impl Render for Table<'_> {
+    fn render(&self) -> Markup {
+        let cols = self.query.cols(&self.columns);
+        let options = TableOptions {
+            sort: self.sort(),
+            filter: self.filter(),
+            cols: cols.as_deref(),
+            choose_columns: self.choose_columns,
+            bulk: self.bulk.as_ref().map(|(action, buttons)| (*action, buttons.as_slice())),
+            csv: self.csv,
+            empty: self.empty,
+            loading: self.loading,
+            ..TableOptions::default()
+        };
+        match self.total {
+            Some(total) => {
+                let paged = PagedTableOptions { table: options, query: Some(&self.query), state: Some(&self.ui.state), ..PagedTableOptions::default() };
+                paged_table_with(&self.ui.caps, self.id, self.href, &self.columns, &self.rows, total, paged)
+            }
+            None => table_with(&self.ui.caps, self.id, self.href, &self.columns, &self.rows, options),
         }
     }
 }

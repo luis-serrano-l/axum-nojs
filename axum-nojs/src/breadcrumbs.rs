@@ -13,43 +13,73 @@
 //! **Fallback:** none needed.
 //!
 //! ```rust
-//! use axum_nojs::{Caps, breadcrumbs};
-//! let m = breadcrumbs(&Caps::all(), &[("Home", "/"), ("Projects", "/projects"), ("axum-nojs", "")]).into_string();
+//! use axum_nojs::prelude::*;
+//! let ui = Ui::from(Caps::all());
+//! let m = ui.breadcrumbs().link("Home", "/").link("Projects", "/projects").here("axum-nojs").render().into_string();
 //! assert!(m.contains(r#"<a href="/projects">Projects</a>"#));
 //! assert!(m.contains(r#"aria-current="page">axum-nojs"#));
 //! // More than four: the middle folds into <details>.
-//! let long = [("Home", "/"), ("A", "/a"), ("B", "/a/b"), ("C", "/a/b/c"), ("Here", "")];
-//! assert!(breadcrumbs(&Caps::all(), &long).into_string().contains("<details"));
+//! let long = ui.breadcrumbs().link("Home", "/").link("A", "/a").link("B", "/a/b").link("C", "/a/b/c").here("Here");
+//! assert!(long.render().into_string().contains("<details"));
 //! ```
 
-use maud::{Markup, html};
+use maud::{Markup, Render, html};
 
-use crate::Caps;
+use crate::Ui;
 
-/// `trail` is `(label, href)` from the root to the current page; the last `href` is ignored.
-pub fn breadcrumbs(_caps: &Caps, trail: &[(&str, &str)]) -> Markup {
-    let Some(((current, _), before)) = trail.split_last() else { return html! {} };
-    let fold = before.len() > 3;
-    let (head, middle, tail) = if fold { (&before[..1], &before[1..before.len() - 1], &before[before.len() - 1..]) } else { (before, &before[..0], &before[..0]) };
-    html! {
-        nav class="nojs-breadcrumbs" aria-label="Breadcrumb" {
-            ol {
-                @for (label, href) in head { li { a href=(href) { (label) } } }
-                @if fold {
-                    li class="nojs-breadcrumbs-fold" {
-                        details {
-                            summary aria-label={ "Show " (middle.len()) " more" } { "\u{2026}" }
-                            ol { @for (label, href) in middle { li { a href=(href) { (label) } } } }
+/// A trail of links ending in the current page, made by [`Ui::breadcrumbs`].
+#[derive(Clone, Debug, Default)]
+pub struct Breadcrumbs<'a> {
+    trail: Vec<(&'a str, &'a str)>,
+    here: &'a str,
+}
+
+impl Ui {
+    /// An empty trail: add the way down with [`Breadcrumbs::link`], then the page with
+    /// [`Breadcrumbs::here`].
+    pub fn breadcrumbs(&self) -> Breadcrumbs<'_> {
+        Breadcrumbs::default()
+    }
+}
+
+impl<'a> Breadcrumbs<'a> {
+    /// One step from the root towards this page.
+    pub fn link(mut self, label: &'a str, href: &'a str) -> Self {
+        self.trail.push((label, href));
+        self
+    }
+
+    /// The current page, last in the trail and not a link.
+    pub fn here(mut self, label: &'a str) -> Self {
+        self.here = label;
+        self
+    }
+}
+
+impl Render for Breadcrumbs<'_> {
+    fn render(&self) -> Markup {
+        let before = &self.trail[..];
+        let fold = before.len() > 3;
+        let (head, middle, tail) = if fold { (&before[..1], &before[1..before.len() - 1], &before[before.len() - 1..]) } else { (before, &before[..0], &before[..0]) };
+        html! {
+            nav class="nojs-breadcrumbs" aria-label="Breadcrumb" {
+                ol {
+                    @for (label, href) in head { li { a href=(href) { (label) } } }
+                    @if fold {
+                        li class="nojs-breadcrumbs-fold" {
+                            details {
+                                summary aria-label={ "Show " (middle.len()) " more" } { "\u{2026}" }
+                                ol { @for (label, href) in middle { li { a href=(href) { (label) } } } }
+                            }
                         }
                     }
+                    @for (label, href) in tail { li { a href=(href) { (label) } } }
+                    li { span aria-current="page" { (self.here) } }
                 }
-                @for (label, href) in tail { li { a href=(href) { (label) } } }
-                li { span aria-current="page" { (current) } }
             }
         }
     }
 }
-
 /// Styles for this component; included in [`crate::stylesheet`].
 pub const CSS: &str = r#"
 .nojs-breadcrumbs { font-size: 0.875rem; color: var(--nojs-muted); margin-bottom: calc(var(--nojs-space) * 2); }

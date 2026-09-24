@@ -1,9 +1,9 @@
 //! axum-nojs on raw hyper, no framework: `cargo run -p axum-nojs --example hyper_server --features http`,
 //! then open http://127.0.0.1:3002.
 //!
-//! Everything the Axum glue does is wired here by hand, in a few lines each: `Caps` from the
-//! `Cookie:` header, `UiState` from path + query + cookies, the beacon route from
-//! `caps::beacon_cookie`, Post/Redirect/Get from `prg`, the enhancement script from
+//! Everything the Axum glue does is wired here by hand, in a few lines each: `Ui` (caps, theme
+//! and state) from path + query + the `Cookie:` header, the beacon route from
+//! `caps::beacon_cookie`, Post/Redirect/Get from `ui.redirect`, the enhancement script from
 //! `enhance::served()`. Three components: a dialog, tabs, and a counter kept in a cookie.
 //!
 //! **HTTP/2.** The connection builder speaks HTTP/1.1 and HTTP/2 on the same port and picks
@@ -24,11 +24,11 @@ use hyper_util::rt::{TokioExecutor, TokioIo};
 use hyper_util::server::conn::auto;
 use maud::html;
 use tokio::net::TcpListener;
-use axum_nojs::{Caps, Theme, UiState, caps, counter, dialog_with, dialog::DialogOptions, enhance, layout, prg, tabs_with, tabs::{Tab, TabsOptions}};
+use axum_nojs::{Ui, caps, enhance};
 
 type Reply = Response<Full<Bytes>>;
 
-fn html_reply(body: String, set_cookies: Vec<String>) -> Reply {
+fn html_reply(set_cookies: Vec<String>, body: String) -> Reply {
     let mut res = Response::builder().header(header::CONTENT_TYPE, "text/html; charset=utf-8");
     for c in set_cookies {
         res = res.header(header::SET_COOKIE, c);
@@ -53,32 +53,31 @@ async fn handle(req: Request<Incoming>) -> Result<Reply, Infallible> {
         .collect::<Vec<_>>()
         .join("; ");
     let (path, query) = (req.uri().path().to_string(), req.uri().query().unwrap_or("").to_string());
-    // `?caps=` first, then the cookies: the whole of the Axum extractor.
-    let caps = Caps::from_query(&query).unwrap_or_else(|| Caps::from_cookie_header(&cookies));
+    // Caps (`?caps=` first, then the cookies), theme and UI state: the whole of the Axum extractor.
+    let ui = Ui::from_request(&path, &query, &cookies);
     let count: i64 = cookie(&cookies, "count").and_then(|v| v.parse().ok()).unwrap_or(0);
 
     let reply = match (req.method(), path.as_str()) {
         (&Method::GET, "/") => {
-            let state = UiState::from_request(&path, &query, &cookies);
-            let page = layout(&caps, "axum-nojs on hyper", Theme::Auto, html! {
+            let page = ui.page("axum-nojs on hyper", html! {
                 h1 { "axum-nojs on hyper" }
-                p { "This browser supports: " @for n in caps.names() { code { (n) } " " } }
-                (dialog_with(&caps, "d", "Open dialog", html! { p { "Closed by the platform, not by script." } }, DialogOptions::default().state(&state)))
+                p { "This browser supports: " @for n in ui.caps.names() { code { (n) } " " } }
+                (ui.dialog("Open dialog").body(html! { p { "Closed by the platform, not by script." } }))
                 h2 { "Tabs" }
-                (tabs_with(&caps, "demo", &[Tab::new("First", html! { p { "Tab state lives in the URL and a cookie." } }),
-                                      Tab::new("Second", html! { p { "Reload, leave, come back: still here." } })], TabsOptions::default().state(&state)))
+                (ui.tabs("demo")
+                    .tab("First", html! { p { "Tab state lives in the URL and a cookie." } })
+                    .tab("Second", html! { p { "Reload, leave, come back: still here." } }))
                 h2 { "Counter" }
-                (counter(&caps, "/counter", count))
+                (ui.flash())
+                (ui.counter("/counter", count))
             });
-            html_reply(page.into_string(), state.set_cookies())
+            html_reply(page.set_cookies().to_vec(), page.into_string())
         }
         (&Method::POST, "/counter") => {
             let body = req.into_body().collect().await.map(|b| b.to_bytes()).unwrap_or_default();
             let op = cookie(&String::from_utf8_lossy(&body).replace('&', ";"), "op").unwrap_or("").to_string();
-            let next = match op.as_str() { "inc" => count + 1, "dec" => count - 1, _ => 0 };
-            let mut res: Reply = prg("/", Some("Counted."));
-            res.headers_mut().append(header::SET_COOKIE, format!("count={next}; Path=/; SameSite=Lax").parse().unwrap());
-            res
+            let next = ui.counter("/counter", count).apply(&op, None);
+            ui.redirect("/").flash("Counted.").cookie(format!("count={next}; Path=/; SameSite=Lax")).into_http()
         }
         (&Method::GET, caps::BEACON_PATH) => {
             // The beacon route: 204 + Set-Cookie for a known flag, 404 otherwise, never cached.

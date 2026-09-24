@@ -17,7 +17,7 @@
 //! **What it does not do without script:** fill slots out of order where declarative shadow DOM
 //! streaming is missing; the fallback keeps document order.
 //!
-//! **Fallback:** without `Caps::StreamingDsd`, `slot` leaves an HTML comment marker and the
+//! **Fallback:** without `Caps::StreamingDsd`, `ui.slot` leaves an HTML comment marker and the
 //! response is streamed *in document order*: the bytes up to the first marker go out at once,
 //! then each section as soon as it and everything before it are ready. Every browser renders
 //! that progressively; only the out-of-order part is lost.
@@ -26,14 +26,14 @@
 //! twice in DSD mode, once in `<head>` for the slotted chunks and once in the shadow tree.
 //!
 //! ```rust
-//! use maud::html;
-//! use axum_nojs::{Caps, Streamed, Theme, slot};
-//! let caps = Caps::all();
-//! let page = Streamed::page(&caps, "Feed", Theme::Auto, html! {
+//! use axum_nojs::prelude::*;
+//! let ui = Ui::from(Caps::all());
+//! let page = ui.stream("Feed", html! {
 //!     h1 { "Feed" }
-//!     (slot(&caps, "news", html! { p { "Loading news…" } }))
+//!     (ui.slot("news", html! { p { "Loading news…" } }))
 //! })
 //! .fill("news", async { html! { p { "Fresh news." } } });
+//! assert!(page.out_of_order());
 //! ```
 
 use std::collections::HashMap;
@@ -43,17 +43,26 @@ use std::pin::Pin;
 use futures_util::stream::{self, FuturesUnordered, Stream, StreamExt};
 use maud::{DOCTYPE, Markup, PreEscaped, html};
 
-use crate::{Cap, Caps, Theme, caps, enhance, layout, stylesheet};
+use crate::{Cap, Caps, Theme, Ui, caps, enhance, layout, stylesheet};
 
 type Fill = Pin<Box<dyn Future<Output = Markup> + Send + 'static>>;
 
-/// Placeholder for the section `id`. In DSD mode it is a named `<slot>` showing `placeholder`
-/// until the chunk arrives; otherwise a comment marker where the chunk is spliced in order.
-pub fn slot(caps: &Caps, id: &str, placeholder: Markup) -> Markup {
-    if caps.has(Cap::StreamingDsd) {
-        html! { slot name=(id) { (placeholder) } }
-    } else {
-        html! { (PreEscaped(marker(id))) }
+impl Ui {
+    /// A page in this request's theme whose slow sections arrive later: mark each with
+    /// [`Ui::slot`], then add its content with [`Streamed::fill`].
+    pub fn stream(&self, title: &str, body: Markup) -> Streamed {
+        Streamed::page(&self.caps, title, self.theme, body)
+    }
+
+    /// Placeholder for the section `id`. In DSD mode it is a named `<slot>` showing
+    /// `placeholder` until the chunk arrives; otherwise a comment marker where the chunk is
+    /// spliced in order.
+    pub fn slot(&self, id: &str, placeholder: Markup) -> Markup {
+        if self.has(Cap::StreamingDsd) {
+            html! { slot name=(id) { (placeholder) } }
+        } else {
+            html! { (PreEscaped(marker(id))) }
+        }
     }
 }
 
@@ -61,7 +70,7 @@ fn marker(id: &str) -> String {
     format!("<!--nojs-slot:{id}-->")
 }
 
-/// A page whose slow sections arrive later. Build with [`Streamed::page`], add sections with
+/// A page whose slow sections arrive later. Build with [`Ui::stream`], add sections with
 /// [`Streamed::fill`], then return it from an Axum handler or send [`Streamed::into_stream`]
 /// as a chunked `text/html; charset=utf-8` body from any server.
 pub struct Streamed {
@@ -74,7 +83,7 @@ pub struct Streamed {
 
 impl Streamed {
     /// The page shell with `body` inside `<main>`, like `layout`, ready for fills.
-    pub fn page(caps: &Caps, title: &str, theme: Theme, body: Markup) -> Streamed {
+    fn page(caps: &Caps, title: &str, theme: Theme, body: Markup) -> Streamed {
         let dsd = caps.has(Cap::StreamingDsd);
         let inner = html! {
             (layout::header())

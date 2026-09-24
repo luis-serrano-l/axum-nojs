@@ -12,21 +12,22 @@
 //! **Fallback:** none needed.
 //!
 //! ```rust
-//! use axum_nojs::{Caps, stat, stat_with, stat::StatOptions};
-//! let m = stat(&Caps::all(), "Visitors", "12,480").into_string();
-//! assert!(m.contains("12,480"));
+//! use axum_nojs::prelude::*;
+//! let ui = Ui::from(Caps::all());
+//! assert!(ui.stat("Visitors", "12,480").render().into_string().contains("12,480"));
 //! // The sign of the delta says the direction: `+` up, `-` down, zero flat.
-//! let m = stat_with(&Caps::all(), "Error rate", "0.4%", StatOptions::default()
+//! let m = ui.stat("Error rate", "0.4%")
 //!     .delta("-0.2 pt")
 //!     .down_is_good()
 //!     .note("last 7 days")
-//!     .href("/errors")).into_string();
+//!     .href("/errors");
+//! let m = m.render().into_string();
 //! assert!(m.contains("nojs-stat-good") && m.contains("down") && m.contains(r#"href="/errors""#));
 //! ```
 
-use maud::{Markup, html};
+use maud::{Markup, Render, html};
 
-use crate::Caps;
+use crate::Ui;
 
 /// Which way the number moved.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -40,49 +41,56 @@ pub enum Trend {
     Flat,
 }
 
-/// Options for [`stat`].
+/// A stat card, `label` above `value`, made by [`Ui::stat`].
 #[derive(Clone, Debug, Default)]
-pub struct StatOptions<'a> {
-    /// The change, as text (`"+12%"`).
-    pub delta: Option<&'a str>,
-    /// Its direction; `None` reads it from the sign of `delta`.
-    pub trend: Option<Trend>,
-    /// Colour a fall as good (error rates, latency).
-    pub down_is_good: bool,
-    /// Small print under the value: the period, the source.
-    pub note: Option<&'a str>,
-    /// Make the whole card a link to the details.
-    pub href: Option<&'a str>,
+pub struct Stat<'a> {
+    label: &'a str,
+    value: &'a str,
+    delta: Option<&'a str>,
+    trend: Option<Trend>,
+    down_is_good: bool,
+    note: Option<&'a str>,
+    href: Option<&'a str>,
 }
 
-impl<'a> StatOptions<'a> {
+impl Ui {
+    /// A card showing `value` under `label`.
+    pub fn stat<'a>(&self, label: &'a str, value: &'a str) -> Stat<'a> {
+        Stat { label, value, ..Stat::default() }
+    }
+}
+
+impl<'a> Stat<'a> {
     /// The change; a leading `+` is up, `-` (or `−`) is down, and a zero is flat.
     pub fn delta(mut self, text: &'a str) -> Self {
         self.delta = Some(text);
         self
     }
+
     /// Override the direction read from the delta's sign.
     pub fn trend(mut self, trend: Trend) -> Self {
         self.trend = Some(trend);
         self
     }
-    /// A fall is good news.
+
+    /// A fall is good news (error rates, latency).
     pub fn down_is_good(mut self) -> Self {
         self.down_is_good = true;
         self
     }
-    /// Small print under the value.
+
+    /// Small print under the value: the period, the source.
     pub fn note(mut self, note: &'a str) -> Self {
         self.note = Some(note);
         self
     }
-    /// Link the card.
+
+    /// Make the whole card a link to the details.
     pub fn href(mut self, href: &'a str) -> Self {
         self.href = Some(href);
         self
     }
 }
-
 impl Trend {
     /// The direction a delta's text says: `+` up, `-` or `−` down, flat when there is no
     /// sign or every digit is zero.
@@ -97,40 +105,34 @@ impl Trend {
     }
 }
 
-/// A stat with no delta or note.
-/// [`stat_with`] takes the options.
-pub fn stat(caps: &Caps, label: &str, value: &str) -> Markup {
-    stat_with(caps, label, value, Default::default())
-}
-
-/// A stat card: `label` above `value`.
-pub fn stat_with(_caps: &Caps, label: &str, value: &str, options: StatOptions) -> Markup {
-    let inner = html! {
-        p class="nojs-stat-label" { (label) }
-        p class="nojs-stat-value" { (value) }
-        @if let Some(text) = options.delta {
-            @let trend = options.trend.unwrap_or_else(|| Trend::of(text));
-            @let (arrow, word, good) = match trend {
-                Trend::Up => ("\u{25b2}", "up", !options.down_is_good),
-                Trend::Down => ("\u{25bc}", "down", options.down_is_good),
-                Trend::Flat => ("\u{25b6}", "unchanged", true),
-            };
-            @let tone = if trend == Trend::Flat { "nojs-stat-flat" } else if good { "nojs-stat-good" } else { "nojs-stat-bad" };
-            p class={ "nojs-stat-delta " (tone) } {
-                span aria-hidden="true" { (arrow) " " } span class="nojs-sr" { (word) " " } (text)
+impl Render for Stat<'_> {
+    fn render(&self) -> Markup {
+        let inner = html! {
+            p class="nojs-stat-label" { (self.label) }
+            p class="nojs-stat-value" { (self.value) }
+            @if let Some(text) = self.delta {
+                @let trend = self.trend.unwrap_or_else(|| Trend::of(text));
+                @let (arrow, word, good) = match trend {
+                    Trend::Up => ("\u{25b2}", "up", !self.down_is_good),
+                    Trend::Down => ("\u{25bc}", "down", self.down_is_good),
+                    Trend::Flat => ("\u{25b6}", "unchanged", true),
+                };
+                @let tone = if trend == Trend::Flat { "nojs-stat-flat" } else if good { "nojs-stat-good" } else { "nojs-stat-bad" };
+                p class={ "nojs-stat-delta " (tone) } {
+                    span aria-hidden="true" { (arrow) " " } span class="nojs-sr" { (word) " " } (text)
+                }
             }
-        }
-        @if let Some(n) = options.note { p class="nojs-stat-note" { (n) } }
-    };
-    html! {
-        @if let Some(href) = options.href {
-            a class="nojs-stat nojs-stat-link" href=(href) { (inner) }
-        } @else {
-            div class="nojs-stat" { (inner) }
+            @if let Some(n) = self.note { p class="nojs-stat-note" { (n) } }
+        };
+        html! {
+            @if let Some(href) = self.href {
+                a class="nojs-stat nojs-stat-link" href=(href) { (inner) }
+            } @else {
+                div class="nojs-stat" { (inner) }
+            }
         }
     }
 }
-
 /// Styles for this component; included in [`crate::stylesheet`].
 pub const CSS: &str = r#"
 .nojs-stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); gap: calc(var(--nojs-space) * 2); margin-block: calc(var(--nojs-space) * 2); }
@@ -161,9 +163,10 @@ mod tests {
         assert_eq!(Trend::of("0"), Trend::Flat);
         assert_eq!(Trend::of("+0.0%"), Trend::Flat);
         assert_eq!(Trend::of("12"), Trend::Flat);
-        let inferred = stat_with(&Caps::all(), "Orders", "0", StatOptions::default().delta("-3")).into_string();
+        let ui = Ui::default();
+        let inferred = ui.stat("Orders", "0").delta("-3").render().into_string();
         assert!(inferred.contains("down") && inferred.contains("nojs-stat-bad"));
-        let forced = stat_with(&Caps::all(), "Orders", "0", StatOptions::default().delta("-3").trend(Trend::Flat)).into_string();
+        let forced = ui.stat("Orders", "0").delta("-3").trend(Trend::Flat).render().into_string();
         assert!(forced.contains("unchanged"));
     }
 }

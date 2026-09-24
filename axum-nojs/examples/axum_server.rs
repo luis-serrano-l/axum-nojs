@@ -4,20 +4,19 @@
 //! First view: fallback markup, beacons fire. Reload: markup tailored to your browser.
 
 use axum::{Router, routing::get};
-use maud::{Markup, html};
-use axum_nojs::{Ui, caps, dialog_with, dialog::DialogOptions, enhance, tabs_with, tabs::{Tab, TabsOptions}};
+use axum_nojs::{caps, enhance, prelude::*};
 
-/// `Ui` is the browser's capabilities, the theme and the UI state in one extractor; returning
-/// it beside the page remembers the open tab.
-async fn index(ui: Ui) -> (Ui, Markup) {
-    let page = ui.layout("axum-nojs", html! {
+/// `Ui` is the browser's capabilities, the theme and the UI state in one extractor; the page
+/// it returns remembers the open tab.
+async fn index(ui: Ui) -> Page {
+    ui.page("axum-nojs", html! {
         h1 { "axum-nojs on Axum" }
         p { "This browser supports: " @for n in ui.caps.names() { code { (n) } " " } }
-        (tabs_with(&ui, "demo", &[Tab::new("First", html! { p { "Tab state lives in the URL and a cookie." } }),
-                                  Tab::new("Second", html! { p { "Reload, leave, come back: still here." } })], TabsOptions::default().state(&ui.state)))
-        (dialog_with(&ui, "d", "Open dialog", html! { p { "Hello." } }, DialogOptions::default().state(&ui.state)))
-    });
-    (ui, page)
+        (ui.tabs("demo")
+            .tab("First", html! { p { "Tab state lives in the URL and a cookie." } })
+            .tab("Second", html! { p { "Reload, leave, come back: still here." } }))
+        (ui.dialog("Open dialog").body(html! { p { "Hello." } }))
+    })
 }
 
 #[tokio::main]

@@ -2,8 +2,8 @@
 
 Every colour, corner and gap in `axum-nojs` is a `--nojs-*` custom property. The components never
 name a colour of their own (a test in `axum-nojs/src/lib.rs` fails if one does), so a theme is
-twelve values, not a stylesheet. `layout::Tokens` holds them; `layout_with` emits them once per
-page.
+twelve values, not a stylesheet. `layout::Tokens` holds them; `ui.page(..).tokens(&t)` emits them once
+per page.
 
 ## The tokens
 
@@ -57,8 +57,8 @@ formula; any contrast checker gives the same numbers.
 copper": warm paper, near-black ink, a copper accent that turns to amber in the dark scheme.
 
 ```rust
-use maud::html;
-use axum_nojs::{Caps, Theme, layout::{Palette, Tokens, layout_with}};
+use axum_nojs::prelude::*;
+use axum_nojs::layout::{Palette, Tokens};
 
 const LINEN: Tokens = Tokens {
     light: Palette {
@@ -73,7 +73,7 @@ const LINEN: Tokens = Tokens {
     space: "8px",
 };
 
-let page = layout_with(&Caps::all(), "Hello", Theme::Auto, &LINEN, html! { p { "Warm." } });
+let page = Ui::default().page("Hello", html! { p { "Warm." } }).tokens(&LINEN);
 ```
 
 Its ratios: `fg`/`bg` 15.1 and 14.9, `muted`/`bg` 6.2 and 6.8, `accent`/`bg` 6.8 and 7.9,
@@ -82,7 +82,7 @@ Its ratios: `fg`/`bg` 15.1 and 14.9, `muted`/`bg` 6.2 and 6.8, `accent`/`bg` 6.8
 To change one value, spread the default: `Tokens { radius: "0", ..Default::default() }` or
 `Palette { accent: "#7a3b1e", ..Tokens::default().light }`.
 
-`layout_with` puts a second `<style class="nojs-tokens">` right after the stylesheet with the
+`.tokens(..)` puts a second `<style class="nojs-tokens">` right after the stylesheet with the
 same three rule blocks the default palette uses, so it wins by source order and nothing else
 changes. The demo shows the pair: `/` is the default, `/?palette=linen` is this one.
 

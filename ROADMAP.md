@@ -234,3 +234,68 @@ form, and the old form kept only where removing it would break a published signa
   every doc example so each reads top to bottom without jumping to another file.
 - [x] Docs: `docs/ergonomics.md` shows before/after for each changed call site; README's
   first example is the most pleasant one the library can offer.
+
+## M18 · Every component starts from `ui`
+The owner looked at the demo after M17 and found the call sites still heavy (a 70-name import
+line, `x_with(&ui, …, XOptions::default()…)`, `.state(&ui.state)` repeating `ui`, cookies parsed
+by hand). Chosen shape (asked and answered): methods on `Ui` returning builders that render in
+`html!` (`ui.dialog("Delete account").title(..).danger().confirm(..).body(html!{..})`), one
+`use axum_nojs::prelude::*`, no `_with` twins, no `XOptions`; handlers lose their cookie
+plumbing through `Saved<T>` and `ui.redirect(to).ok(..).save(&value)`.
+- [x] Core: `Ui` gains `page(title, body) -> Page` (an `IntoResponse` that writes back changed
+  state and clears a shown flash, so no more `(ui, markup)`), `redirect(to) -> Redirect`
+  (`.flash/.ok/.warn/.danger/.cookie`, `into_http`), `param`/`params` (decoded query, so
+  components read their own input), `From<Caps>`, `Default`. `prg`/`prg_parts` removed.
+  `dialog` is no longer remembered in the `nojs-ui` cookie.
+- [x] `saved.rs` (`axum` feature, serde + serde_urlencoded): `Saved<T>` extractor, cookie
+  `nojs-<type-name>`, `Redirect::save`/`forget`.
+- [x] Every component converted to a builder with `impl Ui { fn x(..) }` in its own file:
+  flash, toasts, breadcrumbs (`.link().here()`), theme_toggle, stat, skeleton, empty_state,
+  counter (`.apply(op, typed)` for the handler), range/range_pair, color, select
+  (`.options/.group/.groups`, `.search(action)` reads `<name>-q`), combobox (reads `?q`/`?sel`,
+  results default to matching suggestions), pager (reads `?page`, `.rows(|i| ..)`), dialog
+  (id = slug of trigger, `.small()/.large()`, `.cancel()`), drawer (`.nav().body()`), menu
+  (`ui.menu`, item modifiers apply to the last item, `.submenu(text, items)`), tabs
+  (`.tab/.lazy/.badge`), accordion (`.item/.icon/.summary`), form (`ui.form(action)`/`ui.fields()`,
+  `.text/.email/.number/.pattern/.textarea/.file/.date/.time/.select/.checkbox/.hidden`,
+  last-field modifiers, `.group(legend)`), wizard (`.step(title, fields|markup)`,
+  `.optional()`, `.review(title)` generated from the fields, `.errors()`, `Posted::from_pairs`,
+  `.link(n)`, `.current()`), table (`ui.table(id, href).column().sortable().numeric().width()`,
+  reads sort/q/page/cols, `.sort()/.filter()/.visible()/.page()/.per_page()` for the route,
+  `.rows()`, `.paged(total)`), palette (`.group/.command/.commands/.keywords`, `.exact()`),
+  stream (`ui.stream`, `ui.slot`). lib.rs: `prelude`, slim re-exports, tests rewritten.
+  Examples (render_page, axum_server, hyper_server) and the bench rewritten.
+- [x] `cargo test -p axum-nojs --all-features` green (38 unit, 54 doc), and the crate builds
+  with no features and with `--features http`.
+- [x] Demo rewrite (`demo/src/lib.rs`): one prelude import, every route in the new form, each
+  handler `Page`/`Redirect`, `Saved<Settings>`/`Saved<Count>`/`Saved<Signup>`/`Saved<Inputs>`
+  instead of hand-parsed cookies (cookie names change to `nojs-*`: check `axum-nojs-test`
+  and `scripts/browser-check.mjs` for the old `count`, `settings`, `inputs`, `wizard`, `notes`
+  cookies), dialog page keeps `.id("confirm")` so `/dialog?dialog=confirm` in `PATHS` still
+  works, table + CSV share one `fn files_table(ui)`, palette redirects via `.exact()`,
+  wizard uses `.review()` and `Posted`. Goal: the demo visibly shorter; count lines before/after.
+- [x] Demo tests (`demo/src/lib.rs` tests), `axum-nojs-test` (Blitz) and
+  `scripts/browser-check.mjs` pass; look at `tests/shots/` (form select field and wizard
+  review are new markup).
+- [x] Docs: README first example and "How to read this crate" (signatures section is stale:
+  describes `name`/`name_with`/`XOptions`), the "Use with any server" table (`prg` rows),
+  `docs/ergonomics.md` before/after for the M18 shape, `docs/state.md`, CLAUDE.md component
+  convention #5 (now: builder struct + `impl Ui` method in the component file, modifiers on
+  the last item, `impl Render`), FINDINGS if Blitz changes. Grep for `_with(`, `Options`,
+  `prg`, `popover_menu`, `command_palette`, `Streamed::page` across docs.
+- [x] `cargo clippy --all-targets --all-features -- -D warnings`, `cargo test`,
+  `scripts/verify.sh`, then one local commit "M18: every component starts from ui". Do not push.
+
+## M19 · A demo that teaches
+Asked by the owner during M18: each component page shows how it is written, and the demo
+gets a second visual pass.
+- [ ] Code snippet on every component page: the handler's component call as it appears in
+  `demo/src/lib.rs`, in a `<pre><code>` under the live component (a `snippet` helper beside
+  `page()`, text kept in a const next to each route so the page and the code cannot drift;
+  a test asserts each snippet string occurs in the source via `include_str!`). No syntax
+  highlighting script: token colours, if any, come from server-side markup and `--nojs-*` tokens.
+- [ ] Visual pass with the frontend-design skill: plan (palette, type, layout, principles),
+  review against the generic defaults, then build. Theming only through `--nojs-*` tokens;
+  demo-shell classes in `layout.rs`. Look at the Blitz PNGs and Firefox screenshots, light
+  and dark, narrow and wide.
+- [ ] README "Run the demo" updated, clippy/tests/`scripts/verify.sh` green, local commit.

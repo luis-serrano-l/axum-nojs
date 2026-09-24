@@ -21,162 +21,144 @@
 //! **Fallback:** without `Caps::DetailsContent` the same `<details>` render as a stacked
 //! accordion, reusing the accordion styles. Without `name` support exclusivity is lost.
 //!
-//! **Server persistence:** with a `UiState` in the options, the open tab comes from
-//! `state.tab(name)` and each title is a link to `?tab.<name>=i`, so the choice survives
+//! **Server persistence:** the open tab comes from the request's `?tab.<name>=` (see
+//! [`crate::UiState::tab`]) and each title is a link to `?tab.<name>=i`, so the choice survives
 //! navigation (query first, cookie after). The link fills the summary, so every click is a
-//! round trip: a native toggle would be undone by the next render. With a state the strip is a
+//! round trip: a native toggle would be undone by the next render. The strip is a
 //! swap root, so the [`crate::enhance`] script replaces just the strip instead of the page;
 //! it also opens the clicked tab before the request, so the switch shows on the click.
-//! Because every switch is a request, a lazy tab ([`Tab::lazy_with`]) costs nothing until
+//! Because every switch is a request, a lazy tab ([`Tabs::lazy`]) costs nothing until
 //! opened: the component calls its closure only when it is the open tab.
 //!
 //! **Without script:** the narrow-screen `<select>` needs its "Go" button; the script submits
-//! it on change. Without a state the tabs toggle natively and remember nothing.
+//! it on change.
 //!
 //! ```rust
-//! use maud::html;
-//! use axum_nojs::{Caps, UiState, tabs, tabs_with, tabs::{Tab, TabsOptions}};
-//! let m = tabs(&Caps::all(), "t", &[Tab::new("One", html! { p { "First." } }), Tab::new("Two", html! { p { "Second." } })]);
-//!
-//! let state = UiState::parse("/docs", "tab.docs=1", "");
-//! let m = tabs_with(&Caps::all(), "docs", &[
-//!     Tab::new("Install", html! { p { "cargo add" } }),
-//!     Tab::new("Use", html! { p { "html!" } }).badge(3),
-//!     Tab::lazy_with("Changelog", &|| html! { p { "(long)" } }),
-//! ], TabsOptions::default().state(&state).vertical().select_below());
-//! let html = m.into_string();
+//! use axum_nojs::prelude::*;
+//! let mut ui = Ui::from_request("/docs", "tab.docs=1", "");
+//! ui.caps = Caps::all();
+//! // `badge` applies to the tab added last.
+//! let m = ui.tabs("docs")
+//!     .tab("Install", html! { p { "cargo add" } })
+//!     .tab("Use", html! { p { "html!" } }).badge(3)
+//!     .lazy("Changelog", || html! { p { "(long)" } })
+//!     .vertical()
+//!     .select_below();
+//! let html = m.render().into_string();
 //! assert!(html.contains("href=\"/docs?tab.docs=0\""));
 //! assert!(html.contains("view-transition-name: nojs-tabs-docs"));
 //! assert!(html.contains("<select name=\"tab.docs\""));
 //! ```
 
-use maud::{Markup, html};
+use maud::{Markup, Render, html};
 
-use crate::{Cap, Caps, UiState};
+use crate::{Cap, Ui};
 
-/// One tab: a title, a body (or none for a lazy tab), an optional badge count.
-#[derive(Clone)]
-pub struct Tab<'a> {
+/// One tab: a title, a panel (ready or rendered on demand), an optional badge count.
+struct Tab<'a> {
     title: &'a str,
     body: Body<'a>,
     badge: Option<usize>,
 }
 
 /// A panel: rendered already, or rendered on demand.
-#[derive(Clone)]
 enum Body<'a> {
     Ready(Markup),
-    Lazy(&'a dyn Fn() -> Markup),
+    Lazy(Box<dyn Fn() -> Markup + 'a>),
 }
 
-impl std::fmt::Debug for Tab<'_> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let body = match &self.body { Body::Ready(_) => "ready", Body::Lazy(_) => "lazy" };
-        f.debug_struct("Tab").field("title", &self.title).field("body", &body).field("badge", &self.badge).finish()
+/// A tab strip, made by [`Ui::tabs`]: the open tab is `?tab.<name>=i` (or the cookie's
+/// memory of it), and each title links to its own. Horizontal unless told otherwise.
+pub struct Tabs<'a> {
+    ui: &'a Ui,
+    name: &'a str,
+    tabs: Vec<Tab<'a>>,
+    vertical: bool,
+    select_below: bool,
+}
+
+impl Ui {
+    /// An empty strip named `name` (the key in `?tab.<name>=`); add tabs with [`Tabs::tab`].
+    pub fn tabs<'a>(&'a self, name: &'a str) -> Tabs<'a> {
+        Tabs { ui: self, name, tabs: Vec::new(), vertical: false, select_below: false }
     }
 }
 
-impl<'a> Tab<'a> {
-    /// A tab with its panel.
-    pub const fn new(title: &'a str, body: Markup) -> Self {
-        Tab { title, body: Body::Ready(body), badge: None }
+impl<'a> Tabs<'a> {
+    /// A tab titled `title` with its panel.
+    pub fn tab(mut self, title: &'a str, body: Markup) -> Self {
+        self.tabs.push(Tab { title, body: Body::Ready(body), badge: None });
+        self
     }
-    /// A tab whose panel is rendered only when it is the open one: the component calls
-    /// `render` for the open tab and never for the others, so an expensive panel costs
+
+    /// A tab whose panel is rendered only when it is the open one: an expensive panel costs
     /// nothing until the round trip that opens it.
-    pub const fn lazy_with(title: &'a str, render: &'a dyn Fn() -> Markup) -> Self {
-        Tab { title, body: Body::Lazy(render), badge: None }
-    }
-    /// A count shown after the title.
-    pub const fn badge(mut self, count: usize) -> Self {
-        self.badge = Some(count);
+    pub fn lazy(mut self, title: &'a str, body: impl Fn() -> Markup + 'a) -> Self {
+        self.tabs.push(Tab { title, body: Body::Lazy(Box::new(body)), badge: None });
         self
     }
-}
 
-/// `("Install", html! { … })`: a tab, its title and its panel.
-impl<'a> From<(&'a str, Markup)> for Tab<'a> {
-    fn from((title, body): (&'a str, Markup)) -> Self {
-        Tab::new(title, body)
+    /// A count after the title of the tab added last.
+    pub fn badge(mut self, count: usize) -> Self {
+        if let Some(t) = self.tabs.last_mut() {
+            t.badge = Some(count);
+        }
+        self
     }
-}
 
-/// Options for [`tabs`]; `Default::default()` is a horizontal strip with no server state.
-#[derive(Clone, Copy, Debug, Default)]
-pub struct TabsOptions<'a> {
-    /// Server-held open tab and links to change it.
-    pub state: Option<&'a UiState>,
     /// Titles in a column on the left, the open panel beside them.
-    pub vertical: bool,
-    /// On screens under 40rem the titles give way to a `<select>` (needs `state`).
-    pub select_below: bool,
-}
-
-impl<'a> TabsOptions<'a> {
-    /// Server-held open tab and links to change it.
-    pub fn state(mut self, state: &'a UiState) -> Self {
-        self.state = Some(state);
-        self
-    }
-    /// Titles in a column on the left.
     pub fn vertical(mut self) -> Self {
         self.vertical = true;
         self
     }
-    /// Collapse to a `<select>` on narrow screens.
+
+    /// On screens under 40rem the titles give way to a `<select>`.
     pub fn select_below(mut self) -> Self {
         self.select_below = true;
         self
     }
 }
 
-/// Tabs with the first one open and no remembered state.
-/// [`tabs_with`] takes the options.
-pub fn tabs(caps: &Caps, name: &str, tabs: &[Tab]) -> Markup {
-    tabs_with(caps, name, tabs, Default::default())
-}
-
-/// Tab strip `name`. The open panel is `state.tab(name)`, or the first one without state.
-pub fn tabs_with(caps: &Caps, name: &str, tabs: &[Tab], options: TabsOptions) -> Markup {
-    let TabsOptions { state, vertical, select_below } = options;
-    let strip = caps.has(Cap::DetailsContent);
-    let active = state.map(|s| s.tab(name)).unwrap_or(0);
-    let key = format!("tab.{name}");
-    let class = match (strip, vertical) {
-        (false, _) => "nojs-tabs nojs-accordion",
-        (true, false) => "nojs-tabs",
-        (true, true) => "nojs-tabs nojs-tabs-vertical",
-    };
-    html! {
-        div id=[state.map(|_| format!("nojs-tabs-{name}"))] data-nojs=[state.map(|_| "swap")]
-            class=(class) style=[(strip && vertical).then(|| format!("--nojs-tabs-n: {}", tabs.len()))] {
-            @if let (Some(s), true) = (state, select_below) {
-                form method="get" action=(s.path()) class="nojs-tabs-select" {
-                    @for (k, v) in s.entries() { @if k != key { input type="hidden" name=(k) value=(v); } }
-                    select name=(key) aria-label="Tab" {
-                        @for (i, t) in tabs.iter().enumerate() {
-                            option value=(i) selected[i == active] { (t.title) @if let Some(n) = t.badge { " (" (n) ")" } }
+impl Render for Tabs<'_> {
+    fn render(&self) -> Markup {
+        let Tabs { ui, name, ref tabs, vertical, select_below } = *self;
+        let s = &ui.state;
+        let strip = ui.has(Cap::DetailsContent);
+        let active = s.tab(name);
+        let key = format!("tab.{name}");
+        let class = match (strip, vertical) {
+            (false, _) => "nojs-tabs nojs-accordion",
+            (true, false) => "nojs-tabs",
+            (true, true) => "nojs-tabs nojs-tabs-vertical",
+        };
+        html! {
+            div id={ "nojs-tabs-" (name) } data-nojs="swap"
+                class=(class) style=[(strip && vertical).then(|| format!("--nojs-tabs-n: {}", tabs.len()))] {
+                @if select_below {
+                    form method="get" action=(s.path()) class="nojs-tabs-select" {
+                        @for (k, v) in s.entries() { @if k != key { input type="hidden" name=(k) value=(v); } }
+                        select name=(key) aria-label="Tab" {
+                            @for (i, t) in tabs.iter().enumerate() {
+                                option value=(i) selected[i == active] { (t.title) @if let Some(n) = t.badge { " (" (n) ")" } }
+                            }
                         }
+                        button type="submit" { "Go" }
                     }
-                    button type="submit" { "Go" }
                 }
-            }
-            @for (i, t) in tabs.iter().enumerate() {
-                details name=(name) open[i == active] {
-                    summary {
-                        @match state {
-                            Some(s) => a href=(s.link(&key, &i.to_string())) { (t.title) (badge(t)) },
-                            None => { (t.title) (badge(t)) },
+                @for (i, t) in tabs.iter().enumerate() {
+                    details name=(name) open[i == active] {
+                        summary {
+                            a href=(s.link(&key, &i.to_string())) { (t.title) (badge(t)) }
+                            @if i == active && strip {
+                                span class="nojs-tabs-mark" style=(format!("view-transition-name: nojs-tabs-{name}")) {}
+                            }
                         }
-                        @if i == active && strip {
-                            span class="nojs-tabs-mark" style=(format!("view-transition-name: nojs-tabs-{name}")) {}
-                        }
-                    }
-                    div class=(if strip { "nojs-tabs-panel" } else { "nojs-accordion-body" }) {
-                        @match (&t.body, i == active) {
-                            (Body::Ready(body), _) => (body),
-                            (Body::Lazy(render), true) => (render()),
-                            (Body::Lazy(_), false) => span class="nojs-tabs-lazy" {},
+                        div class=(if strip { "nojs-tabs-panel" } else { "nojs-accordion-body" }) {
+                            @match (&t.body, i == active) {
+                                (Body::Ready(body), _) => (body),
+                                (Body::Lazy(render), true) => (render()),
+                                (Body::Lazy(_), false) => span class="nojs-tabs-lazy" {},
+                            }
                         }
                     }
                 }
@@ -184,7 +166,6 @@ pub fn tabs_with(caps: &Caps, name: &str, tabs: &[Tab], options: TabsOptions) ->
         }
     }
 }
-
 fn badge(t: &Tab) -> Markup {
     html! { @if let Some(n) = t.badge { " " span class="nojs-tabs-badge" { (n) } } }
 }
@@ -250,9 +231,8 @@ mod tests {
         let calls = Cell::new(0);
         let render = || { calls.set(calls.get() + 1); html! { p { "Changelog body" } } };
         let strip = |query: &str| {
-            let state = UiState::parse("/docs", query, "");
-            tabs_with(&Caps::all(), "docs", &[Tab::new("Install", html! { "cargo add" }), Tab::lazy_with("Changelog", &render)],
-                TabsOptions::default().state(&state)).into_string()
+            let ui = Ui::from_request("/docs", query, "");
+            ui.tabs("docs").tab("Install", html! { "cargo add" }).lazy("Changelog", render).render().into_string()
         };
         let closed = strip("");
         assert!(!closed.contains("Changelog body") && closed.contains("nojs-tabs-lazy"));

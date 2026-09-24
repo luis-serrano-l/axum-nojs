@@ -21,9 +21,9 @@
 //! rule shows the dialog as a fixed overlay; links to `#` close and cancel it. Only one variant
 //! is ever in the markup.
 //!
-//! **Server state:** `open` renders the dialog already open (non-modal, no backdrop).
-//! `state(&ui_state)` does that from `?dialog=<id>` itself, and sends the confirm form back
-//! to the page it came from unless `returns_to` says otherwise. `returns_to` is posted
+//! **Server state:** `?dialog=<id>` in the URL renders the dialog already open (non-modal, no
+//! backdrop), as does `.open(true)`. The confirm form goes back to the page it came from
+//! unless `returns_to` says otherwise. `returns_to` is posted
 //! with the confirm form as a hidden `returns_to` field, so the handler knows where to send
 //! the browser back; check it is a local path before redirecting to it.
 //!
@@ -31,48 +31,47 @@
 //! fallback closes through its links alone. Focus is not trapped in the fallback.
 //!
 //! ```rust
-//! use maud::html;
-//! use axum_nojs::{Caps, UiState, dialog, dialog_with, dialog::{DialogOptions, DialogSize}};
-//! let m = dialog(&Caps::all(), "hi", "Say hi", html! { p { "Hello." } });
-//! let m = dialog_with(&Caps::all(), "confirm", "Delete account", html! {
+//! use axum_nojs::prelude::*;
+//! let ui = Ui::from(Caps::all());
+//! let hi = ui.dialog("Say hi").body(html! { p { "Hello." } });
+//! assert!(hi.render().into_string().contains(r#"commandfor="say-hi""#), "the id is the trigger's slug");
+//!
+//! let m = ui.dialog("Delete account")
+//!     .id("confirm")
+//!     .title("Delete account?")
+//!     .small()
+//!     .danger()
+//!     .confirm("Delete", "/account/delete")
+//!     .returns_to("/settings")
+//!     .cancel("Keep it")
+//!     .closedby("closerequest")
+//!     .open(true)
+//!     .body(html! {
 //!         p { "This cannot be undone." }
 //!         label { "Reason " input name="reason"; }
-//!     },
-//!     DialogOptions::default()
-//!         .title("Delete account?")
-//!         .size(DialogSize::Sm)
-//!         .danger()
-//!         .confirm("Delete", "/account/delete")
-//!         .returns_to("/settings")
-//!         .cancel_label("Keep it")
-//!         .closedby("closerequest")
-//!         .open(true));
-//! let html = m.into_string();
+//!     });
+//! let html = m.render().into_string();
 //! assert!(html.contains("<dialog id=\"confirm\" class=\"nojs-dialog-sm\" closedby=\"closerequest\" aria-labelledby=\"confirm-title\" open>"));
 //! assert!(html.contains("<form method=\"post\" action=\"/account/delete\""));
 //! assert!(html.contains("name=\"returns_to\" value=\"/settings\""));
 //!
-//! // With the request's state: open when the URL says `?dialog=confirm`, and the
-//! // confirm form returns to this page.
-//! let state = UiState::parse("/account", "dialog=confirm", "");
-//! let html = dialog_with(&Caps::all(), "confirm", "Delete account", html! {},
-//!     DialogOptions::default().confirm("Delete", "/account/delete").state(&state)).into_string();
+//! // From the request: open when the URL says `?dialog=confirm`, and the confirm form
+//! // returns to this page.
+//! let ui = Ui::from_request("/account", "dialog=confirm", "");
+//! let html = ui.dialog("Delete account").id("confirm").confirm("Delete", "/account/delete").render().into_string();
 //! assert!(html.contains(" open>") && html.contains("value=\"/account\""));
 //! ```
 
-use maud::{Markup, html};
+use maud::{Markup, Render, html};
 
-use crate::{Cap, Caps, UiState};
+use crate::{Cap, Ui, slug};
 
-/// Width of a [`dialog`]: `max-width` of 20, 28 or 40 rem.
+/// Width of a dialog: `max-width` of 20, 28 or 40 rem.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-pub enum DialogSize {
-    /// 20 rem: a confirmation.
+enum DialogSize {
     Sm,
-    /// 28 rem: a short form.
     #[default]
     Md,
-    /// 40 rem: a long form or a table.
     Lg,
 }
 
@@ -86,166 +85,173 @@ impl DialogSize {
     }
 }
 
-/// Options for [`dialog`]; `Default::default()` is a closed, medium, untitled dialog with a
-/// "Close" button.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct DialogOptions<'a> {
-    /// Render the dialog already open (non-modal, no backdrop), for example after a
-    /// redirect to `?dialog=<id>` read through `UiState::dialog()`.
-    pub open: bool,
-    /// Title shown in a header with a close control; also the dialog's accessible name.
-    pub title: Option<&'a str>,
-    /// Width.
-    pub size: DialogSize,
-    /// Red confirm button and a red title rule: for destructive actions.
-    pub danger: bool,
-    /// A confirm button `(label, action)`: the footer becomes `<form method="post">` to that
-    /// URL and the body's fields are posted with it.
-    pub confirm: Option<(&'a str, &'a str)>,
-    /// Posted as a hidden `returns_to` field with the confirm form.
-    pub returns_to: Option<&'a str>,
-    /// Label of the closing button when there is no confirm form.
-    pub close_label: &'a str,
-    /// Label of the cancel button beside the confirm button.
-    pub cancel_label: &'a str,
-    /// The `closedby` attribute: `any` (Escape and outside click), `closerequest` (Escape
-    /// only) or `none`.
-    pub closedby: &'a str,
-    /// The request's state: opens the dialog when `?dialog=<id>` names it, and is where the
-    /// confirm form returns when `returns_to` is not set.
-    pub state: Option<&'a UiState>,
+/// A modal dialog behind a button, made by [`Ui::dialog`]: medium width, untitled, closed by
+/// a "Close" button, unless told otherwise.
+#[derive(Clone, Debug)]
+pub struct Dialog<'a> {
+    ui: &'a Ui,
+    id: String,
+    trigger: &'a str,
+    body: Markup,
+    open: bool,
+    title: Option<&'a str>,
+    size: DialogSize,
+    danger: bool,
+    confirm: Option<(&'a str, &'a str)>,
+    returns_to: Option<&'a str>,
+    close: &'a str,
+    cancel: &'a str,
+    closedby: &'a str,
 }
 
-impl Default for DialogOptions<'_> {
-    fn default() -> Self {
-        DialogOptions {
+impl Ui {
+    /// A dialog opened by a button labelled `trigger`. Its id is the trigger's slug
+    /// (`"Delete account"` is `delete-account`); it renders open when the URL says
+    /// `?dialog=<id>`.
+    pub fn dialog<'a>(&'a self, trigger: &'a str) -> Dialog<'a> {
+        Dialog {
+            ui: self,
+            id: slug(trigger),
+            trigger,
+            body: Markup::default(),
             open: false,
             title: None,
             size: DialogSize::Md,
             danger: false,
             confirm: None,
             returns_to: None,
-            close_label: "Close",
-            cancel_label: "Cancel",
+            close: "Close",
+            cancel: "Cancel",
             closedby: "any",
-            state: None,
         }
     }
 }
 
-impl<'a> DialogOptions<'a> {
-    /// Render the dialog already open.
+impl<'a> Dialog<'a> {
+    /// What the dialog says.
+    pub fn body(mut self, body: Markup) -> Self {
+        self.body = body;
+        self
+    }
+
+    /// The dialog's id instead of the trigger's slug; it must be unique on the page.
+    pub fn id(mut self, id: &str) -> Self {
+        self.id = id.to_string();
+        self
+    }
+
+    /// Render the dialog already open (non-modal, no backdrop).
     pub fn open(mut self, open: bool) -> Self {
         self.open = open;
         self
     }
 
-    /// Title in a header with a close control.
+    /// A title in a header with a close control; also the dialog's accessible name.
     pub fn title(mut self, title: &'a str) -> Self {
         self.title = Some(title);
         self
     }
 
-    /// Width.
-    pub fn size(mut self, size: DialogSize) -> Self {
-        self.size = size;
+    /// 20 rem wide: a confirmation.
+    pub fn small(mut self) -> Self {
+        self.size = DialogSize::Sm;
         self
     }
 
-    /// Destructive styling.
+    /// 40 rem wide: a long form or a table.
+    pub fn large(mut self) -> Self {
+        self.size = DialogSize::Lg;
+        self
+    }
+
+    /// Red confirm button and title rule: for destructive actions.
     pub fn danger(mut self) -> Self {
         self.danger = true;
         self
     }
 
-    /// A confirm button with this label, posting the body's fields to `action`.
+    /// A confirm button labelled `label`: the footer becomes `<form method="post">` to
+    /// `action`, and the body's fields are posted with it.
     pub fn confirm(mut self, label: &'a str, action: &'a str) -> Self {
         self.confirm = Some((label, action));
         self
     }
 
-    /// Where the server should redirect after the confirm form; posted as `returns_to`.
+    /// Where the server should send the browser after the confirm form, posted as a hidden
+    /// `returns_to` field; this page by default. Check it is a local path before
+    /// redirecting to it.
     pub fn returns_to(mut self, path: &'a str) -> Self {
         self.returns_to = Some(path);
         self
     }
 
-    /// Label of the closing button.
-    pub fn close_label(mut self, label: &'a str) -> Self {
-        self.close_label = label;
+    /// Label of the closing button when there is no confirm form.
+    pub fn close(mut self, label: &'a str) -> Self {
+        self.close = label;
         self
     }
 
-    /// Label of the cancel button beside a confirm button.
-    pub fn cancel_label(mut self, label: &'a str) -> Self {
-        self.cancel_label = label;
+    /// Label of the cancel button beside the confirm button.
+    pub fn cancel(mut self, label: &'a str) -> Self {
+        self.cancel = label;
         self
     }
 
-    /// `any`, `closerequest` or `none`.
+    /// The `closedby` attribute: `any` (Escape and outside click, the default),
+    /// `closerequest` (Escape only) or `none`.
     pub fn closedby(mut self, closedby: &'a str) -> Self {
         self.closedby = closedby;
         self
     }
-
-    /// Read `?dialog=<id>` to open it, and return the confirm form to this page.
-    pub fn state(mut self, state: &'a UiState) -> Self {
-        self.state = Some(state);
-        self
-    }
 }
 
-/// A dialog opened by a button labelled `trigger`, with the default options.
-/// [`dialog_with`] takes the options.
-pub fn dialog(caps: &Caps, id: &str, trigger: &str, body: Markup) -> Markup {
-    dialog_with(caps, id, trigger, body, Default::default())
-}
-
-/// A modal dialog. `id` must be unique on the page; `trigger` is the opening button's label.
-pub fn dialog_with(caps: &Caps, id: &str, trigger: &str, body: Markup, options: DialogOptions) -> Markup {
-    let DialogOptions { open, title, size, danger, confirm, returns_to, close_label, cancel_label, closedby, state } = options;
-    let open = open || state.is_some_and(|s| s.dialog() == Some(id));
-    let returns_to = returns_to.or(state.map(UiState::path));
-    let invokers = caps.has(Cap::Invokers);
-    let title_id = format!("{id}-title");
-    html! {
-        div class={ "nojs-dialog" @if danger { " nojs-dialog-danger" } } {
-            @if invokers {
-                button type="button" command="show-modal" commandfor=(id) { (trigger) }
-            } @else {
-                a class="nojs-dialog-open" role="button" href={ "#" (id) } { (trigger) }
-            }
-            dialog id=(id) class=(size.class()) closedby=(closedby) aria-labelledby=[title.map(|_| &title_id)] open[open] {
-                @if let Some(t) = title { h2 id=(title_id) class="nojs-dialog-title" { (t) } }
-                @if let Some((label, action)) = confirm {
-                    form method="post" action=(action) class="nojs-dialog-form" {
-                        div class="nojs-dialog-body" { (body) }
-                        @if let Some(to) = returns_to { input type="hidden" name="returns_to" value=(to); }
-                        div class="nojs-dialog-actions" {
-                            @if invokers {
-                                button type="button" command="close" commandfor=(id) { (cancel_label) }
-                            } @else {
-                                a href="#" role="button" class="nojs-dialog-cancel" { (cancel_label) }
-                            }
-                            button type="submit" class={ @if danger { "nojs-danger" } @else { "nojs-primary" } } { (label) }
-                        }
-                    }
+impl Render for Dialog<'_> {
+    fn render(&self) -> Markup {
+        let Dialog { ui, ref id, trigger, ref body, open, title, size, danger, confirm, returns_to, close, cancel, closedby } = *self;
+        let open = open || ui.state.dialog() == Some(id);
+        let returns_to = returns_to.unwrap_or(ui.state.path());
+        let returns_to = (!returns_to.is_empty()).then_some(returns_to);
+        let invokers = ui.has(Cap::Invokers);
+        let title_id = format!("{id}-title");
+        html! {
+            div class={ "nojs-dialog" @if danger { " nojs-dialog-danger" } } {
+                @if invokers {
+                    button type="button" command="show-modal" commandfor=(id) { (trigger) }
                 } @else {
-                    div class="nojs-dialog-body" { (body) }
-                    @if invokers {
-                        form method="dialog" class="nojs-dialog-actions" {
-                            button type="submit" class="nojs-primary" { (close_label) }
+                    a class="nojs-dialog-open" role="button" href={ "#" (id) } { (trigger) }
+                }
+                dialog id=(id) class=(size.class()) closedby=(closedby) aria-labelledby=[title.map(|_| &title_id)] open[open] {
+                    @if let Some(t) = title { h2 id=(title_id) class="nojs-dialog-title" { (t) } }
+                    @if let Some((label, action)) = confirm {
+                        form method="post" action=(action) class="nojs-dialog-form" {
+                            div class="nojs-dialog-body" { (body) }
+                            @if let Some(to) = returns_to { input type="hidden" name="returns_to" value=(to); }
+                            div class="nojs-dialog-actions" {
+                                @if invokers {
+                                    button type="button" command="close" commandfor=(id) { (cancel) }
+                                } @else {
+                                    a href="#" role="button" class="nojs-dialog-cancel" { (cancel) }
+                                }
+                                button type="submit" class={ @if danger { "nojs-danger" } @else { "nojs-primary" } } { (label) }
+                            }
                         }
                     } @else {
-                        p class="nojs-dialog-actions" { a href="#" role="button" { (close_label) } }
+                        div class="nojs-dialog-body" { (body) }
+                        @if invokers {
+                            form method="dialog" class="nojs-dialog-actions" {
+                                button type="submit" class="nojs-primary" { (close) }
+                            }
+                        } @else {
+                            p class="nojs-dialog-actions" { a href="#" role="button" { (close) } }
+                        }
                     }
-                }
-                // Last in the markup so the dialog's focusing steps skip it for the first field.
-                @if title.is_some() {
-                    @if invokers {
-                        button type="button" command="close" commandfor=(id) class="nojs-dialog-close" aria-label="Close" { "\u{d7}" }
-                    } @else {
-                        a href="#" class="nojs-dialog-close" aria-label="Close" { "\u{d7}" }
+                    // Last in the markup so the dialog's focusing steps skip it for the first field.
+                    @if title.is_some() {
+                        @if invokers {
+                            button type="button" command="close" commandfor=(id) class="nojs-dialog-close" aria-label="Close" { "\u{d7}" }
+                        } @else {
+                            a href="#" class="nojs-dialog-close" aria-label="Close" { "\u{d7}" }
+                        }
                     }
                 }
             }
@@ -303,13 +309,16 @@ mod tests {
 
     #[test]
     fn state_opens_the_named_dialog_and_returns_to_its_page() {
-        let state = UiState::parse("/dialog", "dialog=confirm", "");
-        let with = |id: &str, options: DialogOptions| dialog_with(&Caps::all(), id, "Open", html! {}, options.confirm("Go", "/go").state(&state)).into_string();
-        let named = with("confirm", DialogOptions::default());
+        let ui = Ui::from_request("/dialog", "dialog=confirm", "");
+        let with = |id: &str, to: Option<&str>| {
+            let d = ui.dialog("Open").id(id).confirm("Go", "/go");
+            to.map_or(d.clone(), |to| d.returns_to(to)).render().into_string()
+        };
+        let named = with("confirm", None);
         assert!(named.contains(" open>") && named.contains(r#"name="returns_to" value="/dialog""#));
-        let other = with("other", DialogOptions::default());
-        assert!(!other.contains(" open>"));
-        let explicit = with("confirm", DialogOptions::default().returns_to("/home"));
+        assert!(!with("other", None).contains(" open>"));
+        let explicit = with("confirm", Some("/home"));
         assert!(explicit.contains(r#"value="/home""#) && !explicit.contains(r#"value="/dialog""#));
+        assert!(!Ui::default().dialog("Open").confirm("Go", "/go").render().into_string().contains("returns_to"), "no request, no return path");
     }
 }

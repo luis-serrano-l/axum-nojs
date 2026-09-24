@@ -11,7 +11,7 @@
 //!   Firefox 57, Safari 14.1).
 //! - `:user-invalid` / `:user-valid` (baseline 2023): styles only after the user has interacted,
 //!   so fields are not red on first paint.
-//! - `<fieldset>` + `<legend>` per [`FieldGroup`]; help text and the error are tied to the
+//! - `<fieldset>` + `<legend>` per [`Form::group`]; help text and the error are tied to the
 //!   field with `aria-describedby`.
 //! - `<output>` counts characters for a field with a `maxlength`: the server renders the count
 //!   of the value it has, the enhancement script keeps it live while typing.
@@ -27,7 +27,7 @@
 //!
 //! **Fallback:** without `field-sizing` a textarea keeps its `rows` and can be resized by
 //! hand. Without the script the counter shows the length of the last submitted value and
-//! `maxlength` still stops input at the limit. `Caps` is unused.
+//! `maxlength` still stops input at the limit.
 //!
 //! **Enhanced:** the form is a swap root, so with the [`crate::enhance`] script a submit
 //! replaces only the form (errors included) and a successful redirect swaps in the result.
@@ -36,270 +36,298 @@
 //! on the server round trip, and warning about unsaved changes when leaving needs script.
 //!
 //! ```rust
-//! use axum_nojs::{Caps, form, form_with, Field, FieldKind, form::{FieldGroup, FormLayout, FormOptions}};
-//! let fields = [Field::new("email", "Email", FieldKind::Email).required()];
-//! let m = form(&Caps::all(), "/form", &[FieldGroup::plain(&fields)]);
+//! use axum_nojs::prelude::*;
+//! let ui = Ui::from(Caps::all());
+//! let m = ui.form("/signup").email("email", "Email").required();
+//! assert!(m.render().into_string().contains(r#"type="email" value="" required"#));
 //!
-//! let about = [
-//!     Field::new("bio", "Bio", FieldKind::Textarea { rows: 3 }).maxlength(280).value("Hi").help("Shown on your profile."),
-//!     Field::new("avatar", "Avatar", FieldKind::File { accept: "image/png,image/jpeg", multiple: false }),
-//!     Field::new("born", "Born", FieldKind::Date { min: "1900-01-01", max: "2026-12-31" }),
-//! ];
-//! let m = form_with(&Caps::all(), "/profile", &[FieldGroup::new("About you", &about)],
-//!              FormOptions::default().submit("Save profile").layout(FormLayout::Inline));
-//! let html = m.into_string();
+//! // `required`, `help`, `maxlength`, `value` and friends apply to the field added last;
+//! // `group` starts a fieldset for the fields after it.
+//! let m = ui.form("/profile")
+//!     .group("About you")
+//!     .textarea("bio", "Bio", 3).maxlength(280).value("Hi").help("Shown on your profile.")
+//!     .file("avatar", "Avatar", "image/png,image/jpeg")
+//!     .date("born", "Born", "1900-01-01", "2026-12-31")
+//!     .select("digest", "Digest", ["daily", "weekly", "never"]).value("weekly")
+//!     .submit("Save profile")
+//!     .inline();
+//! let html = m.render().into_string();
 //! assert!(html.contains("enctype=\"multipart/form-data\""));
 //! assert!(html.contains("<legend>About you</legend>"));
 //! assert!(html.contains(">2 / 280</output>"));
 //! assert!(html.contains("accept=\"image/png,image/jpeg\""));
+//! assert!(html.contains(r#"<option value="weekly" selected>"#));
 //! ```
 
-use maud::{Markup, html};
+use maud::{Markup, Render, html};
 
-use crate::{Caps, enhance};
+use crate::{Ui, enhance};
 
-/// Input type for a [`Field`].
-#[derive(Clone, Copy, Debug)]
-pub enum FieldKind {
-    /// Single-line text.
+/// Input type of a field.
+#[derive(Clone, Debug)]
+enum FieldKind<'a> {
     Text,
-    /// `type="email"`: the browser checks the shape.
     Email,
-    /// Integer between `min` and `max`, inclusive.
-    Number {
-        /// Smallest accepted value.
-        min: i64,
-        /// Largest accepted value.
-        max: i64,
-    },
-    /// Free text that must match `pattern`; `hint` explains the rule to people.
-    Pattern {
-        /// HTML `pattern` attribute (a regular expression matched against the whole value).
-        pattern: &'static str,
-        /// Shown under the field (unless the field has its own help) and as the input's `title`.
-        hint: &'static str,
-    },
-    /// Multi-line text; grows with its content where `field-sizing` is supported.
-    Textarea {
-        /// Visible rows without `field-sizing`, and the starting height with it.
-        rows: u8,
-    },
-    /// File picker; `accept` lists MIME types or extensions (`image/*,.pdf`), empty for any.
-    File {
-        /// The `accept` attribute.
-        accept: &'static str,
-        /// Allow several files.
-        multiple: bool,
-    },
-    /// `type="date"`, bounds as `YYYY-MM-DD`; an empty bound is left out.
-    Date {
-        /// Earliest date.
-        min: &'static str,
-        /// Latest date.
-        max: &'static str,
-    },
-    /// `type="time"`, bounds as `HH:MM`; an empty bound is left out.
-    Time {
-        /// Earliest time.
-        min: &'static str,
-        /// Latest time.
-        max: &'static str,
-    },
-    /// A checkbox posting `true` when ticked and nothing when not (so a `bool` with
-    /// `#[serde(default)]` reads it); ticked when the value is `true`, `on` or `1`.
+    Number { min: i64, max: i64 },
+    Pattern { pattern: &'a str, hint: &'a str },
+    Textarea { rows: u8 },
+    File { accept: &'a str, multiple: bool },
+    Date { min: &'a str, max: &'a str },
+    Time { min: &'a str, max: &'a str },
+    Select(Vec<&'a str>),
     Checkbox,
-    /// `type="hidden"`: carried with the post, not shown; the label is unused.
     Hidden,
 }
 
 /// One form field with its current value and server-side error.
 #[derive(Clone, Debug)]
-pub struct Field<'a> {
-    /// Form field name, also used for the input id (`f-<name>`).
-    pub name: &'a str,
-    /// Visible label.
-    pub label: &'a str,
-    /// Input type and its constraints.
-    pub kind: FieldKind,
-    /// Current value, re-rendered after a failed submit (ignored for files).
-    pub value: &'a str,
-    /// Server-side error message for this field.
-    pub error: Option<&'a str>,
-    /// Adds the `required` attribute and a `*` to the label.
-    pub required: bool,
+pub(crate) struct Field<'a> {
+    pub(crate) name: &'a str,
+    pub(crate) label: &'a str,
+    kind: FieldKind<'a>,
+    pub(crate) value: &'a str,
+    error: Option<&'a str>,
+    required: bool,
+    help: Option<&'a str>,
+    maxlength: Option<usize>,
+    placeholder: Option<&'a str>,
+}
+
+impl Field<'_> {
+    /// Whether a person sees it (a review lists only these).
+    pub(crate) fn shown(&self) -> bool {
+        !matches!(self.kind, FieldKind::Hidden)
+    }
+}
+
+/// A POST form of fields, made by [`Ui::form`], or the fields alone, made by [`Ui::fields`].
+/// Fields are added in order; `required`, `help`, `maxlength`, `value`, `error`,
+/// `placeholder`, `multiple` and `checked` apply to the field added last. A stacked form
+/// with a "Submit" button unless told otherwise.
+#[derive(Clone, Debug)]
+pub struct Form<'a> {
+    action: Option<&'a str>,
+    groups: Vec<(Option<&'a str>, Vec<Field<'a>>)>,
+    submit: &'a str,
+    inline: bool,
+    values: &'a [(String, String)],
+    errors: &'a [(&'a str, &'a str)],
+    id: Option<&'a str>,
+}
+
+impl Ui {
+    /// A form posting to `action`; add fields with [`Form::text`] and friends.
+    pub fn form<'a>(&self, action: &'a str) -> Form<'a> {
+        Form { action: Some(action), ..self.fields() }
+    }
+
+    /// Fields with no `<form>` around them, for a form built elsewhere (a wizard step, a
+    /// dialog's confirm form).
+    pub fn fields<'a>(&self) -> Form<'a> {
+        Form { action: None, groups: vec![(None, Vec::new())], submit: "Submit", inline: false, values: &[], errors: &[], id: None }
+    }
+}
+
+impl<'a> Form<'a> {
+    fn add(mut self, name: &'a str, label: &'a str, kind: FieldKind<'a>) -> Self {
+        let field = Field { name, label, kind, value: "", error: None, required: false, help: None, maxlength: None, placeholder: None };
+        self.groups.last_mut().expect("a form always has a group").1.push(field);
+        self
+    }
+
+    fn last(mut self, change: impl FnOnce(&mut Field<'a>)) -> Self {
+        if let Some(f) = self.groups.last_mut().and_then(|g| g.1.last_mut()) {
+            change(f);
+        }
+        self
+    }
+
+    /// A `<fieldset>` with this `<legend>` around the fields added after it.
+    pub fn group(mut self, legend: &'a str) -> Self {
+        self.groups.push((Some(legend), Vec::new()));
+        self
+    }
+
+    /// Single-line text.
+    pub fn text(self, name: &'a str, label: &'a str) -> Self {
+        self.add(name, label, FieldKind::Text)
+    }
+
+    /// `type="email"`: the browser checks the shape.
+    pub fn email(self, name: &'a str, label: &'a str) -> Self {
+        self.add(name, label, FieldKind::Email)
+    }
+
+    /// A whole number from `min` to `max`, inclusive.
+    pub fn number(self, name: &'a str, label: &'a str, min: i64, max: i64) -> Self {
+        self.add(name, label, FieldKind::Number { min, max })
+    }
+
+    /// Text that must match `pattern` (the HTML `pattern` attribute); `hint` explains the
+    /// rule under the field and as the input's `title`.
+    pub fn pattern(self, name: &'a str, label: &'a str, pattern: &'a str, hint: &'a str) -> Self {
+        self.add(name, label, FieldKind::Pattern { pattern, hint })
+    }
+
+    /// Multi-line text, `rows` high; it grows with its content where `field-sizing` works.
+    pub fn textarea(self, name: &'a str, label: &'a str, rows: u8) -> Self {
+        self.add(name, label, FieldKind::Textarea { rows })
+    }
+
+    /// A file picker; `accept` lists MIME types or extensions (`image/*,.pdf`), empty for
+    /// any. The form becomes `multipart/form-data`.
+    pub fn file(self, name: &'a str, label: &'a str, accept: &'a str) -> Self {
+        self.add(name, label, FieldKind::File { accept, multiple: false })
+    }
+
+    /// `type="date"`, bounds as `YYYY-MM-DD`; an empty bound is left out.
+    pub fn date(self, name: &'a str, label: &'a str, min: &'a str, max: &'a str) -> Self {
+        self.add(name, label, FieldKind::Date { min, max })
+    }
+
+    /// `type="time"`, bounds as `HH:MM`; an empty bound is left out.
+    pub fn time(self, name: &'a str, label: &'a str, min: &'a str, max: &'a str) -> Self {
+        self.add(name, label, FieldKind::Time { min, max })
+    }
+
+    /// A `<select>` of `options`, each its own value and text.
+    pub fn select(self, name: &'a str, label: &'a str, options: impl IntoIterator<Item = &'a str>) -> Self {
+        self.add(name, label, FieldKind::Select(options.into_iter().collect()))
+    }
+
+    /// A checkbox posting `true` when ticked and nothing when not (so a `bool` with
+    /// `#[serde(default)]` reads it).
+    pub fn checkbox(self, name: &'a str, label: &'a str) -> Self {
+        self.add(name, label, FieldKind::Checkbox)
+    }
+
+    /// `type="hidden"`: posted with the form, not shown.
+    pub fn hidden(self, name: &'a str, value: &'a str) -> Self {
+        self.add(name, "", FieldKind::Hidden).value(value)
+    }
+
+    /// The `required` attribute, and a `*` after the label.
+    pub fn required(self) -> Self {
+        self.last(|f| f.required = true)
+    }
+
     /// Help text under the field.
-    pub help: Option<&'a str>,
-    /// `maxlength`, shown as a character counter in an `<output>`.
-    pub maxlength: Option<usize>,
-}
+    pub fn help(self, help: &'a str) -> Self {
+        self.last(|f| f.help = Some(help))
+    }
 
-impl<'a> Field<'a> {
-    /// An empty, optional field.
-    pub const fn new(name: &'a str, label: &'a str, kind: FieldKind) -> Self {
-        Field { name, label, kind, value: "", error: None, required: false, help: None, maxlength: None }
+    /// `maxlength`, counted in an `<output>` under the field.
+    pub fn maxlength(self, max: usize) -> Self {
+        self.last(|f| f.maxlength = Some(max))
     }
-    /// Current value.
-    pub const fn value(mut self, value: &'a str) -> Self {
-        self.value = value;
-        self
-    }
-    /// Server-side error message.
-    pub const fn error(mut self, message: &'a str) -> Self {
-        self.error = Some(message);
-        self
-    }
-    /// Required field.
-    pub const fn required(mut self) -> Self {
-        self.required = true;
-        self
-    }
-    /// Help text under the field.
-    pub const fn help(mut self, help: &'a str) -> Self {
-        self.help = Some(help);
-        self
-    }
-    /// `maxlength` with a character counter.
-    pub const fn maxlength(mut self, max: usize) -> Self {
-        self.maxlength = Some(max);
-        self
-    }
-}
 
-/// Fields under one `<fieldset>` and `<legend>`, or with no box around them.
-#[derive(Clone, Copy, Debug)]
-pub struct FieldGroup<'a> {
-    /// The `<legend>`; `None` renders the fields without a fieldset.
-    pub legend: Option<&'a str>,
-    /// The fields, in order.
-    pub fields: &'a [Field<'a>],
-}
-
-impl<'a> FieldGroup<'a> {
-    /// A fieldset with a legend.
-    pub fn new(legend: &'a str, fields: &'a [Field<'a>]) -> Self {
-        FieldGroup { legend: Some(legend), fields }
+    /// The field's current value (ignored for files). A checkbox is ticked by `true`, `on`
+    /// or `1`.
+    pub fn value(self, value: &'a str) -> Self {
+        self.last(|f| f.value = value)
     }
-    /// Fields with no fieldset around them.
-    pub fn plain(fields: &'a [Field<'a>]) -> Self {
-        FieldGroup { legend: None, fields }
+
+    /// Tick the checkbox.
+    pub fn checked(self, checked: bool) -> Self {
+        self.last(|f| f.value = if checked { "true" } else { "" })
     }
-}
 
-/// Fields with no fieldset: `(&fields).into()`.
-impl<'a> From<&'a [Field<'a>]> for FieldGroup<'a> {
-    fn from(fields: &'a [Field<'a>]) -> Self {
-        FieldGroup::plain(fields)
+    /// A server message beside the field.
+    pub fn error(self, message: &'a str) -> Self {
+        self.last(|f| f.error = Some(message))
     }
-}
 
-/// `("Account", &fields)`: a fieldset and its legend.
-impl<'a> From<(&'a str, &'a [Field<'a>])> for FieldGroup<'a> {
-    fn from((legend, fields): (&'a str, &'a [Field<'a>])) -> Self {
-        FieldGroup::new(legend, fields)
+    /// Placeholder text.
+    pub fn placeholder(self, placeholder: &'a str) -> Self {
+        self.last(|f| f.placeholder = Some(placeholder))
     }
-}
 
-/// Where labels sit.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-pub enum FormLayout {
-    /// Label above the field.
-    #[default]
-    Stacked,
-    /// Label beside the field on screens wider than 40rem, above it on narrower ones.
-    Inline,
-}
+    /// The file picker takes several files.
+    pub fn multiple(self) -> Self {
+        self.last(|f| {
+            if let FieldKind::File { multiple, .. } = &mut f.kind {
+                *multiple = true;
+            }
+        })
+    }
 
-/// Options for [`form`]; `Default::default()` is a stacked form with a "Submit" button.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct FormOptions<'a> {
     /// Label of the submit button.
-    pub submit: &'a str,
-    /// Where labels sit.
-    pub layout: FormLayout,
+    pub fn submit(mut self, label: &'a str) -> Self {
+        self.submit = label;
+        self
+    }
+
+    /// Labels beside the fields on screens wider than 40rem, above them on narrower ones.
+    pub fn inline(mut self) -> Self {
+        self.inline = true;
+        self
+    }
+
     /// Submitted values by field name, as a form post parses them: each field without its
     /// own `value` shows the one named after it.
-    pub values: &'a [(String, String)],
-    /// Server messages `(field name, message)`: each field without its own `error` shows the
-    /// one named after it.
-    pub errors: &'a [(&'a str, &'a str)],
-    /// What the swap root's id is built from, when two forms on a page post to the same
-    /// `action` (one per tab, say); `None` uses the action.
-    pub id: Option<&'a str>,
-}
-
-impl Default for FormOptions<'_> {
-    fn default() -> Self {
-        FormOptions { submit: "Submit", layout: FormLayout::Stacked, values: &[], errors: &[], id: None }
-    }
-}
-
-impl<'a> FormOptions<'a> {
-    /// Label of the submit button.
-    pub fn submit(mut self, submit: &'a str) -> Self {
-        self.submit = submit;
-        self
-    }
-    /// Stacked or inline labels.
-    pub fn layout(mut self, layout: FormLayout) -> Self {
-        self.layout = layout;
-        self
-    }
-    /// Fill each field's value from the submitted pairs, by name.
     pub fn values(mut self, values: &'a [(String, String)]) -> Self {
         self.values = values;
         self
     }
-    /// Attach each server message to the field it names.
+
+    /// Server messages `(field name, message)`: each field without its own `error` shows the
+    /// one named after it.
     pub fn errors(mut self, errors: &'a [(&'a str, &'a str)]) -> Self {
         self.errors = errors;
         self
     }
-    /// Tell this form apart from another posting to the same action.
+
+    /// What the swap root's id is built from, when two forms on a page post to the same
+    /// action (one per tab, say); the action by default.
     pub fn id(mut self, id: &'a str) -> Self {
         self.id = Some(id);
         self
     }
-}
 
-/// A stacked form with the default submit button.
-/// [`form_with`] takes the options.
-pub fn form(caps: &Caps, action: &str, groups: &[FieldGroup<'_>]) -> Markup {
-    form_with(caps, action, groups, Default::default())
-}
+    /// Every field, with the values and errors filled in by name.
+    pub(crate) fn filled(&self) -> impl Iterator<Item = (Option<&'a str>, Vec<Field<'a>>)> + '_ {
+        self.groups.iter().filter(|(legend, fs)| legend.is_some() || !fs.is_empty()).map(|(legend, fs)| {
+            let fs = fs.iter().map(|f| {
+                let value = if f.value.is_empty() {
+                    self.values.iter().find(|(n, _)| n == f.name).map_or("", |(_, v)| v.as_str())
+                } else {
+                    f.value
+                };
+                let error = f.error.or_else(|| self.errors.iter().find(|(n, _)| *n == f.name).map(|(_, m)| *m));
+                Field { value, error, ..f.clone() }
+            });
+            (*legend, fs.collect())
+        })
+    }
 
-/// Render `groups` as a POST form to `action`.
-pub fn form_with(_caps: &Caps, action: &str, groups: &[FieldGroup<'_>], options: FormOptions) -> Markup {
-    let FormOptions { submit, layout, id, .. } = options;
-    let multipart = groups.iter().flat_map(|g| g.fields).any(|f| matches!(f.kind, FieldKind::File { .. }));
-    let class = match layout { FormLayout::Stacked => "nojs-form", FormLayout::Inline => "nojs-form nojs-form-inline" };
-    html! {
-        form id=(enhance::swap_id("nojs-form", id.unwrap_or(action))) data-nojs="swap" class=(class) method="post" action=(action)
-            enctype=[multipart.then_some("multipart/form-data")] {
-            (fields(groups, options))
-            div class="nojs-form-actions" { button type="submit" class="nojs-primary" { (submit) } }
+    /// Whether any field has a server message.
+    pub(crate) fn has_errors(&self) -> bool {
+        self.filled().any(|(_, fs)| fs.iter().any(|f| f.error.is_some()))
+    }
+
+    fn fields(&self) -> Markup {
+        html! {
+            @for (legend, fs) in self.filled() {
+                @if let Some(legend) = legend {
+                    fieldset class="nojs-form-group" { legend { (legend) } @for f in &fs { (field(f)) } }
+                } @else {
+                    @for f in &fs { (field(f)) }
+                }
+            }
         }
     }
 }
 
-/// The groups and their fields without the `<form>` around them, for a form that is built
-/// elsewhere (a wizard step, a dialog's confirm form). `values` and `errors` fill by name as
-/// in [`form_with`]; `submit` and `layout` belong to the form and are not used.
-pub fn fields(groups: &[FieldGroup<'_>], options: FormOptions) -> Markup {
-    let filled = |f: &Field| {
-        let value = if f.value.is_empty() {
-            options.values.iter().find(|(n, _)| n == f.name).map_or("", |(_, v)| v.as_str())
-        } else {
-            f.value
-        };
-        let error = f.error.or_else(|| options.errors.iter().find(|(n, _)| *n == f.name).map(|(_, m)| *m));
-        field(&Field { value, error, ..*f })
-    };
-    html! {
-        @for g in groups {
-            @if let Some(legend) = g.legend {
-                fieldset class="nojs-form-group" { legend { (legend) } @for f in g.fields { (filled(f)) } }
-            } @else {
-                @for f in g.fields { (filled(f)) }
+impl Render for Form<'_> {
+    fn render(&self) -> Markup {
+        let Some(action) = self.action else { return self.fields() };
+        let multipart = self.groups.iter().flat_map(|g| &g.1).any(|f| matches!(f.kind, FieldKind::File { .. }));
+        let class = if self.inline { "nojs-form nojs-form-inline" } else { "nojs-form" };
+        html! {
+            form id=(enhance::swap_id("nojs-form", self.id.unwrap_or(action))) data-nojs="swap" class=(class) method="post" action=(action)
+                enctype=[multipart.then_some("multipart/form-data")] {
+                (self.fields())
+                div class="nojs-form-actions" { button type="submit" class="nojs-primary" { (self.submit) } }
             }
         }
     }
@@ -315,9 +343,9 @@ fn field(f: &Field) -> Markup {
     ];
     let described: Vec<&str> = ids.iter().flatten().map(String::as_str).collect();
     let described = (!described.is_empty()).then(|| described.join(" "));
-    let bound = |s: &'static str| (!s.is_empty()).then_some(s.to_string());
+    let bound = |s: &str| (!s.is_empty()).then(|| s.to_string());
     let (kind, min, max, pattern, accept, multiple) = match f.kind {
-        FieldKind::Text | FieldKind::Textarea { .. } => ("text", None, None, None, None, false),
+        FieldKind::Text | FieldKind::Textarea { .. } | FieldKind::Select(_) => ("text", None, None, None, None, false),
         FieldKind::Email => ("email", None, None, None, None, false),
         FieldKind::Number { min, max } => ("number", Some(min.to_string()), Some(max.to_string()), None, None, false),
         FieldKind::Pattern { pattern, .. } => ("text", None, None, Some(pattern), None, false),
@@ -348,12 +376,16 @@ fn field(f: &Field) -> Markup {
         div class="nojs-field" {
             label for=(id) { (f.label) @if f.required { " *" } }
             @if let FieldKind::Textarea { rows } = f.kind {
-                textarea id=(id) name=(f.name) rows=(rows) required[f.required] maxlength=[f.maxlength]
+                textarea id=(id) name=(f.name) rows=(rows) required[f.required] maxlength=[f.maxlength] placeholder=[f.placeholder]
                     aria-invalid=[invalid] aria-describedby=[described.as_deref()] { (f.value) }
+            } @else if let FieldKind::Select(options) = &f.kind {
+                select id=(id) name=(f.name) required[f.required] aria-invalid=[invalid] aria-describedby=[described.as_deref()] {
+                    @for o in options { option value=(o) selected[*o == f.value] { (o) } }
+                }
             } @else {
                 input id=(id) name=(f.name) type=(kind) value=[(kind != "file").then_some(f.value)]
                     required[f.required] min=[min] max=[max] pattern=[pattern] title=[pattern.and(help)]
-                    accept=[accept] multiple[multiple] maxlength=[f.maxlength]
+                    accept=[accept] multiple[multiple] maxlength=[f.maxlength] placeholder=[f.placeholder]
                     aria-invalid=[invalid] aria-describedby=[described.as_deref()];
             }
             @if let Some(h) = help { small id={ (id) "-help" } class="nojs-field-help" { (h) } }
@@ -396,40 +428,40 @@ pub const CSS: &str = r#"
 mod tests {
     use super::*;
 
+    fn html(f: Form) -> String {
+        f.render().into_string()
+    }
+
     #[test]
     fn checkbox_and_hidden_fields() {
-        let fs = [Field::new("tab", "", FieldKind::Hidden).value("1"), Field::new("notify", "Email me", FieldKind::Checkbox)];
-        let values = [("notify".to_string(), "true".to_string())];
-        let m = fields(&[FieldGroup::plain(&fs)], FormOptions::default().values(&values)).into_string();
+        let ui = Ui::default();
+        let fs = || ui.fields().hidden("tab", "1").checkbox("notify", "Email me");
+        let m = html(fs().checked(true));
         assert!(m.starts_with(r#"<input type="hidden" name="tab" value="1">"#), "{m}");
         assert!(m.contains(r#"type="checkbox" value="true" checked"#) && m.contains(" Email me</label>"), "{m}");
-        let off = fields(&[FieldGroup::plain(&fs)], FormOptions::default()).into_string();
-        assert!(!off.contains("checked"));
+        assert!(!html(fs()).contains("checked"));
     }
 
     #[test]
     fn values_and_errors_fill_fields_by_name() {
-        let fs = [
-            Field::new("name", "Name", FieldKind::Text),
-            Field::new("email", "Email", FieldKind::Email).value("own@x.org"),
-            Field::new("bio", "Bio", FieldKind::Textarea { rows: 2 }).error("Own message."),
-        ];
+        let ui = Ui::default();
         let values = [("name".to_string(), "Ada".to_string()), ("email".to_string(), "posted@x.org".to_string()), ("bio".to_string(), "Hi".to_string())];
         let errors = [("name", "Too short."), ("bio", "Posted message.")];
-        let m = form_with(&Caps::NONE, "/p", &[FieldGroup::plain(&fs)], FormOptions::default().values(&values).errors(&errors)).into_string();
+        let fs = |f: Form<'static>| f.text("name", "Name").email("email", "Email").value("own@x.org").textarea("bio", "Bio", 2).error("Own message.");
+        let m = html(fs(ui.form("/p")).values(&values).errors(&errors));
         assert!(m.contains(r#"name="name" type="text" value="Ada""#), "{m}");
         assert!(m.contains(r#"value="own@x.org""#) && !m.contains("posted@x.org"), "a field's own value wins");
         assert!(m.contains(">Too short.</p>") && m.contains(r#"aria-invalid="true""#));
         assert!(m.contains("Own message.") && !m.contains("Posted message."), "a field's own error wins");
         assert!(m.contains(">Hi</textarea>"));
-        let bare = fields(&[FieldGroup::plain(&fs)], FormOptions::default().values(&values)).into_string();
+        let bare = html(fs(ui.fields()).values(&values));
         assert!(!bare.contains("<form") && bare.contains(r#"value="Ada""#));
     }
 
     #[test]
     fn help_counter_and_error_describe_the_field() {
-        let fields = [Field::new("bio", "Bio", FieldKind::Textarea { rows: 2 }).value("héllo").maxlength(10).help("Short.").error("Too dull.")];
-        let m = form(&Caps::NONE, "/p", &[FieldGroup::plain(&fields)]).into_string();
+        let f = Ui::default().form("/p").textarea("bio", "Bio", 2).value("héllo").maxlength(10).help("Short.").error("Too dull.");
+        let m = html(f);
         assert!(m.contains("aria-describedby=\"f-bio-help f-bio-count f-bio-error\""), "{m}");
         assert!(m.contains("<output id=\"f-bio-count\" for=\"f-bio\" class=\"nojs-field-count\">5 / 10</output>"), "counts chars, not bytes");
         assert!(m.contains("aria-invalid=\"true\"") && m.contains(">héllo</textarea>"));
@@ -438,17 +470,20 @@ mod tests {
 
     #[test]
     fn kinds_map_to_attributes() {
-        let fields = [
-            Field::new("d", "D", FieldKind::Date { min: "2026-01-01", max: "" }),
-            Field::new("t", "T", FieldKind::Time { min: "09:00", max: "17:00" }),
-            Field::new("f", "F", FieldKind::File { accept: "", multiple: true }).value("ignored"),
-            Field::new("h", "H", FieldKind::Pattern { pattern: "[a-z]+", hint: "Lowercase." }),
-        ];
-        let m = form_with(&Caps::NONE, "/p", &[FieldGroup::new("G", &fields)], FormOptions::default().layout(FormLayout::Inline)).into_string();
+        let f = Ui::default().form("/p")
+            .group("G")
+            .date("d", "D", "2026-01-01", "")
+            .time("t", "T", "09:00", "17:00")
+            .file("f", "F", "").multiple().value("ignored")
+            .pattern("h", "H", "[a-z]+", "Lowercase.")
+            .text("p", "P").placeholder("Type")
+            .inline();
+        let m = html(f);
         assert!(m.contains("type=\"date\" value=\"\" min=\"2026-01-01\">"), "an empty bound is left out: {m}");
         assert!(m.contains("type=\"time\" value=\"\" min=\"09:00\" max=\"17:00\""));
         assert!(m.contains("type=\"file\" multiple") && !m.contains("ignored") && !m.contains("accept="));
         assert!(m.contains("pattern=\"[a-z]+\" title=\"Lowercase.\"") && m.contains("id=\"f-h-help\""));
+        assert!(m.contains("placeholder=\"Type\""));
         assert!(m.contains("class=\"nojs-form nojs-form-inline\"") && m.contains("<legend>G</legend>"));
     }
 }

@@ -21,78 +21,85 @@
 //! Cumulative pages (`?page=3` shows rows 1..3×N) give the same *feel* with one click per page.
 //!
 //! ```rust
-//! use maud::html;
-//! use axum_nojs::{Caps, pager, pager_with, pager::PagerOptions};
-//! let rows = vec![html!{ li{"a"} }, html!{ li{"b"} }];
-//! let m = pager(&Caps::all(), "/list", &rows, 2);
-//! let m = pager_with(&Caps::all(), "/list", &rows, 30, PagerOptions::default().page(2).per_page(1));
-//! assert!(m.into_string().contains("?page=3#more"));
+//! use axum_nojs::prelude::*;
+//! // `?page=2` of 30 rows, 10 at a time: rows 0 to 19 are shown.
+//! let ui = Ui::from_request("/list", "page=2", "");
+//! let list = ui.pager("/list", 30).per_page(10);
+//! assert_eq!(list.shown(), 20);
+//! let m = list.rows(|i| html! { "Row " (i + 1) }).render().into_string();
+//! assert!(m.contains("Row 20") && !m.contains("Row 21") && m.contains("?page=3#more"));
 //! ```
 
-use maud::{Markup, html};
+use maud::{Markup, Render, html};
 
-use crate::{Cap, Caps, enhance};
+use crate::{Cap, Caps, Ui, enhance};
 
-/// Options for [`pager`]; `Default::default()` is page 1 of 10 rows per page.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct PagerOptions {
-    /// The page being shown, 1-based; `items` holds the rows of pages 1..=page.
-    pub page: usize,
-    /// Rows per page.
-    pub per_page: usize,
+/// A load-more list, made by [`Ui::pager`]: pages 1 to `?page=` of the rows, 10 per page
+/// unless told otherwise.
+pub struct Pager<'a> {
+    caps: Caps,
+    href: &'a str,
+    total: usize,
+    page: usize,
+    per_page: usize,
+    row: Option<Box<dyn Fn(usize) -> Markup + 'a>>,
 }
 
-impl Default for PagerOptions {
-    fn default() -> Self {
-        PagerOptions { page: 1, per_page: 10 }
+impl Ui {
+    /// A list of `total` rows whose "Load more" link goes to `href?page=n`; the page shown
+    /// is this request's `?page=`.
+    pub fn pager<'a>(&self, href: &'a str, total: usize) -> Pager<'a> {
+        let page = self.param("page").and_then(|p| p.parse().ok()).unwrap_or(1).max(1);
+        Pager { caps: self.caps, href, total, page, per_page: 10, row: None }
     }
 }
 
-impl PagerOptions {
-    /// The page being shown, 1-based.
-    pub fn page(mut self, page: usize) -> Self {
-        self.page = page.max(1);
-        self
-    }
-
+impl<'a> Pager<'a> {
     /// Rows per page.
     pub fn per_page(mut self, per_page: usize) -> Self {
         self.per_page = per_page.max(1);
         self
     }
+
+    /// How many rows the page shows: every row of pages 1 to `?page=`.
+    pub fn shown(&self) -> usize {
+        (self.page * self.per_page).min(self.total)
+    }
+
+    /// Row `i` (0-based) of the list; called for each shown row.
+    pub fn rows(mut self, row: impl Fn(usize) -> Markup + 'a) -> Self {
+        self.row = Some(Box::new(row));
+        self
+    }
 }
 
-/// Page 1 of a load-more list with the default page size.
-/// [`pager_with`] takes the options.
-pub fn pager(caps: &Caps, href: &str, items: &[Markup], total: usize) -> Markup {
-    pager_with(caps, href, items, total, Default::default())
-}
-
-/// `items` are the rows for pages 1..=page. `total` is the full row count.
-pub fn pager_with(caps: &Caps, href: &str, items: &[Markup], total: usize, options: PagerOptions) -> Markup {
-    let PagerOptions { page, per_page } = options;
-    let vt = caps.has(Cap::ViewTransitions);
-    let shown = items.len();
-    let has_more = page * per_page < total;
-    html! {
-        div id=(enhance::swap_id("nojs-pager", href)) data-nojs="swap" class="nojs-pager" {
-            ol class="nojs-pager-list" style=[vt.then_some("view-transition-name: nojs-pager-list")] {
-                @for (i, item) in items.iter().enumerate() {
-                    @if i + 1 == (page - 1) * per_page + 1 && page > 1 {
-                        li id="more" class="nojs-pager-anchor" { (item) }
-                    } @else {
-                        li { (item) }
+impl Render for Pager<'_> {
+    fn render(&self) -> Markup {
+        let Pager { caps, href, total, page, per_page, ref row } = *self;
+        let vt = caps.has(Cap::ViewTransitions);
+        let shown = self.shown();
+        let first_new = (page - 1) * per_page;
+        html! {
+            div id=(enhance::swap_id("nojs-pager", href)) data-nojs="swap" class="nojs-pager" {
+                ol class="nojs-pager-list" style=[vt.then_some("view-transition-name: nojs-pager-list")] {
+                    @if let Some(row) = row {
+                        @for i in 0..shown {
+                            @if i == first_new && page > 1 {
+                                li id="more" class="nojs-pager-anchor" { (row(i)) }
+                            } @else {
+                                li { (row(i)) }
+                            }
+                        }
                     }
                 }
-            }
-            p class="nojs-note" { "Showing " (shown) " of " (total) }
-            @if has_more {
-                a class="nojs-pager-more" href={ (href) "?page=" (page + 1) "#more" } { "Load more" }
+                p class="nojs-note" { "Showing " (shown) " of " (total) }
+                @if page * per_page < total {
+                    a class="nojs-pager-more" href={ (href) "?page=" (page + 1) "#more" } { "Load more" }
+                }
             }
         }
     }
 }
-
 /// Styles for this component; included in [`crate::stylesheet`].
 pub const CSS: &str = r#"
 .nojs-pager-list { margin: 0; padding-left: 1.5rem; }

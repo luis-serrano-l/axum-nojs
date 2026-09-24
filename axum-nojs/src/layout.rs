@@ -14,17 +14,16 @@
 //! custom properties switched by a media query and `data-theme`, so no `light-dark()` needed.
 //!
 //! **Theming:** every colour, radius and spacing the components use is a `--nojs-*` custom
-//! property. [`Tokens`] holds them for light and dark; [`layout_with`] emits them once per page
+//! property. [`Tokens`] holds them for light and dark; `ui.page(..).tokens(&tokens)` emits them once per page
 //! as a `<style>` after the stylesheet, so a different palette is a struct, not a CSS file.
 //! `docs/theming.md` lists each token and what it affects.
 //!
 //! ```rust
-//! use maud::html;
-//! use axum_nojs::{Caps, layout, Theme, layout::{Palette, Tokens, layout_with}};
-//! let page = layout(&Caps::all(), "Title", Theme::Auto, html! { p { "body" } });
+//! use axum_nojs::{prelude::*, layout::{Palette, Tokens}};
+//! let ui = Ui::from(Caps::all());
+//! let page = ui.page("Title", html! { p { "body" } });
 //! let tokens = Tokens { light: Palette { accent: "#7a3b1e", ..Tokens::default().light }, ..Default::default() };
-//! let page = layout_with(&Caps::all(), "Title", Theme::Auto, &tokens, html! { p { "body" } });
-//! assert!(page.into_string().contains("--nojs-accent: #7a3b1e"));
+//! assert!(page.tokens(&tokens).into_string().contains("--nojs-accent: #7a3b1e"));
 //! ```
 
 use maud::{DOCTYPE, Markup, PreEscaped, Render, html};

@@ -14,7 +14,8 @@ default = []
 # Framework-neutral responses: `prg` as an `http::Response`, `Streamed` as a chunk stream.
 http = ["dep:http", "dep:futures-util"]
 # Axum glue on top of `http`: extractors, the `/nojs/caps` beacon route, `IntoResponse` impls.
-axum = ["http", "dep:axum", "dep:bytes", "axum-nojs-caps/axum"]
+# `Saved<T>` keeps a serde value in a cookie.
+axum = ["http", "dep:axum", "dep:bytes", "dep:serde", "dep:serde_urlencoded", "dep:form_urlencoded", "axum-nojs-caps/axum"]
 
 [dependencies]
 maud.workspace = true
@@ -23,8 +24,12 @@ http = { version = "1", optional = true }
 axum = { workspace = true, optional = true }
 futures-util = { version = "0.3", optional = true, default-features = false, features = ["std"] }
 bytes = { version = "1", optional = true }
+serde = { version = "1", optional = true }
+serde_urlencoded = { version = "0.7", optional = true }
+form_urlencoded = { version = "1", optional = true }
 
 [dev-dependencies]
+serde.workspace = true
 axum.workspace = true
 tokio.workspace = true
 hyper = { version = "1", features = ["server", "http1", "http2"] }

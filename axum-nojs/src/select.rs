@@ -9,8 +9,8 @@
 //!   mirrors the picked option's markup into it, so options can carry a swatch or an icon.
 //! - `appearance: base-select` on the select and its `::picker(select)` pseudo-element hands
 //!   both to author CSS.
-//! - `<optgroup label>` (baseline) for [`Group`]s.
-//! - A filter box when there are more than [`SelectOptions::search_over`] options: an
+//! - `<optgroup label>` (baseline) for [`Select::group`].
+//! - A filter box when there are more than [`Select::search_over`] options: an
 //!   `<input type="search" name="<name>-q">` and a button with `formmethod="get"` and
 //!   `formaction` (baseline 2015), so filtering re-requests the page through the enclosing
 //!   form without saving it. The server renders only the options whose text contains the
@@ -26,24 +26,27 @@
 //! **Enhanced:** the enhancement script filters as you type, through the same GET.
 //!
 //! ```rust
-//! use maud::html;
-//! use axum_nojs::{Caps, select, select_with, select::{Group, SelectOption, SelectOptions}};
-//! // Plain tuples of (value, label) or (value, label, icon) convert with `From`.
-//! let sizes = [("s", "Small", "🐭"), ("l", "Large", "🐘")].map(SelectOption::from);
-//! let m = select(&Caps::all(), "size", &[Group::flat(&sizes)], "l");
-//! assert!(m.into_string().contains("<selectedcontent>"));
+//! use axum_nojs::{prelude::*, select::SelectOption};
+//! let mut ui = Ui::from_request("/shop", "food-q=k", "");
+//! ui.caps = Caps::all();
+//! // Plain tuples of (value, label) or (value, label, icon) are options.
+//! let m = ui.select("size", "l").options([("s", "Small", "🐭"), ("l", "Large", "🐘")]).label("Size");
+//! let m = m.render().into_string();
+//! assert!(m.contains("<selectedcontent>") && m.contains(r#"<label for="size">Size</label>"#));
 //!
-//! let fruit = [SelectOption::new("apple", "Apple"), SelectOption::new("kiwi", "Kiwi").content(html! { b { "Kiwi" } })];
-//! let veg = [SelectOption::new("leek", "Leek")];
-//! let m = select_with(&Caps::all(), "food", &[Group::new("Fruit", &fruit), Group::new("Vegetables", &veg)], "leek",
-//!                SelectOptions::default().search("/shop", "k").search_over(2)).into_string();
+//! let m = ui.select("food", "leek")
+//!     .group("Fruit", [SelectOption::new("apple", "Apple"), SelectOption::new("kiwi", "Kiwi").content(html! { b { "Kiwi" } })])
+//!     .group("Vegetables", [("leek", "Leek")])
+//!     .search("/shop")
+//!     .search_over(2);
+//! let m = m.render().into_string();
 //! assert!(m.contains("<optgroup label=\"Fruit\">") && !m.contains("Apple"), "filtered to 'k'");
 //! assert!(m.contains("formmethod=\"get\" formaction=\"/shop\""));
 //! ```
 
-use maud::{Markup, html};
+use maud::{Markup, Render, html};
 
-use crate::{Cap, Caps};
+use crate::{Cap, Ui};
 
 /// One option: its value, its text (what the filter matches), an optional icon and optional
 /// rich content shown instead of the text.
@@ -90,111 +93,110 @@ impl<'a> From<(&'a str, &'a str, &'a str)> for SelectOption<'a> {
     }
 }
 
-/// Options under an `<optgroup>`, or loose.
-#[derive(Clone, Copy, Debug)]
-pub struct Group<'a> {
-    /// The `<optgroup label>`; `None` for loose options.
-    pub label: Option<&'a str>,
-    /// The options.
-    pub options: &'a [SelectOption<'a>],
+/// Options under an `<optgroup label>`, or loose when `label` is `None`.
+#[derive(Clone, Debug)]
+struct Group<'a> {
+    label: Option<&'a str>,
+    options: Vec<SelectOption<'a>>,
 }
 
-impl<'a> Group<'a> {
-    /// A labelled group.
-    pub const fn new(label: &'a str, options: &'a [SelectOption<'a>]) -> Self {
-        Group { label: Some(label), options }
-    }
-    /// Options with no group.
-    pub const fn flat(options: &'a [SelectOption<'a>]) -> Self {
-        Group { label: None, options }
-    }
+/// A select, made by [`Ui::select`]. No filter box unless [`Select::search`] asks for one.
+#[derive(Clone, Debug)]
+pub struct Select<'a> {
+    ui: &'a Ui,
+    name: &'a str,
+    selected: &'a str,
+    groups: Vec<Group<'a>>,
+    search: Option<&'a str>,
+    search_over: usize,
+    label: Option<&'a str>,
 }
 
-/// Loose options with no `<optgroup>`: `(&SIZES).into()`.
-impl<'a> From<&'a [SelectOption<'a>]> for Group<'a> {
-    fn from(options: &'a [SelectOption<'a>]) -> Self {
-        Group::flat(options)
-    }
-}
-
-/// `("Europe", &EUROPE)`: a labelled group.
-impl<'a> From<(&'a str, &'a [SelectOption<'a>])> for Group<'a> {
-    fn from((label, options): (&'a str, &'a [SelectOption<'a>])) -> Self {
-        Group::new(label, options)
+impl Ui {
+    /// A select named `name` with `selected` chosen; add options with [`Select::options`] or
+    /// [`Select::group`].
+    pub fn select<'a>(&'a self, name: &'a str, selected: &'a str) -> Select<'a> {
+        Select { ui: self, name, selected, groups: Vec::new(), search: None, search_over: 15, label: None }
     }
 }
 
-/// Options for [`select`]; `Default::default()` has no filter box.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct SelectOptions<'a> {
-    /// `(formaction, query)`: where the filter's GET goes and the current `<name>-q`.
-    pub search: Option<(&'a str, &'a str)>,
-    /// Show the filter box above this many options.
-    pub search_over: usize,
-}
-
-impl Default for SelectOptions<'_> {
-    fn default() -> Self {
-        SelectOptions { search: None, search_over: 15 }
-    }
-}
-
-impl<'a> SelectOptions<'a> {
-    /// A filter box submitting to `action` with GET; `query` is the current `<name>-q`.
-    pub fn search(mut self, action: &'a str, query: &'a str) -> Self {
-        self.search = Some((action, query));
+impl<'a> Select<'a> {
+    /// Options with no `<optgroup>`: [`SelectOption`]s or `(value, label)` and
+    /// `(value, label, icon)` tuples.
+    pub fn options<O: Into<SelectOption<'a>>>(mut self, options: impl IntoIterator<Item = O>) -> Self {
+        self.groups.push(Group { label: None, options: options.into_iter().map(Into::into).collect() });
         self
     }
+
+    /// Options under `<optgroup label>`.
+    pub fn group<O: Into<SelectOption<'a>>>(mut self, label: &'a str, options: impl IntoIterator<Item = O>) -> Self {
+        self.groups.push(Group { label: Some(label), options: options.into_iter().map(Into::into).collect() });
+        self
+    }
+
+    /// Several labelled groups at once: `(label, options)` pairs.
+    pub fn groups<O: Into<SelectOption<'a>>, G: IntoIterator<Item = O>>(self, groups: impl IntoIterator<Item = (&'a str, G)>) -> Self {
+        groups.into_iter().fold(self, |s, (label, options)| s.group(label, options))
+    }
+
+    /// A filter box submitting `<name>-q` to `action` with GET; the options shown are those
+    /// matching the `<name>-q` in this request's query, and always the selected one.
+    pub fn search(mut self, action: &'a str) -> Self {
+        self.search = Some(action);
+        self
+    }
+
     /// Show the filter box above this many options (default 15).
     pub fn search_over(mut self, n: usize) -> Self {
         self.search_over = n;
         self
     }
-}
 
-/// A select with the default options.
-/// [`select_with`] takes the options.
-pub fn select(caps: &Caps, name: &str, groups: &[Group], selected: &str) -> Markup {
-    select_with(caps, name, groups, selected, Default::default())
-}
-
-/// `groups` of options; `selected` is the current value from the server.
-pub fn select_with(caps: &Caps, name: &str, groups: &[Group], selected: &str, options: SelectOptions) -> Markup {
-    let SelectOptions { search, search_over } = options;
-    let rich = caps.has(Cap::BaseSelect);
-    let total: usize = groups.iter().map(|g| g.options.len()).sum();
-    let search = search.filter(|_| total > search_over);
-    let query = search.map(|(_, q)| q.trim().to_lowercase()).unwrap_or_default();
-    let shown = |o: &SelectOption| query.is_empty() || o.value == selected || o.text.to_lowercase().contains(&query);
-    let option = |o: &SelectOption| html! {
-        option value=(o.value) selected[o.value == selected] {
-            @if let Some(i) = o.icon { span class="nojs-select-icon" aria-hidden="true" { (i) } " " }
-            @match (&o.content, rich) { (Some(c), true) => (c), _ => (o.text) }
-        }
-    };
-    html! {
-        span class="nojs-select" {
-            @if let Some((action, q)) = search {
-                span class="nojs-select-search" {
-                    input type="search" name={ (name) "-q" } value=(q) placeholder="Filter" aria-label="Filter options";
-                    button type="submit" formmethod="get" formaction=(action) formnovalidate { "Filter" }
-                }
-            }
-            select id=(name) name=(name) {
-                @if rich { button type="button" { selectedcontent {} } }
-                @for g in groups {
-                    @let visible: Vec<&SelectOption> = g.options.iter().filter(|o| shown(o)).collect();
-                    @if let (Some(label), false) = (g.label, visible.is_empty()) {
-                        optgroup label=(label) { @for o in &visible { (option(o)) } }
-                    } @else {
-                        @for o in &visible { (option(o)) }
-                    }
-                }
-            }
-        }
+    /// A `<label>` above the select, in a `div.nojs-field` like a form field.
+    pub fn label(mut self, label: &'a str) -> Self {
+        self.label = Some(label);
+        self
     }
 }
 
+impl Render for Select<'_> {
+    fn render(&self) -> Markup {
+        let Select { ui, name, selected, ref groups, search, search_over, label } = *self;
+        let rich = ui.has(Cap::BaseSelect);
+        let total: usize = groups.iter().map(|g| g.options.len()).sum();
+        let search = search.filter(|_| total > search_over);
+        let q = ui.param(&format!("{name}-q")).unwrap_or("");
+        let query = if search.is_some() { q.trim().to_lowercase() } else { String::new() };
+        let shown = |o: &SelectOption| query.is_empty() || o.value == selected || o.text.to_lowercase().contains(&query);
+        let option = |o: &SelectOption| html! {
+            option value=(o.value) selected[o.value == selected] {
+                @if let Some(i) = o.icon { span class="nojs-select-icon" aria-hidden="true" { (i) } " " }
+                @match (&o.content, rich) { (Some(c), true) => (c), _ => (o.text) }
+            }
+        };
+        crate::labelled(label, name, html! {
+            span class="nojs-select" {
+                @if let Some(action) = search {
+                    span class="nojs-select-search" {
+                        input type="search" name={ (name) "-q" } value=(q) placeholder="Filter" aria-label="Filter options";
+                        button type="submit" formmethod="get" formaction=(action) formnovalidate { "Filter" }
+                    }
+                }
+                select id=(name) name=(name) {
+                    @if rich { button type="button" { selectedcontent {} } }
+                    @for g in groups {
+                        @let visible: Vec<&SelectOption> = g.options.iter().filter(|o| shown(o)).collect();
+                        @if let (Some(label), false) = (g.label, visible.is_empty()) {
+                            optgroup label=(label) { @for o in &visible { (option(o)) } }
+                        } @else {
+                            @for o in &visible { (option(o)) }
+                        }
+                    }
+                }
+            }
+        })
+    }
+}
 /// Styles for this component; included in [`crate::stylesheet`].
 pub const CSS: &str = r#"
 .nojs-select { display: inline-grid; gap: 0.4rem; }

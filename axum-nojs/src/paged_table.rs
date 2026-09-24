@@ -1,6 +1,6 @@
 //! # Paged table
 //!
-//! [`crate::table()`] for data too long for one page: first, previous, numbered, next and last
+//! A [`crate::Ui::table`] with `.paged(total)`, for data too long for one page: first, previous, numbered, next and last
 //! links with an ellipsis over long ranges, a jump-to-page form, a page-size `<select>`, and a
 //! line saying which rows of how many are shown (`1–10 of 1,234`). Everything is a URL, so a
 //! page can be bookmarked, and the sort, filter and columns survive paging.
@@ -23,24 +23,18 @@
 //!
 //! **Fallback:** none needed. Every control is a link or a form.
 //!
-//! **Server state:** with a `UiState` in the options the page size is `per.<id>`, a state key,
-//! so the size a visitor picked is remembered in the `nojs-ui` cookie and read back through
-//! `state.per_page(id)`. Every page link still names it, so a shared URL shows the same rows
-//! for everyone. Without a state the parameter is a plain `per` and nothing is remembered.
+//! **Server state:** the page size is `per.<id>`, a state key, so the size a visitor picked
+//! is remembered in the `nojs-ui` cookie and read back through `state.per_page(id)`. Every
+//! page link still names it, so a shared URL shows the same rows for everyone.
 //!
 //! ```rust
-//! use maud::html;
-//! use axum_nojs::{Caps, UiState, paged_table, paged_table_with, paged_table::PagedTableOptions, table::{Column, Row, TableQuery}};
-//! let cols = [Column::sortable("name", "Name"), Column::plain("note", "Note")];
-//! let rows = vec![Row::new(vec![html!{"a"}, html!{"b"}])];
-//! let m = paged_table(&Caps::all(), "files", "/table", &cols, &rows, 36);
-//!
-//! // The URL's sort, filter and page parsed once; the remembered page size read from the state.
-//! let state = UiState::parse("/table", "per.files=25", "");
-//! let query = TableQuery::parse("sort=name&dir=desc&q=a&page=20");
-//! let m = paged_table_with(&Caps::all(), "files", "/table", &cols, &rows, 1234,
-//!                     PagedTableOptions::default().query(&query).state(&state));
-//! let html = m.into_string();
+//! use axum_nojs::{prelude::*, table::Row};
+//! // The URL's sort, filter and page, and the page size the visitor picked before.
+//! let ui = Ui::from_request("/table", "sort=name&dir=desc&q=a&page=20", "nojs-ui=per.files=25");
+//! let files = ui.table("files", "/table").column("name", "Name").sortable().column("note", "Note");
+//! assert_eq!((files.page(), files.per_page()), (20, 25), "what a database query needs");
+//! // Only this page's rows, and the total after filtering.
+//! let html = files.rows([Row::new([html! { "a" }, html! { "b" }])]).paged(1234).render().into_string();
 //! assert!(html.contains("476–500 of 1,234"));
 //! assert!(html.contains("per.files=25&amp;page=50\">Last"));
 //! assert!(html.contains("<select name=\"per.files\""));
@@ -57,10 +51,10 @@ use crate::{Caps, UiState};
 /// Page sizes offered in the select.
 pub const PAGE_SIZES: [usize; 4] = [5, 10, 25, 50];
 
-/// Options for [`paged_table`]; `Default::default()` is page 1 of 10, unsorted, unfiltered.
+/// How the paged table renders; `Default::default()` is page 1 of 10, unsorted, unfiltered.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct PagedTableOptions<'a> {
-    /// The current sort as `(key, descending)`, usually from [`crate::table::sort_from_query`].
+pub(crate) struct PagedTableOptions<'a> {
+    /// The current sort as `(key, descending)`.
     pub sort: Option<(&'a str, bool)>,
     /// The current search text.
     pub filter: &'a str,
@@ -69,7 +63,7 @@ pub struct PagedTableOptions<'a> {
     /// Rows per page; one of [`PAGE_SIZES`] is selected in the size control. With a `state`
     /// the size the visitor picked (`per.<id>`) wins, capped at the largest of [`PAGE_SIZES`].
     pub per_page: usize,
-    /// Everything else the inner [`crate::table()`] takes (columns, bulk form, CSV link, empty and
+    /// Everything else the inner table takes (columns, bulk form, CSV link, empty and
     /// loading states); its `sort`, `filter` and `keep` are overwritten by the pager's.
     pub table: TableOptions<'a>,
     /// Remember the page size per table as the state key `per.<id>`.
@@ -85,6 +79,8 @@ impl Default for PagedTableOptions<'_> {
     }
 }
 
+// Setters for the tests; the builder fills the struct directly.
+#[cfg(test)]
 impl<'a> PagedTableOptions<'a> {
     /// The current sort as `(key, descending)`.
     pub fn sort(mut self, sort: Option<(&'a str, bool)>) -> Self {
@@ -110,11 +106,6 @@ impl<'a> PagedTableOptions<'a> {
         self
     }
 
-    /// Options for the inner table (columns, bulk form, CSV, empty and loading states).
-    pub fn table(mut self, table: TableOptions<'a>) -> Self {
-        self.table = table;
-        self
-    }
 
     /// Name the page-size parameter `per.<id>` so the `nojs-ui` cookie remembers it, and read
     /// the remembered size back.
@@ -130,16 +121,10 @@ impl<'a> PagedTableOptions<'a> {
     }
 }
 
-/// Page 1 of a paged table with the default options.
-/// [`paged_table_with`] takes the options.
-pub fn paged_table(caps: &Caps, id: &str, href: &str, columns: &[Column], rows: &[Row], total: usize) -> Markup {
-    paged_table_with(caps, id, href, columns, rows, total, Default::default())
-}
-
 /// `rows` are either every row (`rows.len() == total`), and the component shows the current
 /// page of them, or the rows of the current page only, for data too large to build in full;
 /// `total` is the full row count after filtering, which sizes the page links.
-pub fn paged_table_with(caps: &Caps, id: &str, href: &str, columns: &[Column], rows: &[Row], total: usize, options: PagedTableOptions) -> Markup {
+pub(crate) fn paged_table_with(caps: &Caps, id: &str, href: &str, columns: &[Column], rows: &[Row], total: usize, options: PagedTableOptions) -> Markup {
     let PagedTableOptions { sort, filter, page, per_page, table: inner, state, query } = options;
     let sort = sort.or_else(|| query.and_then(|q| q.sort(columns)));
     let filter = if filter.is_empty() { query.map_or("", |q| q.filter.as_str()) } else { filter };
@@ -343,7 +328,7 @@ mod tests {
     fn the_query_state_and_all_rows_are_enough() {
         let cols = [Column::sortable("n", "N"), Column::plain("x", "X")];
         let rows: Vec<Row> = (1..=12).map(|n| Row::new(vec![html! { "row " (n) }, html! {}])).collect();
-        let query = TableQuery::parse("sort=n&dir=desc&q=r%C3%A9&page=3&cols=n&other=1");
+        let query = TableQuery::from_ui(&crate::Ui::from_request("/t", "sort=n&dir=desc&q=r%C3%A9&page=3&cols=n&other=1", ""));
         assert_eq!(query.filter, "r\u{e9}");
         let state = UiState::parse("/t", "per.t=5", "");
         let m = paged_table_with(&Caps::NONE, "t", "/t", &cols, &rows, 12, PagedTableOptions::default().query(&query).state(&state)).into_string();

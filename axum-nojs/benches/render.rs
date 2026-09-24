@@ -2,32 +2,31 @@
 //! and parsing UI state. `cargo bench -p axum-nojs`; numbers go in FINDINGS.md (M16).
 
 use criterion::{Criterion, black_box, criterion_group, criterion_main};
-use maud::html;
-use axum_nojs::table::{Column, Row, TableOptions};
-use axum_nojs::{Caps, PagedTableOptions, Theme, UiState, layout, paged_table_with, stylesheet, table_with};
+use axum_nojs::{UiState, prelude::*, stylesheet, table::Row};
 
 fn rows(n: usize) -> Vec<Row<'static>> {
-    (0..n).map(|i| Row::new(vec![html! { "file-" (i) ".txt" }, html! { (i * 17) " KB" }, html! { "—" }])).collect()
+    (0..n).map(|i| Row::new([html! { "file-" (i) ".txt" }, html! { (i * 17) " KB" }, html! { "—" }])).collect()
 }
 
-const COLS: [Column; 3] = [Column::sortable("name", "Name"), Column::numeric("size", "Size"), Column::plain("note", "Note")];
+fn files(ui: &Ui) -> axum_nojs::table::Table<'_> {
+    ui.table("t", "/t").column("name", "Name").sortable().column("size", "Size").sortable().numeric().column("note", "Note")
+}
 
 fn bench(c: &mut Criterion) {
-    let caps = Caps::all();
+    let ui = Ui::from(Caps::all());
     c.bench_function("stylesheet", |b| b.iter(|| black_box(stylesheet()).len()));
-    c.bench_function("layout", |b| {
-        b.iter(|| layout(&caps, "Title", Theme::Auto, html! { p { "body" } }).into_string().len())
-    });
+    c.bench_function("layout", |b| b.iter(|| ui.page("Title", html! { p { "body" } }).into_string().len()));
+    let mut sorted = Ui::from_request("/t", "sort=name", "");
+    sorted.caps = Caps::all();
     let thousand = rows(1000);
     c.bench_function("table 1000 rows", |b| {
-        b.iter(|| table_with(&caps, "t", "/t", &COLS, black_box(&thousand), TableOptions::default().sort(Some(("name", false)))).into_string().len())
+        b.iter(|| files(&sorted).rows(black_box(thousand.clone())).render().into_string().len())
     });
+    let mut paged = Ui::from_request("/t", "page=20&q=file", "nojs-ui=per.t=25");
+    paged.caps = Caps::all();
     let page = rows(25);
     c.bench_function("paged_table 25 of 1000", |b| {
-        b.iter(|| {
-            let opts = PagedTableOptions::default().page(black_box(20)).per_page(25).filter("file");
-            paged_table_with(&caps, "t", "/t", &COLS, &page, 1000, opts).into_string().len()
-        })
+        b.iter(|| files(&paged).rows(page.clone()).paged(1000).render().into_string().len())
     });
     c.bench_function("UiState::from_request", |b| {
         b.iter(|| {

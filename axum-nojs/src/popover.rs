@@ -10,7 +10,7 @@
 //!   platform keeps open with its parent.
 //! - CSS anchor positioning `anchor-name` / `position-anchor` / `position-area`
 //!   (Chrome 125, Firefox 147, Safari 26) to place the menu under its button, at its end, or
-//!   to its right (`Placement`).
+//!   to its right (`.align_end()`, `.open_right()`).
 //!
 //! **What it does not do without script:** position itself against the opener where anchor
 //! positioning is missing; it is centred instead.
@@ -24,31 +24,33 @@
 //! script; Tab always works.
 //!
 //! ```rust
-//! use axum_nojs::{Caps, popover_menu, popover_menu_with, popover::{MenuItem, Placement, PopoverOptions}};
-//! // The id is derived from the label: this menu is `#account`.
-//! let m = popover_menu(&Caps::all(), "Account", &[MenuItem::link("Profile", "/profile"), MenuItem::link("Sign out", "/logout")]);
-//! assert!(m.into_string().contains(r#"id="account""#));
-//! let m = popover_menu_with(&Caps::all(), "acct", "Account", &[
-//!     MenuItem::heading("Signed in as Ada"),
-//!     MenuItem::link("Profile", "/profile").icon("@").shortcut("g p"),
-//!     MenuItem::link("Billing", "/billing").disabled(),
-//!     MenuItem::separator(),
-//!     MenuItem::submenu("Theme", "acct-theme", &[MenuItem::link("Light", "/?t=light"), MenuItem::link("Dark", "/?t=dark")]),
-//!     MenuItem::separator(),
-//!     MenuItem::action("Sign out", "/logout").danger(),
-//! ], PopoverOptions::default().placement(Placement::BottomEnd));
-//! let html = m.into_string();
+//! use axum_nojs::prelude::*;
+//! let ui = Ui::from(Caps::all());
+//! // The id is the label's slug: this menu is `#account`.
+//! let m = ui.menu("Account").link("Profile", "/profile").link("Sign out", "/logout");
+//! assert!(m.render().into_string().contains(r#"id="account""#));
+//! // `icon`, `shortcut`, `disabled` and `danger` apply to the item just added.
+//! let m = ui.menu("Account")
+//!     .heading("Signed in as Ada")
+//!     .link("Profile", "/profile").icon("@").shortcut("g p")
+//!     .link("Billing", "/billing").disabled()
+//!     .separator()
+//!     .submenu("Theme", [("Light", "/?t=light"), ("Dark", "/?t=dark")])
+//!     .separator()
+//!     .action("Sign out", "/logout").danger()
+//!     .align_end();
+//! let html = m.render().into_string();
 //! assert!(html.contains("<form method=\"post\" action=\"/logout\""));
-//! assert!(html.contains("position-area: bottom span-left"));
+//! assert!(html.contains("position-area: bottom span-left") && html.contains(r#"id="account-theme""#));
 //! ```
 
-use maud::{Markup, html};
+use maud::{Markup, Render, html};
 
-use crate::{Cap, Caps};
+use crate::{Cap, Caps, Ui, slug};
 
 /// Where the menu opens relative to its button.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-pub enum Placement {
+pub(crate) enum Placement {
     /// Below, left edges aligned.
     #[default]
     BottomStart,
@@ -66,6 +68,7 @@ impl Placement {
             Placement::Right => "right span-bottom",
         }
     }
+
     fn class(self) -> &'static str {
         match self {
             Placement::BottomStart => "nojs-popover-start",
@@ -75,34 +78,18 @@ impl Placement {
     }
 }
 
-/// Options for [`popover_menu`]; `Default::default()` opens below the button, start-aligned.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-pub struct PopoverOptions {
-    /// Where the menu opens.
-    pub placement: Placement,
-}
-
-impl PopoverOptions {
-    /// Where the menu opens.
-    pub fn placement(mut self, placement: Placement) -> Self {
-        self.placement = placement;
-        self
-    }
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 enum Kind<'a> {
     Link(&'a str),
     Action(&'a str),
     Heading,
     Separator,
-    Submenu(&'a str, &'a [MenuItem<'a>]),
+    Submenu(Vec<MenuItem<'a>>),
 }
 
-/// One entry of a [`popover_menu`]: build with [`MenuItem::link`], [`MenuItem::action`],
-/// [`MenuItem::heading`], [`MenuItem::separator`] or [`MenuItem::submenu`], then set
-/// `icon`, `shortcut`, `disabled` or `danger`.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+/// One entry of a menu, for the places that take a list of them (a table row's menu). A
+/// [`Menu`] builds its own with [`Menu::link`] and friends.
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MenuItem<'a> {
     kind: Kind<'a>,
     text: &'a str,
@@ -116,41 +103,17 @@ impl<'a> MenuItem<'a> {
     const fn new(kind: Kind<'a>, text: &'a str) -> Self {
         MenuItem { kind, text, icon: None, shortcut: None, disabled: false, danger: false }
     }
+
     /// A link.
     pub const fn link(text: &'a str, href: &'a str) -> Self {
         Self::new(Kind::Link(href), text)
     }
+
     /// A `<form method="post">` button posting to `action`: for things that change state.
     pub const fn action(text: &'a str, action: &'a str) -> Self {
         Self::new(Kind::Action(action), text)
     }
-    /// A section heading.
-    pub const fn heading(text: &'a str) -> Self {
-        Self::new(Kind::Heading, text)
-    }
-    /// A rule between groups.
-    pub const fn separator() -> Self {
-        Self::new(Kind::Separator, "")
-    }
-    /// A nested menu; `id` must be unique on the page.
-    pub const fn submenu(text: &'a str, id: &'a str, items: &'a [MenuItem<'a>]) -> Self {
-        Self::new(Kind::Submenu(id, items), text)
-    }
-    /// A glyph or emoji shown before the text (decorative, hidden from assistive tech).
-    pub const fn icon(mut self, icon: &'a str) -> Self {
-        self.icon = Some(icon);
-        self
-    }
-    /// A shortcut shown after the text, as `<kbd>`; a label only.
-    pub const fn shortcut(mut self, keys: &'a str) -> Self {
-        self.shortcut = Some(keys);
-        self
-    }
-    /// Shown but not usable: a link without `href`, a button with `disabled`.
-    pub const fn disabled(mut self) -> Self {
-        self.disabled = true;
-        self
-    }
+
     /// Destructive: coloured with `--nojs-danger`.
     pub const fn danger(mut self) -> Self {
         self.danger = true;
@@ -165,30 +128,127 @@ impl<'a> From<(&'a str, &'a str)> for MenuItem<'a> {
     }
 }
 
-/// A menu whose id is derived from `label`; use [`popover_menu_with`] to name it.
-/// [`popover_menu_with`] takes the options.
-pub fn popover_menu(caps: &Caps, label: &str, items: &[MenuItem]) -> Markup {
-    popover_menu_with(caps, &crate::slug(label), label, items, Default::default())
+/// A button that opens a menu, made by [`Ui::menu`]. Items are added in order; `icon`,
+/// `shortcut`, `disabled` and `danger` apply to the item added last. Opens below the button,
+/// start-aligned, unless told otherwise.
+#[derive(Clone, Debug)]
+pub struct Menu<'a> {
+    caps: Caps,
+    id: String,
+    label: &'a str,
+    items: Vec<MenuItem<'a>>,
+    placement: Placement,
 }
 
-/// A button labelled `label` that toggles a menu of `items`. `id` must be unique on the page.
-pub fn popover_menu_with(caps: &Caps, id: &str, label: &str, items: &[MenuItem], options: PopoverOptions) -> Markup {
+impl Ui {
+    /// A menu behind a button labelled `label`; its id is the label's slug.
+    pub fn menu<'a>(&self, label: &'a str) -> Menu<'a> {
+        Menu { caps: self.caps, id: slug(label), label, items: Vec::new(), placement: Placement::default() }
+    }
+}
+
+impl<'a> Menu<'a> {
+    fn push(mut self, item: MenuItem<'a>) -> Self {
+        self.items.push(item);
+        self
+    }
+
+    fn last(mut self, change: impl FnOnce(&mut MenuItem<'a>)) -> Self {
+        if let Some(item) = self.items.last_mut() {
+            change(item);
+        }
+        self
+    }
+
+    /// A link.
+    pub fn link(self, text: &'a str, href: &'a str) -> Self {
+        self.push(MenuItem::link(text, href))
+    }
+
+    /// A `<form method="post">` button posting to `action`: for things that change state.
+    pub fn action(self, text: &'a str, action: &'a str) -> Self {
+        self.push(MenuItem::action(text, action))
+    }
+
+    /// A section heading.
+    pub fn heading(self, text: &'a str) -> Self {
+        self.push(MenuItem::new(Kind::Heading, text))
+    }
+
+    /// A rule between groups.
+    pub fn separator(self) -> Self {
+        self.push(MenuItem::new(Kind::Separator, ""))
+    }
+
+    /// A nested menu of `items` ([`MenuItem`]s or `(text, href)` links); its id is this
+    /// menu's id and the text's slug.
+    pub fn submenu<I: Into<MenuItem<'a>>>(self, text: &'a str, items: impl IntoIterator<Item = I>) -> Self {
+        self.push(MenuItem::new(Kind::Submenu(items.into_iter().map(Into::into).collect()), text))
+    }
+
+    /// A glyph or emoji before the item's text (decorative, hidden from assistive tech).
+    pub fn icon(self, icon: &'a str) -> Self {
+        self.last(|it| it.icon = Some(icon))
+    }
+
+    /// A shortcut shown after the item's text, as `<kbd>`; a label only.
+    pub fn shortcut(self, keys: &'a str) -> Self {
+        self.last(|it| it.shortcut = Some(keys))
+    }
+
+    /// The item is shown but not usable: a link without `href`, a button with `disabled`.
+    pub fn disabled(self) -> Self {
+        self.last(|it| it.disabled = true)
+    }
+
+    /// The item is destructive: coloured with `--nojs-danger`.
+    pub fn danger(self) -> Self {
+        self.last(|it| it.danger = true)
+    }
+
+    /// The menu's id instead of the label's slug.
+    pub fn id(mut self, id: &str) -> Self {
+        self.id = id.to_string();
+        self
+    }
+
+    /// Open below the button with right edges aligned, for a button at the end of a row.
+    pub fn align_end(mut self) -> Self {
+        self.placement = Placement::BottomEnd;
+        self
+    }
+
+    /// Open to the right of the button.
+    pub fn open_right(mut self) -> Self {
+        self.placement = Placement::Right;
+        self
+    }
+}
+
+impl Render for Menu<'_> {
+    fn render(&self) -> Markup {
+        menu(&self.caps, &self.id, self.label, &self.items, self.placement)
+    }
+}
+
+/// A button labelled `label` that toggles a menu of `items`; also a table row's menu.
+pub(crate) fn menu(caps: &Caps, id: &str, label: &str, items: &[MenuItem], placement: Placement) -> Markup {
     let popover = caps.has(Cap::Popover);
     let anchor = caps.has(Cap::Anchor);
-    let list = html! { ul role="menu" { @for it in items { (item(it, popover, anchor)) } } };
+    let list = html! { ul role="menu" { @for it in items { (item(id, it, popover, anchor)) } } };
     html! {
         @if !popover {
-            details class={ "nojs-popover nojs-popover-details " (options.placement.class()) } id=(id) {
+            details class={ "nojs-popover nojs-popover-details " (placement.class()) } id=(id) {
                 summary { (label) " \u{25be}" }
                 nav { (list) }
             }
         } @else if anchor {
-            div class={ "nojs-popover nojs-popover-anchored " (options.placement.class()) } style={ "anchor-name: --" (id) } {
+            div class={ "nojs-popover nojs-popover-anchored " (placement.class()) } style={ "anchor-name: --" (id) } {
                 button type="button" popovertarget=(id) { (label) " \u{25be}" }
-                nav id=(id) popover style={ "position-anchor: --" (id) "; position-area: " (options.placement.area()) } { (list) }
+                nav id=(id) popover style={ "position-anchor: --" (id) "; position-area: " (placement.area()) } { (list) }
             }
         } @else {
-            div class={ "nojs-popover " (options.placement.class()) } {
+            div class={ "nojs-popover " (placement.class()) } {
                 button type="button" popovertarget=(id) { (label) " \u{25be}" }
                 nav id=(id) popover { (list) }
             }
@@ -196,7 +256,7 @@ pub fn popover_menu_with(caps: &Caps, id: &str, label: &str, items: &[MenuItem],
     }
 }
 
-fn item(it: &MenuItem, popover: bool, anchor: bool) -> Markup {
+fn item(menu_id: &str, it: &MenuItem, popover: bool, anchor: bool) -> Markup {
     let class = format!("nojs-popover-item{}{}", if it.danger { " nojs-popover-danger" } else { "" }, if it.disabled { " nojs-popover-disabled" } else { "" });
     let inner = html! {
         @if let Some(i) = it.icon { span class="nojs-popover-icon" aria-hidden="true" { (i) } }
@@ -219,8 +279,9 @@ fn item(it: &MenuItem, popover: bool, anchor: bool) -> Markup {
                     button type="submit" class=(class) role="menuitem" disabled[it.disabled] { (inner) }
                 }
             },
-            Kind::Submenu(sub_id, items) => li role="none" class="nojs-popover-sub" {
-                @let list = html! { ul role="menu" { @for it in items { (item(it, popover, anchor)) } } };
+            Kind::Submenu(ref items) => li role="none" class="nojs-popover-sub" {
+                @let sub_id = format!("{menu_id}-{}", slug(it.text));
+                @let list = html! { ul role="menu" { @for it in items { (item(&sub_id, it, popover, anchor)) } } };
                 @if !popover {
                     details class="nojs-popover-details nojs-popover-right" id=(sub_id) {
                         summary class=(class) role="menuitem" aria-haspopup="menu" { (inner) " \u{25b8}" }

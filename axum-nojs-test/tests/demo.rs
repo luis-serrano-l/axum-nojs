@@ -159,7 +159,7 @@ async fn popover_variants() {
 
 #[tokio::test]
 async fn settings_flash_and_form_values() {
-    let cookie = format!("{MODERN}; nojs-flash=ok%3ASettings%20saved.%0Awarn%3ANo%20releases.%0Adanger%3AReserved.; settings=Ada%7C1; nojs-ui=tab.settings=1");
+    let cookie = format!("{MODERN}; nojs-flash=ok%3ASettings%20saved.%0Awarn%3ANo%20releases.%0Adanger%3AReserved.; nojs-settings=name%3DAda%26notify%3Dtrue; nojs-ui=tab.settings=1");
     let page = Page::render(demo::router(), "/settings", &cookie).await;
     assert_eq!(page.text(".nojs-flash-ok .nojs-flash-text").as_deref(), Some("Settings saved."));
     assert!(page.is_visible(".nojs-flash"));
@@ -168,9 +168,9 @@ async fn settings_flash_and_form_values() {
     assert!(ok.y + ok.height <= warn.y + 1.0 && warn.y + warn.height <= danger.y + 1.0, "messages stack top to bottom");
     assert!(page.exists(".nojs-flash-danger[role=alert]") && page.exists(".nojs-flash-ok[role=status]"));
     assert!(page.exists(".nojs-flash-ok.nojs-flash-auto") && !page.exists(".nojs-flash-danger.nojs-flash-auto"), "only calm levels auto-hide");
-    assert!(page.exists(".nojs-flash-warn a.nojs-flash-dismiss[href='/settings?tab.settings=1']"));
+    assert!(page.exists(".nojs-flash-warn a.nojs-flash-dismiss[href='/settings']"));
     assert!(page.is_visible(".nojs-flash-dismiss"));
-    assert!(page.is_visible("input[name=notify]"), "notifications tab is open");
+    assert!(page.is_visible("input[type=checkbox][name=notify]"), "notifications tab is open");
     assert!(!page.is_visible("input[name=name][id]"), "profile tab is closed");
     let flash = page.bbox(".nojs-flash").unwrap();
     let tabs = page.bbox(".nojs-tabs").unwrap();
@@ -257,7 +257,7 @@ async fn table_sort_links_and_pages() {
 /// still complete without the script (count shown, list rendered from the cookie).
 #[tokio::test]
 async fn swap_targets_render_without_script() {
-    let page = Page::render(demo::router(), "/swap?n=3", "nojs-cap-probed=1; notes=one|two").await;
+    let page = Page::render(demo::router(), "/swap?n=3", "nojs-cap-probed=1; nojs-notes=note%3Done%26note%3Dtwo").await;
     assert_eq!(page.text("#count").as_deref(), Some("3"));
     assert_eq!(page.count("#log li"), 2);
     assert_eq!(page.text("#note-count").as_deref(), Some("2"), "the count is plain markup on the full page");
@@ -273,12 +273,12 @@ async fn swap_targets_render_without_script() {
 /// and opacity sit beside the picker, and a long select gets a filter box and groups.
 #[tokio::test]
 async fn counter_and_inputs() {
-    let top = Page::render(demo::router(), "/counter", &format!("{MODERN}; count=20")).await;
+    let top = Page::render(demo::router(), "/counter", &format!("{MODERN}; nojs-count=n%3D20")).await;
     assert!(top.exists(".nojs-counter button[value=inc][disabled]") && !top.exists(".nojs-counter button[value=dec][disabled]"), "+ is off at the maximum");
     assert!(top.is_visible(".nojs-counter input[type=number][name=value][min='0'][max='20'][step='2'][value='20']"));
     assert_eq!(top.text(".nojs-counter-bounds").as_deref(), Some("0 to 20, in steps of 2"));
 
-    let page = Page::render(demo::router(), "/inputs", &format!("{MODERN}; inputs=l|40|%23b3261e|60|10|90|jp")).await;
+    let page = Page::render(demo::router(), "/inputs", &format!("{MODERN}; nojs-inputs=size%3Dl%26volume%3D40%26accent%3D%2523b3261e%26accent-alpha%3D60%26price_min%3D10%26price_max%3D90%26country%3Djp")).await;
     let (lo, hi) = (page.bbox("#f-price_min").unwrap(), page.bbox("#f-price_max").unwrap());
     assert!((lo.x - hi.x).abs() < 1.0 && (lo.y - hi.y).abs() < 1.0 && (lo.width - hi.width).abs() < 1.0, "both thumbs on one track: {lo:?} {hi:?}");
     assert_eq!(page.text("output[for=f-price_min]").as_deref(), Some("10"));

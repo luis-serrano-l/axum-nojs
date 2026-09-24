@@ -9,8 +9,8 @@
 //! - `popover` (Chrome 114, Firefox 125, Safari 17) opened by `popovertarget`; light dismiss
 //!   and Escape for free; `autofocus` puts the caret in the box when it opens.
 //! - `<datalist>` bound by `list=` for as-you-type suggestions, filtered by the browser.
-//! - `<search>` (Chrome 118, Firefox 118, Safari 17) around a GET `<form>`; [`exact`] and
-//!   [`matches()`] do the server's part.
+//! - `<search>` (Chrome 118, Firefox 118, Safari 17) around a GET `<form>`; the server
+//!   redirects an exact name ([`Palette::exact`]) and lists the matches of anything else.
 //! - `accesskey` on the opener (Alt+Shift+K in Chrome and Firefox, Ctrl+Option+K in Safari),
 //!   announced with `aria-keyshortcuts`.
 //!
@@ -22,68 +22,42 @@
 //! and the global Ctrl+K shortcut (the access key stands in for it).
 //!
 //! ```rust
-//! use axum_nojs::{Caps, command_palette, command_palette_with, palette::{Command, PaletteOptions, exact, matches}};
-//! const CMDS: &[Command] = &[
-//!     Command::new("Open settings", "/settings").group("Go to"),
-//!     Command::new("New invoice", "/invoices/new").keywords("bill create"),
-//! ];
-//! let m = command_palette(&Caps::all(), "cmd", "/search", CMDS).into_string();
-//! assert!(m.contains(r#"popovertarget="cmd""#) && m.contains(r#"list="cmd-list""#));
-//! assert_eq!(exact(CMDS, "open settings").map(|c| c.href), Some("/settings"));
-//! assert_eq!(matches(CMDS, "bill").len(), 1);
-//! let m = command_palette_with(&Caps::all(), "cmd", "/search", CMDS, PaletteOptions::default().query("new")).into_string();
+//! use axum_nojs::prelude::*;
+//! // A search for "new" that matched no command exactly.
+//! let ui = Ui::from_request("/search", "q=new", "");
+//! let palette = ui.palette("/search")
+//!     .group("Go to")
+//!     .command("Open settings", "/settings")
+//!     .command("New invoice", "/invoices/new").keywords("bill create");
+//! assert_eq!(palette.exact(), None, "an exact name would redirect");
+//! let m = palette.render().into_string();
+//! assert!(m.contains(r#"popovertarget="palette""#) && m.contains(r#"list="palette-list""#));
 //! assert!(m.contains("nojs-palette-results") && m.contains("New invoice"));
+//! let ui = Ui::from_request("/search", "q=open+settings", "");
+//! assert_eq!(ui.palette("/search").command("Open settings", "/settings").exact(), Some("/settings"));
 //! ```
 
-use maud::{Markup, html};
+use maud::{Markup, Render, html};
 
-use crate::{Cap, Caps};
+use crate::{Cap, Ui};
 
 /// One destination in the palette.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct Command<'a> {
-    /// What the user types or picks.
-    pub label: &'a str,
-    /// Where it goes.
-    pub href: &'a str,
-    /// A heading it is listed under.
-    pub group: &'a str,
-    /// Extra words that find it, space-separated; never shown.
-    pub keywords: &'a str,
-}
-
-impl<'a> Command<'a> {
-    /// A command `label` going to `href`.
-    pub const fn new(label: &'a str, href: &'a str) -> Self {
-        Command { label, href, group: "", keywords: "" }
-    }
-    /// List it under `group`.
-    pub const fn group(mut self, group: &'a str) -> Self {
-        self.group = group;
-        self
-    }
-    /// Extra words that find it.
-    pub const fn keywords(mut self, keywords: &'a str) -> Self {
-        self.keywords = keywords;
-        self
-    }
-}
-
-/// `("Settings", "/settings")`: a command, its label and where it goes.
-impl<'a> From<(&'a str, &'a str)> for Command<'a> {
-    fn from((label, href): (&'a str, &'a str)) -> Self {
-        Command::new(label, href)
-    }
+struct Command<'a> {
+    label: &'a str,
+    href: &'a str,
+    group: &'a str,
+    keywords: &'a str,
 }
 
 /// The command whose label is `query`, ignoring case and outer spaces: where Enter goes.
-pub fn exact<'c, 'a>(commands: &'c [Command<'a>], query: &str) -> Option<&'c Command<'a>> {
+fn exact<'c, 'a>(commands: &'c [Command<'a>], query: &str) -> Option<&'c Command<'a>> {
     let q = query.trim();
     commands.iter().find(|c| c.label.eq_ignore_ascii_case(q))
 }
 
 /// Commands whose label or keywords contain every word of `query`, labels that start with it first.
-pub fn matches<'c, 'a>(commands: &'c [Command<'a>], query: &str) -> Vec<&'c Command<'a>> {
+fn matches<'c, 'a>(commands: &'c [Command<'a>], query: &str) -> Vec<&'c Command<'a>> {
     let q = query.trim().to_lowercase();
     let words: Vec<&str> = q.split_whitespace().collect();
     let mut found: Vec<&Command> = commands
@@ -97,96 +71,129 @@ pub fn matches<'c, 'a>(commands: &'c [Command<'a>], query: &str) -> Vec<&'c Comm
     found
 }
 
-/// Options for [`command_palette`].
+/// A command palette submitting `q` to its action with GET, made by [`Ui::palette`]. The
+/// request's `?q=` is the search; its results show below the opener.
 #[derive(Clone, Debug)]
-pub struct PaletteOptions<'a> {
-    /// The opener's label (default "Search").
-    pub label: &'a str,
-    /// The access key (default `k`).
-    pub key: char,
-    /// A search that found no exact command: shown in the box and as a results list.
-    pub query: Option<&'a str>,
+pub struct Palette<'a> {
+    ui: &'a Ui,
+    id: &'a str,
+    action: &'a str,
+    commands: Vec<Command<'a>>,
+    group: &'a str,
+    label: &'a str,
+    key: char,
 }
 
-impl Default for PaletteOptions<'_> {
-    fn default() -> Self {
-        PaletteOptions { label: "Search", key: 'k', query: None }
+impl Ui {
+    /// A palette `#palette` whose searches go to `action`; add destinations with
+    /// [`Palette::command`].
+    pub fn palette<'a>(&'a self, action: &'a str) -> Palette<'a> {
+        Palette { ui: self, id: "palette", action, commands: Vec::new(), group: "", label: "Search", key: 'k' }
     }
 }
 
-impl<'a> PaletteOptions<'a> {
-    /// The opener's label.
+impl<'a> Palette<'a> {
+    /// A destination: what the visitor types or picks, and where it goes.
+    pub fn command(mut self, label: &'a str, href: &'a str) -> Self {
+        self.commands.push(Command { label, href, group: self.group, keywords: "" });
+        self
+    }
+
+    /// Several `(label, href)` destinations at once.
+    pub fn commands(self, commands: impl IntoIterator<Item = (&'a str, &'a str)>) -> Self {
+        commands.into_iter().fold(self, |p, (label, href)| p.command(label, href))
+    }
+
+    /// Extra words that find the command added last, space-separated; never shown.
+    pub fn keywords(mut self, keywords: &'a str) -> Self {
+        if let Some(c) = self.commands.last_mut() {
+            c.keywords = keywords;
+        }
+        self
+    }
+
+    /// List the commands added after this under a heading.
+    pub fn group(mut self, heading: &'a str) -> Self {
+        self.group = heading;
+        self
+    }
+
+    /// The opener's label (default "Search").
     pub fn label(mut self, label: &'a str) -> Self {
         self.label = label;
         self
     }
-    /// The access key.
+
+    /// The access key (default `k`).
     pub fn key(mut self, key: char) -> Self {
         self.key = key;
         self
     }
-    /// Show the results for `query` below the opener.
-    pub fn query(mut self, query: &'a str) -> Self {
-        self.query = Some(query);
+
+    /// The palette's id instead of `palette`.
+    pub fn id(mut self, id: &'a str) -> Self {
+        self.id = id;
         self
+    }
+
+    /// Where the request's search goes when it names a command exactly (ignoring case):
+    /// the handler redirects there instead of rendering.
+    pub fn exact(&self) -> Option<&'a str> {
+        exact(&self.commands, self.ui.param("q")?).map(|c| c.href)
     }
 }
 
-/// A palette with the default options.
-/// [`command_palette_with`] takes the options.
-pub fn command_palette(caps: &Caps, id: &str, action: &str, commands: &[Command]) -> Markup {
-    command_palette_with(caps, id, action, commands, Default::default())
-}
-
-/// A command palette `id` over `commands`, submitting `q` to `action` with GET.
-pub fn command_palette_with(caps: &Caps, id: &str, action: &str, commands: &[Command], options: PaletteOptions) -> Markup {
-    let list_id = format!("{id}-list");
-    let shortcut = format!("Alt+Shift+{}", options.key.to_ascii_uppercase());
-    let key = options.key.to_string();
-    let hint = html! { kbd class="nojs-palette-kbd" { (shortcut) } };
-    let popover = caps.has(Cap::Popover);
-    let results = options.query.map(|q| {
-        let found = matches(commands, q);
-        html! {
-            section class="nojs-palette-results" aria-labelledby={ (id) "-results" } {
-                h2 id={ (id) "-results" } { (found.len()) @if found.len() == 1 { " match" } @else { " matches" } " for \u{201c}" (q) "\u{201d}" }
-                @if found.is_empty() { p { "Nothing by that name. Try one word, or pick from the list." } }
-                @else { (grouped(found)) }
-            }
-        }
-    });
-    let form = html! {
-        search {
-            form method="get" action=(action) class="nojs-palette-form" {
-                input type="search" name="q" list=(list_id) autofocus autocomplete="off"
-                    placeholder="Type a command or a page" aria-label=(options.label) value=[options.query];
-                button type="submit" class="nojs-primary" { "Go" }
-            }
-        }
-        datalist id=(list_id) { @for c in commands { option value=(c.label) {} } }
-    };
-    html! {
-        div class="nojs-palette" {
-            @if popover {
-                button type="button" class="nojs-palette-open" popovertarget=(id) accesskey=(key) aria-keyshortcuts=(shortcut) {
-                    (options.label) " " (hint)
+impl Render for Palette<'_> {
+    fn render(&self) -> Markup {
+        let Palette { ui, id, action, ref commands, label, key, .. } = *self;
+        let query = ui.param("q").filter(|q| !q.trim().is_empty());
+        let list_id = format!("{id}-list");
+        let shortcut = format!("Alt+Shift+{}", key.to_ascii_uppercase());
+        let key = key.to_string();
+        let hint = html! { kbd class="nojs-palette-kbd" { (shortcut) } };
+        let popover = ui.has(Cap::Popover);
+        let results = query.map(|q| {
+            let found = matches(commands, q);
+            html! {
+                section class="nojs-palette-results" aria-labelledby={ (id) "-results" } {
+                    h2 id={ (id) "-results" } { (found.len()) @if found.len() == 1 { " match" } @else { " matches" } " for \u{201c}" (q) "\u{201d}" }
+                    @if found.is_empty() { p { "Nothing by that name. Try one word, or pick from the list." } }
+                    @else { (grouped(found)) }
                 }
-                div id=(id) class="nojs-palette-panel" popover { (form) (grouped(commands.iter().collect())) }
-                // A popover cannot arrive open, so the results of a search sit in the page.
-                @if let Some(r) = results { (r) }
-            } @else {
-                details class="nojs-palette-details" id=(id) open[options.query.is_some()] {
-                    summary class="nojs-palette-open" accesskey=(key) aria-keyshortcuts=(shortcut) { (options.label) " " (hint) }
-                    div class="nojs-palette-panel" {
-                        (form)
-                        @if let Some(r) = results { (r) } @else { (grouped(commands.iter().collect())) }
+            }
+        });
+        let form = html! {
+            search {
+                form method="get" action=(action) class="nojs-palette-form" {
+                    input type="search" name="q" list=(list_id) autofocus autocomplete="off"
+                        placeholder="Type a command or a page" aria-label=(label) value=[query];
+                    button type="submit" class="nojs-primary" { "Go" }
+                }
+            }
+            datalist id=(list_id) { @for c in commands { option value=(c.label) {} } }
+        };
+        html! {
+            div class="nojs-palette" {
+                @if popover {
+                    button type="button" class="nojs-palette-open" popovertarget=(id) accesskey=(key) aria-keyshortcuts=(shortcut) {
+                        (label) " " (hint)
+                    }
+                    div id=(id) class="nojs-palette-panel" popover { (form) (grouped(commands.iter().collect())) }
+                    // A popover cannot arrive open, so the results of a search sit in the page.
+                    @if let Some(r) = results { (r) }
+                } @else {
+                    details class="nojs-palette-details" id=(id) open[query.is_some()] {
+                        summary class="nojs-palette-open" accesskey=(key) aria-keyshortcuts=(shortcut) { (label) " " (hint) }
+                        div class="nojs-palette-panel" {
+                            (form)
+                            @if let Some(r) = results { (r) } @else { (grouped(commands.iter().collect())) }
+                        }
                     }
                 }
             }
         }
     }
 }
-
 fn grouped(commands: Vec<&Command>) -> Markup {
     let mut groups: Vec<&str> = Vec::new();
     for c in &commands {

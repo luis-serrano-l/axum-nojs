@@ -36,13 +36,14 @@ scripts/verify.sh                  # everything above plus a <script> grep and t
 - `axum-nojs-caps/` – the detection crate: `Caps`/`Cap` bitset, `@supports` beacons, cookie and
   query parsing, `beacon_cookie`, and an `axum` feature with the extractor and beacon route.
   `axum-nojs` re-exports it as `axum_nojs::caps`, so nothing else changes.
-- `axum-nojs/` – the library crate. Depends only on `maud` and `axum-nojs-caps`. Feature `http` adds `prg` as an
-  `http::Response` and `Streamed` (a chunk stream); feature `axum` adds the `Caps`/`UiState`
-  extractors, `IntoResponse` impls and the `/nojs/caps` beacon route on top. Everything else is
-  plain functions over strings (`Caps::from_cookie_header`, `UiState::from_request`,
-  `prg_parts`, `caps::beacon_cookie`). No serde.
-- `demo/` – Axum lib + binary, one route per component. Handlers take `axum_nojs::Ui` (caps,
-  theme and `UiState` in one extractor), only parse input (query, form, cookie) and call `axum-nojs`; keep each route around 15 lines. The only-one-script test lives here
+- `axum-nojs/` – the library crate. Depends only on `maud` and `axum-nojs-caps`. Feature `http` adds
+  `Redirect::into_http` and `Streamed` (a chunk stream); feature `axum` adds the `Ui` extractor,
+  `IntoResponse` for `Page`/`Redirect`/`Streamed`, the `/nojs/caps` beacon route, and
+  `Saved<T>` (the only use of serde). Everything else is plain functions over strings
+  (`Ui::from_request`, `Page::into_string`, `Redirect::set_cookies`, `caps::beacon_cookie`).
+- `demo/` – Axum lib + binary, one route per component, one `use axum_nojs::prelude::*`.
+  Handlers take `ui: Ui` (plus `Saved<T>` / `Form<T>` when they need them) and return `Page`
+  or `Redirect`; they only parse input and call `axum-nojs`; keep each route around 15 lines. The only-one-script test lives here
   and hits every route via `tower::oneshot`, so **add new demo routes to `PATHS`** (the
   screenshot test in `axum-nojs-test` uses the same list).
 - `axum-nojs-test/` – Blitz-based test harness: `Page::render(router, path, cookie)` then
@@ -51,26 +52,30 @@ scripts/verify.sh                  # everything above plus a <script> grep and t
 
 ## Component conventions (follow exactly when adding one)
 
-1. One component = one file `axum-nojs/src/<name>.rs`, registered in `lib.rs` as `pub mod` and
-   re-exported with `pub use`.
+1. One component = one file `axum-nojs/src/<name>.rs`, registered in `lib.rs` as `pub mod`.
+   Only types a caller names go in the `prelude` (most never do: builders are reached from `ui`).
 2. File starts with a `//!` header: what it does, **Platform features** (with browser baseline
    versions), **What it does not do without script**, **Fallback**, and a runnable ```` ```rust ```` usage example (these are doctests).
 3. CSS lives beside the component as `pub const CSS: &str` and must be appended to the array in
-   `stylesheet()` in `lib.rs`; `layout()` inlines that once per page. Theming only through
+   `stylesheet()` in `lib.rs`; `ui.page()` inlines that once per page. Theming only through
    `--nojs-*` custom properties defined in `layout.rs`.
 4. Root element carries a single `nojs-<component>` class; sub-parts use `nojs-<component>-<part>`.
    Output should be readable via `curl`.
-5. No macros beyond `html!`. Signature order: `caps: &Caps` first, then `id`, required args,
-   then options. More than three arguments after `id` means the rest go in a `<Name>Options`
-   struct in the same file: `Default` impl, one builder setter per field, re-exported from
-   `lib.rs` beside the function. The component then comes in two forms, like `layout` /
-   `layout_with`: `<name>(caps, required…)` for the common case with no options (required text
-   first; an id the caller does not care about is derived from its label with `crate::slug`),
-   and `<name>_with(caps, …, options)` for everything else. The doc header shows the short
-   form first and one full `_with` form. Setter names follow the HTML attribute or element
-   they set (`.maxlength()`, `.placeholder()`, `.closedby()`). A setter with no argument
-   switches something on (`.required()`, `.danger()`, `.multi()`); one that takes a `bool` is
-   one a route sets from a condition (`.open(..)`, `.loading(..)`, a step's `.error(..)`). Branch on `caps.has(Cap::X)` and emit only one variant, never both.
+5. No macros beyond `html!`. A component is a builder struct holding `&Ui` (or what it needs
+   from it) plus an `impl Ui { pub fn <name>(&self, required…) -> <Name> }` in the same file,
+   and `impl Render for <Name>`, so a route writes `(ui.<name>(..).setter()..)` inside `html!`.
+   Required arguments stay in the call (text first); everything else is a chained setter. An
+   id the caller does not care about is derived from the label with `crate::slug`, with an
+   `.id()` override. Components read their own input from `ui` (`ui.param`, `ui.params`,
+   `ui.state`) instead of taking it as an argument. For lists (fields, menu items, tabs,
+   columns, commands), an adder per item (`.text(..)`, `.link(..)`, `.tab(..)`) and
+   modifiers that apply to the item added last (`.required()`, `.icon()`, `.badge()`). No
+   `_with` twins and no `XOptions` structs. The doc header shows the common call first, then
+   one with the setters. Setter names follow the HTML attribute or element they set
+   (`.maxlength()`, `.placeholder()`, `.closedby()`). A setter with no argument switches
+   something on (`.required()`, `.danger()`, `.multi()`); one that takes a `bool` is one a
+   route sets from a condition (`.open(..)`, `.loading(..)`). Branch on `caps.has(Cap::X)` and
+   emit only one variant, never both.
    A root that should update in place gets `id=(enhance::swap_id(prefix, key))` and
    `data-nojs="swap"`; the markup must behave identically without the script.
 6. Server-held state (theme, counter, active tab) travels via cookie or `?query=`; mutations use

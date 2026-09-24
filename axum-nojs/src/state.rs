@@ -13,15 +13,13 @@
 //!
 //! **Fallback:** none needed. Without cookies, state still travels in links on the same page.
 //!
-//! **Post/Redirect/Get:** [`prg`] answers a form POST with a redirect and a one-shot
-//! `nojs-flash` cookie; the next page renders it with the `flash` component and, by returning
-//! its `UiState`, clears it.
+//! **Post/Redirect/Get:** [`crate::Ui::redirect`] answers a form POST with a redirect and a
+//! one-shot `nojs-flash` cookie; the next page renders it with `ui.flash()` and, as a
+//! [`crate::Page`], clears it.
 //!
 //! **Any server.** The protocol is plain strings: [`UiState::from_request`] reads path, query
 //! and the `Cookie:` header; [`UiState::set_cookies`] gives the `Set-Cookie` values to send
-//! back; [`prg_parts`] gives the redirect's status, `Location` and `Set-Cookie`. The `http`
-//! feature adds [`prg`] as an `http::Response`; the `axum` feature adds the extractor and the
-//! `IntoResponseParts` impl on top.
+//! back. The `axum` feature adds the extractor and the `IntoResponseParts` impl on top.
 //!
 //! ```rust
 //! use axum_nojs::UiState;
@@ -34,11 +32,7 @@
 //! let state = UiState::from_request("/settings", "tab.settings=1", "nojs-ui=open.faq=2; nojs-flash=Saved.");
 //! assert_eq!(state.flash(), Some("Saved."));
 //! assert_eq!(state.set_cookies().len(), 2); // remember tab.settings, clear the flash
-//!
-//! // A form POST answered with Post/Redirect/Get, for any server.
-//! let (status, location, cookie) = axum_nojs::state::prg_parts("/settings", Some("Saved."));
-//! assert_eq!((status, location), (303, "/settings"));
-//! assert!(cookie.unwrap().starts_with("nojs-flash=Saved."));
+
 //! ```
 
 use std::borrow::Cow;
@@ -233,38 +227,19 @@ impl UiState {
         if query.is_empty() { self.path.clone() } else { format!("{}?{}", self.path, query.join("&")) }
     }
 
-    /// Whether the query changed something the cookie should now remember.
+    /// Whether the query changed something the cookie should now remember. `dialog` is never
+    /// remembered: a dialog opened by a link is open on that page view only.
     pub fn changed(&self) -> bool {
-        self.from_query.iter().any(|(k, v)| self.from_cookie.get(k) != Some(v))
+        self.from_query.iter().any(|(k, v)| k != "dialog" && self.from_cookie.get(k) != Some(v))
     }
 
     /// Value for the `nojs-ui` cookie: the merged state, or `None` when nothing changed.
     pub fn cookie_value(&self) -> Option<String> {
         self.changed().then(|| {
-            self.entries().iter().map(|(k, v)| format!("{}={}", encode(k), encode(v))).collect::<Vec<_>>().join("&")
+            let kept = self.entries().into_iter().filter(|(k, _)| *k != "dialog");
+            kept.map(|(k, v)| format!("{}={}", encode(k), encode(v))).collect::<Vec<_>>().join("&")
         })
     }
-}
-
-/// Post/Redirect/Get for any server: the status (`303`), the `Location` value, and the
-/// `Set-Cookie` value carrying `flash` for one minute, if there is a message.
-pub fn prg_parts<'a>(to: &'a str, flash: Option<&str>) -> (u16, &'a str, Option<String>) {
-    let cookie =
-        flash.map(|msg| format!("{FLASH_COOKIE}={}; Path=/; Max-Age=60; SameSite=Lax", encode(msg)));
-    (303, to, cookie)
-}
-
-/// Post/Redirect/Get: `303 See Other` to `to`, carrying `flash` in a one-shot cookie. The
-/// body is empty and generic over anything built from a `String`, so an Axum handler can
-/// return it as `axum::response::Response` and a hyper one as `Response<Full<Bytes>>`.
-#[cfg(feature = "http")]
-pub fn prg<B: From<String>>(to: &str, flash: Option<&str>) -> http::Response<B> {
-    let (status, location, cookie) = prg_parts(to, flash);
-    let mut res = http::Response::builder().status(status).header(http::header::LOCATION, location);
-    if let Some(c) = cookie {
-        res = res.header(http::header::SET_COOKIE, c);
-    }
-    res.body(B::from(String::new())).expect("valid redirect headers")
 }
 
 #[cfg(feature = "axum")]
@@ -329,7 +304,7 @@ mod tests {
         let closed = UiState::parse("/p", "open.faq=", "open.faq=0,2");
         assert!(closed.opens("faq").is_empty() && closed.changed(), "the explicit empty wins and is remembered");
         assert!(s.changed());
-        assert_eq!(s.cookie_value().as_deref(), Some("dialog=confirm&open.faq=0&tab.a=2"));
+        assert_eq!(s.cookie_value().as_deref(), Some("open.faq=0&tab.a=2"));
         let same = UiState::parse("/p", "tab.a=1", "tab.a=1");
         assert!(!same.changed() && same.cookie_value().is_none());
     }
@@ -342,7 +317,7 @@ mod tests {
         assert_eq!(cookies[0], "nojs-ui=tab.a=2; Path=/; Max-Age=2592000; SameSite=Lax");
         assert!(cookies[1].starts_with("nojs-flash=; ") && cookies[1].contains("Max-Age=0"));
         assert!(UiState::from_request("/p", "", "nojs-ui=tab.a=1").set_cookies().is_empty());
-        assert_eq!(prg_parts("/p", None), (303, "/p", None));
+        assert!(UiState::from_request("/p", "dialog=d", "").set_cookies().is_empty(), "an open dialog is not remembered");
     }
 
     #[test]

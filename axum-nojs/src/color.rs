@@ -20,38 +20,53 @@
 //! and mirrors the opacity into its `<output>`.
 //!
 //! ```rust
-//! use axum_nojs::{Caps, color, color_with, color::{ColorOptions, hex_alpha}};
-//! let m = color(&Caps::all(), "accent", "#2f5bea");
-//! assert!(m.into_string().contains("type=\"color\""));
-//! let m = color_with(&Caps::all(), "accent", "#2f5bea", ColorOptions::default().presets(&["#1f6f5f", "#b3261e"]).alpha(80));
-//! let html = m.into_string();
+//! use axum_nojs::{prelude::*, color::hex_alpha};
+//! let ui = Ui::from(Caps::all());
+//! assert!(ui.color("accent", "#2f5bea").render().into_string().contains("type=\"color\""));
+//! let m = ui.color("accent", "#2f5bea").presets(&["#1f6f5f", "#b3261e"]).alpha(80).label("Accent");
+//! let html = m.render().into_string();
 //! assert!(html.contains("name=\"accent-preset\" value=\"#b3261e\""));
-//! assert!(html.contains("name=\"accent-alpha\""));
+//! assert!(html.contains("name=\"accent-alpha\"") && html.contains(r#"<label for="f-accent">"#));
 //! assert_eq!(hex_alpha("#2f5bea", 80), "#2f5beacc");
 //! ```
 
-use maud::{Markup, html};
+use maud::{Markup, Render, html};
 
-use crate::Caps;
+use crate::Ui;
 
-/// Options for [`color`]; `Default::default()` is the picker alone.
+/// A colour input with a swatch of its current value, made by [`Ui::color`].
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-pub struct ColorOptions<'a> {
-    /// `#rrggbb` swatches that post `<name>-preset` when clicked.
-    pub presets: &'a [&'a str],
-    /// Opacity in percent; `Some` shows the slider.
-    pub alpha: Option<u8>,
+pub struct Color<'a> {
+    name: &'a str,
+    value: &'a str,
+    presets: &'a [&'a str],
+    alpha: Option<u8>,
+    label: Option<&'a str>,
 }
 
-impl<'a> ColorOptions<'a> {
-    /// Preset swatches.
+impl Ui {
+    /// A colour input named `name` holding the `#rrggbb` `value`.
+    pub fn color<'a>(&self, name: &'a str, value: &'a str) -> Color<'a> {
+        Color { name, value, ..Color::default() }
+    }
+}
+
+impl<'a> Color<'a> {
+    /// `#rrggbb` swatches that post `<name>-preset` when clicked.
     pub fn presets(mut self, presets: &'a [&'a str]) -> Self {
         self.presets = presets;
         self
     }
-    /// Show the opacity slider at `percent` (clamped to 100).
+
+    /// An opacity slider (`<name>-alpha`) at `percent`, clamped to 100.
     pub fn alpha(mut self, percent: u8) -> Self {
         self.alpha = Some(percent.min(100));
+        self
+    }
+
+    /// A `<label>` above the picker, in a `div.nojs-field` like a form field.
+    pub fn label(mut self, label: &'a str) -> Self {
+        self.label = Some(label);
         self
     }
 }
@@ -61,41 +76,35 @@ pub fn hex_alpha(hex: &str, percent: u8) -> String {
     format!("{hex}{:02x}", (u32::from(percent.min(100)) * 255 + 50) / 100)
 }
 
-/// A colour input with the default options.
-/// [`color_with`] takes the options.
-pub fn color(caps: &Caps, name: &str, value: &str) -> Markup {
-    color_with(caps, name, value, Default::default())
-}
-
-/// A colour input named `name` with the current `#rrggbb` value and a swatch of it.
-pub fn color_with(_caps: &Caps, name: &str, value: &str, options: ColorOptions) -> Markup {
-    let ColorOptions { presets, alpha } = options;
-    let id = format!("f-{name}");
-    let pct = alpha.unwrap_or(100);
-    html! {
-        div class="nojs-color" {
-            input type="color" id=(id) name=(name) value=(value);
-            span class="nojs-color-swatch" style={ "--nojs-color-value: " (value) "; --nojs-color-alpha: " (pct) "%" } aria-hidden="true" {}
-            code { @if pct < 100 { (hex_alpha(value, pct)) } @else { (value) } }
-            @if alpha.is_some() {
-                label class="nojs-color-alpha" {
-                    "Opacity "
-                    input type="range" id={ (id) "-alpha" } name={ (name) "-alpha" } min="0" max="100" value=(pct);
-                    span { output for={ (id) "-alpha" } { (pct) } "%" }
+impl Render for Color<'_> {
+    fn render(&self) -> Markup {
+        let Color { name, value, presets, alpha, label } = *self;
+        let id = format!("f-{name}");
+        let pct = alpha.unwrap_or(100);
+        crate::labelled(label, &id, html! {
+            div class="nojs-color" {
+                input type="color" id=(id) name=(name) value=(value);
+                span class="nojs-color-swatch" style={ "--nojs-color-value: " (value) "; --nojs-color-alpha: " (pct) "%" } aria-hidden="true" {}
+                code { @if pct < 100 { (hex_alpha(value, pct)) } @else { (value) } }
+                @if alpha.is_some() {
+                    label class="nojs-color-alpha" {
+                        "Opacity "
+                        input type="range" id={ (id) "-alpha" } name={ (name) "-alpha" } min="0" max="100" value=(pct);
+                        span { output for={ (id) "-alpha" } { (pct) } "%" }
+                    }
                 }
-            }
-            @if !presets.is_empty() {
-                span class="nojs-color-presets" role="group" aria-label="Presets" {
-                    @for p in presets {
-                        button type="submit" name={ (name) "-preset" } value=(p) aria-label={ "Use " (p) }
-                            aria-pressed=(if p.eq_ignore_ascii_case(value) { "true" } else { "false" }) style={ "--nojs-color-value: " (p) } {}
+                @if !presets.is_empty() {
+                    span class="nojs-color-presets" role="group" aria-label="Presets" {
+                        @for p in presets {
+                            button type="submit" name={ (name) "-preset" } value=(p) aria-label={ "Use " (p) }
+                                aria-pressed=(if p.eq_ignore_ascii_case(value) { "true" } else { "false" }) style={ "--nojs-color-value: " (p) } {}
+                        }
                     }
                 }
             }
-        }
+        })
     }
 }
-
 /// Styles for this component; included in [`crate::stylesheet`].
 pub const CSS: &str = r#"
 .nojs-color { display: inline-flex; flex-wrap: wrap; align-items: center; gap: var(--nojs-space); }

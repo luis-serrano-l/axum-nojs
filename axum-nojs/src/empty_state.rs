@@ -11,83 +11,84 @@
 //! **Fallback:** none needed.
 //!
 //! ```rust
-//! use maud::html;
-//! use axum_nojs::{Caps, empty_state, empty_state_with, empty_state::EmptyOptions};
-//! let m = empty_state(&Caps::all(), "No files yet").into_string();
-//! assert!(m.contains("No files yet"));
-//! let m = empty_state_with(&Caps::all(), "No results for \u{201c}zzz\u{201d}", EmptyOptions::default()
+//! use axum_nojs::prelude::*;
+//! let ui = Ui::from(Caps::all());
+//! assert!(ui.empty_state("No files yet").render().into_string().contains("No files yet"));
+//! let m = ui.empty_state("No results for \u{201c}zzz\u{201d}")
 //!     .icon("\u{1f50d}")
 //!     .text(html! { "Check the spelling or clear the filter." })
 //!     .link("Clear the filter", "/table")
-//!     .post("Create a file", "/files/new")).into_string();
+//!     .post("Create a file", "/files/new");
+//! let m = m.render().into_string();
 //! assert!(m.contains(r#"href="/table""#) && m.contains(r#"action="/files/new""#));
 //! ```
 
-use maud::{Markup, html};
+use maud::{Markup, Render, html};
 
-use crate::Caps;
+use crate::Ui;
 
-/// Options for [`empty_state`].
+/// What a list shows when there is nothing in it, made by [`Ui::empty_state`].
 #[derive(Clone, Debug, Default)]
-pub struct EmptyOptions<'a> {
-    /// A glyph or emoji above the title, hidden from screen readers.
-    pub icon: Option<&'a str>,
-    /// One or two sentences: why it is empty.
-    pub text: Option<Markup>,
-    /// A secondary action: `(label, href)`.
-    pub link: Option<(&'a str, &'a str)>,
-    /// The primary action, posted: `(label, action)`.
-    pub post: Option<(&'a str, &'a str)>,
+pub struct EmptyState<'a> {
+    title: &'a str,
+    icon: Option<&'a str>,
+    text: Option<Markup>,
+    link: Option<(&'a str, &'a str)>,
+    post: Option<(&'a str, &'a str)>,
 }
 
-impl<'a> EmptyOptions<'a> {
-    /// A glyph above the title.
+impl Ui {
+    /// An empty state saying `title`: what is missing.
+    pub fn empty_state<'a>(&self, title: &'a str) -> EmptyState<'a> {
+        EmptyState { title, ..EmptyState::default() }
+    }
+}
+
+impl<'a> EmptyState<'a> {
+    /// A glyph or emoji above the title, hidden from screen readers.
     pub fn icon(mut self, icon: &'a str) -> Self {
         self.icon = Some(icon);
         self
     }
-    /// Why it is empty.
+
+    /// One or two sentences: why it is empty.
     pub fn text(mut self, text: Markup) -> Self {
         self.text = Some(text);
         self
     }
-    /// A link to follow.
+
+    /// A link to follow: the secondary action.
     pub fn link(mut self, label: &'a str, href: &'a str) -> Self {
         self.link = Some((label, href));
         self
     }
-    /// A button posting to `action`.
+
+    /// A button posting to `action`: the primary action.
     pub fn post(mut self, label: &'a str, action: &'a str) -> Self {
         self.post = Some((label, action));
         self
     }
 }
 
-/// An empty state with only a title.
-/// [`empty_state_with`] takes the options.
-pub fn empty_state(caps: &Caps, title: &str) -> Markup {
-    empty_state_with(caps, title, Default::default())
-}
-
-/// An empty state titled `title`.
-pub fn empty_state_with(_caps: &Caps, title: &str, options: EmptyOptions) -> Markup {
-    html! {
-        div class="nojs-empty" {
-            @if let Some(i) = options.icon { span class="nojs-empty-icon" aria-hidden="true" { (i) } }
-            p class="nojs-empty-title" { (title) }
-            @if let Some(t) = &options.text { p class="nojs-empty-text" { (t) } }
-            @if options.link.is_some() || options.post.is_some() {
-                div class="nojs-empty-actions" {
-                    @if let Some((label, action)) = options.post {
-                        form method="post" action=(action) { button type="submit" class="nojs-primary" { (label) } }
+impl Render for EmptyState<'_> {
+    fn render(&self) -> Markup {
+        html! {
+            div class="nojs-empty" {
+                @if let Some(i) = self.icon { span class="nojs-empty-icon" aria-hidden="true" { (i) } }
+                p class="nojs-empty-title" { (self.title) }
+                @if let Some(t) = &self.text { p class="nojs-empty-text" { (t) } }
+                @if self.link.is_some() || self.post.is_some() {
+                    div class="nojs-empty-actions" {
+                        @if let Some((label, action)) = self.post {
+                            form method="post" action=(action) { button type="submit" class="nojs-primary" { (label) } }
+                        }
+                        @if let Some((label, href)) = self.link { a href=(href) { (label) } }
                     }
-                    @if let Some((label, href)) = options.link { a href=(href) { (label) } }
                 }
             }
         }
     }
 }
-
 /// Styles for this component; included in [`crate::stylesheet`].
 pub const CSS: &str = r#"
 .nojs-empty {

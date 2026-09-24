@@ -1,7 +1,7 @@
 //! # Toast
 //!
 //! Short notices in a stack at the corner of the viewport, outside the page flow, that fade
-//! on their own: "Copied", "Invite sent". The same one-shot cookie as [`crate::flash()`] carries
+//! on their own: "Copied", "Invite sent". The same one-shot cookie as [`crate::Ui::flash`] carries
 //! them across a Post/Redirect/Get, with the same `level:` lines ([`crate::flash::stack`]).
 //!
 //! **Platform features:** `position: fixed` in the bottom corner (top on narrow screens, clear
@@ -10,59 +10,63 @@
 //! `prefers-reduced-motion: reduce` switches off. Danger toasts never fade.
 //!
 //! **Fallback:** without CSS animations the toasts stay until the next page; the dismiss link
-//! (`ToastOptions::dismiss`) clears them sooner. `/nojs/enhance.js` carries the list across a
+//! (`.dismiss()`) clears them sooner. `/nojs/enhance.js` carries the list across a
 //! swap like the flash.
 //!
 //! **What it does not do without script:** it cannot appear without a request (a toast is the
 //! answer to a round trip), and dismissing one is a navigation, not an instant removal.
 //!
 //! ```rust
-//! use axum_nojs::{Caps, toasts, toasts_with, toast::ToastOptions, flash::{Level, stack}};
-//! let text = stack(&[(Level::Ok, "Invite sent."), (Level::Danger, "Mail server down.")]);
-//! let m = toasts(&Caps::all(), Some(&text)).into_string();
+//! use axum_nojs::prelude::*;
+//! // What `ui.redirect("/toast").ok("Invite sent.").danger("Mail server down.")` sends.
+//! let ui = Ui::from_request("/toast", "", "nojs-flash=ok%3AInvite%20sent.%0Adanger%3AMail%20server%20down.");
+//! let m = ui.toasts().render().into_string();
 //! assert!(m.contains("nojs-toast-ok") && m.contains(r#"role="alert""#));
-//! let m = toasts_with(&Caps::all(), Some("Copied."), ToastOptions::default().dismiss("/toast")).into_string();
-//! assert!(m.contains(r#"href="/toast""#));
-//! assert_eq!(toasts(&Caps::all(), None).into_string(), "");
+//! assert!(ui.toasts().dismiss().render().into_string().contains(r#"href="/toast""#));
+//! assert_eq!(Ui::default().toasts().render().into_string(), "");
 //! ```
 
-use maud::{Markup, html};
+use maud::{Markup, Render, html};
 
-use crate::Caps;
+use crate::Ui;
 use crate::flash::{Level, parse};
 
-/// Options for [`toasts`].
-#[derive(Clone, Debug, Default)]
-pub struct ToastOptions<'a> {
-    /// Where each toast's close link goes, normally the page's own URL.
-    pub dismiss: Option<&'a str>,
+/// The request's flash messages as toasts in the corner, made by [`Ui::toasts`]; nothing when
+/// there are none.
+#[derive(Clone, Debug)]
+pub struct Toasts<'a> {
+    ui: &'a Ui,
+    dismiss: bool,
 }
 
-impl<'a> ToastOptions<'a> {
-    /// A close link to `href` on every toast.
-    pub fn dismiss(mut self, href: &'a str) -> Self {
-        self.dismiss = Some(href);
+impl Ui {
+    /// The flash messages a [`Ui::redirect`] left for this page, as toasts.
+    pub fn toasts(&self) -> Toasts<'_> {
+        Toasts { ui: self, dismiss: false }
+    }
+}
+
+impl Toasts<'_> {
+    /// A close link on each toast, back to this page.
+    pub fn dismiss(mut self) -> Self {
+        self.dismiss = true;
         self
     }
 }
 
-/// A toast region with the default options.
-/// [`toasts_with`] takes the options.
-pub fn toasts(caps: &Caps, text: Option<&str>) -> Markup {
-    toasts_with(caps, text, Default::default())
-}
-
-/// The messages in `text` as a stack of toasts; nothing when there are none.
-pub fn toasts_with(_caps: &Caps, text: Option<&str>, options: ToastOptions) -> Markup {
-    let messages = text.map(parse).unwrap_or_default();
-    html! {
-        @if !messages.is_empty() {
-            ol class="nojs-toasts" {
-                @for (level, message) in &messages {
-                    li class={ "nojs-toast nojs-toast-" (level.as_str()) } role=(if *level == Level::Danger { "alert" } else { "status" }) {
-                        span class="nojs-toast-text" { (message) }
-                        @if let Some(href) = options.dismiss {
-                            a class="nojs-toast-close" href=(href) aria-label={ "Dismiss: " (message) } { "\u{d7}" }
+impl Render for Toasts<'_> {
+    fn render(&self) -> Markup {
+        let messages = self.ui.state.flash().map(parse).unwrap_or_default();
+        let dismiss = self.dismiss.then(|| self.ui.state.path());
+        html! {
+            @if !messages.is_empty() {
+                ol class="nojs-toasts" {
+                    @for (level, message) in &messages {
+                        li class={ "nojs-toast nojs-toast-" (level.as_str()) } role=(if *level == Level::Danger { "alert" } else { "status" }) {
+                            span class="nojs-toast-text" { (message) }
+                            @if let Some(href) = dismiss {
+                                a class="nojs-toast-close" href=(href) aria-label={ "Dismiss: " (message) } { "\u{d7}" }
+                            }
                         }
                     }
                 }
@@ -70,7 +74,6 @@ pub fn toasts_with(_caps: &Caps, text: Option<&str>, options: ToastOptions) -> M
         }
     }
 }
-
 /// Styles for this component; included in [`crate::stylesheet`].
 pub const CSS: &str = r#"
 .nojs-toasts {
