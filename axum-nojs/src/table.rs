@@ -4,7 +4,8 @@
 //! column header is a link that re-requests the page sorted by that column, a search box
 //! filters rows on the server, checkboxes pick rows for a bulk form, a "Columns" chooser
 //! hides columns through `?cols=`, a row can expand a detail block and carry its own action
-//! menu, numbers line up, and a CSV link downloads the current filter.
+//! menu, numbers line up, a CSV link downloads the current filter, and a row can be edited in
+//! place (`?edit.<id>=<key>` draws it as text boxes posting to one form, Post/Redirect/Get).
 //!
 //! **Platform features:**
 //! - Ordinary links to `?sort=<col>&dir=asc|desc` in each `<th>`; clicking the sorted column
@@ -15,7 +16,8 @@
 //! - Row selection through the form attribute (`form="id"`, Chrome 10, Firefox 4, Safari 5.1):
 //!   each checkbox belongs to a
 //!   bulk `<form method="post">` that sits after the table, so nothing nests and the row's
-//!   own menu can still post.
+//!   own menu can still post. The row being edited uses the same attribute: its text boxes
+//!   and "Save" belong to an edit form after the table, since a form cannot wrap a row.
 //! - `<details>` (baseline 2020) in the first cell for a row's detail block; the row's menu
 //!   is a [`crate::Ui::menu`].
 //! - `<colgroup>` widths and `font-variant-numeric: tabular-nums` (Chrome 52, Firefox 34,
@@ -87,6 +89,8 @@ pub(crate) struct Column<'a> {
     pub numeric: bool,
     /// A CSS width for the `<col>`, such as `6rem` or `30%`.
     pub width: Option<&'a str>,
+    /// Becomes a text box when its row is edited in place.
+    pub editable: bool,
 }
 
 impl<'a> Column<'a> {
@@ -99,6 +103,7 @@ impl<'a> Column<'a> {
             sortable: true,
             numeric: false,
             width: None,
+            editable: false,
         }
     }
 
@@ -110,6 +115,7 @@ impl<'a> Column<'a> {
             sortable: false,
             numeric: false,
             width: None,
+            editable: false,
         }
     }
 
@@ -122,6 +128,7 @@ impl<'a> Column<'a> {
             sortable: true,
             numeric: true,
             width: None,
+            editable: false,
         }
     }
 }
@@ -134,6 +141,7 @@ pub struct Row<'a> {
     key: Option<&'a str>,
     detail: Option<Markup>,
     menu: Vec<MenuItem<'a>>,
+    values: Vec<&'a str>,
 }
 
 impl<'a> Row<'a> {
@@ -144,6 +152,7 @@ impl<'a> Row<'a> {
             key: None,
             detail: None,
             menu: Vec::new(),
+            values: Vec::new(),
         }
     }
     /// The value posted for this row when its checkbox is ticked; also names its menu.
@@ -154,6 +163,12 @@ impl<'a> Row<'a> {
     /// A block shown under the first cell when its `<details>` is opened.
     pub fn detail(mut self, detail: Markup) -> Self {
         self.detail = Some(detail);
+        self
+    }
+    /// The raw text of each cell, in column order, for editing the row in place: an editable
+    /// column's text box starts with its value (the cells may be formatted, `1 KB`).
+    pub fn values(mut self, values: impl IntoIterator<Item = &'a str>) -> Self {
+        self.values = values.into_iter().collect();
         self
     }
     /// Items of the row's action menu (needs a `key`).
@@ -264,6 +279,22 @@ pub(crate) struct TableOptions<'a> {
     pub empty: &'a str,
     /// Draw skeleton rows with `aria-busy` instead of `rows`: the data is still coming.
     pub loading: bool,
+    /// Rows can be edited in place: an "Edit" link per row, and the row being edited as text
+    /// boxes posting to one form.
+    pub edit: Option<Editing<'a>>,
+}
+
+/// The in-place edit of a table's rows, worked out by [`Table`] from the request.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) struct Editing<'a> {
+    /// Where the edit form posts: `key=<row key>`, one field per editable column, `returns_to`.
+    pub action: &'a str,
+    /// The key of the row being edited, from `?edit.<id>=`.
+    pub key: Option<&'a str>,
+    /// This page's URL ending in `edit.<id>=`: a row's key completes its "Edit" link.
+    pub link: &'a str,
+    /// This page's URL without `edit.<id>`: "Cancel", and where the route returns.
+    pub done: &'a str,
 }
 
 impl Default for TableOptions<'_> {
@@ -278,6 +309,7 @@ impl Default for TableOptions<'_> {
             csv: None,
             empty: "No rows match.",
             loading: false,
+            edit: None,
         }
     }
 }
@@ -351,8 +383,10 @@ pub(crate) fn table_in(
         csv,
         empty,
         loading,
+        edit,
     } = options;
     let root = enhance::swap_id("nojs-table", id);
+    let edit_id = format!("{root}-edit");
     let filter_id = format!("{root}-q");
     let bulk_id = format!("{root}-bulk");
     let vt = caps
@@ -415,7 +449,10 @@ pub(crate) fn table_in(
         format!("{href}{}", query(sort, &pairs))
     };
     let has_menu = rows.iter().any(|r| !r.menu.is_empty());
-    let span = visible.len() + usize::from(bulk.is_some()) + usize::from(has_menu);
+    let span = visible.len()
+        + usize::from(bulk.is_some())
+        + usize::from(has_menu)
+        + usize::from(edit.is_some());
     html! {
         div id=(root) data-nojs=[swap.then_some("swap")] class="nojs-table" {
             div class="nojs-table-toolbar" {
@@ -454,6 +491,7 @@ pub(crate) fn table_in(
                 colgroup {
                     @if bulk.is_some() { col class="nojs-table-select-col"; }
                     @for (_, c) in &visible { col style=[c.width.map(|w| format!("width: {w}"))]; }
+                    @if edit.is_some() { col class="nojs-table-edit-col"; }
                     @if has_menu { col class="nojs-table-menu-col"; }
                 }
                 thead { tr {
@@ -472,6 +510,7 @@ pub(crate) fn table_in(
                             } @else { (col.label) }
                         }
                     }
+                    @if edit.is_some() { th scope="col" class="nojs-table-edit" { span class="nojs-sr" { "Edit" } } }
                     @if has_menu { th scope="col" class="nojs-table-menu" { span class="nojs-sr" { "Actions" } } }
                 } }
                 tbody style=[vt] aria-busy=[loading.then_some("true")] {
@@ -480,7 +519,9 @@ pub(crate) fn table_in(
                     } @else if rows.is_empty() {
                         tr { td colspan=(span) class="nojs-table-empty" { (empty) } }
                     }
-                    @for row in rows.iter().filter(|_| !loading) { tr {
+                    @for row in rows.iter().filter(|_| !loading) {
+                    @let editing = edit.is_some_and(|e| e.key.is_some() && e.key == row.key);
+                    tr class=[editing.then_some("nojs-table-editing")] {
                         @if bulk.is_some() {
                             td class="nojs-table-select" {
                                 @if let Some(k) = row.key { input type="checkbox" class="nojs-table-check" name="row" value=(k) form=(bulk_id) aria-label={ "Select " (k) }; }
@@ -489,12 +530,27 @@ pub(crate) fn table_in(
                         @for (n, (i, col)) in visible.iter().enumerate() {
                             @let cell = row.cells.get(*i);
                             td class=[col.numeric.then_some("nojs-table-num")] {
+                                @if editing && col.editable {
+                                    (Input::text_box(col.key, col.label, row.values.get(*i).copied().unwrap_or("")).form(&edit_id).class("nojs-table-edit-input"))
+                                } @else {
                                 @match (n, &row.detail) {
                                     (0, Some(detail)) => details class="nojs-table-detail" {
                                         summary { @if let Some(c) = cell { (c) } }
                                         div class="nojs-table-detail-body" { (detail) }
                                     },
                                     _ => @if let Some(c) = cell { (c) },
+                                }
+                                }
+                            }
+                        }
+                        @if let Some(e) = edit {
+                            td class="nojs-table-edit" {
+                                @if editing {
+                                    (Button::new(*caps, "Save").primary().small().form(&edit_id))
+                                    (Button::link(*caps, "Cancel", e.done).ghost().small())
+                                } @else if let Some(k) = row.key {
+                                    @let href = format!("{}{}", e.link, encode(k));
+                                    (Button::link(*caps, "Edit", &href).ghost().small())
                                 }
                             }
                         }
@@ -506,6 +562,12 @@ pub(crate) fn table_in(
                             }
                         }
                     } }
+                }
+            }
+            @if let (Some(e), Some(key)) = (edit, edit.and_then(|e| e.key)) {
+                form method="post" action=(e.action) id=(edit_id) class="nojs-table-edit-form" {
+                    input type="hidden" name="key" value=(key);
+                    input type="hidden" name="returns_to" value=(e.done);
                 }
             }
             @if let Some((action, buttons)) = bulk {
@@ -535,6 +597,7 @@ pub struct Table<'a> {
     csv: Option<&'a str>,
     empty: &'a str,
     loading: bool,
+    edit: Option<&'a str>,
 }
 
 impl Ui {
@@ -553,6 +616,7 @@ impl Ui {
             csv: None,
             empty: "No rows match.",
             loading: false,
+            edit: None,
         }
     }
 }
@@ -579,6 +643,20 @@ impl<'a> Table<'a> {
     /// The column added last holds numbers: right-aligned, tabular figures.
     pub fn numeric(self) -> Self {
         self.last(|c| c.numeric = true)
+    }
+
+    /// The column added last becomes a text box when its row is edited in place ([`Table::edit`]).
+    pub fn editable(self) -> Self {
+        self.last(|c| c.editable = true)
+    }
+
+    /// Rows (with a [`Row::key`]) can be edited in place: each gets an "Edit" link to
+    /// `?edit.<id>=<key>`, which draws that row's editable columns as text boxes and a
+    /// "Save" button posting to `action` (`key`, one field per editable column named after
+    /// it, `returns_to`). The route saves and redirects to `returns_to`.
+    pub fn edit(mut self, action: &'a str) -> Self {
+        self.edit = Some(action);
+        self
     }
 
     /// A CSS width for the column added last, such as `6rem` or `30%`.
@@ -671,6 +749,17 @@ impl<'a> Table<'a> {
 impl Render for Table<'_> {
     fn render(&self) -> Markup {
         let cols = self.query.cols(&self.columns);
+        let edit_key = format!("edit.{}", self.id);
+        let (link, done) = (
+            self.ui.link_with(&edit_key, ""),
+            self.ui.link_without(&edit_key),
+        );
+        let edit = self.edit.map(|action| Editing {
+            action,
+            key: self.ui.param(&edit_key).filter(|k| !k.is_empty()),
+            link: &link,
+            done: &done,
+        });
         let options = TableOptions {
             sort: self.sort(),
             filter: self.filter(),
@@ -683,6 +772,7 @@ impl Render for Table<'_> {
             csv: self.csv,
             empty: self.empty,
             loading: self.loading,
+            edit,
             ..TableOptions::default()
         };
         match self.total {
@@ -776,6 +866,10 @@ pub const CSS: &str = r#"
 .nojs-table-num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .nojs-table-select { width: 2.5rem; text-align: center; }
 .nojs-table-menu { width: 3.5rem; text-align: center; text-wrap: nowrap; }
+.nojs-table-edit-col { width: 10rem; }
+.nojs-table-edit { white-space: nowrap; text-align: right; }
+.nojs-table-edit .nojs-button + .nojs-button { margin-left: 0.25rem; }
+.nojs-table-edit-input { width: 100%; box-sizing: border-box; min-height: 2rem; padding-block: 0.25rem; }
 .nojs-table-check { margin: 0; }
 .nojs-table-empty { color: var(--nojs-muted); text-align: center; padding: 1.5rem; height: 6rem; }
 .nojs-table-detail summary { cursor: pointer; list-style: none; font-weight: 400; }

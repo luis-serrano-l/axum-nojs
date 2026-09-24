@@ -528,8 +528,17 @@ The showcase for "wait, this needs no JS?".
   date ("24 September 2026"); without script it does not follow a new pick until the form is
   sent. `Calendar::value()` added so a form's saved date shows. Demo: a GET form on
   `/calendar`; the browser check opens the popover and picks a day.
-- [ ] `table` upgrades: row selection with bulk actions (checkboxes + one form), inline edit
+- [x] `table` upgrades: row selection with bulk actions (checkboxes + one form), inline edit
   row via PRG, sticky header.
+  Done: selection with bulk actions (M10's `form=` checkboxes and one bulk form) and the sticky
+  header were already there; inline edit is new. `Table::edit(action)` plus `.editable()` per
+  column and `Row::values(..)` (the raw text of each cell): every keyed row gets an "Edit"
+  link to `?edit.<id>=<key>` (all other parameters kept, page included), and that row draws
+  its editable columns as text boxes tied by `form=` to one POST form after the table (a form
+  cannot wrap a `<tr>`), with Save and Cancel. The route saves and redirects to the posted
+  `returns_to`. Demo: `/table`'s Kind column, saved per visitor in a cookie (`/table/edit`
+  only redirects back to `/table…`). Blitz test `table_row_edits_in_place`; the browser check
+  edits, saves and reads the new value. `Ui::link_without` and `Input::form` added.
 - [ ] `upload.rs`: file input with a preview list after the round trip; progress only through
   the enhance script, no-script path intact.
 - [ ] `kanban.rs`: moving a card is a form post per column.

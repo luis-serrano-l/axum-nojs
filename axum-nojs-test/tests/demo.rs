@@ -920,6 +920,35 @@ async fn command_palette_suggests_and_lists_matches() {
 }
 
 #[tokio::test]
+async fn table_row_edits_in_place() {
+    let page = Page::render(
+        demo::router(),
+        "/table?per.files=5&edit.files=src/build.rs",
+        MODERN,
+    )
+    .await;
+    assert!(page.is_visible(
+        ".nojs-table-editing .nojs-table-edit-input[name=kind][form='nojs-table-files-edit']"
+    ));
+    assert!(page.exists("form#nojs-table-files-edit[method=post][action='/table/edit'] input[name=key][value='src/build.rs']"));
+    assert_eq!(
+        page.count(".nojs-table-edit-input"),
+        1,
+        "only the edited row, only its editable column"
+    );
+    let row = page.bbox(".nojs-table-editing").unwrap();
+    let other = page.bbox("tbody tr:first-child").unwrap();
+    assert!(
+        (row.width - other.width).abs() < 1.0,
+        "the edited row keeps the table's columns"
+    );
+    assert!(
+        page.exists("tbody tr:not(.nojs-table-editing) a.nojs-button[href*='edit.files=']"),
+        "other rows link to their edit"
+    );
+}
+
+#[tokio::test]
 async fn buttons_badges_and_icons() {
     let mut page = Page::render(demo::router(), "/button?loading=1", MODERN).await;
     shot(&mut page, "button-variants");

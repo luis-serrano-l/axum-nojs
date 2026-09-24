@@ -87,6 +87,7 @@ pub(crate) struct Extra<'a> {
     step: Option<i64>,
     aria_controls: Option<&'a str>,
     class: Option<&'a str>,
+    form: Option<&'a str>,
 }
 
 impl<'a> Field<'a> {
@@ -144,6 +145,13 @@ impl<'a> Input<'a> {
         max: Option<i64>,
     ) -> Self {
         Input(Field::new(name, label, FieldKind::Number { min, max }))
+    }
+
+    /// A text box with no visible label: `label` is its `aria-label`.
+    pub(crate) fn text_box(name: &'a str, label: &'a str, value: &'a str) -> Self {
+        Input(Field::new(name, label, FieldKind::Text))
+            .hide_label()
+            .value(value)
     }
 
     /// A search box with no visible label: `label` is its `aria-label`, `value` the query.
@@ -305,6 +313,13 @@ impl<'a> Input<'a> {
         self
     }
 
+    /// `form`: the id of the form this control posts with, when it cannot sit inside it (a
+    /// table row being edited).
+    pub fn form(mut self, id: &'a str) -> Self {
+        self.0.extra.form = Some(id);
+        self
+    }
+
     /// A class on the control, for a component's part name.
     pub fn class(mut self, class: &'a str) -> Self {
         self.0.extra.class = Some(class);
@@ -396,7 +411,7 @@ impl Render for Field<'_> {
             input id=(id) class=[x.class] name=(f.name) type=(kind) value=[echo.then_some(f.value)]
                 required[f.required] min=[min] max=[max] step=[x.step] pattern=[pattern] title=[pattern.and(help)]
                 accept=[accept] multiple[multiple] maxlength=[f.maxlength] placeholder=[f.placeholder]
-                list=[x.list] autocomplete=[x.autocomplete] autofocus[x.autofocus] inputmode=[x.inputmode]
+                form=[x.form] list=[x.list] autocomplete=[x.autocomplete] autofocus[x.autofocus] inputmode=[x.inputmode]
                 aria-label=[x.hide_label.then_some(f.label)] aria-controls=[x.aria_controls]
                 aria-invalid=[invalid] aria-describedby=[described.as_deref()];
         };

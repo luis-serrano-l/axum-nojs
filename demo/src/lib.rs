@@ -24,7 +24,7 @@ use tower_http::compression::{
 };
 
 /// Every demo path the no-script test and the screenshot test visit.
-pub const PATHS: [&str; 26] = [
+pub const PATHS: [&str; 27] = [
     "/",
     "/caps",
     "/button?loading=1",
@@ -45,6 +45,7 @@ pub const PATHS: [&str; 26] = [
     "/counter",
     "/inputs",
     "/table?sort=size&dir=desc&q=a&per.files=5&page=2&cols=name,size",
+    "/table?per.files=5&edit.files=src/build.rs",
     "/wizard?step.signup=1",
     "/swap?n=3",
     "/toast",
@@ -77,6 +78,7 @@ pub fn router() -> Router {
         .route("/table", get(table_page))
         .route("/table.csv", get(table_csv))
         .route("/table/bulk", post(table_bulk))
+        .route("/table/edit", post(table_edit))
         .route("/wizard", get(wizard_page).post(wizard_submit))
         .route("/form", get(form_page).post(form_submit))
         .route("/counter", get(counter_page).post(counter_submit))
@@ -689,6 +691,7 @@ fn files_table(ui: &Ui) -> Table<'_> {
         .width("7rem")
         .column("kind", "Kind")
         .sortable()
+        .editable()
         .width("9rem")
     // end code
 }
@@ -719,11 +722,25 @@ fn files(t: &Table) -> Vec<(String, u32, &'static str)> {
 }
 
 /// The table only renders and links; a row can expand, has its own menu and can be selected.
-async fn table_page(ui: Ui) -> Page {
+/// Kinds renamed in place on `/table`, remembered per visitor.
+#[derive(Default, Deserialize, Serialize)]
+struct Kinds(Vec<(String, String)>);
+
+impl Kinds {
+    fn of<'a>(&'a self, file: &str, kind: &'a str) -> &'a str {
+        self.0
+            .iter()
+            .find(|(f, _)| f == file)
+            .map_or(kind, |(_, k)| k.as_str())
+    }
+}
+
+async fn table_page(ui: Ui, Saved(kinds): Saved<Kinds>) -> Page {
     let t = files_table(&ui);
     let files = files(&t);
-    let rows = files.iter().map(|f| Row::new([html! { code { (f.0) } }, html! { (axum_nojs::paged_table::thousands(f.1 as usize / 1024)) " KB" }, html! { (f.2) }])
+    let rows = files.iter().map(|f| Row::new([html! { code { (f.0) } }, html! { (axum_nojs::paged_table::thousands(f.1 as usize / 1024)) " KB" }, html! { (kinds.of(&f.0, f.2)) }])
         .key(&f.0)
+        .values(["", "", kinds.of(&f.0, f.2)])
         .detail(html! { p { "A " (f.2) " of " (f.1) " bytes, in " code { (f.0.split('/').next().unwrap_or("")) } "." } })
         .menu([MenuItem::link("Open", "/table"), MenuItem::action("Delete", "/table/bulk").danger()]));
     // code: /table
@@ -736,6 +753,7 @@ async fn table_page(ui: Ui) -> Page {
             "/table/bulk",
             [("archive", "Archive"), ("delete", "Delete")],
         )
+        .edit("/table/edit")
         .empty("No files match this filter.")
         .loading(ui.param("loading") == Some("1"));
     // end code
@@ -776,6 +794,35 @@ async fn table_csv(ui: Ui) -> impl IntoResponse {
         ],
         csv,
     )
+}
+
+/// A row edited in place: the file's new kind, saved, then back to the page it came from.
+#[derive(Deserialize)]
+struct EditedRow {
+    key: String,
+    kind: String,
+    returns_to: String,
+}
+
+async fn table_edit(
+    ui: Ui,
+    Saved(mut kinds): Saved<Kinds>,
+    Form(row): Form<EditedRow>,
+) -> Redirect {
+    let kind: String = row.kind.trim().chars().take(20).collect();
+    kinds.0.retain(|(f, _)| *f != row.key);
+    if !kind.is_empty() {
+        kinds.0.push((row.key.clone(), kind));
+    }
+    // Only back to this page: `returns_to` is posted, so it is not trusted as a URL.
+    let back = if row.returns_to.starts_with("/table") {
+        &row.returns_to
+    } else {
+        "/table"
+    };
+    ui.redirect(back)
+        .flash(&format!("Saved {}.", row.key))
+        .save(&kinds)
 }
 
 /// `row=<key>` per ticked box and `action=<value>` from the button: acknowledged with a flash.

@@ -110,6 +110,15 @@ impl Ui {
     /// This page's URL with the query parameter `key` set to `value` (added last when absent)
     /// and every other parameter kept in order: a link that changes one thing.
     pub(crate) fn link_with(&self, key: &str, value: &str) -> String {
+        self.link_changing(key, Some(value))
+    }
+
+    /// This page's URL without the query parameter `key`.
+    pub(crate) fn link_without(&self, key: &str) -> String {
+        self.link_changing(key, None)
+    }
+
+    fn link_changing(&self, key: &str, value: Option<&str>) -> String {
         use crate::state::encode;
         let mut pairs: Vec<(&str, &str)> = self
             .params
@@ -117,12 +126,16 @@ impl Ui {
             .filter(|(k, _)| k != key)
             .map(|(k, v)| (k.as_str(), v.as_str()))
             .collect();
-        pairs.push((key, value));
+        pairs.extend(value.map(|v| (key, v)));
         let query: Vec<String> = pairs
             .iter()
             .map(|(k, v)| format!("{}={}", encode(k), encode(v)))
             .collect();
-        format!("{}?{}", self.state.path(), query.join("&"))
+        if query.is_empty() {
+            self.state.path().to_string()
+        } else {
+            format!("{}?{}", self.state.path(), query.join("&"))
+        }
     }
 
     /// A whole page titled `title` in this request's theme.

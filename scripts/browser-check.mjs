@@ -288,6 +288,13 @@ try {
   assert(await js("return document.activeElement.matches('.nojs-button-primary:focus-visible')"), "button: reached by Tab, :focus-visible");
   assert(await js("return getComputedStyle(document.activeElement).outlineWidth") === "3px", "button: the focus ring is a 3px outline");
 
+  // Table: edit a row in place; Save posts, the redirect comes back with the new value.
+  await go("/table?per.files=5&edit.files=src/build.rs");
+  await js("const i = document.querySelector('.nojs-table-edit-input'); i.value = 'rust'");
+  await click(".nojs-table-editing .nojs-button-primary");
+  await until(async () => /Saved src\/build.rs/.test(await js("return document.querySelector('.nojs-flash')?.textContent || ''")), "table: row saved");
+  assert(await js("return !document.querySelector('.nojs-table-edit-input') && [...document.querySelectorAll('td')].some(td => td.textContent.trim() === 'rust')"), "table: an edited row is saved and shown");
+
   // Date picker: the button opens the calendar popover; a day is a radio the form posts.
   await go("/calendar?due=2026-09-24");
   await click("#f-due");
