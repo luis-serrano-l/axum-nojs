@@ -514,3 +514,36 @@ script, proven in CI, with server-side flows included.
 - [ ] Launch material: live demo host, a post "shadcn look, zero JavaScript, verified",
   crates.io keywords `no-js`, `progressive-enhancement`, `maud`, `ssr`, `components`.
   Posting to r/rust / This Week in Rust and hosting are outward actions: ask the owner first.
+
+## M27 · Loco fit (only if the owner picks Loco)
+The owner thinks [Loco](https://loco.rs) (Rails-style, built on Axum) is the best home for
+this library. Loco controllers are Axum handlers, so `Ui`, `Page`, `Redirect` and `Saved<T>`
+should already work there; this milestone makes it a first-class fit instead of an accident.
+Loco's default views are Tera templates and its scaffolds generate them, so the gap is
+wiring, generators and docs, not components. Check every Loco API named below against the
+loco-rs source (fetch it into `~/.cargo/registry` with a scratch crate) before relying on it.
+- [ ] Decision: commit to Loco as the primary target? Owner only; if no, skip this milestone.
+  If yes, it also bears on M26's naming box (a `loco-nojs`/`nojs-ui` split, or one crate with
+  a `loco` feature).
+- [ ] `loco` feature (or `axum-nojs-loco` crate): an `Initializer` whose `after_routes` mounts
+  `/nojs/enhance.js` and the `/nojs/caps` beacon route, so an app adds one line to
+  `app.rs::initializers`.
+- [ ] Handlers return Loco's `Result<Response>`: `Page`, `Redirect` and `Streamed` convert with
+  `?`/`.into_response()`, no wrapper; a doctest shows a Loco controller using `ui: Ui`.
+- [ ] Validation errors: Loco models validate with the `validator` crate; a helper maps
+  `ValidationErrors` into `Form::errors(..)`/`Input::error(..)` so server errors land on the
+  right field.
+- [ ] Data: SeaORM's paginator feeds `paged_table`/`pager` (`?page=` and page size) without
+  loading every row; an example query in the docs.
+- [ ] Flash and PRG: `Redirect` + `ui.flash()` work with Loco's cookie setup (the private
+  cookie key from `config/*.yaml` if we use signed cookies); no conflict with Loco's
+  session or auth middleware.
+- [ ] Views: document Maud views beside Loco's Tera default (a `views/` module of functions
+  returning `Markup`), and decide whether a Tera function bridge (`{{ nojs_button(..) }}`) is
+  worth it; default answer: no, Maud only, stated in the docs.
+- [ ] Generator: a scaffold override (`cargo loco generate override` templates, or our own
+  template set) that emits Maud views built from `ui.*` for list/show/new/edit, PRG included.
+- [ ] `examples/loco-app`: a minimal Loco app (one model, CRUD, sign-in) with script off;
+  Blitz renders its routes and the only-one-script test covers them.
+- [ ] `docs/loco.md` and a README section: install, the initializer line, a controller, a
+  form with validation, the generator.
