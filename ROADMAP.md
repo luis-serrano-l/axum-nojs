@@ -358,7 +358,10 @@ Done before M21 so the primitives are born in this look.
   (the Blitz test now checks the chip, inset 3px). Toasts and flashes are neutral cards with
   a level dot. Link-as-button rules repeat the button values until M22 builds them on the
   primitive.
-- [ ] The demo takes the same look (index, plate, code box); syntect classes recoloured.
+- [x] The demo takes the same look (index, plate, code box); syntect classes recoloured.
+  Done: index groups are grids of cards (the title link stretches over the card), "built on"
+  items are outline badges, the stage is a preview box over a `--nojs-surface` code block, and
+  the seven `nojs-hl-*` classes use danger/ok/warn/muted/fg (GitHub-like, still tokens only).
 - [ ] Side-by-side check: for each component, a Firefox screenshot of the demo (light and dark,
   1280 and 420 wide) next to the shadcn docs page for the same component; mismatches fixed
   or noted. `tests/shots/` refreshed; the colour-literal test still passes.

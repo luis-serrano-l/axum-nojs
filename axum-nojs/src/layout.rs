@@ -362,57 +362,69 @@ tbody tr:hover { background: color-mix(in srgb, var(--nojs-accent) 50%, transpar
 .nojs-yes { color: var(--nojs-ok); font-weight: 600; }
 .nojs-no { color: var(--nojs-danger); font-weight: 600; }
 
-/* Demo shell: toolbar with the way back and the theme switch, the lede under a title,
-   the "built on" line, the plate (stage + highlighted code), and the grouped index. */
+/* Demo shell, after the shadcn docs: toolbar with the way back and the theme switch, the
+   lede under a title, "built on" as outline badges, the plate (a preview box over a muted
+   code block), and the index as a grid of cards per group. */
 .nojs-toolbar { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: var(--nojs-space); margin: 0 0 calc(var(--nojs-space) * 3); min-height: 2.25rem; }
 .nojs-popover-row { display: flex; justify-content: space-between; gap: var(--nojs-space); margin-bottom: calc(var(--nojs-space) * 2); }
-.nojs-back { color: var(--nojs-muted); text-decoration: none; }
+.nojs-back { color: var(--nojs-muted); text-decoration: none; font-size: 0.875rem; font-weight: 500; }
 .nojs-back::before { content: "\2190"; margin-right: 0.35em; }
-.nojs-back:hover { color: var(--nojs-primary); text-decoration: underline; }
-.nojs-lede { font-size: 1.125rem; color: var(--nojs-muted); margin-bottom: 1.5rem; }
-.nojs-built { color: var(--nojs-muted); font-size: 0.875rem; margin: -0.5rem 0 1.5rem; }
-.nojs-built code, .nojs-index li code { color: var(--nojs-fg); margin: 0 0.25rem 0.25rem 0; display: inline-block; white-space: nowrap; }
+.nojs-back:hover { color: var(--nojs-fg); }
+.nojs-lede { font-size: 1.125rem; line-height: 1.75rem; color: var(--nojs-muted); margin-bottom: 1rem; }
+.nojs-built { color: var(--nojs-muted); font-size: 0.875rem; margin: 0 0 1.5rem; }
+.nojs-built code, .nojs-index li code {
+  display: inline-block; margin: 0 0.25rem 0.25rem 0; padding: 0.125rem 0.5rem; white-space: nowrap;
+  font-size: 0.75rem; line-height: 1rem; font-weight: 500; color: var(--nojs-fg);
+  background: transparent; border: 1px solid var(--nojs-line); border-radius: var(--nojs-radius-sm);
+}
 /* A component page's plate: the live component on a stage, the code that drew it joined
    underneath. One per page; no transform, overflow or contain on the stage, so dialogs,
    drawers and toasts still escape it. */
 .nojs-plate { margin: 0 0 2rem; }
 .nojs-stage {
-  padding: calc(var(--nojs-space) * 3); background: var(--nojs-surface);
-  border: 1px solid var(--nojs-line); border-bottom: 0; border-radius: var(--nojs-radius) var(--nojs-radius) 0 0;
+  padding: calc(var(--nojs-space) * 5) calc(var(--nojs-space) * 4); background: var(--nojs-bg);
+  border: 1px solid var(--nojs-line); border-bottom: 0; border-radius: var(--nojs-radius-lg) var(--nojs-radius-lg) 0 0;
 }
 .nojs-stage > :last-child { margin-bottom: 0; }
 .nojs-stage h2:first-child { margin-top: 0; }
-@media (max-width: 40rem) { .nojs-stage { padding: calc(var(--nojs-space) * 2); } }
+@media (max-width: 40rem) { .nojs-stage { padding: calc(var(--nojs-space) * 3) calc(var(--nojs-space) * 2); } }
 .nojs-snippet {
   margin: 0; max-width: none; overflow: hidden;
-  border: 1px solid var(--nojs-line); border-radius: 0 0 var(--nojs-radius) var(--nojs-radius);
-  background: color-mix(in srgb, var(--nojs-fg) 5%, var(--nojs-surface));
+  border: 1px solid var(--nojs-line); border-radius: 0 0 var(--nojs-radius-lg) var(--nojs-radius-lg);
+  background: var(--nojs-surface);
 }
 .nojs-snippet figcaption {
   display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.25rem 1rem;
   padding: 0.5rem calc(var(--nojs-space) * 2); border-bottom: 1px solid var(--nojs-line);
-  color: var(--nojs-muted); font-size: 0.8125rem;
+  color: var(--nojs-muted); font-size: 0.75rem;
 }
 .nojs-snippet figcaption span:first-child { color: var(--nojs-fg); font-weight: 500; font-family: var(--nojs-font-mono); }
-.nojs-snippet pre { margin: 0; padding: calc(var(--nojs-space) * 2); overflow-x: auto; scrollbar-color: var(--nojs-line) transparent; line-height: 1.55; tab-size: 4; }
+.nojs-snippet pre { margin: 0; padding: calc(var(--nojs-space) * 2); overflow-x: auto; scrollbar-color: var(--nojs-line) transparent; line-height: 1.7; tab-size: 4; }
 .nojs-snippet pre code { background: none; border: 0; padding: 0; font-size: 0.8125rem; color: var(--nojs-fg); }
-/* Highlighted Rust: keyword, string, number and type, comment, macro, method. */
-.nojs-hl-k { color: var(--nojs-danger); font-weight: 600; }
-.nojs-hl-s { color: var(--nojs-warn); }
-.nojs-hl-n, .nojs-hl-t { color: var(--nojs-ok); }
+/* Highlighted Rust in the status colours, as a GitHub-like theme: keywords in danger, strings
+   in ok, numbers and types in warn, comments muted, macros bold. */
+.nojs-hl-k { color: var(--nojs-danger); }
+.nojs-hl-s { color: var(--nojs-ok); }
+.nojs-hl-n, .nojs-hl-t { color: var(--nojs-warn); }
 .nojs-hl-c { color: var(--nojs-muted); font-style: italic; }
-.nojs-hl-m { color: var(--nojs-primary); font-weight: 600; }
-.nojs-hl-f { color: var(--nojs-primary); }
+.nojs-hl-m { color: var(--nojs-fg); font-weight: 600; }
+.nojs-hl-f { color: var(--nojs-fg); }
 .nojs-index { max-width: none; }
-.nojs-index h2 { margin-top: 2.5rem; padding-bottom: 0.35rem; border-bottom: 1px solid var(--nojs-line); }
-.nojs-index ul { list-style: none; margin: 0; padding: 0; }
-.nojs-index li { display: grid; grid-template-columns: 13rem 1fr; gap: 0.25rem 1.5rem; align-items: baseline; padding: 0.9rem 0; max-width: none; }
-.nojs-index li + li { border-top: 1px solid var(--nojs-line); }
-.nojs-index li a { font-size: 1.25rem; font-weight: 600; line-height: 1.3; text-decoration: none; color: var(--nojs-fg); }
-.nojs-index li a:hover { color: var(--nojs-primary); text-decoration: underline; }
-.nojs-index li p { margin: 0 0 0.4rem; }
-.nojs-index li span { display: block; font-size: 0.875rem; }
-@media (max-width: 40rem) { .nojs-index li { grid-template-columns: 1fr; } }
+.nojs-index h2 { margin: 2.5rem 0 1rem; font-size: 1.25rem; line-height: 1.75rem; }
+.nojs-index ul { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: 1rem; }
+/* Each component is a card; its title link stretches over the whole card. */
+.nojs-index li {
+  position: relative; display: grid; align-content: start; gap: 0.5rem; padding: 1.25rem; max-width: none;
+  background: var(--nojs-card); border: 1px solid var(--nojs-line); border-radius: var(--nojs-radius-lg);
+  box-shadow: var(--nojs-shadow-xs); transition: background-color 0.15s;
+}
+.nojs-index li:hover { background: color-mix(in srgb, var(--nojs-accent) 50%, var(--nojs-card)); }
+.nojs-index li a { font-size: 1rem; font-weight: 600; line-height: 1.5rem; text-decoration: none; color: var(--nojs-fg); }
+.nojs-index li a::after { content: ""; position: absolute; inset: 0; border-radius: inherit; }
+.nojs-index li a:focus-visible { outline: none; }
+.nojs-index li:has(a:focus-visible) { outline: 3px solid color-mix(in srgb, var(--nojs-ring) 50%, transparent); }
+.nojs-index li p { margin: 0 0 0.5rem; font-size: 0.875rem; color: var(--nojs-muted); }
+.nojs-index li span { display: block; }
 
 @media (prefers-reduced-motion: reduce) {
   *, ::before, ::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
