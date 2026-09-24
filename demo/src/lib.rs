@@ -167,6 +167,8 @@ async fn index(caps: Caps, jar: CookieJar, Query(q): Query<IndexQuery>) -> Marku
                 li { a href=(href) { (title) } span { @for f in feats.split(", ") { code { (f) } " " } } }
             } }
         } }
+        // Idle-time fetch of every component page, so the click is served from cache.
+        @for (href, ..) in COMPONENTS { link rel="prefetch" href=(href); }
     })
 }
 
@@ -899,10 +901,10 @@ mod tests {
             router().oneshot(req.body(Body::empty()).unwrap())
         };
         let full = get(false).await.unwrap();
-        assert_eq!(full.headers()["vary"], "wo-enhance");
+        assert_eq!(full.headers()["vary"], "wo-enhance, cookie");
         let full = String::from_utf8(axum::body::to_bytes(full.into_body(), usize::MAX).await.unwrap().to_vec()).unwrap();
         let slim = get(true).await.unwrap();
-        assert_eq!(slim.headers()["vary"], "wo-enhance");
+        assert_eq!(slim.headers()["vary"], "wo-enhance, cookie");
         let slim = String::from_utf8(axum::body::to_bytes(slim.into_body(), usize::MAX).await.unwrap().to_vec()).unwrap();
         assert!(full.contains("<style>") && !slim.contains("<style>"), "the stylesheet stays home");
         assert!(slim.contains("id=\"wo-tabs-demo\"") && slim.contains("<title>"), "the swap root and title are still there");

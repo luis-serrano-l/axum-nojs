@@ -189,7 +189,7 @@ in FINDINGS.md (`hyperfine` against the demo, Firefox navigation timing from
   so a swap moves a few hundred bytes instead of the page; `fetch` with `priority: "high"`
   for user actions; prefetch on `mouseenter`/`focus` for same-origin links inside a swap root
   (`data-wo-prefetch`), cached for a few seconds and reused by the click.
-- [ ] Speculation rules: a `<script type="speculationrules">` is a `<script>` tag and so out
+- [x] Speculation rules: a `<script type="speculationrules">` is a `<script>` tag and so out
   of bounds by CLAUDE.md; instead `<link rel="prefetch">` for the index's component links and
   `<link rel="prerender">`-free; record in FINDINGS what the platform cannot prefetch without
   the rules script.

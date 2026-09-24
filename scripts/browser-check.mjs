@@ -281,6 +281,15 @@ try {
   await click(".wo-theme button[value=dark]");
   await until(async () => (await js("return document.documentElement.dataset.theme")) === "dark", "theme");
   assert(await navigations() === 1, "theme: switched without a reload");
+
+  // Index prefetch: a component page opens from the cache with the current theme. (A copy
+  // prefetched before a theme change is not reused: Vary: Cookie; checked by hand, see FINDINGS.)
+  await go("/");
+  await sleep(1000);
+  await click(".wo-index a[href='/dialog']");
+  await until(async () => (await js("return location.pathname")) === "/dialog", "dialog opened");
+  assert(await js("return performance.getEntriesByType('navigation')[0].transferSize") === 0, "index: the prefetched page came from the cache");
+  assert(await js("return document.documentElement.dataset.theme") === "dark", "index: the cached copy follows the theme cookie");
   await click(".wo-theme button[value=auto]");
   await until(async () => (await js("return document.documentElement.dataset.theme")) === "auto", "theme back");
 } catch (e) {

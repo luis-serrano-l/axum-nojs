@@ -9,7 +9,7 @@ follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); the project us
 ### `webonsive`
 
 - Latency: `stylesheet()` built once and minified (`minify_css`); `enhance::slim` middleware
-  answers an enhanced request without the inline stylesheet and sets `Vary: Wo-Enhance`
+  answers an enhanced request without the inline stylesheet and sets `Vary: Wo-Enhance, Cookie`
   (`enhance::slim_html` without a framework); the script sends `Accept: text/html`, fetches
   user actions with `priority: "high"`, prefetches links under `data-wo-prefetch` on hover or
   focus and reuses the answer for a click within five seconds; `enhance::served()` is the

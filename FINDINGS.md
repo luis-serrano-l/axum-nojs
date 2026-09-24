@@ -451,3 +451,22 @@ a swap the link under the pointer is a new element and gets a fresh `mouseover`.
 The script grew past 10 KB with prefetch; it is now served without comment lines and
 indentation (`enhance::served()`, 9 398 bytes) and the budget applies to that, while the
 source keeps its comments (a second test caps the source at 12 KB).
+
+**Prefetch without speculation rules.** `<script type="speculationrules">` is a `<script>` tag,
+so it is out. The index instead emits one `<link rel="prefetch">` per component page (body-ok
+`link`, baseline in Firefox and Chrome, not Safari). In Firefox the click on `/dialog` then
+comes from the cache: navigation `transferSize` 0 and `responseStart` 0 ms, against 8.9 KB and
+24–46 ms without the hints (debug build, loopback). The cost is the 19 pages fetched at idle
+priority on each index view, about 170 KB gzipped.
+
+A first try served a stale page: after switching to dark on the index, `/dialog` came from the
+prefetch cache still light. Every page depends on cookies (caps, theme, flash), so
+`enhance::slim` now sends `Vary: Wo-Enhance, Cookie` on every HTML answer; with it the cached
+copy is dropped when the cookie changes and the page is fetched fresh (checked by hand in
+Firefox; the browser check covers the cache hit).
+
+What the platform cannot do without the rules script: **prerender** (`<link rel="prerender">`
+is gone from every engine; only speculation rules prerender, in Chromium), eagerness levels
+(`moderate` = on hover, `conservative` = on pointer down) and document rules that match links
+by selector. The hover-time version lives in `enhance.js` as `data-wo-prefetch`; `rel=prefetch`
+is all-or-nothing at page load.

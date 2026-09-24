@@ -24,7 +24,7 @@
 //! `Wo-Enhance: 1` and `Accept: text/html`) with only the fragment it needs to; without the
 //! script it is a full navigation to the same URL. [`slim`] does that for every page: an
 //! enhanced request gets the page without its inline stylesheet, which the document already
-//! has, and every HTML answer says `Vary: Wo-Enhance`. User actions fetch with
+//! has, and every HTML answer says `Vary: Wo-Enhance, Cookie`. User actions fetch with
 //! `priority: "high"`. Links inside an element marked `data-wo-prefetch` are fetched at low
 //! priority on hover or focus, and a click within five seconds reuses that answer. A response may also carry elements marked `data-wo-oob`
 //! (out of band): each replaces the element of the same `id` anywhere in the page, in the
@@ -370,8 +370,8 @@ mod axum_glue {
 
     /// Middleware for the whole router (`.layer(axum::middleware::from_fn(enhance::slim))`):
     /// an HTML answer to an enhanced request (`Wo-Enhance: 1`) loses its inline stylesheet
-    /// ([`slim_html`]), and every HTML answer carries `Vary: Wo-Enhance` so a cache keeps the
-    /// two apart. Streamed bodies (no known size) pass through untouched.
+    /// ([`slim_html`]), and every HTML answer carries `Vary: Wo-Enhance, Cookie`, so a cache or
+    /// a `<link rel="prefetch">` never serves one variant, or one cookie's page, for another. Streamed bodies (no known size) pass through untouched.
     pub async fn slim(req: Request, next: Next) -> Response {
         let enhanced = req.headers().contains_key("wo-enhance");
         let mut res = next.run(req).await;
@@ -379,7 +379,7 @@ mod axum_glue {
         if !html {
             return res;
         }
-        res.headers_mut().append(header::VARY, HeaderValue::from_static("wo-enhance"));
+        res.headers_mut().append(header::VARY, HeaderValue::from_static("wo-enhance, cookie"));
         if !enhanced || res.body().size_hint().exact().is_none() {
             return res;
         }
