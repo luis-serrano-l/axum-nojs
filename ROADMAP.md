@@ -625,6 +625,8 @@ script, proven in CI, with server-side flows included.
   Proposed `nojs-ui` (+ `nojs-ui-caps`, `nojs-ui-test`, Axum stays the `axum` feature; free
   on crates.io as of 2026-09-24), or keep `axum-nojs`. Ask the owner before renaming; the
   `nojs-*` classes, `--nojs-*` tokens and `/nojs/` routes stay either way.
+  Blocked on the owner: question and suggested answer (keep `axum-nojs`, decide together
+  with M27) in BLOCKED.md.
 - [ ] Measure and publish: bytes shipped per demo page (HTML, CSS, script = 0 required),
   `stylesheet()` size raw and gzip, next to maud-ui's numbers; a bench or test keeps them
   from regressing.
