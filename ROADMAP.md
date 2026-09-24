@@ -201,7 +201,7 @@ in FINDINGS.md (`hyperfine` against the demo, Firefox navigation timing from
   allocations; Maud templates render into a pre-sized `String` (`html!` with capacity hints
   where a component knows its size); `paged_table` builds rows without intermediate `String`s;
   a `cargo bench` (criterion) for `layout`, `table` with 1 000 rows and `stylesheet()`.
-- [ ] HTTP/2 and HTTP/3 in the hyper example so many beacon images share one connection; a
+- [x] HTTP/2 and HTTP/3 in the hyper example so many beacon images share one connection; a
   note in `docs/caps.md` on why the beacons cost nothing after the first visit (cookie) and
   how to serve them from the same origin as the page.
 - [ ] Docs: `docs/latency.md` with the numbers, what moved them, what did not, and the order a

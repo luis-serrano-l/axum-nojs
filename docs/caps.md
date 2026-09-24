@@ -69,7 +69,30 @@ images (`curl`, readers, some mail clients) stay on fallbacks for ever, which is
 as any browser without touching cookies: useful for tests, screenshots and bug reports. A
 forced set counts as probed.
 
-## 5. What each flag tests
+## 5. What the beacons cost
+
+**After the first visit, nothing.** Once the cookies are set the server sees `Probed` and
+`beacons()` renders an empty string: no `.wo-cap-*` elements, no rules, no image requests. The
+cookies last 30 days (`Max-Age=2592000`); a browser whose cookies lapsed is simply probed again.
+
+**On the first visit, one small request per supported flag**, made by the CSS engine after the
+stylesheet parses, at image priority, after the page's own resources. Each answer is a
+`204` with one `Set-Cookie` and no body. Two things keep that cheap:
+
+- **Serve them from the page's own origin.** `BEACON_PATH` is a path, not a URL, so the
+  requests reuse the page's connection, send its cookies and set cookies the page can read.
+  Mount the route on the same server (`caps::router()` in Axum, or match `caps::BEACON_PATH`
+  by hand as `examples/hyper_server.rs` does). A CDN in front must pass `/wo/caps` through
+  uncached: the answers are `Cache-Control: no-store` because they set a cookie.
+- **Speak HTTP/2 or HTTP/3.** Over HTTP/1.1 a browser opens up to six connections per origin
+  and queues the rest; over HTTP/2 or HTTP/3 every beacon is a stream on the one connection
+  the page already opened. `examples/hyper_server.rs` serves HTTP/1.1 and HTTP/2 on one port
+  (checked with `curl --http2-prior-knowledge`: page, script and a beacon on one connection).
+  Browsers only use HTTP/2 over TLS and HTTP/3 over QUIC, so in production the TLS proxy in
+  front (Caddy, nginx, a load balancer) terminates `h2`/`h3` and forwards to the app as `h2c`
+  or HTTP/1.1; the app needs no QUIC stack of its own.
+
+## 6. What each flag tests
 
 | Flag | `@supports` test | Real feature | Shipped |
 |---|---|---|---|
@@ -87,7 +110,7 @@ CSS cannot test HTML attributes, so `invokers` and `streaming_dsd` are **proxies
 features that shipped in the same release or later. Both err on the safe side and never
 claim a feature the browser lacks; the error bands are in `FINDINGS.md` under M1.
 
-## 6. Adding a flag
+## 7. Adding a flag
 
 1. Add a variant to `Cap` in `wo-caps/src/lib.rs` and to `Cap::ALL` (display order).
 2. Give it a `name()` (snake case; it becomes the cookie, the URL and the class name), a

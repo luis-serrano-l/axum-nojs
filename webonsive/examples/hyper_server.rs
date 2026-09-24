@@ -4,17 +4,24 @@
 //! Everything the Axum glue does is wired here by hand, in a few lines each: `Caps` from the
 //! `Cookie:` header, `UiState` from path + query + cookies, the beacon route from
 //! `caps::beacon_cookie`, Post/Redirect/Get from `prg`, the enhancement script from
-//! `enhance::JS`. Three components: a dialog, tabs, and a counter kept in a cookie.
+//! `enhance::served()`. Three components: a dialog, tabs, and a counter kept in a cookie.
+//!
+//! **HTTP/2.** The connection builder speaks HTTP/1.1 and HTTP/2 on the same port and picks
+//! by the client's preface, so a first visit's beacon images, the script and the page share
+//! one connection instead of opening six: `curl --http2-prior-knowledge http://127.0.0.1:3002/`.
+//! Browsers only speak HTTP/2 over TLS, so in production put TLS (and HTTP/3) in front: a
+//! proxy such as Caddy or nginx terminates `h2`/`h3` and forwards here as `h2c` or HTTP/1.1.
+//! `docs/caps.md` explains why the beacons cost nothing after the first visit.
 
 use std::convert::Infallible;
 use std::net::SocketAddr;
 
 use http_body_util::{BodyExt, Full};
 use hyper::body::{Bytes, Incoming};
-use hyper::server::conn::http1;
 use hyper::service::service_fn;
 use hyper::{Method, Request, Response, StatusCode, header};
-use hyper_util::rt::TokioIo;
+use hyper_util::rt::{TokioExecutor, TokioIo};
+use hyper_util::server::conn::auto;
 use maud::html;
 use tokio::net::TcpListener;
 use webonsive::{Caps, Theme, UiState, caps, counter, dialog, dialog::DialogOptions, enhance, layout, prg, tabs, tabs::{Tab, TabsOptions}};
@@ -85,7 +92,7 @@ async fn handle(req: Request<Incoming>) -> Result<Reply, Infallible> {
         (&Method::GET, enhance::SCRIPT_PATH) => Response::builder()
             .header(header::CONTENT_TYPE, "text/javascript; charset=utf-8")
             .header(header::CACHE_CONTROL, "public, max-age=31536000, immutable")
-            .body(Full::new(Bytes::from_static(enhance::JS.as_bytes())))
+            .body(Full::new(Bytes::from_static(enhance::served().as_bytes())))
             .unwrap(),
         _ => Response::builder().status(StatusCode::NOT_FOUND).body(Full::default()).unwrap(),
     };
@@ -100,7 +107,9 @@ async fn main() {
     loop {
         let (stream, _) = listener.accept().await.unwrap();
         tokio::spawn(async move {
-            if let Err(e) = http1::Builder::new().serve_connection(TokioIo::new(stream), service_fn(handle)).await {
+            // HTTP/1.1 or HTTP/2 (h2c), chosen per connection by what the client sends first.
+            let builder = auto::Builder::new(TokioExecutor::new());
+            if let Err(e) = builder.serve_connection(TokioIo::new(stream), service_fn(handle)).await {
                 eprintln!("connection error: {e}");
             }
         });
