@@ -70,7 +70,7 @@ use crate::{Caps, Ui, enhance};
 /// `placeholder`, `multiple` and `checked` apply to the field added last. A stacked form
 /// with a "Submit" button unless told otherwise.
 ///
-/// **Setters.** Values and items: `.values(..)`, `.errors(..)`, `.group(..)`, `.text(..)`,
+/// **Setters.** Values and items: `.values(..)`, `.errors(..)`, `.group(..)`, `.text(..)`, `.password(..)`,
 /// `.email(..)`, `.number(..)`, `.pattern(..)`, `.textarea(..)`, `.file(..)`, `.date(..)`,
 /// `.time(..)`, `.select(..)`, `.checkbox(..)`, `.hidden(..)`, `.help(..)`, `.maxlength(..)`,
 /// `.value(..)`, `.error(..)`, `.placeholder(..)`, `.submit(..)`, `.id(..)`; switches:
@@ -137,6 +137,11 @@ impl<'a> Form<'a> {
     /// Single-line text.
     pub fn text(self, name: &'a str, label: &'a str) -> Self {
         self.add(name, label, FieldKind::Text)
+    }
+
+    /// `type="password"`: the value is never written back into the page, even on an error.
+    pub fn password(self, name: &'a str, label: &'a str) -> Self {
+        self.add(name, label, FieldKind::Password)
     }
 
     /// `type="email"`: the browser checks the shape.

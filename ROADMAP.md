@@ -679,9 +679,16 @@ script, proven in CI, with server-side flows included.
     switches and `bool` conditions (the required call is the `ui.x(..)` method it names);
     test `every_setter_is_listed_on_its_builder` fails when a setter is missing from it (it
     caught 14 on the first run). `docs/comparison.md` has the side by side.
-- [ ] Complete flows, not just widgets: a demo "app" section with sign-in with server
+- [x] Complete flows, not just widgets: a demo "app" section with sign-in with server
   validation errors, create/edit/delete via PRG with flash, a filterable paged table, and a
   multi-step wizard, all with script off; each a Blitz test.
+  Done: a "Complete flows" group on the index. `/app/signin` (server checks; mistakes
+  re-render the form with messages beside the fields, the email kept and the password never
+  echoed; success sets a session cookie and redirects) and `/app/notes` (add, rename in place,
+  delete from the row menu, each Post/Redirect/Get with a flash; the list is a filterable,
+  sortable, paged table). `Form::password` added. The wizard was already at `/wizard` with its
+  Blitz test. Blitz test `a_whole_app_flow_with_no_script` walks it with a cookie jar: bad
+  sign-in, good sign-in, add, edit in place, delete, rendering each state.
 - [ ] Close the shadcn must-have gaps M21 does not cover: `tooltip` (popover `hint` /
   `title` fallback), `alert`, `progress`/`meter`, `separator`, `textarea` field. Then stop:
   no JS widget shells (editors, grids, maps).

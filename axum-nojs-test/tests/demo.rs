@@ -1166,3 +1166,95 @@ async fn a_component_written_outside_the_library() {
     );
     assert!(page.exists("a.nojs-button[aria-current=page][href='/pricing?billing=yearly']"));
 }
+
+/// A form post through the demo router: status, the `Set-Cookie` pairs and the body.
+async fn post(path: &str, cookie: &str, form: &str) -> (u16, Vec<String>, String) {
+    use tower::ServiceExt;
+    let req = axum::http::Request::post(path)
+        .header("cookie", cookie)
+        .header("content-type", "application/x-www-form-urlencoded")
+        .body(axum::body::Body::from(form.to_string()))
+        .unwrap();
+    let res = demo::router().oneshot(req).await.unwrap();
+    let status = res.status().as_u16();
+    let cookies = res
+        .headers()
+        .get_all("set-cookie")
+        .iter()
+        .filter_map(|v| v.to_str().ok()?.split(';').next().map(str::to_string))
+        .collect();
+    let body = axum::body::to_bytes(res.into_body(), usize::MAX)
+        .await
+        .unwrap();
+    (status, cookies, String::from_utf8_lossy(&body).into_owned())
+}
+
+/// Keeps what the server set, like a browser's cookie jar (an empty value clears).
+fn jar(cookies: &mut Vec<String>, set: Vec<String>) {
+    for c in set {
+        let name = c.split('=').next().unwrap_or("").to_string();
+        cookies.retain(|k| !k.starts_with(&format!("{name}=")));
+        if !c.ends_with('=') {
+            cookies.push(c);
+        }
+    }
+}
+
+#[tokio::test]
+async fn a_whole_app_flow_with_no_script() {
+    // Sign in wrong: the server answers with the form, its messages beside the fields.
+    let (status, _, html) = post("/app/signin", MODERN, "email=ada&password=short").await;
+    assert_eq!(status, 200);
+    let mut page = Page::from_html(html);
+    shot(&mut page, "app-signin-errors");
+    assert!(page.is_visible("#f-email-error") && page.is_visible("#f-password-error"));
+    assert!(
+        page.exists("input[name=email][value=ada]"),
+        "the email comes back"
+    );
+    assert!(
+        !page.html.contains("value=\"short\""),
+        "the password never does"
+    );
+
+    // Sign in right: a redirect and a session cookie.
+    let mut cookies = vec![MODERN.to_string()];
+    let (status, set, _) = post(
+        "/app/signin",
+        MODERN,
+        "email=ada%40example.org&password=long-enough",
+    )
+    .await;
+    assert_eq!(status, 303);
+    jar(&mut cookies, set);
+
+    // Add a note: Post/Redirect/Get, the list shows it.
+    let (status, set, _) = post("/app/notes", &cookies.join("; "), "text=Buy+milk").await;
+    assert_eq!(status, 303);
+    jar(&mut cookies, set);
+    let page = Page::render(demo::router(), "/app/notes", &cookies.join("; ")).await;
+    assert!(page.text("tbody").unwrap().contains("Buy milk") && page.html.contains("Signed in as"));
+
+    // Edit it in place, then delete it.
+    let mut page = Page::render(
+        demo::router(),
+        "/app/notes?edit.notes=1",
+        &cookies.join("; "),
+    )
+    .await;
+    shot(&mut page, "app-notes-edit");
+    assert!(page.is_visible(".nojs-table-editing .nojs-table-edit-input[name=text]"));
+    let (_, set, _) = post(
+        "/app/notes/edit",
+        &cookies.join("; "),
+        "key=1&text=Buy+oat+milk&returns_to=%2Fapp%2Fnotes",
+    )
+    .await;
+    jar(&mut cookies, set);
+    let page = Page::render(demo::router(), "/app/notes", &cookies.join("; ")).await;
+    assert!(page.text("tbody").unwrap().contains("Buy oat milk"));
+    let (_, set, _) = post("/app/notes/delete?id=1", &cookies.join("; "), "").await;
+    jar(&mut cookies, set);
+    let page = Page::render(demo::router(), "/app/notes", &cookies.join("; ")).await;
+    assert!(page.text("tbody").unwrap().contains("No notes yet"));
+}
