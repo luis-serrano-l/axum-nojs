@@ -289,11 +289,13 @@ plumbing through `Saved<T>` and `ui.redirect(to).ok(..).save(&value)`.
 ## M19 · A demo that teaches
 Asked by the owner during M18: each component page shows how it is written, and the demo
 gets a second visual pass.
-- [ ] Code snippet on every component page: the handler's component call as it appears in
-  `demo/src/lib.rs`, in a `<pre><code>` under the live component (a `snippet` helper beside
-  `page()`, text kept in a const next to each route so the page and the code cannot drift;
-  a test asserts each snippet string occurs in the source via `include_str!`). No syntax
-  highlighting script: token colours, if any, come from server-side markup and `--nojs-*` tokens.
+- [x] Code snippet on every component page, in a box under the live component: the lines
+  between `// code: <href>` and `// end code` markers in `demo/src/lib.rs`, cut from the file
+  itself (`include_str!`) so the page and the code cannot drift (markers instead of the planned
+  const, which would have been a second copy). Highlighted on the server by `highlight()`
+  (keywords, strings, numbers, types, comments, macros, methods), coloured only with
+  `--nojs-*` tokens (`.nojs-snippet`, `.nojs-hl-*` in `layout.rs`); no script. A test checks
+  every component page has a snippet and that the box shows exactly that code.
 - [ ] Visual pass with the frontend-design skill: plan (palette, type, layout, principles),
   review against the generic defaults, then build. Theming only through `--nojs-*` tokens;
   demo-shell classes in `layout.rs`. Look at the Blitz PNGs and Firefox screenshots, light

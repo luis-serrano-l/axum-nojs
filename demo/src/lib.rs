@@ -118,15 +118,81 @@ fn toolbar(ui: &Ui, back: bool) -> Markup {
     } }
 }
 
-/// What every page shows above its body: the toolbar, the title and what it is built on.
+/// What every page shows around its body: the toolbar, the title and what it is built on
+/// above, the code that drew it below.
 fn shell(ui: &Ui, title: &str, body: Markup) -> Markup {
-    let built = COMPONENTS.iter().find(|c| c.1 == title).map(|c| c.3);
+    let component = COMPONENTS.iter().find(|c| c.1 == title);
     html! {
-        (toolbar(ui, built.is_some()))
+        (toolbar(ui, component.is_some()))
         h1 { (title) }
-        @if let Some(feats) = built { p class="nojs-built" { "Built on " @for f in feats.split(", ") { code { (f) } " " } } }
+        @if let Some(c) = component { p class="nojs-built" { "Built on " @for f in c.3.split(", ") { code { (f) } " " } } }
         (body)
+        @if let Some(c) = component {
+            h2 { "The code" }
+            figure class="nojs-snippet" {
+                figcaption { span { "demo/src/lib.rs" } span { "Cut from the handler that drew this page" } }
+                pre { code { (highlight(&snippet(c.0))) } }
+            }
+        }
     }
+}
+
+/// This file, so every component page can show the code that draws it.
+const SOURCE: &str = include_str!("lib.rs");
+
+/// The lines of this file between `// code: <href>` and `// end code`, dedented, one block per
+/// pair: a page shows the component call, and the handler or helper next to it if it has one.
+fn snippet(href: &str) -> String {
+    let open = format!("// code: {href}");
+    let mut lines = SOURCE.lines();
+    let mut blocks = Vec::new();
+    while lines.any(|l| l.trim() == open) {
+        let block: Vec<&str> = lines.by_ref().take_while(|l| l.trim() != "// end code").collect();
+        let indent = block.iter().filter(|l| !l.trim().is_empty()).map(|l| l.len() - l.trim_start().len()).min().unwrap_or(0);
+        blocks.push(block.iter().map(|l| l.get(indent..).unwrap_or("")).collect::<Vec<_>>().join("\n"));
+    }
+    blocks.join("\n\n")
+}
+
+/// Rust (and Maud) source as spans the stylesheet colours: comments, strings, numbers,
+/// keywords, macros, types and method names. Done here on the server, so no script.
+fn highlight(code: &str) -> Markup {
+    const KEYWORDS: [&str; 18] = ["let", "if", "else", "return", "async", "fn", "move", "mut", "for", "in", "match", "Some", "None", "true", "false", "const", "while", "as"];
+    let mut parts: Vec<(&str, &str)> = Vec::new();
+    let (bytes, mut i, mut plain) = (code.as_bytes(), 0, 0);
+    let word_end = |from: usize| from + code[from..].find(|c: char| !(c.is_alphanumeric() || c == '_')).unwrap_or(code.len() - from);
+    while i < code.len() {
+        let rest = &code[i..];
+        let (kind, end) = if rest.starts_with("//") {
+            ("c", i + rest.find('\n').unwrap_or(rest.len()))
+        } else if bytes[i] == b'"' {
+            let mut j = i + 1;
+            while j < code.len() && bytes[j] != b'"' { j += if bytes[j] == b'\\' { 2 } else { 1 }; }
+            ("s", (j + 1).min(code.len()))
+        } else if bytes[i].is_ascii_digit() && (i == 0 || !(bytes[i - 1].is_ascii_alphanumeric() || bytes[i - 1] == b'_')) {
+            ("n", word_end(i))
+        } else if bytes[i] == b'@' && rest[1..].starts_with(|c: char| c.is_alphabetic()) {
+            ("k", word_end(i + 1))
+        } else if rest.starts_with(|c: char| c.is_alphabetic() || c == '_') && (i == 0 || !(bytes[i - 1].is_ascii_alphanumeric() || bytes[i - 1] == b'_' || bytes[i - 1] == b'\'')) {
+            let end = word_end(i);
+            let word = &code[i..end];
+            match () {
+                _ if code[end..].starts_with('!') => ("m", end + 1),
+                _ if KEYWORDS.contains(&word) => ("k", end),
+                _ if i > 0 && bytes[i - 1] == b'.' => ("f", end),
+                _ if word.starts_with(char::is_uppercase) => ("t", end),
+                _ => ("", end),
+            }
+        } else {
+            ("", i + rest.chars().next().map_or(1, char::len_utf8))
+        };
+        if kind.is_empty() { i = end; continue; }
+        if plain < i { parts.push(("", &code[plain..i])); }
+        parts.push((kind, &code[i..end]));
+        (i, plain) = (end, end);
+    }
+    parts.push(("", &code[plain..]));
+    html! { @for (kind, text) in parts { @if kind.is_empty() { (text) } @else { span class={ "nojs-hl-" (kind) } { (text) } } } }
 }
 
 fn page(ui: &Ui, title: &str, body: Markup) -> Page {
@@ -156,12 +222,14 @@ async fn index(ui: Ui) -> Page {
 async fn dialog_page(ui: Ui) -> Page {
     page(&ui, "Dialog", html! {
         (ui.flash())
+        // code: /dialog
         (ui.dialog("Delete account").id("confirm").title("Delete account?").small().danger()
             .confirm("Delete account", "/dialog/delete").cancel("Keep it")
             .body(html! {
                 p { "This cannot be undone. Everything you wrote goes with it." }
                 label { "Tell us why (optional)" input name="reason" placeholder="Moving on"; }
             }))
+        // end code
         p class="nojs-note" { "Opened by an invoker button; the footer is a real form posting to " code { "/dialog/delete" } " with a hidden " code { "returns_to" } " so the server comes back here. Server-opened: " a href="/dialog?dialog=confirm" { "?dialog=confirm" } }
     })
 }
@@ -180,6 +248,7 @@ async fn popover_page(ui: Ui) -> Page {
     page(&ui, "Popover menu", html! {
         (ui.flash())
         div class="nojs-popover-row" {
+            // code: /popover
             (ui.menu("Account")
                 .heading("Signed in as Ada")
                 .link("Profile", "/popover").icon("@").shortcut("g p")
@@ -192,6 +261,7 @@ async fn popover_page(ui: Ui) -> Page {
             (ui.menu("More").align_end()
                 .link("Documentation", "/").icon("?")
                 .action("Clear cache", "/popover/signout"))
+            // end code
         }
         p class="nojs-note" { "Links, a heading, a disabled item, a submenu that is another popover, and a " code { "<form method=\"post\">" } " action. Click outside or press Escape to close; the second menu opens end-aligned." }
     })
@@ -205,12 +275,14 @@ async fn popover_signout(ui: Ui) -> Redirect {
 async fn tabs_page(ui: Ui) -> Page {
     page(&ui, "Tabs", html! {
         // Hovering or focusing a tab title fetches it early; the click reuses the answer.
+        // code: /tabs
         div data-nojs-prefetch { (ui.tabs("demo")
             .tab("Install", html! { p { code { "cargo add axum-nojs maud axum" } } })
             .tab("Use", html! { p { "Call a function, get " code { "Markup" } ", send it." } }).badge(3)
             // Lazy: the body is rendered only by the request that opens the tab.
             .lazy("Why", || html! { p { "Because the platform can do this without script now. (Rendered on demand.)" } })
             .select_below()) }
+        // end code
         p class="nojs-note" { "Deep link: " a href="/tabs?tab.demo=2" { "?tab.demo=2" } ". Leave and come back: the tab is remembered. The third tab is lazy; under 40rem the strip becomes a select." }
         h2 { "Vertical" }
         (ui.tabs("side").vertical()
@@ -222,6 +294,7 @@ async fn tabs_page(ui: Ui) -> Page {
 
 async fn accordion_page(ui: Ui) -> Page {
     page(&ui, "Accordion", html! {
+        // code: /accordion
         (ui.accordion("faq").multi().controls()
             .item("Does this need JavaScript?", html! { p { "No. Turn it off and reload: every control still works through links and form posts. The one script on the page only swaps the answer in place instead of reloading." } })
                 .icon("\u{1F50D}").summary("Every open and close is a link the server answers.")
@@ -233,6 +306,7 @@ async fn accordion_page(ui: Ui) -> Page {
                     .item("Nested", html! { p { "Its own key, " code { "open.faq-more" } "." } })
                     .item("Exclusive", html! { p { "This inner group opens one at a time." } }))
             }).icon("\u{1F4DA}").summary("Lists, links and a nested accordion."))
+        // end code
         p class="nojs-note" { "Deep link: " a href="/accordion?open.faq=0,2" { "?open.faq=0,2" } ". Leave and come back: the open sections are remembered." }
     })
 }
@@ -242,11 +316,13 @@ async fn combobox_page(ui: Ui) -> Page {
         (ui.flash())
         // One swap root around the form and its results: the script searches as you type.
         div id="langs" data-nojs="swap" {
+            // code: /combobox
             (ui.combobox("q", "/combobox").multi().create("/combobox/new")
                 .label("Language").placeholder("Type a language")
                 .group("Systems", ["Rust", "Zig", "Swift"])
                 .group("Scripting", ["Ruby", "Python", "Racket"])
                 .options(["Prolog", "Scala"]))
+            // end code
         }
         p class="nojs-note" { "Pick several: each result adds a chip, each chip's \u{d7} removes it, and the chips ride along with the next search. Type a language that is not here to get a Create row." }
     })
@@ -263,7 +339,9 @@ async fn combobox_new(ui: Ui, Form(f): Form<NewLang>) -> Redirect {
 
 async fn list_page(ui: Ui) -> Page {
     page(&ui, "Load-more list", html! {
+        // code: /list
         (ui.pager("/list", 50).per_page(8).rows(|i| html! { "Row " (i + 1) }))
+        // end code
     })
 }
 
@@ -276,10 +354,12 @@ const FILES: [(&str, u32, &str); 12] = [
 
 /// The files table's columns; the page and the CSV both read their sort and filter from it.
 fn files_table(ui: &Ui) -> Table<'_> {
+    // code: /table
     ui.table("files", "/table")
         .column("name", "Name").sortable()
         .column("size", "Size").sortable().numeric().width("7rem")
         .column("kind", "Kind").sortable().width("9rem")
+    // end code
 }
 
 /// Thirty-six files sorted and filtered on the server, in one place for the page and the CSV.
@@ -303,9 +383,11 @@ async fn table_page(ui: Ui) -> Page {
         .key(&f.0)
         .detail(html! { p { "A " (f.2) " of " (f.1) " bytes, in " code { (f.0.split('/').next().unwrap_or("")) } "." } })
         .menu([MenuItem::link("Open", "/table"), MenuItem::action("Delete", "/table/bulk").danger()]));
+    // code: /table
     let t = t.rows(rows).paged(files.len()).choose_columns().csv("/table.csv")
         .bulk("/table/bulk", [("archive", "Archive"), ("delete", "Delete")])
         .empty("No files match this filter.").loading(ui.param("loading") == Some("1"));
+    // end code
     page(&ui, "Table", html! {
         (ui.flash())
         p { "Click a header to sort, again to flip. Type to filter. Hide columns, tick rows for the bulk form, open a row's menu or its detail. The page size you pick is remembered for your next visit. Every state is a URL, including " a href="/table?loading=1" { "the loading one" } "." }
@@ -345,6 +427,7 @@ impl Signup {
 }
 
 fn signup<'a>(ui: &'a Ui, s: &'a Signup, errors: &'a [(&'a str, &'a str)]) -> Wizard<'a> {
+    // code: /wizard
     ui.wizard("signup", "/wizard")
         .step("Account", ui.fields().text("name", "Name").required().email("email", "Email").required())
         .step("Newsletter", ui.fields()
@@ -352,6 +435,7 @@ fn signup<'a>(ui: &'a Ui, s: &'a Signup, errors: &'a [(&'a str, &'a str)]) -> Wi
             .text("topics", "Topics").placeholder("rust, html")).optional()
         .review("Review")
         .values(&s.0).errors(errors).finish("Create account")
+    // end code
 }
 
 /// Server rules for a wizard step: `(field, message)` per problem.
@@ -398,6 +482,7 @@ async fn wizard_submit(ui: Ui, Saved(mut s): Saved<Signup>, Form(pairs): Form<Ve
 
 fn form_view(ui: &Ui, values: &[(String, String)], errors: &[(&str, &str)]) -> Page {
     let inline = ui.param("layout") == Some("inline");
+    // code: /form
     let form = ui.form("/form").submit("Sign up").values(values).errors(errors)
         .group("Account")
         .text("name", "Name").required()
@@ -410,6 +495,7 @@ fn form_view(ui: &Ui, values: &[(String, String)], errors: &[(&str, &str)]) -> P
         .file("avatar", "Avatar", "image/png,image/jpeg").help("PNG or JPEG.")
         .date("start", "Start date", "2026-01-01", "2027-12-31")
         .time("call", "Best time to call", "09:00", "17:00").help("Office hours, 09:00 to 17:00.");
+    // end code
     page(ui, "Validated form", html! {
         (ui.flash())
         p { "Labels " @if inline { "beside the fields. " a href="/form" { "Put them above" } } @else { "above the fields. " a href="/form?layout=inline" { "Put them beside" } } "." }
@@ -447,7 +533,9 @@ struct Count { n: i64 }
 
 /// The counter's rules, shared by the page (to render them) and the post (to apply them).
 fn counter(ui: &Ui, n: i64) -> axum_nojs::counter::Counter<'static> {
+    // code: /counter
     ui.counter("/counter", n).min(0).max(20).step(2).typed()
+    // end code
 }
 
 async fn counter_page(ui: Ui, Saved(c): Saved<Count>) -> Page {
@@ -461,8 +549,10 @@ async fn counter_page(ui: Ui, Saved(c): Saved<Count>) -> Page {
 struct CounterOp { op: String, value: Option<i64> }
 
 async fn counter_submit(ui: Ui, Saved(c): Saved<Count>, Form(f): Form<CounterOp>) -> Redirect {
+    // code: /counter
     let n = counter(&ui, c.n).apply(&f.op, f.value);
     ui.redirect("/counter").save(&Count { n })
+    // end code
 }
 
 /// The notes added on the swap page, one `note=` pair each.
@@ -476,15 +566,19 @@ async fn swap_page(ui: Ui, Saved(notes): Saved<Notes>) -> Page {
     page(&ui, "Swap targets", html! {
         (ui.flash())
         p class="nojs-note" { "Neither control sits inside a swap root. " code { "data-nojs-target" } " names the root to update and " code { "data-nojs-swap" } " how; without the script both are ordinary navigations to the same URL." }
+        // code: /swap
         p { "Count: " span id="count" data-nojs="swap" { (n) } " " a href={ "/swap?n=" (n + 1) } data-nojs-target="#count" { "Add one" }
             " · " a href={ "/swap?n=" (n + 10) } data-nojs-target="#count" data-nojs-push="false" { "Add ten, keep the URL" } }
+        // end code
         p { "Notes so far: " span id="note-count" { (notes.0.len()) } }
+        // code: /swap
         form method="post" action="/swap" data-nojs-target="#log" data-nojs-swap="append" data-nojs-indicator="#saving" {
             input name="note" required placeholder="A note" aria-label="Note" autocomplete="off";
             button type="submit" class="nojs-primary" { "Add note" }
             " " span id="saving" class="nojs-note" hidden { "Saving…" }
         }
         ol id="log" data-nojs="swap" { @for (_, note) in &notes.0 { li { (note) } } }
+        // end code
     })
 }
 
@@ -512,12 +606,14 @@ struct Settings { name: String, #[serde(default)] notify: bool }
 async fn settings_page(ui: Ui, Saved(s): Saved<Settings>) -> Page {
     let form = |id| ui.form("/settings").id(id).submit("Save");
     page(&ui, "Settings", html! {
+        // code: /settings
         (ui.flash().dismiss().auto_hide())
         (ui.tabs("settings")
             .tab("Profile", form("profile").text("name", "Display name").required().value(&s.name)
                 .hidden("notify", if s.notify { "true" } else { "false" }).render())
             .tab("Notifications", form("notify").hidden("name", &s.name)
                 .checkbox("notify", "Email me about releases").checked(s.notify).render()))
+        // end code
         p class="nojs-note" { "Go to " a href="/" { "the index" } " and come back: the open tab and the values are remembered. Saving with notifications off stacks a warning under the confirmation; the name " code { "admin" } " is refused with an alert. The confirmation fades after six seconds unless reduced motion is on." }
     })
 }
@@ -528,9 +624,11 @@ async fn settings_submit(ui: Ui, Form(s): Form<Settings>) -> Redirect {
     if s.name.trim().eq_ignore_ascii_case("admin") {
         return back.danger("The name admin is reserved; nothing was saved.");
     }
+    // code: /settings
     let back = back.ok("Settings saved.");
     let back = if s.notify { back } else { back.warn("You will not hear about releases.") };
     back.save(&s)
+    // end code
 }
 
 /// The inputs page's values: from the query while filtering (unsaved), else saved.
@@ -559,11 +657,13 @@ async fn inputs_page(ui: Ui, Query(q): Query<Inputs>, Saved(saved): Saved<Inputs
     page(&ui, "Select, range, colour", html! {
         (ui.flash())
         form id="inputs" data-nojs="swap" class="nojs-form" method="post" action="/inputs" {
+            // code: /inputs
             (ui.select("size", v.size.as_deref().unwrap_or("m")).options(SIZES).label("Size"))
             (ui.select("country", v.country.as_deref().unwrap_or("es")).groups(COUNTRIES).search("/inputs").label("Country"))
             (ui.range("volume", v.volume.unwrap_or(40)).step(5).label("Volume"))
             (ui.range_pair("price", (v.price_min.unwrap_or(20), v.price_max.unwrap_or(80))).step(5).label("Price"))
             (ui.color("accent", v.accent.as_deref().unwrap_or("#1f6f5f")).presets(&ACCENTS).alpha(v.alpha.unwrap_or(100)).label("Accent"))
+            // end code
             button type="submit" class="nojs-primary" { "Save" }
         }
         p class="nojs-note" { "Without the enhancement script the outputs and the swatch show the last saved values and update on submit, and the country filter needs its button." }
@@ -596,7 +696,9 @@ async fn toast_page(ui: Ui) -> Page {
             button type="submit" name="kind" value="danger" { "Sync now" } " "
             button type="submit" name="kind" value="all" { "All three" }
         }
+        // code: /toast
         (ui.toasts().dismiss())
+        // end code
     })
 }
 
@@ -605,16 +707,19 @@ struct ToastForm { kind: String }
 
 async fn toast_submit(ui: Ui, Form(f): Form<ToastForm>) -> Redirect {
     let wants = |k: &str| f.kind == "all" || f.kind == k;
+    // code: /toast
     let mut back = ui.redirect("/toast");
     if wants("ok") { back = back.ok("Invite sent to ada@example.org."); }
     if wants("warn") { back = back.warn("Link copied; it expires in an hour."); }
     if wants("danger") { back = back.danger("Sync failed: the server did not answer."); }
+    // end code
     back
 }
 
 /// A sidebar on wide screens, a drawer on narrow ones, and breadcrumbs above the content.
 async fn nav_page(ui: Ui) -> Page {
     page(&ui, "Drawer and breadcrumbs", html! {
+        // code: /nav
         (ui.drawer("Menu").id("site").title("axum-nojs").sidebar()
             .nav(html! { ul {
                 li { a href="/nav" aria-current="page" { "Overview" } }
@@ -626,6 +731,7 @@ async fn nav_page(ui: Ui) -> Page {
                 p { "A long trail folds its middle so both ends stay readable:" }
                 (ui.breadcrumbs().link("Home", "/").link("Projects", "/nav").link("axum-nojs", "/nav")
                     .link("Components", "/").link("Navigation", "/nav").here("Breadcrumbs"))
+        // end code
                 p class="nojs-note" { "Server-opened: " a href="/nav?dialog=site" { "?dialog=site" } }
             }))
     })
@@ -636,16 +742,20 @@ async fn dashboard_page(ui: Ui) -> Page {
     let none = ui.param("orders") == Some("none");
     page(&ui, "Stats and empty states", html! {
         div class="nojs-stat-grid" {
+            // code: /dashboard
             (ui.stat("Visitors", "12,480").delta("+8.2%").note("last 7 days"))
             (ui.stat("Orders", if none { "0" } else { "3" }).delta(if none { "-3" } else { "0" }))
             (ui.stat("Error rate", "0.4%").delta("-0.2 pt").down_is_good().href("/table"))
             (ui.stat("p95 latency", "38 ms").delta("+6 ms").down_is_good())
+            // end code
         }
         h2 { "Recent orders" }
         @if none {
+            // code: /dashboard
             (ui.empty_state("No orders yet").icon("\u{1f4e6}")
                 .text(html! { "Orders show up here as soon as a customer checks out." })
                 .link("Show sample orders", "/dashboard"))
+            // end code
         } @else {
             ul { li { "#1042, Ada Lovelace, 3 items" } li { "#1041, Grace Hopper, 1 item" } li { "#1040, Alan Turing, 2 items" } }
             p class="nojs-note" { a href="/dashboard?orders=none" { "See the empty state" } }
@@ -656,6 +766,7 @@ async fn dashboard_page(ui: Ui) -> Page {
 /// Every demo page as a command, plus a few deep links. An exact command name redirects;
 /// anything else lists the matches.
 async fn palette_page(ui: Ui) -> Response {
+    // code: /palette
     let palette = ui.palette("/palette").id("cmd")
         .group("Components").commands(COMPONENTS.iter().map(|c| (c.1, c.0)))
         .group("Shortcuts")
@@ -665,6 +776,7 @@ async fn palette_page(ui: Ui) -> Response {
     if let Some(href) = palette.exact() {
         return ui.redirect(href).into_response();
     }
+    // end code
     page(&ui, "Command palette", html! {
         p { "Open it with the button or the access key, type, pick a suggestion and press Enter. An exact name goes straight to the page; anything else lists what matches." }
         (palette)
@@ -678,13 +790,17 @@ async fn stream_page(ui: Ui) -> Streamed {
         p { @if ui.has(Cap::StreamingDsd) { "Sections arrive out of order into named slots." }
             @else { "This browser has no declarative shadow DOM: sections stream in document order." } }
         @for (id, ms) in sections {
+            // code: /stream
             (ui.slot(id, html! { section class="nojs-stream-section nojs-stream-pending" {
                 (ui.skeleton(2).label(&format!("Loading {id} ({ms} ms)")).heading())
             } }))
+            // end code
         }
     };
+    // code: /stream
     let page = ui.stream("Streaming", shell(&ui, "Streaming", body));
     sections.into_iter().fold(page, |page, (id, ms)| page.fill(id, section(id, ms)))
+    // end code
 }
 
 async fn section(id: &'static str, ms: u64) -> Markup {
@@ -700,6 +816,7 @@ async fn caps_page(ui: Ui) -> Page {
         @else { p class="nojs-error" { "Not probed yet: the beacons fire while this page loads. Reload to see the result." } }
         table class="nojs-caps-table" {
             thead { tr { th { "Capability" } th { "Supported" } th { "Effect" } th { "@supports test" } } }
+            // code: /caps
             tbody { @for cap in Cap::ALL {
                 tr {
                     td { code { (cap.name()) } }
@@ -708,6 +825,7 @@ async fn caps_page(ui: Ui) -> Page {
                     td { @match cap.supports() { Some(t) => code { (t) }, None => span class="nojs-note" { "always" } } }
                 }
             } }
+            // end code
         }
         p class="nojs-note" { "Cookies: " @for n in ui.names() { code { "nojs-cap-" (n) } " " } }
         p class="nojs-note" { "To view any page as another browser, add " code { "?caps=popover,anchor" } " to its URL: the query wins over the cookies." }
@@ -760,6 +878,35 @@ mod tests {
                 let inline_handler = html.split('<').any(|tag| tag.split_whitespace().any(|a| a.starts_with("on") && a.contains('=')));
                 assert!(!inline_handler, "{path}: inline event handler");
             }
+        }
+    }
+
+    /// Every component page shows code cut from this file, so the snippet cannot drift from
+    /// what runs; every `// code:` marker is closed and names a component page.
+    #[tokio::test]
+    async fn every_component_page_shows_its_code() {
+        let opens = SOURCE.lines().filter(|l| l.trim().starts_with("// code: ")).count();
+        let closes = SOURCE.lines().filter(|l| l.trim() == "// end code").count();
+        assert_eq!(opens, closes, "every // code: has its // end code");
+        for l in SOURCE.lines().filter_map(|l| l.trim().strip_prefix("// code: ")) {
+            assert!(COMPONENTS.iter().any(|c| c.0 == l), "{l} is not a component page");
+        }
+        for (href, ..) in COMPONENTS {
+            let code = snippet(href);
+            assert!(!code.trim().is_empty(), "{href}: no snippet");
+            assert!(code.lines().all(|l| SOURCE.contains(l)), "{href}: snippet not cut from the source");
+            let res = router().oneshot(Request::get(href).body(Body::empty()).unwrap()).await.unwrap();
+            let html = String::from_utf8(axum::body::to_bytes(res.into_body(), usize::MAX).await.unwrap().to_vec()).unwrap();
+            // The highlighted block, tags stripped, is exactly the code.
+            let pre = html.split("class=\"nojs-snippet\"").nth(1).and_then(|s| s.split("<pre>").nth(1)).and_then(|s| s.split("</pre>").next());
+            let text: String = pre.expect("{href}: no snippet box").split('<').map(|p| p.split_once('>').map_or(p, |(_, t)| t)).collect();
+            assert_eq!(text, html! { (code) }.into_string(), "{href}: the box does not show its code");
+            assert!(pre.unwrap().contains("class=\"nojs-hl-"), "{href}: not highlighted");
+        }
+        let code = highlight(r#"let t = ui.tabs("demo").badge(3); // lazy
+html! { @if x { Some(Page) } }"#).into_string();
+        for part in [r#"hl-k">let<"#, r#"hl-f">tabs<"#, r#"hl-s">&quot;demo&quot;<"#, r#"hl-n">3<"#, r#"hl-c">// lazy<"#, r#"hl-m">html!<"#, r#"hl-k">@if<"#, r#"hl-t">Page<"#] {
+            assert!(code.contains(part), "{part} in {code}");
         }
     }
 

@@ -245,7 +245,7 @@ th { color: var(--nojs-muted); font-weight: 600; }
 .nojs-no { color: var(--nojs-danger); font-weight: 600; }
 
 /* Demo shell: toolbar with the way back and the theme switch, the lede under a title,
-   the "built on" line, and the grouped index. */
+   the "built on" line, the highlighted code box under each component, and the grouped index. */
 .nojs-toolbar { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: var(--nojs-space); margin: 0 0 calc(var(--nojs-space) * 3); min-height: 2.25rem; }
 .nojs-popover-row { display: flex; justify-content: space-between; gap: var(--nojs-space); margin-bottom: calc(var(--nojs-space) * 2); }
 .nojs-back { color: var(--nojs-muted); text-decoration: none; }
@@ -254,6 +254,27 @@ th { color: var(--nojs-muted); font-weight: 600; }
 .nojs-lede { font-size: 1.125rem; color: var(--nojs-muted); margin-bottom: 1.5rem; }
 .nojs-built { color: var(--nojs-muted); font-size: 0.9rem; margin: -0.25rem 0 1.5rem; }
 .nojs-built code { color: var(--nojs-fg); margin-right: 0.25rem; }
+.nojs-snippet {
+  margin: 0 0 1.5rem; max-width: none; overflow: hidden;
+  border: 1px solid var(--nojs-line); border-radius: var(--nojs-radius);
+  background: color-mix(in srgb, var(--nojs-fg) 5%, var(--nojs-surface));
+}
+.nojs-snippet figcaption {
+  display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.25rem 1rem;
+  padding: 0.5rem calc(var(--nojs-space) * 2); border-bottom: 1px solid var(--nojs-line);
+  background: var(--nojs-surface); color: var(--nojs-muted); font-size: 0.8125rem;
+}
+.nojs-snippet figcaption span:first-child { color: var(--nojs-fg); font-weight: 600; font-family: ui-monospace, "Cascadia Mono", "JetBrains Mono", Menlo, Consolas, monospace; }
+.nojs-snippet pre { margin: 0; padding: calc(var(--nojs-space) * 2); overflow-x: auto; scrollbar-color: var(--nojs-line) transparent; line-height: 1.55; tab-size: 4; }
+.nojs-snippet pre code { background: none; border: 0; padding: 0; font-size: 0.8125rem; color: var(--nojs-fg); }
+/* Highlighted Rust: keyword, string, number and type, comment, macro, method. */
+.nojs-hl-k { font-weight: 600; }
+.nojs-hl-k { color: var(--nojs-danger); }
+.nojs-hl-s { color: var(--nojs-warn); }
+.nojs-hl-n, .nojs-hl-t { color: var(--nojs-ok); }
+.nojs-hl-c { color: var(--nojs-muted); font-style: italic; }
+.nojs-hl-m { color: var(--nojs-accent); font-weight: 600; }
+.nojs-hl-f { color: var(--nojs-accent); }
 .nojs-index { max-width: none; }
 .nojs-index h2 { margin-top: 2.5rem; padding-bottom: 0.35rem; border-bottom: 1px solid var(--nojs-line); }
 .nojs-index ul { list-style: none; margin: 0; padding: 0; }
