@@ -116,14 +116,17 @@ pub use theme::{Theme, theme_toggle};
 pub use toast::{ToastOptions, toasts};
 pub use wizard::{WizardOptions, wizard};
 
-/// All component stylesheets, concatenated. `layout` inlines this once per page.
-pub fn stylesheet() -> String {
-    let beacons = caps::beacon_css();
-    let tokens = layout::Tokens::default().css();
-    let mut parts = vec![tokens.as_str()];
-    parts.extend(COMPONENT_CSS);
-    parts.push(beacons.as_str());
-    parts.join("\n")
+/// All component stylesheets, concatenated once per process. `layout` inlines this once per page.
+pub fn stylesheet() -> &'static str {
+    static CSS: std::sync::OnceLock<String> = std::sync::OnceLock::new();
+    CSS.get_or_init(|| {
+        let beacons = caps::beacon_css();
+        let tokens = layout::Tokens::default().css();
+        let mut parts = vec![tokens.as_str()];
+        parts.extend(COMPONENT_CSS);
+        parts.push(beacons.as_str());
+        parts.join("\n")
+    })
 }
 
 /// Every component's `CSS`, in the order the stylesheet includes them. Colours in here are

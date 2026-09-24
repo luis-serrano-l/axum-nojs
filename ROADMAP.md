@@ -174,7 +174,7 @@ in FINDINGS.md (`hyperfine` against the demo, Firefox navigation timing from
 - [x] Measure: a `scripts/bench.sh` that starts the release demo and reports p50/p95 time to
   first byte and full response for `/`, `/table`, `/stream` cold and warm; Firefox
   `performance.getEntriesByType("navigation")` for the same routes; numbers in FINDINGS.md.
-- [ ] Cheap wins, server: `stylesheet()` built once (`OnceLock`) instead of per page; the
+- [x] Cheap wins, server: `stylesheet()` built once (`OnceLock`) instead of per page; the
   `Tokens::css()` string cached; `Content-Length` on every response; `Cache-Control` with a
   hash on `/wo/caps` beacon images and `/wo/enhance.js` verified; gzip/br on the demo through
   `tower-http` `CompressionLayer`; release profile with `lto = "fat"`, `codegen-units = 1`,

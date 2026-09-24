@@ -390,3 +390,24 @@ cheap wins that count are the ones that shrink the page (inline stylesheet, comp
 the swap payload, not the handler. `/stream` finishes at about 2.9 s in curl but DOMContentLoaded
 fires at 2.0 s in Firefox: the slots Firefox gets depend on its caps cookie, and the last slot
 arrives after the document it cares about has been parsed.
+
+**Server cheap wins.** `stylesheet()` is built once in a `OnceLock` and returned as
+`&'static str` (it held the `Tokens::default().css()` string too, so that is cached with it);
+the demo router gets `tower-http`'s `CompressionLayer` for gzip and br, restricted to bodies
+with a known size so `/stream` keeps its chunks (gzip would hold them until its buffer
+fills); the release profile is `lto = "fat"`, `codegen-units = 1`, `panic = "abort"`.
+Every non-streamed response already carries `Content-Length` (axum sets it from the body's
+exact size; a test checks it). `/wo/enhance.js` is served `immutable` under a `?v=<hash>`
+URL, verified. The `/wo/caps` beacons stay `no-store` on purpose: each one sets a cookie, and a
+cached answer would never set it again after the cookie is cleared; they are only requested
+while the cookie lacks the flag, so they cost nothing after the first visit.
+
+| Route | Warm TTFB p50 before → after | Cold TTFB p50 | Bytes plain / gzip / br | Firefox DOMContentLoaded |
+|---|---|---|---|---|
+| `/` | 0.33 → 0.17 ms | 0.73 → 0.32 ms | 48 906 / 10 479 / 11 135 | 66 → 33 ms |
+| `/table` | 0.42 → 0.19 ms | 0.93 → 0.37 ms | 58 140 / 11 103 / 11 714 | 41 → 41 ms |
+| `/stream` | 0.68 → 0.59 ms | unchanged | not compressed | unchanged |
+
+Pages are about 80 % inline stylesheet, so compression shrinks them to a fifth; br at
+`tower-http`'s default quality comes out slightly larger than gzip here. Firefox on loopback
+barely notices the bytes; on a real network the fifth-size page is the win that counts.

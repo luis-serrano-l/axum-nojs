@@ -20,6 +20,7 @@ use webonsive::{
     toasts, toast::ToastOptions, drawer::DrawerOptions, empty_state::EmptyOptions,
 };
 use std::time::Duration;
+use tower_http::compression::{CompressionLayer, predicate::{DefaultPredicate, Predicate}};
 
 /// Every demo path the no-script test and the screenshot test visit.
 pub const PATHS: [&str; 21] = [
@@ -60,6 +61,18 @@ pub fn router() -> Router {
         .route("/palette", get(palette_page))
         .merge(caps::router())
         .merge(webonsive::enhance::router())
+        .layer(CompressionLayer::new().compress_when(DefaultPredicate::new().and(WholeBody)))
+}
+
+/// Compress only bodies whose size is known up front. A streamed page (`/stream`) has no
+/// exact size, and gzip would hold its chunks until the buffer fills, so it is sent as is.
+#[derive(Clone, Copy)]
+struct WholeBody;
+
+impl Predicate for WholeBody {
+    fn should_compress<B: axum::body::HttpBody>(&self, response: &axum::http::Response<B>) -> bool {
+        response.body().size_hint().exact().is_some()
+    }
 }
 
 // ---------- helpers ----------
@@ -862,6 +875,18 @@ mod tests {
                 assert!(!inline_handler, "{path}: inline event handler");
             }
         }
+    }
+
+    #[tokio::test]
+    async fn whole_pages_are_compressed_and_streams_are_not() {
+        let gz = |path: &str| Request::get(path).header("accept-encoding", "gzip").body(Body::empty()).unwrap();
+        let res = router().oneshot(gz("/table")).await.unwrap();
+        assert_eq!(res.headers()["content-encoding"], "gzip", "a whole page is compressed");
+        let res = router().oneshot(gz("/stream")).await.unwrap();
+        assert!(res.headers().get("content-encoding").is_none(), "a stream keeps its chunks");
+        let res = router().oneshot(Request::get("/table").body(Body::empty()).unwrap()).await.unwrap();
+        assert!(res.headers().get("content-encoding").is_none());
+        assert!(axum::body::HttpBody::size_hint(res.body()).exact().is_some(), "plain pages carry a Content-Length");
     }
 
     #[tokio::test]

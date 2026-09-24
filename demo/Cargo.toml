@@ -10,6 +10,7 @@ axum = { workspace = true, features = ["multipart"] }
 tokio.workspace = true
 serde.workspace = true
 axum-extra = { version = "0.10", features = ["cookie"] }
+tower-http = { version = "0.7.1", features = ["compression-gzip", "compression-br"] }
 
 [dev-dependencies]
 tower = { version = "0.5", features = ["util"] }
