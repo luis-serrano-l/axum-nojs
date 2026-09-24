@@ -304,9 +304,11 @@ gets a second visual pass.
   against the defaults: no card grid, shadows, gradients or eyebrows. Checked in Firefox
   (light and dark, 1280 and 420 wide) and the Blitz PNGs. The colour-literal test no longer
   mistakes `white-space` for a colour.
-- [ ] Replace the demo's hand-written `highlight()` with `syntect` (asked by the owner): a
-  dependency of `demo` only, never of `axum-nojs`; `ClassedHTMLGenerator` so the output is
-  classes, not inline colours, mapped to `--nojs-*` tokens in `layout.rs` (no bundled theme);
-  every snippet highlighted once at startup (`LazyLock`), not per request. Check Maud's
-  `@if`/`@for` and `html!` bodies still read well, and that the snippet test still passes.
+- [x] Replace the demo's hand-written `highlight()` with `syntect` (asked by the owner): a
+  dependency of `demo` only (`default-syntaxes`, `regex-fancy`; no bundled themes, no
+  onig C build), never of `axum-nojs`. Its parser and Rust grammar decide the scopes; the
+  demo maps scope prefixes to the same seven `nojs-hl-*` classes coloured by `--nojs-*`
+  tokens, rather than `ClassedHTMLGenerator`, whose class-per-scope spans were about ten times
+  the markup. Every snippet is highlighted once (`LazyLock`, warmed on a thread when the router
+  is built; about 1 s in a debug build). Maud's `@if` shows `if` as a keyword and the `@` plain.
 - [ ] README "Run the demo" updated, clippy/tests/`scripts/verify.sh` green, local commit.

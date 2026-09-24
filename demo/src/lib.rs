@@ -12,7 +12,7 @@ use axum_nojs::layout::{Palette, Tokens};
 use axum_nojs::prelude::*;
 use axum_nojs::{Row, Streamed, table::Table, wizard::{Posted, Wizard}};
 use serde::{Deserialize, Serialize};
-use std::time::Duration;
+use std::{sync::LazyLock, time::Duration};
 use tower_http::compression::{CompressionLayer, predicate::{DefaultPredicate, Predicate}};
 
 /// Every demo path the no-script test and the screenshot test visit.
@@ -25,6 +25,8 @@ pub const PATHS: [&str; 21] = [
 
 /// The whole demo app.
 pub fn router() -> Router {
+    // Load syntect's grammars and highlight the snippets now, not on the first page view.
+    std::thread::spawn(|| LazyLock::force(&CODE));
     Router::new()
         .route("/", get(index))
         .route("/caps", get(caps_page))
@@ -135,7 +137,7 @@ fn shell(ui: &Ui, title: &str, body: Markup) -> Markup {
             div class="nojs-stage" { (body) }
             figure class="nojs-snippet" {
                 figcaption { span { "demo/src/lib.rs" } span { "The code behind the component above" } }
-                pre { code { (highlight(&snippet(c.0))) } }
+                pre { code { @if let Some((_, code)) = CODE.iter().find(|h| h.0 == c.0) { (maud::PreEscaped(code)) } } }
             }
         }
     }
@@ -158,44 +160,43 @@ fn snippet(href: &str) -> String {
     blocks.join("\n\n")
 }
 
-/// Rust (and Maud) source as spans the stylesheet colours: comments, strings, numbers,
-/// keywords, macros, types and method names. Done here on the server, so no script.
+/// Every component's snippet, highlighted once at startup: `(href, html)`.
+static CODE: LazyLock<Vec<(&str, String)>> =
+    LazyLock::new(|| COMPONENTS.iter().map(|c| (c.0, highlight(&snippet(c.0)).into_string())).collect());
+
+/// Rust source as spans the stylesheet colours, parsed by syntect's Rust grammar on the
+/// server (no script). Only seven classes, `nojs-hl-{k,s,n,c,m,f,t}`, coloured with tokens
+/// in `layout.rs`, instead of syntect's own HTML with a class per scope and a bundled theme.
 fn highlight(code: &str) -> Markup {
-    const KEYWORDS: [&str; 18] = ["let", "if", "else", "return", "async", "fn", "move", "mut", "for", "in", "match", "Some", "None", "true", "false", "const", "while", "as"];
-    let mut parts: Vec<(&str, &str)> = Vec::new();
-    let (bytes, mut i, mut plain) = (code.as_bytes(), 0, 0);
-    let word_end = |from: usize| from + code[from..].find(|c: char| !(c.is_alphanumeric() || c == '_')).unwrap_or(code.len() - from);
-    while i < code.len() {
-        let rest = &code[i..];
-        let (kind, end) = if rest.starts_with("//") {
-            ("c", i + rest.find('\n').unwrap_or(rest.len()))
-        } else if bytes[i] == b'"' {
-            let mut j = i + 1;
-            while j < code.len() && bytes[j] != b'"' { j += if bytes[j] == b'\\' { 2 } else { 1 }; }
-            ("s", (j + 1).min(code.len()))
-        } else if bytes[i].is_ascii_digit() && (i == 0 || !(bytes[i - 1].is_ascii_alphanumeric() || bytes[i - 1] == b'_')) {
-            ("n", word_end(i))
-        } else if bytes[i] == b'@' && rest[1..].starts_with(|c: char| c.is_alphabetic()) {
-            ("k", word_end(i + 1))
-        } else if rest.starts_with(|c: char| c.is_alphabetic() || c == '_') && (i == 0 || !(bytes[i - 1].is_ascii_alphanumeric() || bytes[i - 1] == b'_' || bytes[i - 1] == b'\'')) {
-            let end = word_end(i);
-            let word = &code[i..end];
-            match () {
-                _ if code[end..].starts_with('!') => ("m", end + 1),
-                _ if KEYWORDS.contains(&word) => ("k", end),
-                _ if i > 0 && bytes[i - 1] == b'.' => ("f", end),
-                _ if word.starts_with(char::is_uppercase) => ("t", end),
-                _ => ("", end),
+    use syntect::{easy::ScopeRangeIterator, parsing::{ParseState, ScopeStack, SyntaxSet}, util::LinesWithEndings};
+    static SYNTAXES: LazyLock<SyntaxSet> = LazyLock::new(SyntaxSet::load_defaults_newlines);
+    /// Scope prefix to class: keyword, string, number, comment, macro, function, type.
+    const CLASSES: [(&str, &str); 11] = [
+        ("comment", "c"), ("string", "s"), ("constant.numeric", "n"), ("support.macro", "m"),
+        ("support.function", "f"), ("entity.name.function", "f"), ("keyword.control", "k"),
+        ("storage", "k"), ("support.type", "t"), ("entity.name", "t"), ("constant.other", "t"),
+    ];
+    let class = |stack: &ScopeStack| {
+        stack.as_slice().iter().rev().find_map(|scope| {
+            let name = scope.build_string();
+            CLASSES.iter().find(|(prefix, _)| name.starts_with(prefix)).map(|c| c.1)
+        }).unwrap_or("")
+    };
+    let rust = SYNTAXES.find_syntax_by_extension("rs").expect("syntect ships Rust");
+    let (mut state, mut stack) = (ParseState::new(rust), ScopeStack::new());
+    let mut parts: Vec<(&str, String)> = Vec::new();
+    for line in LinesWithEndings::from(code) {
+        let ops = state.parse_line(line, &SYNTAXES).unwrap_or_default();
+        for (range, op) in ScopeRangeIterator::new(&ops, line) {
+            stack.apply(op).ok();
+            let kind = class(&stack);
+            match parts.last_mut() {
+                Some((last, text)) if *last == kind => text.push_str(&line[range]),
+                _ if range.is_empty() => {}
+                _ => parts.push((kind, line[range].to_string())),
             }
-        } else {
-            ("", i + rest.chars().next().map_or(1, char::len_utf8))
-        };
-        if kind.is_empty() { i = end; continue; }
-        if plain < i { parts.push(("", &code[plain..i])); }
-        parts.push((kind, &code[i..end]));
-        (i, plain) = (end, end);
+        }
     }
-    parts.push(("", &code[plain..]));
     html! { @for (kind, text) in parts { @if kind.is_empty() { (text) } @else { span class={ "nojs-hl-" (kind) } { (text) } } } }
 }
 
@@ -909,7 +910,7 @@ mod tests {
         }
         let code = highlight(r#"let t = ui.tabs("demo").badge(3); // lazy
 html! { @if x { Some(Page) } }"#).into_string();
-        for part in [r#"hl-k">let<"#, r#"hl-f">tabs<"#, r#"hl-s">&quot;demo&quot;<"#, r#"hl-n">3<"#, r#"hl-c">// lazy<"#, r#"hl-m">html!<"#, r#"hl-k">@if<"#, r#"hl-t">Page<"#] {
+        for part in [r#"hl-k">let<"#, r#"hl-f">tabs<"#, r#"hl-s">&quot;demo&quot;<"#, r#"hl-n">3<"#, r#"hl-c">// lazy"#, r#"hl-m">html!<"#, r#"hl-k">if<"#, r#"hl-t">Some<"#] {
             assert!(code.contains(part), "{part} in {code}");
         }
     }
