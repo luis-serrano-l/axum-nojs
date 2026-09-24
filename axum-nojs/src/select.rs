@@ -231,7 +231,7 @@ impl Render for Select<'_> {
                 span class="nojs-select" {
                     @if let Some(action) = search {
                         span class="nojs-select-search" {
-                            (Input::search_box(&q_name, "Filter options", q).id(&q_id).placeholder("Filter"))
+                            (Input::search_box(&q_name, "Filter options", q).id(&q_id).placeholder("Filter").class("nojs-select-filter"))
                             (ui.button("Filter").formmethod("get").formaction(action).formnovalidate())
                         }
                     }
@@ -255,7 +255,7 @@ impl Render for Select<'_> {
 pub const CSS: &str = r#"
 .nojs-select { display: inline-grid; gap: 0.4rem; }
 .nojs-select-search { display: flex; gap: 0.4rem; }
-.nojs-select-search input { flex: 1; min-width: 0; }
+.nojs-select-filter { flex: 1; min-width: 0; }
 .nojs-select select, .nojs-select select::picker(select) { appearance: base-select; }
 .nojs-select select { min-width: 12rem; }
 /* base-select draws its own ::picker-icon; drop the gradient chevron from layout.rs. */

@@ -517,6 +517,32 @@ impl Render for RadioGroup<'_> {
 
 /// Styles for this component; included in [`crate::stylesheet`].
 pub const CSS: &str = r#"
+/* Native controls, shadcn sizes: 2.25rem tall, px-3, a 1px --nojs-input border, shadow-xs.
+   These bare element rules are the one place inputs are styled: a hand-written field and a
+   component's control look the same. */
+input, select, textarea { font: inherit; font-size: 0.875rem; line-height: 1.25rem; color: inherit; }
+label { font-weight: 500; }
+input, select, textarea {
+  min-height: 2.25rem; padding: 0.375rem 0.75rem; min-width: 0;
+  background: transparent; border: 1px solid var(--nojs-input); border-radius: var(--nojs-radius-sm);
+  box-shadow: var(--nojs-shadow-xs); transition: border-color 0.15s, box-shadow 0.15s;
+}
+textarea { min-height: 4rem; }
+input::placeholder, textarea::placeholder { color: var(--nojs-muted); }
+/* Native select: no OS chrome, a chevron drawn from two gradients in the muted colour. */
+select {
+  appearance: none; padding-right: 2rem;
+  background-image: linear-gradient(45deg, transparent 50%, var(--nojs-muted) 50%), linear-gradient(135deg, var(--nojs-muted) 50%, transparent 50%);
+  background-position: right 1rem center, right 0.75rem center; background-size: 0.25rem 0.25rem; background-repeat: no-repeat;
+}
+select[multiple], select[size] { padding-right: 0.75rem; background-image: none; }
+input:is([type=checkbox], [type=radio]) { width: 1rem; height: 1rem; min-height: 0; padding: 0; margin: 0; accent-color: var(--nojs-primary); vertical-align: -0.15em; }
+input[type=range] { min-height: 0; padding: 0; border: 0; box-shadow: none; accent-color: var(--nojs-primary); }
+input[type=color] { padding: 0.25rem; }
+input[type=file] { padding-block: 0.25rem; }
+input::file-selector-button { font: inherit; font-weight: 500; color: var(--nojs-fg); background: transparent; border: 0; padding: 0 0.5rem 0 0; }
+:is(input, select, textarea):focus-visible { border-color: var(--nojs-ring); }
+:is(input, select, textarea):disabled { opacity: 0.5; cursor: not-allowed; }
 .nojs-field { display: grid; gap: 0.5rem; }
 .nojs-field label { font-size: 0.875rem; line-height: 1; font-weight: 500; }
 .nojs-field-check label, .nojs-radio-group label { display: flex; align-items: center; gap: 0.5rem; }

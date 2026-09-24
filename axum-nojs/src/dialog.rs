@@ -295,8 +295,7 @@ pub const CSS: &str = r#"
 .nojs-dialog-danger .nojs-dialog-title { color: var(--nojs-danger); }
 .nojs-dialog-body { font-size: 0.875rem; color: var(--nojs-muted); }
 .nojs-dialog-body > :last-child { margin-bottom: 0; }
-.nojs-dialog-body label { display: block; margin: var(--nojs-space) 0; color: var(--nojs-fg); }
-.nojs-dialog-body input:not([type=hidden]), .nojs-dialog-body textarea { display: block; width: 100%; box-sizing: border-box; margin-top: 0.5rem; }
+.nojs-dialog-body label { color: var(--nojs-fg); }
 .nojs-dialog-actions { display: flex; flex-wrap: wrap-reverse; justify-content: flex-end; gap: var(--nojs-space); margin: calc(var(--nojs-space) * 3) 0 0; }
 /* The close control is a small ghost icon button in the corner, 70% opacity until hovered. */
 .nojs-dialog-close { position: absolute; top: calc(var(--nojs-space) * 1.5); right: calc(var(--nojs-space) * 1.5); opacity: 0.7; }

@@ -460,8 +460,30 @@ One change to the button restyles every dialog, pager and table.
 - [x] `form.rs` fields delegate to `input.rs` (one field renderer, not two).
   Done in M21's input box: `Field`, `FieldKind` and the renderer live in `input.rs`; `form.rs`
   holds a list of `Field`s and renders each with `(f)`.
-- [ ] Delete the per-component button/input CSS the primitives now carry; measure
+- [x] Delete the per-component button/input CSS the primitives now carry; measure
   `stylesheet()` bytes and the bench before and after.
+  Done: the native-control rules (inputs, selects, checkboxes, file, focus and disabled
+  states) moved from `layout.rs` into `input.rs` and `button.rs`; the copies of the button look
+  in dialog, drawer, pager, paged table, table, palette and popover are gone. Component-owned
+  controls got part classes (`nojs-color-input`, `nojs-range-input`, `nojs-counter-input`,
+  `nojs-table-filter-input`, `nojs-table-check`, `nojs-palette-input`, `nojs-select-filter`,
+  `nojs-combobox-input`, `nojs-paged-table-page`), so no component CSS targets bare `button` or
+  `input` any more; the wizard's and the dialog body's field rules became `.nojs-field` ones
+  (the demo's dialog field is `ui.input` now).
+  Measured against pre-M21 (`167dfd1`), release build, same machine:
+  | | pre-M21 | before this box | after |
+  |---|---|---|---|
+  | `stylesheet()` bytes (gzip) | 49 305 (8 702) | 51 841 (9 455) | 51 605 (9 404) |
+  | `/table` HTML, 25 rows | 81 365 | 96 038 | 88 263 |
+  | bench `layout` | 12.9 µs | | 12.9 µs |
+  | bench `table 1000 rows` | 162 µs | | 164 µs (noise ±10%) |
+  | bench `paged_table 25 of 1000` | 8.2 µs | 16.6 µs | 12.2 µs |
+  The stylesheet is 2.3 KB (0.7 KB gzip) larger than before M21 for ten new primitives; the
+  duplicates removed here were small because M20 had already reduced them to overrides.
+  Two regressions found and cut: paged_table built a link string for every page (41) instead
+  of the ~11 shown, and each row's menu carried an inline SVG ellipsis (≈330 B a row), now the
+  `⋯` glyph. The remaining paged-table cost is the richer markup (ghost/outline page buttons
+  with icons and attributes).
 - [ ] A test fails if a component's CSS styles bare `button`/`input` selectors outside
   `button.rs`/`input.rs`.
 - [ ] CLAUDE.md component convention 8: a component builds its parts from primitives

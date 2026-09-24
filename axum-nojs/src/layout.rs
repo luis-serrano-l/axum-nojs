@@ -308,36 +308,12 @@ code {
   font-family: var(--nojs-font-mono); font-size: 0.875em;
   background: var(--nojs-surface); border: 1px solid var(--nojs-line); border-radius: var(--nojs-radius-sm); padding: 0.05em 0.35em;
 }
-/* Controls, shadcn sizes: 2.25rem tall, px-3 inputs and px-4 buttons, 1px --nojs-input
-   border, shadow-xs (the button rules live in button.rs). Focus is a 3px ring at 50% plus a
-   ring-coloured border; aria-invalid turns both to --nojs-danger. */
-button, input, select, textarea { font: inherit; font-size: 0.875rem; line-height: 1.25rem; color: inherit; }
-button, label { font-weight: 500; }
-input, select, textarea {
-  min-height: 2.25rem; padding: 0.375rem 0.75rem; min-width: 0;
-  background: transparent; border: 1px solid var(--nojs-input); border-radius: var(--nojs-radius-sm);
-  box-shadow: var(--nojs-shadow-xs); transition: border-color 0.15s, box-shadow 0.15s;
-}
-textarea { min-height: 4rem; }
-input::placeholder, textarea::placeholder { color: var(--nojs-muted); }
-/* Native select: no OS chrome, a chevron drawn from two gradients in the muted colour. */
-select {
-  appearance: none; padding-right: 2rem;
-  background-image: linear-gradient(45deg, transparent 50%, var(--nojs-muted) 50%), linear-gradient(135deg, var(--nojs-muted) 50%, transparent 50%);
-  background-position: right 1rem center, right 0.75rem center; background-size: 0.25rem 0.25rem; background-repeat: no-repeat;
-}
-select[multiple], select[size] { padding-right: 0.75rem; background-image: none; }
-input:is([type=checkbox], [type=radio]) { width: 1rem; height: 1rem; min-height: 0; padding: 0; margin: 0; accent-color: var(--nojs-primary); vertical-align: -0.15em; }
-input[type=range] { min-height: 0; padding: 0; border: 0; box-shadow: none; accent-color: var(--nojs-primary); }
-input[type=color] { padding: 0.25rem; }
-input[type=file] { padding-block: 0.25rem; }
-input::file-selector-button { font: inherit; font-weight: 500; color: var(--nojs-fg); background: transparent; border: 0; padding: 0 0.5rem 0 0; }
+/* Controls are styled in button.rs and input.rs. Focus everywhere is a 3px ring at 50%;
+   aria-invalid turns borders and the ring to --nojs-danger. */
 details > summary { cursor: pointer; font-weight: 500; }
 :focus-visible { outline: 3px solid color-mix(in srgb, var(--nojs-ring) 50%, transparent); outline-offset: 0; }
-:is(input, select, textarea, button):focus-visible { border-color: var(--nojs-ring); }
 [aria-invalid=true] { border-color: var(--nojs-danger); }
 [aria-invalid=true]:focus-visible { outline-color: color-mix(in srgb, var(--nojs-danger) 20%, transparent); }
-:is(button, input, select, textarea):disabled { opacity: 0.5; cursor: not-allowed; }
 /* A swap root or form with a request in flight (set by the enhancement script only). The
    fade waits so a fast answer never flickers; --nojs-busy: 1 turns it off. */
 /* Gap steps for the layout primitives (stack, cluster, grid, split); their default gaps sit

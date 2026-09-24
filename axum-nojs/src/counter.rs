@@ -137,7 +137,7 @@ impl Render for Counter<'_> {
                 (op("inc", at_max).icon().label("increment").content(html! { (Icon::Plus) }))
                 (op("reset", false).ghost().content(html! { "Reset" }))
                 @if typed {
-                    (Input::number_within("value", "Value", min, max).hide_label().step(step).inputmode("numeric").id(&typed_id).value(&value_text))
+                    (Input::number_within("value", "Value", min, max).hide_label().class("nojs-counter-input").step(step).inputmode("numeric").id(&typed_id).value(&value_text))
                     (op("set", false).content(html! { "Set" }))
                 }
                 @if min.is_some() || max.is_some() {
@@ -159,7 +159,7 @@ impl Render for Counter<'_> {
 pub const CSS: &str = r#"
 .nojs-counter { display: inline-flex; flex-wrap: wrap; align-items: center; gap: var(--nojs-space); }
 .nojs-counter output { min-width: 3ch; text-align: center; font-size: 1.5rem; font-weight: 600; font-variant-numeric: tabular-nums; }
-.nojs-counter input[name=value] { width: 6em; }
+.nojs-counter-input { width: 6em; }
 .nojs-counter-bounds { flex-basis: 100%; color: var(--nojs-muted); font-size: 0.875rem; }
 "#;
 

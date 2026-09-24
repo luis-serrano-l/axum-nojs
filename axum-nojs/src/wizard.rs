@@ -344,8 +344,7 @@ pub const CSS: &str = r#"
 .nojs-wizard-form fieldset[aria-invalid=true] { border-color: var(--nojs-danger); }
 .nojs-wizard-form legend { padding: 0 0.5rem; font-weight: 600; }
 .nojs-wizard-form label { display: block; margin: 0.75rem 0; font-size: 0.875rem; }
-.nojs-wizard-form input:not([type=checkbox]), .nojs-wizard-form select { display: block; width: 100%; max-width: 24rem; margin-top: 0.5rem; }
-.nojs-wizard-form [aria-invalid=true]:is(input, select) { border-color: var(--nojs-danger); }
+.nojs-wizard-form .nojs-field { max-width: 24rem; }
 .nojs-wizard-actions { display: flex; align-items: center; gap: calc(var(--nojs-space) * 2); margin-top: 1rem; }
 .nojs-wizard-review { margin: 0; }
 .nojs-wizard-review dt { color: var(--nojs-muted); }

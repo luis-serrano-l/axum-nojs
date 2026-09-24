@@ -222,12 +222,6 @@ pub(crate) fn paged_table_with(
         n,
     };
     let keep = [(per_key.as_str(), per.as_str())];
-    let hrefs: Vec<String> = (0..=pages).map(|n| link(n).to_string()).collect();
-    // A page link is a ghost button; the current page's is the outline one.
-    let go = |n: usize, text: &'static str| {
-        let b = Button::link(*caps, text, &hrefs[n]);
-        if n == page { b } else { b.ghost() }
-    };
     let jump_id = format!("{}-page", enhance::swap_id("nojs-paged-table", id));
     let page_text = page.to_string();
     html! {
@@ -237,25 +231,30 @@ pub(crate) fn paged_table_with(
                 output class="nojs-paged-table-range" { (Thousands(first)) "–" (Thousands(last)) " of " (Thousands(total)) }
                 ul class="nojs-paged-table-pages" {
                     @if page > 1 {
-                        li { (go(1, "First").class("nojs-paged-table-end")) }
-                        li { (go(page - 1, "Previous").rel("prev").content(html! { (Icon::ChevronLeft) "Previous" })) }
+                        @let (first, prev) = (link(1).to_string(), link(page - 1).to_string());
+                        li { (page_button(caps, &first, "First", false).class("nojs-paged-table-end")) }
+                        li { (page_button(caps, &prev, "Previous", false).rel("prev").content(html! { (Icon::ChevronLeft) "Previous" })) }
                     }
                     @for slot in window(page, pages) {
                         @match slot {
-                            Some(n) => li { (go(n, "").current(n == page).content(html! { (Thousands(n)) })) },
+                            Some(n) => li {
+                                @let h = link(n).to_string();
+                                (page_button(caps, &h, "", n == page).current(n == page).content(html! { (Thousands(n)) }))
+                            },
                             None => li class="nojs-paged-table-gap" aria-hidden="true" { "…" },
                         }
                     }
                     @if page < pages {
-                        li { (go(page + 1, "Next").rel("next").content(html! { "Next" (Icon::ChevronRight) })) }
-                        li { (go(pages, "Last").class("nojs-paged-table-end")) }
+                        @let (next, last) = (link(page + 1).to_string(), link(pages).to_string());
+                        li { (page_button(caps, &next, "Next", false).rel("next").content(html! { "Next" (Icon::ChevronRight) })) }
+                        li { (page_button(caps, &last, "Last", false).class("nojs-paged-table-end")) }
                     }
                 }
                 @if pages > 1 {
                     form method="get" action=(href) class="nojs-paged-table-jump" {
                         @for (k, v) in carried("") { input type="hidden" name=(k) value=(v); }
                         span { "Page" }
-                        (Input::number_within("page", "Page", Some(1), Some(pages as i64)).hide_label().inputmode("numeric").id(&jump_id).value(&page_text))
+                        (Input::number_within("page", "Page", Some(1), Some(pages as i64)).hide_label().class("nojs-paged-table-page").inputmode("numeric").id(&jump_id).value(&page_text))
                         span { "of " (Thousands(pages)) }
                         (Button::new(*caps, "Go"))
                     }
@@ -272,6 +271,12 @@ pub(crate) fn paged_table_with(
             }
         }
     }
+}
+
+/// A page link: a ghost button, the outline one for the page being shown.
+fn page_button<'a>(caps: &Caps, href: &'a str, text: &'a str, current: bool) -> Button<'a> {
+    let b = Button::link(*caps, text, href);
+    if current { b } else { b.ghost() }
 }
 
 /// The numbered slots: every page up to seven, else the first, the last and the current
@@ -349,7 +354,7 @@ pub const CSS: &str = r#"
 .nojs-paged-table-gap { align-self: center; padding: 0 0.25rem; }
 .nojs-paged-table-jump, .nojs-paged-table-per { display: flex; align-items: center; gap: var(--nojs-space); }
 .nojs-paged-table-jump { margin-left: auto; }
-.nojs-paged-table-jump input[name=page] { width: 5em; }
+.nojs-paged-table-page { width: 5em; }
 @media (max-width: 40rem) { .nojs-paged-table-jump { margin-left: 0; } }
 "#;
 

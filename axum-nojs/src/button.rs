@@ -409,7 +409,7 @@ pub const CSS: &str = r#"
 button, .nojs-button {
   display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
   min-height: 2.25rem; padding: 0.375rem 1rem; white-space: nowrap; cursor: pointer;
-  font-size: 0.875rem; line-height: 1.25rem; font-weight: 500;
+  font-family: inherit; font-size: 0.875rem; line-height: 1.25rem; font-weight: 500; color: inherit;
   background: var(--nojs-bg); border: 1px solid var(--nojs-input); border-radius: var(--nojs-radius-sm);
   box-shadow: var(--nojs-shadow-xs); transition: background-color 0.15s, color 0.15s, box-shadow 0.15s;
 }
@@ -424,7 +424,8 @@ button.nojs-danger:hover, .nojs-button.nojs-button-danger:hover { background: co
 .nojs-button.nojs-button-small { min-height: 2rem; padding: 0.25rem 0.75rem; gap: 0.375rem; }
 .nojs-button.nojs-button-icon { width: 2.25rem; min-width: 2.25rem; padding: 0; }
 .nojs-button.nojs-button-icon.nojs-button-small { width: 2rem; min-width: 2rem; }
-.nojs-button:focus-visible { border-color: var(--nojs-ring); }
+button:focus-visible, .nojs-button:focus-visible { border-color: var(--nojs-ring); }
+button:disabled { opacity: 0.5; cursor: not-allowed; }
 .nojs-button[aria-disabled=true] { opacity: 0.5; cursor: not-allowed; pointer-events: none; }
 .nojs-button[aria-busy=true] { cursor: progress; }
 .nojs-button-spinner {

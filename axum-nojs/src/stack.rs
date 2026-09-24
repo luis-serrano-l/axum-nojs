@@ -61,5 +61,5 @@ pub const CSS: &str = r#"
 :where(.nojs-stack) { gap: var(--nojs-space-4); }
 .nojs-stack > * { margin-block: 0; }
 /* Fields and blocks take the full width; a button or badge keeps its own. */
-.nojs-stack > :is(button, .nojs-button, .nojs-badge) { align-self: flex-start; }
+.nojs-stack > :is(.nojs-button, .nojs-badge) { align-self: flex-start; }
 "#;

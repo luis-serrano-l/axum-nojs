@@ -272,8 +272,9 @@ pub(crate) fn menu(
     let popover = caps.has(Cap::Popover);
     let anchor = caps.has(Cap::Anchor);
     let list = html! { ul role="menu" { @for it in items { (item(id, it, popover, anchor)) } } };
+    // A row menu repeats once per row, so its face is a text glyph rather than an SVG.
     let face = if compact {
-        html! { (Icon::Ellipsis) }
+        html! { "\u{22ef}" }
     } else {
         html! { (label) (Icon::ChevronDown) }
     };

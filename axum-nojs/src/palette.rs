@@ -190,7 +190,7 @@ impl Render for Palette<'_> {
         let form = html! {
             search {
                 form method="get" action=(action) class="nojs-palette-form" {
-                    (Input::search_box("q", label, query.unwrap_or("")).id(&input_id).list(&list_id).autofocus().autocomplete("off").placeholder("Type a command or a page"))
+                    (Input::search_box("q", label, query.unwrap_or("")).id(&input_id).list(&list_id).autofocus().autocomplete("off").placeholder("Type a command or a page").class("nojs-palette-input"))
                     (ui.button("Go").primary().small())
                 }
             }
@@ -254,8 +254,8 @@ pub const CSS: &str = r#"
 .nojs-palette-panel[popover]::backdrop { background: var(--nojs-overlay); }
 .nojs-palette-details .nojs-palette-panel { margin-top: var(--nojs-space); }
 .nojs-palette-form { display: flex; gap: var(--nojs-space); align-items: center; margin: -0.25rem -0.25rem 0.25rem; padding: 0.25rem 0.5rem; border-bottom: 1px solid var(--nojs-line); }
-.nojs-palette-form input { flex: 1; min-height: 2.75rem; padding: 0.5rem 0.25rem; border: 0; box-shadow: none; background: transparent; }
-.nojs-palette-form input:focus-visible { outline: none; }
+.nojs-palette-input { flex: 1; min-height: 2.75rem; padding: 0.5rem 0.25rem; border: 0; box-shadow: none; background: transparent; }
+.nojs-palette-input:focus-visible { outline: none; }
 .nojs-palette-heading { margin: 0; padding: 0.375rem 0.5rem; font-size: 0.75rem; font-weight: 500; color: var(--nojs-muted); }
 .nojs-palette ul { list-style: none; margin: 0; padding: 0; }
 .nojs-palette li { max-width: none; }

@@ -491,7 +491,7 @@ async fn dialog_page(ui: Ui) -> Page {
                 .confirm("Delete account", "/dialog/delete").cancel("Keep it")
                 .body(html! {
                     p { "This cannot be undone. Everything you wrote goes with it." }
-                    label { "Tell us why (optional)" input name="reason" placeholder="Moving on"; }
+                    (ui.input("reason", "Tell us why (optional)").placeholder("Moving on"))
                 }))
             // end code
             p class="nojs-note" { "Opened by an invoker button; the footer is a real form posting to " code { "/dialog/delete" } " with a hidden " code { "returns_to" } " so the server comes back here. Server-opened: " a href="/dialog?dialog=confirm" { "?dialog=confirm" } }

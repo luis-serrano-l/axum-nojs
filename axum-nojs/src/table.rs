@@ -60,7 +60,7 @@
 //!     .menu([MenuItem::link("Open", "/files/a.txt"), MenuItem::action("Delete", "/files/a.txt/delete").danger()]);
 //! let html = files.rows([row]).render().into_string();
 //! assert!(html.contains("aria-sort=\"ascending\""));
-//! assert!(html.contains("<input type=\"checkbox\" name=\"row\" value=\"a.txt\" form=\"nojs-table-files-bulk\""));
+//! assert!(html.contains("<input type=\"checkbox\" class=\"nojs-table-check\" name=\"row\" value=\"a.txt\" form=\"nojs-table-files-bulk\""));
 //! assert!(html.contains("href=\"/table.csv?sort=name&amp;dir=asc&amp;q=a&amp;cols=name%2Csize\""));
 //! assert!(!html.contains("<td>—</td>"), "a hidden column's cells are not rendered (its name stays in the chooser)");
 //! ```
@@ -426,7 +426,7 @@ pub(crate) fn table_in(
                             input type="hidden" name="dir" value=(if desc { "desc" } else { "asc" });
                         }
                         @for (k, v) in &carried { @if *k != "q" { input type="hidden" name=(k) value=(v); } }
-                        (Input::search_box("q", "Filter rows", filter).id(&filter_id).placeholder("Filter rows…").autocomplete("off"))
+                        (Input::search_box("q", "Filter rows", filter).id(&filter_id).placeholder("Filter rows…").autocomplete("off").class("nojs-table-filter-input"))
                         (Button::new(*caps, "Filter"))
                         @if !filter.is_empty() {
                             a class="nojs-table-clear" href={ (href) (query(sort, &carried.iter().copied().filter(|(k, _)| *k != "q").collect::<Vec<_>>())) } { "Clear" }
@@ -483,7 +483,7 @@ pub(crate) fn table_in(
                     @for row in rows.iter().filter(|_| !loading) { tr {
                         @if bulk.is_some() {
                             td class="nojs-table-select" {
-                                @if let Some(k) = row.key { input type="checkbox" name="row" value=(k) form=(bulk_id) aria-label={ "Select " (k) }; }
+                                @if let Some(k) = row.key { input type="checkbox" class="nojs-table-check" name="row" value=(k) form=(bulk_id) aria-label={ "Select " (k) }; }
                             }
                         }
                         @for (n, (i, col)) in visible.iter().enumerate() {
@@ -747,7 +747,7 @@ pub const CSS: &str = r#"
 .nojs-table-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--nojs-space); margin-bottom: calc(var(--nojs-space) * 2); }
 .nojs-table-filter { flex: 1; min-width: 14rem; }
 .nojs-table-filter form { display: flex; gap: var(--nojs-space); align-items: center; }
-.nojs-table-filter input { flex: 1; min-width: 8rem; max-width: 24rem; }
+.nojs-table-filter-input { flex: 1; min-width: 8rem; max-width: 24rem; }
 .nojs-table-clear, .nojs-table-csv { color: var(--nojs-muted); font-size: 0.875rem; }
 .nojs-table-clear:hover, .nojs-table-csv:hover { color: var(--nojs-fg); }
 .nojs-table-cols { position: relative; font-size: 0.875rem; }
@@ -776,7 +776,7 @@ pub const CSS: &str = r#"
 .nojs-table-num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .nojs-table-select { width: 2.5rem; text-align: center; }
 .nojs-table-menu { width: 3.5rem; text-align: center; text-wrap: nowrap; }
-.nojs-table-select input { margin: 0; }
+.nojs-table-check { margin: 0; }
 .nojs-table-empty { color: var(--nojs-muted); text-align: center; padding: 1.5rem; height: 6rem; }
 .nojs-table-detail summary { cursor: pointer; list-style: none; font-weight: 400; }
 .nojs-table-detail summary::-webkit-details-marker { display: none; }

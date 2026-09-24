@@ -114,7 +114,7 @@ impl Render for Range<'_> {
                 let (list, id) = (format!("{name}-ticks"), format!("f-{name}"));
                 html! {
                     div class="nojs-range" {
-                        input type="range" id=(id) name=(name) min=(min) max=(max) step=(step) value=(value) list=(list);
+                        input type="range" class="nojs-range-input" id=(id) name=(name) min=(min) max=(max) step=(step) value=(value) list=(list);
                         datalist id=(list) {
                             option value=(min) label=(min) {}
                             option value=((min + max) / 2) {}
@@ -129,8 +129,8 @@ impl Render for Range<'_> {
                 html! {
                     div class="nojs-range nojs-range-pair" {
                         div class="nojs-range-track" {
-                            input type="range" id=(lo_id) name={ (name) "_min" } min=(min) max=(max) step=(step) value=(lo) aria-label="Minimum";
-                            input type="range" id=(hi_id) name={ (name) "_max" } min=(min) max=(max) step=(step) value=(hi) aria-label="Maximum";
+                            input type="range" class="nojs-range-input" id=(lo_id) name={ (name) "_min" } min=(min) max=(max) step=(step) value=(lo) aria-label="Minimum";
+                            input type="range" class="nojs-range-input" id=(hi_id) name={ (name) "_max" } min=(min) max=(max) step=(step) value=(hi) aria-label="Maximum";
                         }
                         span class="nojs-range-values" { output for=(lo_id) { (lo) } " – " output for=(hi_id) { (hi) } }
                     }
@@ -154,28 +154,28 @@ pub fn order(a: i64, b: i64) -> (i64, i64) {
 /// Styles for this component; included in [`crate::stylesheet`].
 pub const CSS: &str = r#"
 .nojs-range { display: flex; align-items: center; gap: var(--nojs-space); }
-.nojs-range input { flex: 1; accent-color: var(--nojs-primary); }
+.nojs-range-input { flex: 1; accent-color: var(--nojs-primary); }
 .nojs-range output { min-width: 3ch; text-align: right; font-variant-numeric: tabular-nums; }
 /* Two inputs share one grid cell; only their thumbs catch the pointer. */
 .nojs-range-track { flex: 1; display: grid; align-items: center; min-height: 1.5rem; }
 .nojs-range-track::before { content: ""; grid-area: 1 / 1; height: 6px; border-radius: 3px; background: var(--nojs-secondary); }
-.nojs-range-track input {
+.nojs-range-track .nojs-range-input {
   grid-area: 1 / 1; appearance: none; width: 100%; height: 1.5rem; margin: 0; padding: 0;
   border: 0; background: none; pointer-events: none;
 }
-.nojs-range-track input::-webkit-slider-runnable-track { background: none; }
-.nojs-range-track input::-moz-range-track { background: none; }
-.nojs-range-track input::-moz-range-progress { background: none; }
-.nojs-range-track input::-webkit-slider-thumb {
+.nojs-range-track .nojs-range-input::-webkit-slider-runnable-track { background: none; }
+.nojs-range-track .nojs-range-input::-moz-range-track { background: none; }
+.nojs-range-track .nojs-range-input::-moz-range-progress { background: none; }
+.nojs-range-track .nojs-range-input::-webkit-slider-thumb {
   appearance: none; pointer-events: auto; cursor: pointer; width: 1rem; height: 1rem; border-radius: 50%;
   background: var(--nojs-bg); border: 1px solid var(--nojs-primary); box-shadow: var(--nojs-shadow-xs);
 }
-.nojs-range-track input::-moz-range-thumb {
+.nojs-range-track .nojs-range-input::-moz-range-thumb {
   pointer-events: auto; cursor: pointer; width: 1rem; height: 1rem; border-radius: 50%; box-sizing: border-box;
   background: var(--nojs-bg); border: 1px solid var(--nojs-primary); box-shadow: var(--nojs-shadow-xs);
 }
-.nojs-range-track input:focus-visible { outline: none; }
-.nojs-range-track input:focus-visible::-webkit-slider-thumb { outline: 4px solid color-mix(in srgb, var(--nojs-ring) 50%, transparent); outline-offset: 0; }
-.nojs-range-track input:focus-visible::-moz-range-thumb { outline: 4px solid color-mix(in srgb, var(--nojs-ring) 50%, transparent); outline-offset: 0; }
+.nojs-range-track .nojs-range-input:focus-visible { outline: none; }
+.nojs-range-track .nojs-range-input:focus-visible::-webkit-slider-thumb { outline: 4px solid color-mix(in srgb, var(--nojs-ring) 50%, transparent); outline-offset: 0; }
+.nojs-range-track .nojs-range-input:focus-visible::-moz-range-thumb { outline: 4px solid color-mix(in srgb, var(--nojs-ring) 50%, transparent); outline-offset: 0; }
 .nojs-range-values { text-wrap: nowrap; font-variant-numeric: tabular-nums; }
 "#;

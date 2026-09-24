@@ -186,7 +186,7 @@ impl Render for Combobox<'_> {
                             }
                         }
                     }
-                    (Input::search_box(name, label, query).id(&input_id).list(&list_id).aria_controls(&results_id).placeholder(placeholder).autocomplete("off"))
+                    (Input::search_box(name, label, query).id(&input_id).list(&list_id).aria_controls(&results_id).placeholder(placeholder).autocomplete("off").class("nojs-combobox-input"))
                     datalist id=(list_id) {
                         @for (group, values) in suggestions {
                             @match group {
@@ -227,7 +227,7 @@ impl Render for Combobox<'_> {
 /// Styles for this component; included in [`crate::stylesheet`].
 pub const CSS: &str = r#"
 .nojs-combobox form { display: flex; flex-wrap: wrap; gap: var(--nojs-space); align-items: center; }
-.nojs-combobox input[type=search] { flex: 1; min-width: 10rem; }
+.nojs-combobox-input { flex: 1; min-width: 10rem; }
 .nojs-combobox-chips { display: contents; }
 /* Picked values are shadcn secondary badges with a remove link. */
 .nojs-combobox-chip {

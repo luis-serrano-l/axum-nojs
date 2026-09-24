@@ -101,13 +101,13 @@ impl Render for Color<'_> {
             &id,
             html! {
                 div class="nojs-color" {
-                    input type="color" id=(id) name=(name) value=(value);
+                    input type="color" class="nojs-color-input" id=(id) name=(name) value=(value);
                     span class="nojs-color-swatch" style={ "--nojs-color-value: " (value) "; --nojs-color-alpha: " (pct) "%" } aria-hidden="true" {}
                     code { @if pct < 100 { (hex_alpha(value, pct)) } @else { (value) } }
                     @if alpha.is_some() {
                         label class="nojs-color-alpha" {
                             "Opacity "
-                            input type="range" id={ (id) "-alpha" } name={ (name) "-alpha" } min="0" max="100" value=(pct);
+                            input type="range" class="nojs-color-alpha-range" id={ (id) "-alpha" } name={ (name) "-alpha" } min="0" max="100" value=(pct);
                             span { output for={ (id) "-alpha" } { (pct) } "%" }
                         }
                     }
@@ -127,14 +127,14 @@ impl Render for Color<'_> {
 /// Styles for this component; included in [`crate::stylesheet`].
 pub const CSS: &str = r#"
 .nojs-color { display: inline-flex; flex-wrap: wrap; align-items: center; gap: var(--nojs-space); }
-.nojs-color > input { width: 3rem; height: 2.25rem; padding: 2px; }
+.nojs-color-input { width: 3rem; height: 2.25rem; padding: 2px; }
 .nojs-color-swatch {
   width: 2.25rem; height: 2.25rem; border-radius: var(--nojs-radius-sm); border: 1px solid var(--nojs-input); box-shadow: var(--nojs-shadow-xs);
   background: linear-gradient(color-mix(in srgb, var(--nojs-color-value) var(--nojs-color-alpha, 100%), transparent) 0 0),
     repeating-conic-gradient(var(--nojs-line) 0 25%, var(--nojs-surface) 0 50%) 0 0 / 0.75rem 0.75rem;
 }
 .nojs-color-alpha { display: inline-flex; align-items: center; gap: 0.5rem; font-weight: 400; }
-.nojs-color-alpha input { width: 8rem; accent-color: var(--nojs-primary); }
+.nojs-color-alpha-range { width: 8rem; accent-color: var(--nojs-primary); }
 .nojs-color-alpha output { min-width: 3ch; text-align: right; font-variant-numeric: tabular-nums; }
 .nojs-color-presets { display: flex; flex-basis: 100%; gap: 0.5rem; }
 /* A preset is a button drawn as a round swatch of its colour. */
