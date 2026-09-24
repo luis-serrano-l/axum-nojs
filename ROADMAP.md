@@ -594,9 +594,15 @@ The React idea worth keeping: a component model users extend, not a closed catal
   the featured button primary, yearly prices.
 
 ## M25 · Positioning for release
-- [ ] README opening: "the no-JS UI kit for Rust servers", a layers diagram first
+- [x] README opening: "the no-JS UI kit for Rust servers", a layers diagram first
   (primitives → components → widgets → yours), then a comparison with Leptos, Dioxus and
   htmx + hand-written Maud.
+  Done: the tagline and one paragraph, `docs/layers.svg` (diagram-design skill, big-text
+  profile, a standalone SVG linked from the README: five bands from the HTML/CSS platform up
+  to "Yours", which is the one accent band), a paragraph on what the layering buys, and a
+  table against Leptos/Dioxus and htmx + Maud (where the UI runs, required JS, behaviour with
+  script blocked, components, state) with when to pick which. The screenshot and the code
+  sample follow unchanged.
 - [ ] Demo index grouped by layer.
 - [ ] M13 (Publish) happens after M26.
 

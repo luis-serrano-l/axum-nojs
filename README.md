@@ -1,7 +1,26 @@
 # axum-nojs
 
-Interactive HTML components for Axum and Maud that work without JavaScript. The core is plain
-functions over strings, so it also works with any other Rust server.
+**The no-JS UI kit for Rust servers.** Buttons, forms, dialogs, tables, a calendar, uploads and
+a kanban board for Axum and Maud, in shadcn/ui's look, that work with JavaScript turned off.
+The core is plain functions over strings, so it also works with any other Rust server.
+
+![Five layers, bottom to top: the HTML and CSS platform; primitives such as button, input and card; components such as dialog, tabs and table; widgets such as calendar and kanban; and components you write in your own crate](docs/layers.svg)
+
+Each layer is built only from the ones below it: components from primitives, widgets from
+components and primitives, and yours from any of them (`docs/components.md`), so one change to
+the button restyles every dialog, table and form, including yours.
+
+| | axum-nojs | Leptos, Dioxus | htmx + hand-written Maud |
+|---|---|---|---|
+| Where the UI runs | server, HTML out | Rust compiled to WebAssembly in the browser, rendered first on the server | server |
+| JavaScript needed for it to work | none: one optional 11 KB script | the WASM bundle and its JS glue, to hydrate | the htmx library, for every `hx-` attribute |
+| With script blocked | every page works; CI proves it with a script-less renderer (Blitz) | server-rendered HTML shows; interactivity stops | whatever you wrote as plain links and forms |
+| Components | primitives, components and widgets, themed by tokens | from the ecosystem, or your own | your own |
+| State | URL, cookies, form posts (Post/Redirect/Get) | signals in the browser, server functions | on the server, swapped fragments |
+
+Pick Leptos or Dioxus for an app that reacts on every keystroke (an editor, a live canvas).
+Pick this for the admin panels, dashboards, settings pages, forms and content sites that
+refresh per action, where it gives the same components with nothing to hydrate.
 
 Every component starts from `ui`, the one value a handler extracts, and renders where `html!`
 splices it. Interactivity comes from the HTML/CSS platform and ordinary form round trips. One
@@ -248,6 +267,7 @@ docs/state.md               how state works with no script
 docs/caps.md                how the beacons work, cookie format, the first view, adding a flag
 docs/theming.md             every --nojs-* token, contrast pairs, a second palette as a Tokens value
 docs/components.md          write your own component from the primitives (a doctest)
+docs/layers.svg             the layers diagram at the top of this file
 docs/ergonomics.md          audit of every call site and how M17 makes them shorter
 docs/latency.md             what made pages faster, what did not, and the order to apply it to your server
 axum-nojs/src/<name>.rs     one component each: dialog, popover, tabs, accordion, table, paged_table, wizard,
