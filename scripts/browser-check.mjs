@@ -279,6 +279,15 @@ try {
   await until(async () => (await js("return document.querySelector('.nojs-color-presets button[aria-pressed=true]')?.value")) === "#b3261e", "preset saved");
   assert(/Inputs saved/.test(await js("return document.querySelector('.nojs-flash')?.textContent || ''")), "color: a preset posts the form");
 
+  // Button: Tab onto the primary button; the keyboard focus ring is a 3px outline (Blitz
+  // cannot check this: :focus-visible never matches there, blitz#839).
+  await go("/button");
+  await js("document.querySelector('.nojs-back').focus()");
+  const tab = () => wd("POST", S + "/actions", { actions: [{ type: "key", id: "kb", actions: [{ type: "keyDown", value: "\ue004" }, { type: "keyUp", value: "\ue004" }] }] });
+  for (let i = 0; i < 10 && !(await js("return document.activeElement.matches('.nojs-button-primary')")); i++) await tab();
+  assert(await js("return document.activeElement.matches('.nojs-button-primary:focus-visible')"), "button: reached by Tab, :focus-visible");
+  assert(await js("return getComputedStyle(document.activeElement).outlineWidth") === "3px", "button: the focus ring is a 3px outline");
+
   // Theme: applied in place.
   await click(".nojs-theme button[value=dark]");
   await until(async () => (await js("return document.documentElement.dataset.theme")) === "dark", "theme");

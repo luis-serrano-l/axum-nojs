@@ -358,6 +358,8 @@ th { height: 2.5rem; color: var(--nojs-muted); font-weight: 500; white-space: no
 tbody tr { transition: background-color 0.15s; }
 tbody tr:hover { background: color-mix(in srgb, var(--nojs-accent) 50%, transparent); }
 .nojs-note { color: var(--nojs-muted); font-size: 0.875rem; }
+/* The dashed boxes on the demo's layout page. */
+.nojs-layout-tile { padding: calc(var(--nojs-space) * 1.5); border: 1px dashed var(--nojs-input); border-radius: var(--nojs-radius-sm); background: var(--nojs-surface); font-size: 0.875rem; }
 .nojs-yes { color: var(--nojs-ok); font-weight: 600; }
 .nojs-no { color: var(--nojs-danger); font-weight: 600; }
 

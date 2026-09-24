@@ -229,7 +229,7 @@ impl<'a> Form<'a> {
 
     /// A server message beside the field.
     pub fn error(self, message: &'a str) -> Self {
-        self.last(|f| f.error = Some(message))
+        self.last(|f| f.error = (!message.is_empty()).then_some(message))
     }
 
     /// Placeholder text.

@@ -36,6 +36,111 @@
       "needs_js": "no"
     },
     {
+      "name": "Button",
+      "module": "button",
+      "features": [
+        { "name": "invoker commands", "baseline": { "chrome": "135", "firefox": "144", "safari": "26.2" } },
+        { "name": "popovertarget", "baseline": { "chrome": "114", "firefox": "125", "safari": "17" } },
+        { "name": "aria-busy", "baseline": { "chrome": "1", "firefox": "1", "safari": "1" } },
+        { "name": "prefers-reduced-motion", "baseline": { "chrome": "74", "firefox": "63", "safari": "10.1" } }
+      ],
+      "fallback": "a popover command becomes popovertarget; other commands need the component's own fallback",
+      "needs_js": "no"
+    },
+    {
+      "name": "Input, checkbox, switch, radio group",
+      "module": "input",
+      "features": [
+        { "name": "constraint validation", "baseline": { "chrome": "10", "firefox": "4", "safari": "10.1" } },
+        { "name": "type=date", "baseline": { "chrome": "20", "firefox": "57", "safari": "14.1" } },
+        { "name": ":user-invalid", "baseline": { "chrome": "119", "firefox": "88", "safari": "16.5" } },
+        { "name": "role=\"switch\"", "baseline": { "chrome": "1", "firefox": "1", "safari": "1" } },
+        { "name": "appearance: none", "baseline": { "chrome": "84", "firefox": "80", "safari": "15.4" } },
+        { "name": "<fieldset>", "baseline": { "chrome": "1", "firefox": "1", "safari": "1" } }
+      ],
+      "fallback": "none needed: native controls; the switch stays a checkbox without appearance: none",
+      "needs_js": "partial",
+      "needs_js_note": "a live character count while typing needs the enhancement script"
+    },
+    {
+      "name": "Badge",
+      "module": "badge",
+      "features": [
+        { "name": "<span>", "baseline": { "chrome": "1", "firefox": "1", "safari": "1" } }
+      ],
+      "fallback": "none needed",
+      "needs_js": "no"
+    },
+    {
+      "name": "Card",
+      "module": "card",
+      "features": [
+        { "name": "grid", "baseline": { "chrome": "57", "firefox": "52", "safari": "10.1" } }
+      ],
+      "fallback": "none needed",
+      "needs_js": "no"
+    },
+    {
+      "name": "Icon",
+      "module": "icon",
+      "features": [
+        { "name": "<svg>", "baseline": { "chrome": "4", "firefox": "3", "safari": "3.2" } },
+        { "name": "role=\"img\"", "baseline": { "chrome": "1", "firefox": "1", "safari": "1" } }
+      ],
+      "fallback": "none needed",
+      "needs_js": "no"
+    },
+    {
+      "name": "Avatar",
+      "module": "avatar",
+      "features": [
+        { "name": "alt=\"\"", "baseline": { "chrome": "1", "firefox": "1", "safari": "1" } },
+        { "name": "loading=\"lazy\"", "baseline": { "chrome": "77", "firefox": "75", "safari": "15.4" } },
+        { "name": "role=\"img\"", "baseline": { "chrome": "1", "firefox": "1", "safari": "1" } }
+      ],
+      "fallback": "the initials are the fallback",
+      "needs_js": "no"
+    },
+    {
+      "name": "Stack",
+      "module": "stack",
+      "features": [
+        { "name": "gap", "baseline": { "chrome": "84", "firefox": "63", "safari": "14.1" } }
+      ],
+      "fallback": "none needed",
+      "needs_js": "no"
+    },
+    {
+      "name": "Cluster",
+      "module": "cluster",
+      "features": [
+        { "name": "flex-wrap", "baseline": { "chrome": "29", "firefox": "28", "safari": "9" } },
+        { "name": "gap", "baseline": { "chrome": "84", "firefox": "63", "safari": "14.1" } }
+      ],
+      "fallback": "none needed",
+      "needs_js": "no"
+    },
+    {
+      "name": "Grid",
+      "module": "grid",
+      "features": [
+        { "name": "repeat(auto-fill", "baseline": { "chrome": "57", "firefox": "52", "safari": "10.1" } },
+        { "name": "@media", "baseline": { "chrome": "1", "firefox": "1", "safari": "1" } }
+      ],
+      "fallback": "none needed",
+      "needs_js": "no"
+    },
+    {
+      "name": "Split",
+      "module": "split",
+      "features": [
+        { "name": "flex-wrap", "baseline": { "chrome": "29", "firefox": "28", "safari": "9" } },
+        { "name": "min-inline-size", "baseline": { "chrome": "57", "firefox": "41", "safari": "12.1" } }
+      ],
+      "fallback": "none needed",
+      "needs_js": "no"
+    },
+    {
       "name": "Dialog",
       "module": "dialog",
       "features": [

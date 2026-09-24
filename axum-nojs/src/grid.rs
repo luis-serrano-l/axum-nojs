@@ -1,12 +1,14 @@
 //! # Grid
 //!
 //! As many equal columns as fit, each at least a given width: cards, stats, a gallery. It
-//! drops to fewer columns on a narrow screen with no media query.
+//! drops to fewer columns on a narrow screen on its own.
 //!
-//! **Platform features:** `grid-template-columns: repeat(auto-fill, minmax(min(<min>, 100%),
-//! 1fr))` (CSS Grid, baseline 2017; `min()`, baseline 2020), so a column never overflows a
-//! screen narrower than its minimum. The minimum travels in a `--nojs-grid-min` custom
-//! property on the element.
+//! **Platform features:** `grid-template-columns: repeat(auto-fill, minmax(<min>, 1fr))`
+//! (CSS Grid, baseline 2017); the minimum travels in a `--nojs-grid-min` custom property on
+//! the element. Under a 30rem viewport an `@media` rule caps the minimum at the grid's width
+//! with `min(<min>, 100%)`, so a wide minimum never overflows a phone. (Not at every width:
+//! Taffy, Blitz's layout engine, lays out a single column whenever a track minimum uses
+//! `min()`; see FINDINGS.)
 //!
 //! **What it does not do without script:** nothing is missing.
 //!
@@ -64,7 +66,9 @@ impl Render for Grid<'_> {
 
 /// Styles for this component; included in [`crate::stylesheet`].
 pub const CSS: &str = r#"
-.nojs-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(var(--nojs-grid-min, 15rem), 100%), 1fr)); }
+.nojs-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(var(--nojs-grid-min, 15rem), 1fr)); }
+/* On a phone the minimum is capped at the grid's width, so a wide one cannot overflow. */
+@media (max-width: 30rem) { .nojs-grid { grid-template-columns: repeat(auto-fill, minmax(min(var(--nojs-grid-min, 15rem), 100%), 1fr)); } }
 :where(.nojs-grid) { gap: var(--nojs-space-4); }
 .nojs-grid > * { margin: 0; min-width: 0; }
 "#;

@@ -527,3 +527,33 @@ backdrop overlay, so component CSS still names no colour. Three things learned o
   ([#389](https://github.com/DioxusLabs/blitz/issues/389)); the 2 px black grid
   ([#386](https://github.com/DioxusLabs/blitz/issues/386)) no longer shows on `/table`, because
   the framed table now uses `border-collapse: separate` with row rules only.
+
+### M21 · Primitives
+
+Button, input, badge, card, icon, avatar and four layout helpers. Everything renders in
+Blitz with no script. The Blitz tests and the Firefox check found three things:
+
+- **The keyboard focus ring can only be checked in Firefox.** Blitz hard-codes
+  `:focus-visible` to false (`blitz-dom` `stylo.rs`,
+  [#839](https://github.com/DioxusLabs/blitz/issues/839)). `scripts/browser-check.mjs` now
+  tabs onto the primary button and asserts `:focus-visible` and a 3px outline. The Blitz test
+  covers the variants' sizes and fills.
+- **The switch is a plain box in Blitz.** It is a checkbox with `appearance: none`, and its
+  thumb is an `::before` pseudo-element. Blitz paints neither the custom look nor the pseudo
+  on the `<input>`: it is still a working checkbox, only its drawing differs (form controls
+  are tracked in [#258](https://github.com/DioxusLabs/blitz/issues/258)). Firefox draws the
+  track and thumb.
+- **Taffy picks one column when a grid track minimum uses `min()`.**
+  `repeat(auto-fill, minmax(min(16rem, 100%), 1fr))` gives one column at any width, while
+  `minmax(16rem, 1fr)` and `minmax(var(--m), 1fr)` are fine. No upstream issue exists yet;
+  filing one is the owner's call. `ui.grid` avoids it: it uses the plain minimum, and only
+  under `@media (max-width: 30rem)` caps it with `min(<min>, 100%)`, so a wide minimum cannot
+  overflow a phone. Blitz tests run at 1000px, so they never reach that rule.
+  Inline SVG needs Blitz's `svg` feature. The test harness had turned it off, so icons were
+  laid out but not painted; `axum-nojs-test` now enables it (a first-party inline-SVG plan
+  is [#701](https://github.com/DioxusLabs/blitz/issues/701)).
+
+A crate that uses `html!` from the prelude still needs its own `maud` dependency, because
+the macro expands to `maud::` paths (M24's guide must say so). `.error("")` on a field is
+now "no error", so a route can pass `if bad { "…" } else { "" }` without wrapping the
+builder in a branch.

@@ -98,6 +98,11 @@ component gives the HTML to another template engine.
   `.required()`, `.icon()`, `.badge()` apply to the item added last (a field, a menu item, a
   tab). Ids come from the label; state (`?tab.x=`, `?dialog=`, `?page=`, `?sort=`) is read
   from `ui`, so a route passes only what the page says differently. No macros beyond `html!`.
+- Primitives come first: `ui.button`/`ui.link_button`, `ui.input`/`ui.checkbox`/`ui.switch`/
+  `ui.radio_group`, `ui.badge`, `ui.card`, `Icon` (28 Lucide shapes as inline SVG),
+  `ui.avatar`, and the layouts `ui.stack`, `ui.cluster`, `ui.grid(min, ..)`, `ui.split(side,
+  main)` with `.gap(n)` on a `--nojs-space-*` scale. Components are built from them (`ui.form`
+  renders its fields through `input.rs`), and so can yours.
 - `Caps` is server-side feature detection with no script: `@supports` beacons set one cookie per
   capability, and each component emits only the variant that browser needs (see `/caps`).
   `?caps=popover,anchor` on any URL forces a set. The protocol is three plain functions
@@ -156,6 +161,16 @@ browser-compat-data; `no` means unshipped, so that browser gets the fallback.
 | Enhancement script | `fetch`, `history.pushState`, `document.startViewTransition`, `CustomEvent` | 42 / 39 / 10.1; 5 / 4 / 5; 111 / 144 / 18; 15 / 11 / 6 | none needed: without the script every form and link is a normal navigation and every data-nojs-* attribute is inert | No |
 | Layout | `@view-transition`, `prefers-color-scheme`, `custom properties` | 126 / no / 18.2; 76 / 67 / 12.1; 49 / 31 / 9.1 | plain navigations (root never cross-fades); colours still switch by media query and data-theme | No |
 | Capability beacons | `@supports`, `selector()`, `background images`, `cookies` | 28 / 22 / 9; 83 / 69 / 14.1; 1 / 1 / 1; 1 / 1 / 1 | unknown browser gets every fallback; the first view always does | No |
+| Button | `invoker commands`, `popovertarget`, `aria-busy`, `prefers-reduced-motion` | 135 / 144 / 26.2; 114 / 125 / 17; 1 / 1 / 1; 74 / 63 / 10.1 | a popover command becomes popovertarget; other commands need the component's own fallback | No |
+| Input, checkbox, switch, radio group | `constraint validation`, `type=date`, `:user-invalid`, `role="switch"`, `appearance: none`, `<fieldset>` | 10 / 4 / 10.1; 20 / 57 / 14.1; 119 / 88 / 16.5; 1 / 1 / 1; 84 / 80 / 15.4; 1 / 1 / 1 | none needed: native controls; the switch stays a checkbox without appearance: none | Partly: a live character count while typing needs the enhancement script |
+| Badge | `<span>` | 1 / 1 / 1 | none needed | No |
+| Card | `grid` | 57 / 52 / 10.1 | none needed | No |
+| Icon | `<svg>`, `role="img"` | 4 / 3 / 3.2; 1 / 1 / 1 | none needed | No |
+| Avatar | `alt=""`, `loading="lazy"`, `role="img"` | 1 / 1 / 1; 77 / 75 / 15.4; 1 / 1 / 1 | the initials are the fallback | No |
+| Stack | `gap` | 84 / 63 / 14.1 | none needed | No |
+| Cluster | `flex-wrap`, `gap` | 29 / 28 / 9; 84 / 63 / 14.1 | none needed | No |
+| Grid | `repeat(auto-fill`, `@media` | 57 / 52 / 10.1; 1 / 1 / 1 | none needed | No |
+| Split | `flex-wrap`, `min-inline-size` | 29 / 28 / 9; 57 / 41 / 12.1 | none needed | No |
 | Dialog | `<dialog>`, `command="show-modal"`, `<form method="dialog">`, `closedby` | 37 / 98 / 15.4; 135 / 144 / 26.2; 37 / 98 / 15.4; 134 / 141 / 26 | link to #id opens it through a :target rule, chosen server-side; the confirm footer is a plain form either way | No |
 | Popover menu | `popover`, `anchor-name` | 114 / 125 / 17; 125 / 147 / 26 | no anchor: UA-centred popover; no popover: <details> dropdown (submenus nested); actions are plain post forms either way | No |
 | Tabs | `<details name`, `display: contents`, `::details-content`, `view-transition-name` | 120 / 130 / 17.2; 65 / 37 / 11.1; 131 / 143 / 18.4; 111 / 144 / 18 | accordion markup, chosen server-side; the narrow-screen select has a Go button | No |

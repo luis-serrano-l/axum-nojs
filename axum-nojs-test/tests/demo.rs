@@ -918,3 +918,105 @@ async fn command_palette_suggests_and_lists_matches() {
         "fallback is an open disclosure after a search"
     );
 }
+
+#[tokio::test]
+async fn buttons_badges_and_icons() {
+    let mut page = Page::render(demo::router(), "/button?loading=1", MODERN).await;
+    shot(&mut page, "button-variants");
+    let bg = |sel: &str| {
+        let id = page.node(sel).unwrap();
+        let style = page.doc().get_node(id).unwrap().primary_styles().unwrap();
+        format!("{:?}", style.clone_background_color())
+    };
+    let outline = page
+        .bbox(".nojs-cluster > .nojs-button:nth-child(2)")
+        .unwrap();
+    let primary = page.bbox(".nojs-button-primary").unwrap();
+    assert!(
+        (outline.height - 36.0).abs() < 1.0,
+        "h-9 buttons: {outline:?}"
+    );
+    assert!(
+        (primary.height - outline.height).abs() < 1.0,
+        "same height in every tone"
+    );
+    assert_ne!(
+        bg(".nojs-button-primary"),
+        bg(".nojs-cluster > .nojs-button:nth-child(2)"),
+        "primary is filled, outline is not"
+    );
+    assert_ne!(bg(".nojs-button-danger"), bg(".nojs-button-primary"));
+    // The cluster stretches nothing (align-items: center), so small and icon keep their size.
+    let small = page.bbox(".nojs-button-small").unwrap();
+    assert!((small.height - 32.0).abs() < 1.0, "small is h-8: {small:?}");
+    let icon = page.bbox(".nojs-button-icon").unwrap();
+    assert!(
+        (icon.width - icon.height).abs() < 1.0,
+        "an icon button is square: {icon:?}"
+    );
+    assert!(
+        page.is_visible(".nojs-button-primary .nojs-button-spinner"),
+        "?loading=1 shows the spinner"
+    );
+    assert!(page.html.contains(r#"aria-busy="true" disabled"#));
+    assert!(
+        page.is_visible("a.nojs-button[href='/']"),
+        "a link can look like a button"
+    );
+    assert_eq!(page.count(".nojs-badge"), 6);
+    let svg = page.bbox("svg.nojs-icon").unwrap();
+    assert!(
+        (svg.width - 16.0).abs() < 1.0 && (svg.height - 16.0).abs() < 1.0,
+        "icons are 1rem: {svg:?}"
+    );
+    assert_eq!(page.count("svg.nojs-icon"), 28);
+}
+
+#[tokio::test]
+async fn fields_cards_and_layouts() {
+    let mut page = Page::render(demo::router(), "/field?email=ada", MODERN).await;
+    shot(&mut page, "field-error");
+    assert!(
+        page.is_visible("#f-email-error"),
+        "the server's error shows under the field"
+    );
+    assert!(page.html.contains(r#"aria-describedby="f-email-error""#));
+    assert!(page.is_visible("input.nojs-switch[role=switch]"));
+    assert_eq!(page.count(".nojs-radio-group input[type=radio]"), 2);
+
+    let mut page = Page::render(demo::router(), "/card", MODERN).await;
+    shot(&mut page, "card");
+    let (a, b) = (
+        page.bbox(".nojs-grid > .nojs-card:nth-child(1)").unwrap(),
+        page.bbox(".nojs-grid > .nojs-card:nth-child(2)").unwrap(),
+    );
+    assert!(
+        (a.y - b.y).abs() < 1.0 && b.x > a.x,
+        "two cards side by side at 1000px"
+    );
+    let action = page.bbox(".nojs-card-action").unwrap();
+    let title = page.bbox(".nojs-card-title").unwrap();
+    assert!(
+        action.x > title.x + title.width,
+        "the header action sits right of the title"
+    );
+    let avatar = page.bbox(".nojs-avatar").unwrap();
+    assert!(
+        (avatar.width - 32.0).abs() < 1.0 && page.text(".nojs-avatar").as_deref() == Some("AL")
+    );
+
+    let mut page = Page::render(demo::router(), "/layout", MODERN).await;
+    shot(&mut page, "layout");
+    let side = page.bbox(".nojs-split-side").unwrap();
+    let main = page.bbox(".nojs-split-main").unwrap();
+    assert!(
+        (side.y - main.y).abs() < 1.0 && main.x > side.x && main.width > side.width,
+        "split: side beside a wider main"
+    );
+    let first = page.bbox(".nojs-grid > :nth-child(1)").unwrap();
+    let second = page.bbox(".nojs-grid > :nth-child(2)").unwrap();
+    assert!(
+        (second.x - (first.x + first.width) - 8.0).abs() < 1.0,
+        "grid.gap(2) is 8px"
+    );
+}

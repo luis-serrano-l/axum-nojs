@@ -426,8 +426,16 @@ layered design system: primitives → existing components rebuilt on them → fl
   always wins. Extras: `cluster.between()/.end()`, `split.side_width()/.side_end()`. The grid
   minimum and split width travel as a custom property in a `style` attribute (a note for
   M26's CSP box: that needs `style-src-attr`, which the inline `<style>` already implies).
-- [ ] Demo pages, `PATHS` entries, doctests and README matrix for each; Blitz test for button
+- [x] Demo pages, `PATHS` entries, doctests and README matrix for each; Blitz test for button
   variants and the focus ring.
+  Done: four pages in a new "Primitives" group (`/button`, `/field`, `/card`, `/layout`),
+  in `PATHS` and `COMPONENTS`; ten `SPECS` entries (README matrix regenerated). Blitz tests
+  `buttons_badges_and_icons` and `fields_cards_and_layouts`. The focus ring is checked in
+  Firefox (`browser-check.mjs` tabs onto the button: `:focus-visible`, 3px outline), because
+  Blitz never matches `:focus-visible` (#839). Found and handled: the test harness now enables
+  Blitz's `svg` feature (icons were unpainted); Taffy lays out one column when a grid track
+  minimum uses `min()`, so `ui.grid` only uses it under 30rem; the switch is a plain box in
+  Blitz (#258). `.error("")` means no error. All in FINDINGS.
 
 ## M22 · Components rebuilt on primitives
 One change to the button restyles every dialog, pager and table.

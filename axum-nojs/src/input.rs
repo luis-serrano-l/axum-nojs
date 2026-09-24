@@ -208,9 +208,10 @@ impl<'a> Input<'a> {
         self
     }
 
-    /// A server message under the field; the control gets `aria-invalid`.
+    /// A server message under the field; the control gets `aria-invalid`. An empty message
+    /// is no error, so a route can pass `if bad { ".." } else { "" }`.
     pub fn error(mut self, message: &'a str) -> Self {
-        self.0.error = Some(message);
+        self.0.error = (!message.is_empty()).then_some(message);
         self
     }
 
@@ -378,9 +379,10 @@ impl<'a> RadioGroup<'a> {
         self
     }
 
-    /// A server message under the choices; the group gets `aria-invalid`.
+    /// A server message under the choices; the group gets `aria-invalid`. An empty message
+    /// is no error.
     pub fn error(mut self, message: &'a str) -> Self {
-        self.error = Some(message);
+        self.error = (!message.is_empty()).then_some(message);
         self
     }
 }
