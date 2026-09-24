@@ -34,6 +34,7 @@ theme; the status colours are Radix Colors step 11, the step made for text.
 | `--nojs-radius-lg` | radius + 4px | Not a `Tokens` field, derived: corners of cards, sheets and large panels. |
 | `--nojs-shadow-xs`, `--nojs-shadow-lg` | shadcn's | Not `Tokens` fields: the shadow under controls and under floating layers (dialogs, popovers, menus, toasts). Same in both schemes. |
 | `--nojs-space` | `8px` | The unit every gap, margin and padding is a multiple of (`calc(var(--nojs-space) * 3)`). |
+| `--nojs-space-1` … `-8` | 4px steps | Not `Tokens` fields, derived from `--nojs-space`: steps 1, 2, 3, 4, 6 and 8 are that many halves of it (4, 8, 12, 16, 24, 32px by default). The gaps of `ui.stack`, `ui.cluster`, `ui.grid` and `ui.split` (`.gap(n)`). |
 | `--nojs-busy` | `0.6` | Not a `Tokens` field: the opacity of a swap root or form while the enhancement script has a request in flight (`[data-nojs-busy]`). Set it to `1` on `:root` or on one root to turn the fade off. |
 
 The dark palette applies under `prefers-color-scheme: dark` unless `<html data-theme="light">`,

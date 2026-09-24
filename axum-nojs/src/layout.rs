@@ -111,7 +111,9 @@ pub struct Tokens {
     /// shadows, `--nojs-shadow-xs` (controls) and `--nojs-shadow-lg` (floating layers), are
     /// emitted beside them and are the same in both schemes, as in shadcn/ui.
     pub radius: &'static str,
-    /// The spacing unit every gap and padding is a multiple of (`--nojs-space`).
+    /// The spacing unit every gap and padding is a multiple of (`--nojs-space`). The scale
+    /// `--nojs-space-{1,2,3,4,6,8}` is derived from it: step n is n/2 units (4px each by
+    /// default, as Tailwind's `gap-n`), and the layout primitives' `.gap(n)` uses it.
     pub space: &'static str,
 }
 
@@ -169,7 +171,7 @@ impl Tokens {
     pub fn css(&self) -> String {
         let (light, dark) = (self.light.declarations(), self.dark.declarations());
         format!(
-            ":root {{\n  color-scheme: light dark;\n{light}  --nojs-radius: {}; --nojs-space: {};\n  --nojs-radius-sm: max(0px, var(--nojs-radius) - 2px); --nojs-radius-lg: calc(var(--nojs-radius) + 4px);\n  --nojs-shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.05);\n  --nojs-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);\n  --nojs-overlay: rgb(0 0 0 / 0.5);\n}}\n\
+            ":root {{\n  color-scheme: light dark;\n{light}  --nojs-radius: {}; --nojs-space: {};\n  --nojs-space-1: calc(var(--nojs-space) * 0.5); --nojs-space-2: var(--nojs-space); --nojs-space-3: calc(var(--nojs-space) * 1.5);\n  --nojs-space-4: calc(var(--nojs-space) * 2); --nojs-space-6: calc(var(--nojs-space) * 3); --nojs-space-8: calc(var(--nojs-space) * 4);\n  --nojs-radius-sm: max(0px, var(--nojs-radius) - 2px); --nojs-radius-lg: calc(var(--nojs-radius) + 4px);\n  --nojs-shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.05);\n  --nojs-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);\n  --nojs-overlay: rgb(0 0 0 / 0.5);\n}}\n\
              @media (prefers-color-scheme: dark) {{\n  :root:not([data-theme=\"light\"]) {{\n{dark}  }}\n}}\n\
              :root[data-theme=\"dark\"] {{\n  color-scheme: dark;\n{dark}}}\n\
              :root[data-theme=\"light\"] {{ color-scheme: light; }}\n",
@@ -338,6 +340,15 @@ details > summary { cursor: pointer; font-weight: 500; }
 :is(button, input, select, textarea):disabled { opacity: 0.5; cursor: not-allowed; }
 /* A swap root or form with a request in flight (set by the enhancement script only). The
    fade waits so a fast answer never flickers; --nojs-busy: 1 turns it off. */
+/* Gap steps for the layout primitives (stack, cluster, grid, split); their default gaps sit
+   in :where() so one of these always wins. */
+.nojs-gap-0 { gap: 0; }
+.nojs-gap-1 { gap: var(--nojs-space-1); }
+.nojs-gap-2 { gap: var(--nojs-space-2); }
+.nojs-gap-3 { gap: var(--nojs-space-3); }
+.nojs-gap-4 { gap: var(--nojs-space-4); }
+.nojs-gap-6 { gap: var(--nojs-space-6); }
+.nojs-gap-8 { gap: var(--nojs-space-8); }
 .nojs-sr { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50%); text-wrap: nowrap; border: 0; }
 [data-nojs-busy] { opacity: var(--nojs-busy, 0.6); transition: opacity 0.15s 0.2s; cursor: progress; }
 table { border-collapse: collapse; width: 100%; font-size: 0.875rem; line-height: 1.25rem; font-variant-numeric: tabular-nums; }

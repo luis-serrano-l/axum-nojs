@@ -56,6 +56,7 @@ pub mod badge;
 pub mod breadcrumbs;
 pub mod button;
 pub mod card;
+pub mod cluster;
 pub mod color;
 pub mod combobox;
 pub mod counter;
@@ -65,6 +66,7 @@ pub mod empty_state;
 pub mod enhance;
 pub mod flash;
 pub mod form;
+pub mod grid;
 pub mod icon;
 pub mod input;
 pub mod layout;
@@ -78,6 +80,8 @@ pub mod saved;
 pub mod select;
 pub mod skeleton;
 pub mod spec;
+pub mod split;
+pub mod stack;
 pub mod stat;
 pub mod state;
 #[cfg(feature = "http")]
@@ -135,6 +139,20 @@ pub(crate) fn labelled(label: Option<&str>, id: &str, control: maud::Markup) -> 
             maud::html! { div class="nojs-field" { label for=(id) { (text) } (control) } }
         }
         None => control,
+    }
+}
+
+/// The `nojs-gap-<n>` class for a layout primitive's `.gap(n)`: the step of the
+/// `--nojs-space-*` scale (0, 1, 2, 3, 4, 6, 8) nearest `n`, rounding down between two.
+pub(crate) fn gap_class(n: u8) -> &'static str {
+    match n {
+        0 => "nojs-gap-0",
+        1 => "nojs-gap-1",
+        2 => "nojs-gap-2",
+        3 => "nojs-gap-3",
+        4 | 5 => "nojs-gap-4",
+        6 | 7 => "nojs-gap-6",
+        _ => "nojs-gap-8",
     }
 }
 
@@ -219,6 +237,10 @@ pub const COMPONENT_CSS: &[&str] = &[
     card::CSS,
     icon::CSS,
     avatar::CSS,
+    stack::CSS,
+    cluster::CSS,
+    grid::CSS,
+    split::CSS,
     dialog::CSS,
     popover::CSS,
     tabs::CSS,

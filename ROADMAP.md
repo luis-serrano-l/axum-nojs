@@ -417,8 +417,15 @@ layered design system: primitives → existing components rebuilt on them → fl
   with no `onerror` (the img overhangs the clipped circle by 2px to hide Firefox's broken-image
   frame). Found on the way: a crate using `html!` from the prelude still needs its own `maud`
   dependency, since the macro expands to `maud::` paths; M24's docs must say so.
-- [ ] Layout primitives: `ui.stack()`, `ui.cluster()`, `ui.grid(min)`, `ui.split()`, CSS-only,
+- [x] Layout primitives: `ui.stack()`, `ui.cluster()`, `ui.grid(min)`, `ui.split()`, CSS-only,
   gaps from `--nojs-space-*` tokens.
+  Done: one file each (`stack.rs`, `cluster.rs`, `grid.rs`, `split.rs`); each takes its
+  content as `Markup` (`ui.grid(min, content)`, `ui.split(side, main)`). `Tokens::css()`
+  derives `--nojs-space-{1,2,3,4,6,8}` (n × 4px by default, Tailwind's steps) and `.gap(n)`
+  adds a `nojs-gap-n` class from `layout.rs`; default gaps sit in `:where()` so the class
+  always wins. Extras: `cluster.between()/.end()`, `split.side_width()/.side_end()`. The grid
+  minimum and split width travel as a custom property in a `style` attribute (a note for
+  M26's CSP box: that needs `style-src-attr`, which the inline `<style>` already implies).
 - [ ] Demo pages, `PATHS` entries, doctests and README matrix for each; Blitz test for button
   variants and the focus ring.
 
