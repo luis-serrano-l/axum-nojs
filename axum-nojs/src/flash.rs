@@ -104,6 +104,8 @@ pub fn stack(messages: &[(Level, &str)]) -> String {
 
 /// The request's flash messages as a stack of banners, made by [`Ui::flash`]; nothing when
 /// there are none.
+///
+/// **Setters.** Switches: `.dismiss()`, `.auto_hide()`.
 #[derive(Clone, Debug)]
 pub struct Flash<'a> {
     ui: &'a Ui,

@@ -199,6 +199,8 @@ impl Icon {
 }
 
 /// An icon with an optional accessible name, made by [`Ui::icon`].
+///
+/// **Setters.** Values and items: `.label(..)`.
 #[derive(Clone, Copy, Debug)]
 pub struct IconMark<'a> {
     icon: Icon,

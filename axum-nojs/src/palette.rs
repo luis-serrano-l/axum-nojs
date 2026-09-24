@@ -74,6 +74,9 @@ fn matches<'c, 'a>(commands: &'c [Command<'a>], query: &str) -> Vec<&'c Command<
 
 /// A command palette submitting `q` to its action with GET, made by [`Ui::palette`]. The
 /// request's `?q=` is the search; its results show below the opener.
+///
+/// **Setters.** Values and items: `.commands(..)`, `.command(..)`, `.keywords(..)`,
+/// `.group(..)`, `.label(..)`, `.key(..)`, `.id(..)`.
 #[derive(Clone, Debug)]
 pub struct Palette<'a> {
     ui: &'a Ui,

@@ -28,6 +28,8 @@ use maud::{Markup, Render, html};
 use crate::Ui;
 
 /// A responsive grid, made by [`Ui::grid`].
+///
+/// **Setters.** Values and items: `.gap(..)`.
 #[derive(Clone, Debug)]
 pub struct Grid<'a> {
     min: &'a str,

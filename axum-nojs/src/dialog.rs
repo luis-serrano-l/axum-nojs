@@ -87,6 +87,10 @@ impl DialogSize {
 
 /// A modal dialog behind a button, made by [`Ui::dialog`]: medium width, untitled, closed by
 /// a "Close" button, unless told otherwise.
+///
+/// **Setters.** Values and items: `.body(..)`, `.id(..)`, `.title(..)`, `.confirm(..)`,
+/// `.returns_to(..)`, `.close(..)`, `.cancel(..)`, `.closedby(..)`; switches: `.small()`,
+/// `.large()`, `.danger()`; from a condition: `.open(bool)`.
 #[derive(Clone, Debug)]
 pub struct Dialog<'a> {
     ui: &'a Ui,

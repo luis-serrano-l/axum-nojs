@@ -31,6 +31,9 @@ use maud::{Markup, Render, html};
 use crate::Ui;
 
 /// A card, made by [`Ui::card`].
+///
+/// **Setters.** Values and items: `.title(..)`, `.description(..)`, `.header(..)`, `.body(..)`,
+/// `.footer(..)`, `.id(..)`.
 #[derive(Clone, Debug, Default)]
 pub struct Card<'a> {
     title: Option<&'a str>,

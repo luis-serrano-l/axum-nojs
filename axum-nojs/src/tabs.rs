@@ -50,11 +50,14 @@
 //! assert!(html.contains("<select name=\"tab.docs\""));
 //! ```
 
+use std::rc::Rc;
+
 use maud::{Markup, Render, html};
 
 use crate::{Cap, Ui};
 
 /// One tab: a title, a panel (ready or rendered on demand), an optional badge count.
+#[derive(Clone, Debug)]
 struct Tab<'a> {
     title: &'a str,
     body: Body<'a>,
@@ -62,13 +65,28 @@ struct Tab<'a> {
 }
 
 /// A panel: rendered already, or rendered on demand.
+#[derive(Clone)]
 enum Body<'a> {
     Ready(Markup),
-    Lazy(Box<dyn Fn() -> Markup + 'a>),
+    Lazy(Rc<dyn Fn() -> Markup + 'a>),
+}
+
+/// A lazy panel prints as `Lazy(<fn>)`.
+impl std::fmt::Debug for Body<'_> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Body::Ready(m) => f.debug_tuple("Ready").field(m).finish(),
+            Body::Lazy(_) => f.write_str("Lazy(<fn>)"),
+        }
+    }
 }
 
 /// A tab strip, made by [`Ui::tabs`]: the open tab is `?tab.<name>=i` (or the cookie's
 /// memory of it), and each title links to its own. Horizontal unless told otherwise.
+///
+/// **Setters.** Values and items: `.lazy(..)`, `.tab(..)`, `.badge(..)`; switches:
+/// `.vertical()`, `.select_below()`.
+#[derive(Clone, Debug)]
 pub struct Tabs<'a> {
     ui: &'a Ui,
     name: &'a str,
@@ -106,7 +124,7 @@ impl<'a> Tabs<'a> {
     pub fn lazy(mut self, title: &'a str, body: impl Fn() -> Markup + 'a) -> Self {
         self.tabs.push(Tab {
             title,
-            body: Body::Lazy(Box::new(body)),
+            body: Body::Lazy(Rc::new(body)),
             badge: None,
         });
         self

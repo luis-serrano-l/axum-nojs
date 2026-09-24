@@ -387,6 +387,111 @@ mod tests {
         }
     }
 
+    /// Builders are plain data: every public struct derives or implements `Clone` and `Debug`,
+    /// so a route can keep one in a variable, build it in a loop or print it. `Streamed` owns
+    /// futures and is `Debug` only; the doctest marker `ComponentsGuide` is not a type anyone
+    /// holds.
+    #[test]
+    fn every_builder_is_clone_and_debug() {
+        let dir = concat!(env!("CARGO_MANIFEST_DIR"), "/src");
+        let mut missing = Vec::new();
+        for entry in std::fs::read_dir(dir).unwrap() {
+            let path = entry.unwrap().path();
+            let source = std::fs::read_to_string(&path).unwrap();
+            let mut attrs = String::new();
+            for line in source.lines().map(str::trim) {
+                if line.starts_with("#[") {
+                    attrs.push_str(line);
+                } else if let Some(rest) = line.strip_prefix("pub struct ") {
+                    let name: String = rest
+                        .chars()
+                        .take_while(|c| c.is_alphanumeric() || *c == '_')
+                        .collect();
+                    let has = |t: &str| {
+                        attrs.contains(t)
+                            || source.contains(&format!("impl {t} for {name}"))
+                            || source.contains(&format!("impl std::fmt::{t} for {name}"))
+                            || source.contains(&format!("impl fmt::{t} for {name}"))
+                    };
+                    let exempt_clone = name == "Streamed" || name == "ComponentsGuide";
+                    if (!has("Clone") && !exempt_clone)
+                        || (!has("Debug") && name != "ComponentsGuide")
+                    {
+                        missing.push(format!("{}: {name}", path.display()));
+                    }
+                    attrs.clear();
+                } else if !line.starts_with("///") && !line.starts_with("//") {
+                    attrs.clear();
+                }
+            }
+        }
+        assert!(missing.is_empty(), "not Clone + Debug: {missing:?}");
+    }
+
+    /// Every option discoverable in one place: a builder whose doc has a `**Setters.**`
+    /// paragraph names every setter of its `impl` blocks there (grouped by the convention:
+    /// values and items, no-argument switches, `bool` conditions).
+    #[test]
+    fn every_setter_is_listed_on_its_builder() {
+        let dir = concat!(env!("CARGO_MANIFEST_DIR"), "/src");
+        let mut missing = Vec::new();
+        for entry in std::fs::read_dir(dir).unwrap() {
+            let source = std::fs::read_to_string(entry.unwrap().path()).unwrap();
+            let lines: Vec<&str> = source.lines().collect();
+            for (i, line) in lines.iter().enumerate() {
+                let Some(rest) = line.strip_prefix("pub struct ") else {
+                    continue;
+                };
+                let name: String = rest
+                    .chars()
+                    .take_while(|c| c.is_alphanumeric() || *c == '_')
+                    .collect();
+                let doc: String = lines[..i]
+                    .iter()
+                    .rev()
+                    .take_while(|l| l.starts_with("///") || l.starts_with("#["))
+                    .copied()
+                    .collect();
+                if !doc.contains("**Setters.**") {
+                    continue;
+                }
+                // Each `impl Name` / `impl<'a> Name<'a>` block up to its closing `}`.
+                let mut in_impl = false;
+                let mut body = String::new();
+                for l in &lines {
+                    if l.starts_with("impl")
+                        && !l.contains(" for ")
+                        && (l.contains(&format!(" {name} ")) || l.contains(&format!(" {name}<")))
+                    {
+                        in_impl = true;
+                    } else if in_impl && *l == "}" {
+                        in_impl = false;
+                    } else if in_impl {
+                        body.push_str(l);
+                        body.push('\n');
+                    }
+                }
+                for (at, _) in body.match_indices("pub fn ") {
+                    let sig = &body[at..body[at..].find('{').map_or(body.len(), |e| at + e)];
+                    let setter: String = sig["pub fn ".len()..]
+                        .chars()
+                        .take_while(|c| c.is_alphanumeric() || *c == '_')
+                        .collect();
+                    if sig.contains("self")
+                        && sig.contains("-> Self")
+                        && !doc.contains(&format!("`.{setter}("))
+                    {
+                        missing.push(format!("{name}::{setter}"));
+                    }
+                }
+            }
+        }
+        assert!(
+            missing.is_empty(),
+            "setters missing from their builder's **Setters.** list: {missing:?}"
+        );
+    }
+
     /// Every component's CSS together, inlined once per page, stays under 64 KB (57.6 KB and
     /// 10.3 KB gzipped at M26; README "What a page weighs").
     #[test]

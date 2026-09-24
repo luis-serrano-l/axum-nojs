@@ -28,6 +28,8 @@ use maud::{Markup, Render, html};
 use crate::Ui;
 
 /// A trail of links ending in the current page, made by [`Ui::breadcrumbs`].
+///
+/// **Setters.** Values and items: `.link(..)`, `.here(..)`.
 #[derive(Clone, Debug, Default)]
 pub struct Breadcrumbs<'a> {
     trail: Vec<(&'a str, &'a str)>,

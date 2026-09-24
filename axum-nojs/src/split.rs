@@ -27,6 +27,8 @@ use maud::{Markup, Render, html};
 use crate::Ui;
 
 /// A side-and-main layout, made by [`Ui::split`].
+///
+/// **Setters.** Values and items: `.side_width(..)`, `.gap(..)`; switches: `.side_end()`.
 #[derive(Clone, Debug)]
 pub struct Split<'a> {
     side: Markup,

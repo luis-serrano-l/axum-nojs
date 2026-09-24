@@ -51,6 +51,14 @@ enum Tone {
 }
 
 /// A `<button>` or a link that looks like one, made by [`Ui::button`] or [`Ui::link_button`].
+///
+/// **Setters.** Values and items: `.command(..)`, `.popovertarget(..)`, `.form(..)`,
+/// `.name(..)`, `.value(..)`, `.label(..)`, `.class(..)`, `.content(..)`, `.id(..)`,
+/// `.role(..)`, `.title(..)`, `.style(..)`, `.aria_haspopup(..)`, `.accesskey(..)`,
+/// `.aria_keyshortcuts(..)`, `.formmethod(..)`, `.formaction(..)`, `.rel(..)`; switches:
+/// `.primary()`, `.danger()`, `.ghost()`, `.small()`, `.icon()`, `.submit()`, `.reset()`,
+/// `.disabled()`, `.formnovalidate()`; from a condition: `.loading(bool)`, `.pressed(bool)`,
+/// `.current(bool)`.
 #[derive(Clone, Debug)]
 pub struct Button<'a> {
     caps: Caps,

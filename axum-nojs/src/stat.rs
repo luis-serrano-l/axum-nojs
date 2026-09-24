@@ -42,6 +42,9 @@ pub enum Trend {
 }
 
 /// A stat card, `label` above `value`, made by [`Ui::stat`].
+///
+/// **Setters.** Values and items: `.delta(..)`, `.trend(..)`, `.note(..)`, `.href(..)`;
+/// switches: `.down_is_good()`.
 #[derive(Clone, Debug, Default)]
 pub struct Stat<'a> {
     label: &'a str,

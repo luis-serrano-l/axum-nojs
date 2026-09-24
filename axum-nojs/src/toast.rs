@@ -33,6 +33,8 @@ use crate::flash::{Level, parse};
 
 /// The request's flash messages as toasts in the corner, made by [`Ui::toasts`]; nothing when
 /// there are none.
+///
+/// **Setters.** Switches: `.dismiss()`.
 #[derive(Clone, Debug)]
 pub struct Toasts<'a> {
     ui: &'a Ui,

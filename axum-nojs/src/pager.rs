@@ -30,6 +30,9 @@
 //! assert!(m.contains("Row 20") && !m.contains("Row 21") && m.contains("?page=3#more"));
 //! ```
 
+use std::fmt;
+use std::rc::Rc;
+
 use maud::{Markup, Render, html};
 
 use crate::button::Button;
@@ -37,13 +40,30 @@ use crate::{Cap, Caps, Ui, enhance};
 
 /// A load-more list, made by [`Ui::pager`]: pages 1 to `?page=` of the rows, 10 per page
 /// unless told otherwise.
+///
+/// **Setters.** Values and items: `.rows(..)`, `.per_page(..)`.
+#[derive(Clone)]
 pub struct Pager<'a> {
     caps: Caps,
     href: &'a str,
     total: usize,
     page: usize,
     per_page: usize,
-    row: Option<Box<dyn Fn(usize) -> Markup + 'a>>,
+    row: Option<Rc<dyn Fn(usize) -> Markup + 'a>>,
+}
+
+/// The row closure is shown as `<fn>`: a builder is still printable data.
+impl fmt::Debug for Pager<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Pager")
+            .field("caps", &self.caps)
+            .field("href", &self.href)
+            .field("total", &self.total)
+            .field("page", &self.page)
+            .field("per_page", &self.per_page)
+            .field("row", &self.row.as_ref().map(|_| "<fn>"))
+            .finish()
+    }
 }
 
 impl Ui {
@@ -80,7 +100,7 @@ impl<'a> Pager<'a> {
 
     /// Row `i` (0-based) of the list; called for each shown row.
     pub fn rows(mut self, row: impl Fn(usize) -> Markup + 'a) -> Self {
-        self.row = Some(Box::new(row));
+        self.row = Some(Rc::new(row));
         self
     }
 }

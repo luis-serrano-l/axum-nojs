@@ -50,9 +50,10 @@ Both are fine Rust. The builder wins where this library lives:
   meaning: a setter with no argument switches something on (`.danger()`), one that takes a
   `bool` is set from a condition (`.loading(busy)`), and ids come from the label.
 
-Two things `Props` do better, and the builders take them over (M26): every builder is plain
-data (`Clone` and `Debug`, so a route can keep one in a variable or build it in a loop), and
-every option is listed in one place, on the builder type in the rustdoc.
+Two things `Props` do better, the builders now do too: every builder is plain data (`Clone`
+and `Debug`, so a route can keep one in a variable, build it in a loop or print it), and every
+option is listed in one place, a "Setters" paragraph on the builder type grouping values and
+items, switches and conditions. Two tests keep both true.
 
 ## When to pick which
 

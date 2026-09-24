@@ -26,6 +26,8 @@ use maud::{Markup, Render, html};
 use crate::Ui;
 
 /// An avatar, made by [`Ui::avatar`].
+///
+/// **Setters.** Values and items: `.src(..)`; switches: `.small()`, `.large()`.
 #[derive(Clone, Debug)]
 pub struct Avatar<'a> {
     name: &'a str,

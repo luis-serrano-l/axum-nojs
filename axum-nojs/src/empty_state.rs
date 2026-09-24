@@ -29,6 +29,8 @@ use crate::button::Button;
 use crate::{Caps, Ui};
 
 /// What a list shows when there is nothing in it, made by [`Ui::empty_state`].
+///
+/// **Setters.** Values and items: `.icon(..)`, `.text(..)`, `.link(..)`, `.post(..)`.
 #[derive(Clone, Debug, Default)]
 pub struct EmptyState<'a> {
     title: &'a str,

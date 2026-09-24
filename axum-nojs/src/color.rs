@@ -36,6 +36,8 @@ use crate::button::Button;
 use crate::{Caps, Ui};
 
 /// A colour input with a swatch of its current value, made by [`Ui::color`].
+///
+/// **Setters.** Values and items: `.presets(..)`, `.alpha(..)`, `.label(..)`.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct Color<'a> {
     name: &'a str,

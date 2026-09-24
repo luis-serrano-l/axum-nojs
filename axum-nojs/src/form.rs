@@ -69,6 +69,12 @@ use crate::{Caps, Ui, enhance};
 /// Fields are added in order; `required`, `help`, `maxlength`, `value`, `error`,
 /// `placeholder`, `multiple` and `checked` apply to the field added last. A stacked form
 /// with a "Submit" button unless told otherwise.
+///
+/// **Setters.** Values and items: `.values(..)`, `.errors(..)`, `.group(..)`, `.text(..)`,
+/// `.email(..)`, `.number(..)`, `.pattern(..)`, `.textarea(..)`, `.file(..)`, `.date(..)`,
+/// `.time(..)`, `.select(..)`, `.checkbox(..)`, `.hidden(..)`, `.help(..)`, `.maxlength(..)`,
+/// `.value(..)`, `.error(..)`, `.placeholder(..)`, `.submit(..)`, `.id(..)`; switches:
+/// `.required()`, `.multiple()`, `.inline()`; from a condition: `.checked(bool)`.
 #[derive(Clone, Debug)]
 pub struct Form<'a> {
     action: Option<&'a str>,

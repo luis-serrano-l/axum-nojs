@@ -51,6 +51,9 @@ use crate::{Icon, Ui, state::encode};
 
 /// A search form sending `name` (the text) and `sel` (the selection) by GET, made by
 /// [`Ui::combobox`]. Single choice, labelled "Search", unless told otherwise.
+///
+/// **Setters.** Values and items: `.options(..)`, `.group(..)`, `.results(..)`, `.create(..)`,
+/// `.label(..)`, `.placeholder(..)`; switches: `.multi()`.
 #[derive(Clone, Debug)]
 pub struct Combobox<'a> {
     ui: &'a Ui,

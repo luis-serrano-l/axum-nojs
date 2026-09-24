@@ -135,6 +135,8 @@ impl<'a> Column<'a> {
 
 /// One row: its cells, and optionally a key (for selection and its menu id), a detail
 /// block opened from the first cell, and an action menu in a last column.
+///
+/// **Setters.** Values and items: `.detail(..)`, `.values(..)`, `.menu(..)`.
 #[derive(Clone, Debug)]
 pub struct Row<'a> {
     cells: Vec<Markup>,
@@ -583,6 +585,10 @@ pub(crate) fn table_in(
 /// A data table, made by [`Ui::table`]. It reads its sort, filter, page and visible columns
 /// from the request (`?sort=&dir=&q=&page=&cols=`), so a route asks it how to fetch the
 /// rows ([`Table::sort`], [`Table::filter`]) and hands them over with [`Table::rows`].
+///
+/// **Setters.** Values and items: `.bulk(..)`, `.column(..)`, `.edit(..)`, `.width(..)`,
+/// `.rows(..)`, `.paged(..)`, `.csv(..)`, `.empty(..)`; switches: `.sortable()`, `.numeric()`,
+/// `.editable()`, `.choose_columns()`; from a condition: `.loading(bool)`.
 #[derive(Clone, Debug)]
 pub struct Table<'a> {
     ui: &'a Ui,

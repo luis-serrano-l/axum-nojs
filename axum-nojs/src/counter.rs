@@ -42,6 +42,8 @@ use crate::{Cap, Caps, Icon, Ui, enhance};
 
 /// A number with buttons posting `op` to `action`, made by [`Ui::counter`]. Unbounded and
 /// stepping by 1 unless told otherwise.
+///
+/// **Setters.** Values and items: `.min(..)`, `.max(..)`, `.step(..)`; switches: `.typed()`.
 #[derive(Clone, Debug)]
 pub struct Counter<'a> {
     caps: Caps,

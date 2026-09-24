@@ -114,6 +114,13 @@ impl<'a> Field<'a> {
 }
 
 /// A labelled field, made by [`Ui::input`], [`Ui::checkbox`] or [`Ui::switch`].
+///
+/// **Setters.** Values and items: `.number(..)`, `.pattern(..)`, `.textarea(..)`, `.file(..)`,
+/// `.date(..)`, `.time(..)`, `.help(..)`, `.maxlength(..)`, `.value(..)`, `.error(..)`,
+/// `.placeholder(..)`, `.list(..)`, `.autocomplete(..)`, `.inputmode(..)`, `.step(..)`,
+/// `.aria_controls(..)`, `.form(..)`, `.class(..)`, `.id(..)`; switches: `.email()`,
+/// `.password()`, `.multiple()`, `.required()`, `.search()`, `.hide_label()`, `.autofocus()`;
+/// from a condition: `.checked(bool)`.
 #[derive(Clone, Debug)]
 pub struct Input<'a>(Field<'a>);
 
@@ -443,6 +450,9 @@ impl Render for Field<'_> {
 
 /// A set of radio buttons under a legend, made by [`Ui::radio_group`]. Add choices with
 /// [`RadioGroup::option`].
+///
+/// **Setters.** Values and items: `.option(..)`, `.value(..)`, `.help(..)`, `.error(..)`;
+/// switches: `.required()`.
 #[derive(Clone, Debug)]
 pub struct RadioGroup<'a> {
     name: &'a str,

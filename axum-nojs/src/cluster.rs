@@ -27,6 +27,8 @@ use maud::{Markup, Render, html};
 use crate::Ui;
 
 /// A wrapping row, made by [`Ui::cluster`].
+///
+/// **Setters.** Values and items: `.gap(..)`; switches: `.between()`, `.end()`.
 #[derive(Clone, Debug)]
 pub struct Cluster {
     content: Markup,

@@ -51,6 +51,8 @@ struct Column<'a> {
 
 /// A board, made by [`Ui::kanban`]. Add columns with [`Kanban::column`] and cards, into the
 /// column added last, with [`Kanban::card`].
+///
+/// **Setters.** Values and items: `.column(..)`, `.limit(..)`, `.card(..)`, `.note(..)`.
 #[derive(Clone, Debug)]
 pub struct Kanban<'a> {
     ui: &'a Ui,

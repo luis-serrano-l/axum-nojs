@@ -192,6 +192,9 @@ fn parse_month(s: &str) -> Option<Date> {
 }
 
 /// A month grid, made by [`Ui::calendar`].
+///
+/// **Setters.** Values and items: `.disabled(..)`, `.today(..)`, `.min(..)`, `.max(..)`,
+/// `.event(..)`, `.value(..)`; switches: `.sunday_first()`, `.radio()`, `.required()`.
 #[derive(Clone, Debug)]
 pub struct Calendar<'a> {
     ui: &'a Ui,

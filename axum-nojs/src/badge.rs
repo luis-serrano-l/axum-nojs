@@ -25,6 +25,9 @@ use maud::{Markup, Render, html};
 use crate::Ui;
 
 /// A badge, made by [`Ui::badge`].
+///
+/// **Setters.** Values and items: `.href(..)`; switches: `.secondary()`, `.danger()`,
+/// `.outline()`, `.ok()`, `.warn()`.
 #[derive(Clone, Debug)]
 pub struct Badge<'a> {
     text: &'a str,

@@ -51,6 +51,8 @@ use crate::{Cap, Ui};
 
 /// One option: its value, its text (what the filter matches), an optional icon and optional
 /// rich content shown instead of the text.
+///
+/// **Setters.** Values and items: `.content(..)`.
 #[derive(Clone, Debug)]
 pub struct SelectOption<'a> {
     /// Posted value.
@@ -107,6 +109,9 @@ struct Group<'a> {
 }
 
 /// A select, made by [`Ui::select`]. No filter box unless [`Select::search`] asks for one.
+///
+/// **Setters.** Values and items: `.options(..)`, `.group(..)`, `.groups(..)`, `.search(..)`,
+/// `.search_over(..)`, `.label(..)`.
 #[derive(Clone, Debug)]
 pub struct Select<'a> {
     ui: &'a Ui,

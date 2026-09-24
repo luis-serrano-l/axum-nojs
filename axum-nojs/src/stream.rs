@@ -72,13 +72,31 @@ fn marker(id: &str) -> String {
 
 /// A page whose slow sections arrive later. Build with [`Ui::stream`], add sections with
 /// [`Streamed::fill`], then return it from an Axum handler or send [`Streamed::into_stream`]
-/// as a chunked `text/html; charset=utf-8` body from any server.
+/// as a chunked `text/html; charset=utf-8` body from any server. Not `Clone`: it owns the
+/// futures that fill its slots, which run once.
 pub struct Streamed {
     dsd: bool,
     /// Whole page in fallback mode; everything up to `</template>` in DSD mode.
     prefix: String,
     suffix: String,
     fills: Vec<(String, Fill)>,
+}
+
+/// The pending fills print by slot id.
+impl std::fmt::Debug for Streamed {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Streamed")
+            .field("dsd", &self.dsd)
+            .field(
+                "slots",
+                &self
+                    .fills
+                    .iter()
+                    .map(|(id, _)| id.as_str())
+                    .collect::<Vec<_>>(),
+            )
+            .finish_non_exhaustive()
+    }
 }
 
 impl Streamed {

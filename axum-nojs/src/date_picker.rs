@@ -37,6 +37,9 @@ use crate::calendar::Date;
 use crate::{Cap, Icon, Ui};
 
 /// A date field, made by [`Ui::date_picker`].
+///
+/// **Setters.** Values and items: `.disabled(..)`, `.value(..)`, `.min(..)`, `.max(..)`;
+/// switches: `.required()`, `.native()`.
 #[derive(Clone, Debug)]
 pub struct DatePicker<'a> {
     ui: &'a Ui,

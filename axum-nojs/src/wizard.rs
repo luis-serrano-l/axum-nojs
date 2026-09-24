@@ -86,6 +86,9 @@ struct Step<'a> {
 /// A form split into steps, made by [`Ui::wizard`]: the current step is `?step.<id>=n` (or
 /// the cookie's memory of it). The last button reads "Finish" and a progress bar shows
 /// unless told otherwise.
+///
+/// **Setters.** Values and items: `.values(..)`, `.errors(..)`, `.step(..)`, `.review(..)`,
+/// `.at(..)`, `.finish(..)`; switches: `.optional()`; from a condition: `.progress(bool)`.
 #[derive(Clone, Debug)]
 pub struct Wizard<'a> {
     ui: &'a Ui,

@@ -139,6 +139,10 @@ impl<'a> From<(&'a str, &'a str)> for MenuItem<'a> {
 /// A button that opens a menu, made by [`Ui::menu`]. Items are added in order; `icon`,
 /// `shortcut`, `disabled` and `danger` apply to the item added last. Opens below the button,
 /// start-aligned, unless told otherwise.
+///
+/// **Setters.** Values and items: `.submenu(..)`, `.link(..)`, `.action(..)`, `.heading(..)`,
+/// `.icon(..)`, `.shortcut(..)`, `.id(..)`; switches: `.separator()`, `.disabled()`,
+/// `.danger()`, `.align_end()`, `.open_right()`.
 #[derive(Clone, Debug)]
 pub struct Menu<'a> {
     caps: Caps,

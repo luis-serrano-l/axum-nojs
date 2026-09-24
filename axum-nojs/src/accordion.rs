@@ -57,6 +57,9 @@ struct Item<'a> {
 /// Stacked sections, made by [`Ui::accordion`]: the open ones are `?open.<group>=` (or the
 /// cookie's memory of it), and each title links to toggle its own. One open at a time unless
 /// [`Accordion::multi`].
+///
+/// **Setters.** Values and items: `.item(..)`, `.icon(..)`, `.summary(..)`; switches:
+/// `.multi()`, `.controls()`.
 #[derive(Clone, Debug)]
 pub struct Accordion<'a> {
     ui: &'a Ui,

@@ -38,6 +38,9 @@ use maud::{Markup, Render, html};
 use crate::{Cap, Icon, Ui, slug};
 
 /// Navigation in a drawer beside the page's content, made by [`Ui::drawer`].
+///
+/// **Setters.** Values and items: `.nav(..)`, `.body(..)`, `.id(..)`, `.title(..)`; switches:
+/// `.sidebar()`; from a condition: `.open(bool)`.
 #[derive(Clone, Debug)]
 pub struct Drawer<'a> {
     ui: &'a Ui,

@@ -27,6 +27,8 @@ use crate::Ui;
 
 /// Placeholder bars, made by [`Ui::skeleton`]; the last one is shorter, like the end of a
 /// paragraph.
+///
+/// **Setters.** Values and items: `.label(..)`; switches: `.heading()`.
 #[derive(Clone, Debug)]
 pub struct Skeleton<'a> {
     lines: usize,

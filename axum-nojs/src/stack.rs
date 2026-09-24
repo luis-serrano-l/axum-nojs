@@ -25,6 +25,8 @@ use maud::{Markup, Render, html};
 use crate::Ui;
 
 /// A vertical stack, made by [`Ui::stack`].
+///
+/// **Setters.** Values and items: `.gap(..)`.
 #[derive(Clone, Debug)]
 pub struct Stack {
     content: Markup,

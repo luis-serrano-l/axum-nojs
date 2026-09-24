@@ -39,6 +39,8 @@ use crate::Ui;
 /// A slider with the server's current value beside it, made by [`Ui::range`] or, as a
 /// low/high pair over one track, by [`Ui::range_pair`]. 0 to 100 in steps of 1 unless told
 /// otherwise.
+///
+/// **Setters.** Values and items: `.min(..)`, `.max(..)`, `.step(..)`, `.label(..)`.
 #[derive(Clone, Debug)]
 pub struct Range<'a> {
     name: &'a str,

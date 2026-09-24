@@ -47,6 +47,9 @@ struct Held<'a> {
 }
 
 /// An upload form and its list of files, made by [`Ui::upload`].
+///
+/// **Setters.** Values and items: `.accept(..)`, `.hint(..)`, `.file(..)`, `.preview(..)`,
+/// `.href(..)`, `.remove(..)`; switches: `.multiple()`.
 #[derive(Clone, Debug)]
 pub struct Upload<'a> {
     ui: &'a Ui,
