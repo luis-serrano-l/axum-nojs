@@ -133,7 +133,7 @@ struct IndexQuery { palette: Option<String> }
 async fn index(caps: Caps, jar: CookieJar, Query(q): Query<IndexQuery>) -> Markup {
     let tokens = (q.palette.as_deref() == Some("linen")).then_some(&LINEN);
     page_with(&caps, &jar, "Components", tokens, html! {
-        p class="wo-lede" { "Twelve interactive components for Axum and Maud. Every page here ships zero " code { "<script>" } " tags: the HTML platform does the work, and one optional script only makes the same markup swap in place." }
+        p class="wo-lede" { (COMPONENTS.len()) " interactive components for Axum and Maud that work with JavaScript turned off. The HTML platform and plain form posts do the work. Each page loads one optional script, " code { "/wo/enhance.js" } ", which updates the same markup in place instead of reloading. Block it and every page still works." }
         @if !caps.has(Cap::Probed) { p class="wo-note" { "First visit: this page is the fallback variant. Reload and the server will know your browser." } }
         p class="wo-note" { "Theme: " @if tokens.is_some() { a href="/" { "ink and moss" } " · linen and copper" } @else { "ink and moss · " a href="/?palette=linen" { "linen and copper" } } ", see " code { "docs/theming.md" } }
         div class="wo-index" { @for group in GROUPS {
@@ -220,7 +220,7 @@ async fn tabs_page(caps: Caps, jar: CookieJar, state: UiState) -> (UiState, Mark
 async fn accordion_page(caps: Caps, jar: CookieJar, state: UiState) -> (UiState, Markup) {
     let body = page(&caps, &jar, "Accordion", html! {
         (accordion(&caps, "faq", &[
-            AccordionItem::new("Is this really no JavaScript?", html! { p { "Yes. View source." } })
+            AccordionItem::new("Does this need JavaScript?", html! { p { "No. Turn it off and reload: every control still works through links and form posts. The one script on the page only swaps the answer in place instead of reloading." } })
                 .icon("\u{1F50D}").summary("Every open and close is a link the server answers."),
             AccordionItem::new("Does it animate?", html! { p { "Yes, via ::details-content transitions where supported." } })
                 .icon("\u{1F3AC}").summary("Height animates to auto in Chrome; elsewhere it snaps."),

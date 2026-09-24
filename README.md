@@ -1,9 +1,9 @@
 # webonsive
 
-Interactive HTML components for Rust servers that need no JavaScript. Axum + Maud.
+Interactive HTML components for Rust servers that work with JavaScript turned off. Axum + Maud.
 
 Every component is a plain function returning `Markup`. Interactivity comes from the HTML/CSS
-platform and ordinary form round trips. One optional 9 KB script (`/wo/enhance.js`) makes the
+platform and ordinary form round trips. One optional 10 KB script (`/wo/enhance.js`) makes the
 same markup update in place; see "How the script works" below. Every page works identically
 with the script blocked; that is the only `<script>` tag allowed, and a test enforces it.
 
@@ -144,9 +144,9 @@ issues.
   `::details-content`, `<details name>`, cross-document view transitions in Firefox,
   declarative shadow DOM, and the first page view of every browser (beacons not fired yet).
   All fallbacks are chosen server-side from `Caps`; a page never carries both variants.
-- **Impossible without script:** filtering as you type against server data, infinite scroll,
-  mirroring a slider's value while it moves,
-  a modal opened on load, persisting client-side `<details>` toggles, optimistic UI, offline,
+- **Impossible without script:** filtering as you type against server data, mirroring a
+  slider's value while it moves, and a modal opened on load (the optional script adds these
+  three and moving the arrow keys into combobox results), infinite scroll, persisting client-side `<details>` toggles, optimistic UI, offline,
   undo, drag and drop, inline cell editing, canvas, and feature-detecting HTML attributes from CSS.
 
 **Verdict:** for content sites, admin panels, forms, settings pages and dashboards that refresh

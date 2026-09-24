@@ -2,7 +2,7 @@
 name = "webonsive"
 version = "0.1.0"
 edition = "2024"
-description = "Zero-JavaScript interactive HTML components for Rust servers"
+description = "Interactive HTML components for Rust servers that work with JavaScript turned off"
 readme = "../README.md"
 keywords = ["html", "components", "maud", "axum", "no-js"]
 categories = ["web-programming", "template-engine", "gui"]

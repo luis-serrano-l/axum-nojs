@@ -1,6 +1,6 @@
 //! # webonsive
 //!
-//! Interactive HTML components for Rust servers that need no JavaScript.
+//! Interactive HTML components for Rust servers that work with JavaScript turned off.
 //!
 //! Every component is a plain function that returns [`maud::Markup`]. Interactivity comes from
 //! the HTML and CSS platform (dialog, popover, invokers, `<details name>`, datalist, view

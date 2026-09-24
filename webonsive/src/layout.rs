@@ -172,7 +172,7 @@ pub fn header() -> Markup {
     html! {
         header class="wo-header" {
             a href="/" { strong { "webonsive" } }
-            span { "Interactive HTML for Rust servers, no JavaScript" }
+            span { "Interactive HTML for Rust servers, works without JavaScript" }
         }
     }
 }
