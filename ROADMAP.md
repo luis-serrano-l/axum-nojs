@@ -311,4 +311,5 @@ gets a second visual pass.
   tokens, rather than `ClassedHTMLGenerator`, whose class-per-scope spans were about ten times
   the markup. Every snippet is highlighted once (`LazyLock`, warmed on a thread when the router
   is built; about 1 s in a debug build). Maud's `@if` shows `if` as a keyword and the `@` plain.
-- [ ] README "Run the demo" updated, clippy/tests/`scripts/verify.sh` green, local commit.
+- [x] README "Run the demo" updated (index groups, the plate, the code markers, syntect) and
+  CLAUDE.md notes the markers; clippy/tests/`scripts/verify.sh` green, local commit.

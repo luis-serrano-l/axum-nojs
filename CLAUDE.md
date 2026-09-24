@@ -42,6 +42,9 @@ scripts/verify.sh                  # everything above plus a <script> grep and t
   `Saved<T>` (the only use of serde). Everything else is plain functions over strings
   (`Ui::from_request`, `Page::into_string`, `Redirect::set_cookies`, `caps::beacon_cookie`).
 - `demo/` – Axum lib + binary, one route per component, one `use axum_nojs::prelude::*`.
+  Each component page shows the code between its `// code: <href>` and `// end code`
+  markers (a test fails if a component page has none), so keep the markers around the
+  component call when editing a route.
   Handlers take `ui: Ui` (plus `Saved<T>` / `Form<T>` when they need them) and return `Page`
   or `Redirect`; they only parse input and call `axum-nojs`; keep each route around 15 lines. The only-one-script test lives here
   and hits every route via `tower::oneshot`, so **add new demo routes to `PATHS`** (the

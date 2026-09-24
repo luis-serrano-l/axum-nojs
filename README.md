@@ -51,6 +51,14 @@ cargo test             # includes: only the enhancement <script> on any route, a
 scripts/verify.sh      # build + clippy -D warnings + tests + screenshots + <script> grep + Firefox check
 ```
 
+The index lists every component in groups (overlays, disclosure, navigation, input, feedback,
+server state), each with one line on what it is for and the platform features it is built on.
+A component page shows the live component with the code that drew it joined underneath: the
+lines between `// code: <href>` and `// end code` in `demo/src/lib.rs`, cut from that file at
+compile time so the page and the code cannot drift, and highlighted on the server by
+[syntect](https://crates.io/crates/syntect), a dependency of the demo only, coloured with the
+`--nojs-*` tokens. To show more of a handler, move its markers.
+
 `axum-nojs-test` renders every route through [Blitz](https://github.com/DioxusLabs/blitz)
 (Stylo + Taffy + vello_cpu, no script engine) and writes a PNG per route and capability level
 to `tests/shots/`, which is also the proof that every route works with no script. What Blitz
