@@ -603,7 +603,12 @@ The React idea worth keeping: a component model users extend, not a closed catal
   table against Leptos/Dioxus and htmx + Maud (where the UI runs, required JS, behaviour with
   script blocked, components, state) with when to pick which. The screenshot and the code
   sample follow unchanged.
-- [ ] Demo index grouped by layer.
+- [x] Demo index grouped by layer.
+  Done: the index is four layers, bottom up as in `docs/layers.svg`: Primitives, Components
+  (with Overlays, Disclosure, Navigation, Input, Feedback and Server state as sub-headings),
+  Widgets (calendar, upload, kanban) and Your own (the pricing card), each with a one-line
+  blurb; the lede counts them ("4 primitives, 19 components, 3 widgets and one of your own").
+  A demo test fails if an index entry's group sits in no layer.
 - [ ] M13 (Publish) happens after M26.
 
 ## M26 · Compete on the guarantee, not the catalogue

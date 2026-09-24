@@ -397,7 +397,9 @@ tbody tr:hover { background: color-mix(in srgb, var(--nojs-accent) 50%, transpar
 .nojs-hl-m { color: var(--nojs-fg); font-weight: 600; }
 .nojs-hl-f { color: var(--nojs-fg); }
 .nojs-index { max-width: none; }
-.nojs-index h2 { margin: 2.5rem 0 1rem; font-size: 1.25rem; line-height: 1.75rem; }
+.nojs-index h2 { margin: 3rem 0 0.25rem; font-size: 1.5rem; line-height: 2rem; }
+.nojs-index-layer { margin: 0 0 1rem; color: var(--nojs-muted); font-size: 0.875rem; }
+.nojs-index h3 { margin: 1.5rem 0 0.75rem; font-size: 0.875rem; font-weight: 500; color: var(--nojs-muted); text-transform: uppercase; letter-spacing: 0.05em; }
 .nojs-index ul { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: 1rem; }
 /* Each component is a card; its title link stretches over the whole card. */
 .nojs-index li {

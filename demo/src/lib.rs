@@ -136,21 +136,21 @@ const COMPONENTS: [(&str, &str, &str, &str, &str); 27] = [
     (
         "/kanban",
         "Kanban",
-        "Server state",
+        "Widgets",
         "form POST per move, PRG, view-transition-name, scroll-snap",
         "Cards in columns; each move is a form post the server keeps.",
     ),
     (
         "/upload",
         "Upload",
-        "Input",
+        "Widgets",
         "multipart POST, <input type=file>, drop on the input, <progress>, PRG",
         "Send files; the list under the form is what the server kept.",
     ),
     (
         "/calendar",
         "Calendar",
-        "Input",
+        "Widgets",
         "<table>, links or radios, aria-current=date, :has(:checked), ?month=",
         "A month you can page through and pick a day from.",
     ),
@@ -316,15 +316,36 @@ const COMPONENTS: [(&str, &str, &str, &str, &str); 27] = [
         "Update one part of the page without reloading it.",
     ),
 ];
-const GROUPS: [&str; 8] = [
-    "Primitives",
-    "Overlays",
-    "Disclosure",
-    "Navigation",
-    "Input",
-    "Feedback",
-    "Server state",
-    "Your own",
+
+/// The index's layers, bottom up, each with the groups it holds (as in `docs/layers.svg`).
+const LAYERS: [(&str, &str, &[&str]); 4] = [
+    (
+        "Primitives",
+        "The parts every component is built from.",
+        &["Primitives"],
+    ),
+    (
+        "Components",
+        "Built from the primitives: one change to the button restyles them all.",
+        &[
+            "Overlays",
+            "Disclosure",
+            "Navigation",
+            "Input",
+            "Feedback",
+            "Server state",
+        ],
+    ),
+    (
+        "Widgets",
+        "Larger pieces built from components and primitives.",
+        &["Widgets"],
+    ),
+    (
+        "Your own",
+        "A component written in the demo crate, the way you would write one.",
+        &["Your own"],
+    ),
 ];
 
 /// The second palette from `docs/theming.md`: warm paper, copper primary, amber in the dark.
@@ -511,14 +532,19 @@ async fn index(ui: Ui) -> Page {
         &ui,
         "Components",
         html! {
-            p class="nojs-lede" { (COMPONENTS.len()) " interactive components for Axum and Maud that work with JavaScript turned off. The HTML platform and plain form posts do the work. Each page loads one optional script, " code { "/nojs/enhance.js" } ", which updates the same markup in place instead of reloading. Block it and every page still works." }
+            @let count = |groups: &[&str]| COMPONENTS.iter().filter(|c| groups.contains(&c.2)).count();
+            p class="nojs-lede" { (count(LAYERS[0].2)) " primitives, " (count(LAYERS[1].2)) " components, " (count(LAYERS[2].2)) " widgets and one of your own, for Axum and Maud, all working with JavaScript turned off. The HTML platform and plain form posts do the work. Each page loads one optional script, " code { "/nojs/enhance.js" } ", which updates the same markup in place instead of reloading. Block it and every page still works." }
             @if !ui.has(Cap::Probed) { p class="nojs-note" { "First visit: this page is the fallback variant. Reload and the server will know your browser." } }
             p class="nojs-note" { "Theme: " @if linen { a href="/" { "neutral" } " · linen and copper" } @else { "neutral · " a href="/?palette=linen" { "linen and copper" } } ", see " code { "docs/theming.md" } }
-            div class="nojs-index" { @for group in GROUPS {
-                h2 { (group) }
-                ul { @for (href, title, _, feats, what) in COMPONENTS.iter().filter(|c| c.2 == group) {
-                    li { a href=(href) { (title) } div { p { (what) } span { @for f in feats.split(", ") { code { (f) } " " } } } }
-                } }
+            div class="nojs-index" { @for (layer, blurb, groups) in LAYERS {
+                h2 { (layer) }
+                p class="nojs-index-layer" { (blurb) }
+                @for group in groups.iter() {
+                    @if groups.len() > 1 { h3 { (group) } }
+                    ul { @for (href, title, _, feats, what) in COMPONENTS.iter().filter(|c| c.2 == *group) {
+                        li { a href=(href) { (title) } div { p { (what) } span { @for f in feats.split(", ") { code { (f) } " " } } } }
+                    } }
+                }
             } }
             // Idle-time fetch of every component page, so the click is served from cache.
             @for (href, ..) in COMPONENTS { link rel="prefetch" href=(href); }
@@ -1906,6 +1932,16 @@ mod tests {
     use axum::body::Body;
     use axum::http::Request;
     use tower::ServiceExt;
+
+    #[test]
+    fn every_index_entry_sits_in_a_layer() {
+        for (href, _, group, ..) in COMPONENTS {
+            assert!(
+                LAYERS.iter().any(|l| l.2.contains(&group)),
+                "{href}: group {group} is in no layer"
+            );
+        }
+    }
 
     /// The only script on any page is the one optional enhancement tag: no inline script,
     /// no handlers, no `javascript:` URLs. Blitz (no script engine) proves the pages work
