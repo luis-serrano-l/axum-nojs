@@ -18,7 +18,7 @@ Answered 2026-09-24: **the repository is https://github.com/luis-serrano-l/axum-
 
 ## The publish itself (M13, box 4), on hold
 
-On hold at the owner's request (2026-09-24). The rename is done and `repository` is set; publish only on the owner's yes. Never run on your behalf.
+On hold at the owner's request (2026-09-24). The rename is done and `repository` is set; publish only on the owner's yes. Never run on your behalf. M25 puts it after M26, whose naming box (below) may still change the crate names.
 
 ## Reply to Blitz issue #923
 

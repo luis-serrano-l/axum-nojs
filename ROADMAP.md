@@ -609,7 +609,10 @@ The React idea worth keeping: a component model users extend, not a closed catal
   Widgets (calendar, upload, kanban) and Your own (the pricing card), each with a one-line
   blurb; the lede counts them ("4 primitives, 19 components, 3 widgets and one of your own").
   A demo test fails if an index entry's group sits in no layer.
-- [ ] M13 (Publish) happens after M26.
+- [x] M13 (Publish) happens after M26.
+  Recorded: M13's publish box stays on hold in BLOCKED.md (the owner's yes, never on their
+  behalf), and is not taken before M26 is through; M26's naming box may still change what is
+  published.
 
 ## M26 · Compete on the guarantee, not the catalogue
 `maud-ui` (crates.io, MIT, 0.20.3 on 2026-09-23) already ships the same stack and look: Maud,
