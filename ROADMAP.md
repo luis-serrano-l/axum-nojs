@@ -213,7 +213,7 @@ positional arguments, a chain of setters and a `jar.get(...).map(...).as_deref()
 reach a value; the goal is call sites a newcomer reads once and understands, and that stay
 short enough to scan. Every box lands with the demo and the doc headers rewritten to the new
 form, and the old form kept only where removing it would break a published signature.
-- [ ] Audit: list every public signature and every demo call site with its argument count,
+- [x] Audit: list every public signature and every demo call site with its argument count,
   the setters it needs, and what a reader must know to follow it; record the worst ten in
   `docs/ergonomics.md` with a proposed rewrite for each.
 - [ ] One obvious way in: each component has a short constructor for the common case
