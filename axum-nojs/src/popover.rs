@@ -46,7 +46,8 @@
 
 use maud::{Markup, Render, html};
 
-use crate::{Cap, Caps, Ui, slug};
+use crate::button::Button;
+use crate::{Cap, Caps, Icon, Ui, slug};
 
 /// Where the menu opens relative to its button.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -253,35 +254,57 @@ impl Render for Menu<'_> {
             self.label,
             &self.items,
             self.placement,
+            false,
         )
     }
 }
 
-/// A button labelled `label` that toggles a menu of `items`; also a table row's menu.
+/// A button labelled `label` that toggles a menu of `items`. `compact` is a table row's
+/// menu: a small ghost icon button, `label` its accessible name.
 pub(crate) fn menu(
     caps: &Caps,
     id: &str,
     label: &str,
     items: &[MenuItem],
     placement: Placement,
+    compact: bool,
 ) -> Markup {
     let popover = caps.has(Cap::Popover);
     let anchor = caps.has(Cap::Anchor);
     let list = html! { ul role="menu" { @for it in items { (item(id, it, popover, anchor)) } } };
+    let face = if compact {
+        html! { (Icon::Ellipsis) }
+    } else {
+        html! { (label) (Icon::ChevronDown) }
+    };
+    let trigger = Button::new(*caps, label)
+        .popovertarget(id)
+        .aria_haspopup("menu")
+        .content(face.clone());
+    let trigger = if compact {
+        trigger.ghost().small().icon().label(label)
+    } else {
+        trigger
+    };
+    let summary_class = if compact {
+        "nojs-button nojs-button-ghost nojs-button-small nojs-button-icon"
+    } else {
+        "nojs-button"
+    };
     html! {
         @if !popover {
             details class={ "nojs-popover nojs-popover-details " (placement.class()) } id=(id) {
-                summary { (label) " \u{25be}" }
+                summary class=(summary_class) aria-haspopup="menu" aria-label=[compact.then_some(label)] { (face) }
                 nav { (list) }
             }
         } @else if anchor {
             div class={ "nojs-popover nojs-popover-anchored " (placement.class()) } style={ "anchor-name: --" (id) } {
-                button type="button" popovertarget=(id) { (label) " \u{25be}" }
+                (trigger)
                 nav id=(id) popover style={ "position-anchor: --" (id) "; position-area: " (placement.area()) } { (list) }
             }
         } @else {
             div class={ "nojs-popover " (placement.class()) } {
-                button type="button" popovertarget=(id) { (label) " \u{25be}" }
+                (trigger)
                 nav id=(id) popover { (list) }
             }
         }
@@ -377,13 +400,8 @@ pub const CSS: &str = r#"
 .nojs-popover-heading { padding: 0.375rem 0.5rem; font-size: 0.875rem; font-weight: 500; color: var(--nojs-fg); }
 .nojs-popover-sep { margin: 0.25rem -0.25rem; border-top: 1px solid var(--nojs-line); }
 .nojs-popover-sub { position: relative; }
-/* <details> fallback: summary styled as the outline button, menu absolutely positioned by placement. */
-.nojs-popover-details > summary {
-  list-style: none; cursor: pointer; display: inline-flex; align-items: center; min-height: 2.25rem; padding: 0.375rem 1rem;
-  font-size: 0.875rem; line-height: 1.25rem; background: var(--nojs-bg); box-shadow: var(--nojs-shadow-xs);
-  border: 1px solid var(--nojs-input); border-radius: var(--nojs-radius-sm);
-}
-.nojs-popover-details > summary:hover { background: var(--nojs-accent); color: var(--nojs-on-accent); }
+/* <details> fallback: the summary is a .nojs-button, the menu absolutely positioned by placement. */
+.nojs-popover-details > summary { list-style: none; }
 .nojs-popover-details > summary::-webkit-details-marker { display: none; }
 .nojs-popover-details > nav { position: absolute; z-index: 10; }
 .nojs-popover-start.nojs-popover-details > nav { top: 100%; left: 0; margin-top: 4px; }

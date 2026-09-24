@@ -44,9 +44,11 @@ use maud::{Markup, html};
 
 use std::fmt::{self, Write};
 
+use crate::button::Button;
 use crate::enhance;
+use crate::input::Input;
 use crate::table::{Column, Encoded, Row, TableOptions, TableQuery, table_in};
-use crate::{Caps, UiState};
+use crate::{Caps, Icon, UiState};
 
 /// Page sizes offered in the select.
 pub const PAGE_SIZES: [usize; 4] = [5, 10, 25, 50];
@@ -220,6 +222,14 @@ pub(crate) fn paged_table_with(
         n,
     };
     let keep = [(per_key.as_str(), per.as_str())];
+    let hrefs: Vec<String> = (0..=pages).map(|n| link(n).to_string()).collect();
+    // A page link is a ghost button; the current page's is the outline one.
+    let go = |n: usize, text: &'static str| {
+        let b = Button::link(*caps, text, &hrefs[n]);
+        if n == page { b } else { b.ghost() }
+    };
+    let jump_id = format!("{}-page", enhance::swap_id("nojs-paged-table", id));
+    let page_text = page.to_string();
     html! {
         div id=(enhance::swap_id("nojs-paged-table", id)) data-nojs="swap" class="nojs-paged-table" {
             (table_in(caps, id, href, columns, rows, TableOptions { sort, filter, keep: &keep, ..inner }, false))
@@ -227,29 +237,27 @@ pub(crate) fn paged_table_with(
                 output class="nojs-paged-table-range" { (Thousands(first)) "–" (Thousands(last)) " of " (Thousands(total)) }
                 ul class="nojs-paged-table-pages" {
                     @if page > 1 {
-                        li { a class="nojs-paged-table-end" href=(link(1)) { "First" } }
-                        li { a rel="prev" href=(link(page - 1)) { "Previous" } }
+                        li { (go(1, "First").class("nojs-paged-table-end")) }
+                        li { (go(page - 1, "Previous").rel("prev").content(html! { (Icon::ChevronLeft) "Previous" })) }
                     }
                     @for slot in window(page, pages) {
                         @match slot {
-                            Some(n) if n == page => li { a aria-current="page" href=(link(n)) { (Thousands(n)) } },
-                            Some(n) => li { a href=(link(n)) { (Thousands(n)) } },
+                            Some(n) => li { (go(n, "").current(n == page).content(html! { (Thousands(n)) })) },
                             None => li class="nojs-paged-table-gap" aria-hidden="true" { "…" },
                         }
                     }
                     @if page < pages {
-                        li { a rel="next" href=(link(page + 1)) { "Next" } }
-                        li { a class="nojs-paged-table-end" href=(link(pages)) { "Last" } }
+                        li { (go(page + 1, "Next").rel("next").content(html! { "Next" (Icon::ChevronRight) })) }
+                        li { (go(pages, "Last").class("nojs-paged-table-end")) }
                     }
                 }
                 @if pages > 1 {
                     form method="get" action=(href) class="nojs-paged-table-jump" {
                         @for (k, v) in carried("") { input type="hidden" name=(k) value=(v); }
-                        label { "Page "
-                            input type="number" name="page" min="1" max=(pages) value=(page) inputmode="numeric";
-                            " of " (Thousands(pages))
-                        }
-                        button type="submit" { "Go" }
+                        span { "Page" }
+                        (Input::number_within("page", "Page", Some(1), Some(pages as i64)).hide_label().inputmode("numeric").id(&jump_id).value(&page_text))
+                        span { "of " (Thousands(pages)) }
+                        (Button::new(*caps, "Go"))
                     }
                 }
                 form method="get" action=(href) class="nojs-paged-table-per" {
@@ -259,7 +267,7 @@ pub(crate) fn paged_table_with(
                             @for size in PAGE_SIZES { option value=(size) selected[size == per_page] { (size) } }
                         }
                     }
-                    button type="submit" { "Show" }
+                    (Button::new(*caps, "Show"))
                 }
             }
         }
@@ -337,16 +345,11 @@ pub const CSS: &str = r#"
 /* shadcn Pagination: ghost page links, the current one an outline button, h-9 squares. */
 .nojs-paged-table-nav { display: flex; flex-wrap: wrap; align-items: center; gap: var(--nojs-space) calc(var(--nojs-space) * 2); margin-top: calc(var(--nojs-space) * 2); font-size: 0.875rem; color: var(--nojs-muted); }
 .nojs-paged-table-pages { display: flex; flex-wrap: wrap; gap: 0.25rem; list-style: none; margin: 0; padding: 0; }
-.nojs-paged-table-pages a {
-  display: inline-flex; align-items: center; justify-content: center; min-width: 2.25rem; height: 2.25rem; padding: 0 0.625rem;
-  font-weight: 500; text-decoration: none; color: var(--nojs-fg); border: 1px solid transparent; border-radius: var(--nojs-radius-sm);
-}
-.nojs-paged-table-pages a:hover { background: var(--nojs-accent); color: var(--nojs-on-accent); }
-.nojs-paged-table-pages a[aria-current="page"] { background: var(--nojs-bg); border-color: var(--nojs-input); box-shadow: var(--nojs-shadow-xs); }
+.nojs-paged-table-pages .nojs-button { min-width: 2.25rem; padding-inline: 0.625rem; }
 .nojs-paged-table-gap { align-self: center; padding: 0 0.25rem; }
 .nojs-paged-table-jump, .nojs-paged-table-per { display: flex; align-items: center; gap: var(--nojs-space); }
 .nojs-paged-table-jump { margin-left: auto; }
-.nojs-paged-table-jump input { width: 5em; }
+.nojs-paged-table-jump input[name=page] { width: 5em; }
 @media (max-width: 40rem) { .nojs-paged-table-jump { margin-left: 0; } }
 "#;
 
@@ -426,7 +429,10 @@ mod tests {
         .into_string();
         assert!(m.contains("href=\"/t?per.t=5&amp;page=8\">Last"), "{m}");
         assert!(m.contains("href=\"/t?per.t=5&amp;page=1\">First"));
-        assert!(m.contains("<input type=\"number\" name=\"page\" min=\"1\" max=\"8\" value=\"2\""));
+        assert!(
+            m.contains("name=\"page\" type=\"number\" value=\"2\" min=\"1\" max=\"8\""),
+            "{m}"
+        );
         assert!(m.contains("<select name=\"per.t\">"));
     }
 

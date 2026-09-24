@@ -1041,8 +1041,8 @@ async fn swap_page(ui: Ui, Saved(notes): Saved<Notes>) -> Page {
             p { "Notes so far: " span id="note-count" { (notes.0.len()) } }
             // code: /swap
             form method="post" action="/swap" data-nojs-target="#log" data-nojs-swap="append" data-nojs-indicator="#saving" {
-                input name="note" required placeholder="A note" aria-label="Note" autocomplete="off";
-                button type="submit" class="nojs-primary" { "Add note" }
+                (ui.input("note", "Note").hide_label().required().placeholder("A note").autocomplete("off"))
+                (ui.button("Add note").primary())
                 " " span id="saving" class="nojs-note" hidden { "Saving…" }
             }
             ol id="log" data-nojs="swap" { @for (_, note) in &notes.0 { li { (note) } } }
@@ -1207,7 +1207,7 @@ async fn inputs_page(ui: Ui, Query(q): Query<Inputs>, Saved(saved): Saved<Inputs
                 (ui.range_pair("price", (v.price_min.unwrap_or(20), v.price_max.unwrap_or(80))).step(5).label("Price"))
                 (ui.color("accent", v.accent.as_deref().unwrap_or("#1f6f5f")).presets(&ACCENTS).alpha(v.alpha.unwrap_or(100)).label("Accent"))
                 // end code
-                button type="submit" class="nojs-primary" { "Save" }
+                (ui.button("Save").primary())
             }
             p class="nojs-note" { "Without the enhancement script the outputs and the swatch show the last saved values and update on submit, and the country filter needs its button." }
         },
@@ -1247,11 +1247,11 @@ async fn toast_page(ui: Ui) -> Page {
         "Toasts",
         html! {
             p { "Each button posts, the server redirects back, and the answer shows in the corner. Calm ones fade after five seconds (hover to keep them); errors stay until dismissed." }
-            form method="post" action="/toast" {
-                button type="submit" name="kind" value="ok" class="nojs-primary" { "Send invite" } " "
-                button type="submit" name="kind" value="warn" { "Copy link" } " "
-                button type="submit" name="kind" value="danger" { "Sync now" } " "
-                button type="submit" name="kind" value="all" { "All three" }
+            form method="post" action="/toast" class="nojs-cluster" {
+                (ui.button("Send invite").primary().name("kind").value("ok"))
+                (ui.button("Copy link").name("kind").value("warn"))
+                (ui.button("Sync now").name("kind").value("danger"))
+                (ui.button("All three").name("kind").value("all"))
             }
             // code: /toast
             (ui.toasts().dismiss())

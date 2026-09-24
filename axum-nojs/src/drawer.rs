@@ -35,7 +35,7 @@
 
 use maud::{Markup, Render, html};
 
-use crate::{Cap, Ui, slug};
+use crate::{Cap, Icon, Ui, slug};
 
 /// Navigation in a drawer beside the page's content, made by [`Ui::drawer`].
 #[derive(Clone, Debug)]
@@ -121,20 +121,23 @@ impl Render for Drawer<'_> {
         let open = open || ui.state.dialog() == Some(id);
         let title = title.unwrap_or(label);
         let title_id = format!("{id}-title");
+        let open_href = format!("#{id}");
         html! {
             div class={ "nojs-drawer" @if sidebar { " nojs-drawer-sidebar" } } {
+                @let menu = html! { (Icon::Menu) (label) };
                 @if invokers {
-                    button type="button" class="nojs-drawer-open" command="show-modal" commandfor=(id) aria-haspopup="dialog" { "\u{2630} " (label) }
+                    (ui.button(label).class("nojs-drawer-open").content(menu).command("show-modal", id).aria_haspopup("dialog"))
                 } @else {
-                    a class="nojs-drawer-open" role="button" href={ "#" (id) } { "\u{2630} " (label) }
+                    (ui.link_button(label, &open_href).class("nojs-drawer-open").content(menu).role("button"))
                 }
                 dialog id=(id) class="nojs-drawer-panel" closedby="any" aria-labelledby=(title_id) open[open] {
                     div class="nojs-drawer-head" {
                         p id=(title_id) class="nojs-drawer-title" { (title) }
+                        @let x = html! { (Icon::X) };
                         @if invokers {
-                            button type="button" class="nojs-drawer-close" command="close" commandfor=(id) aria-label="Close" { "\u{d7}" }
+                            (ui.button("").ghost().small().icon().class("nojs-drawer-close").label("Close").content(x).command("close", id))
                         } @else {
-                            a href="#" class="nojs-drawer-close" aria-label="Close" { "\u{d7}" }
+                            (ui.link_button("", "#").ghost().small().icon().class("nojs-drawer-close").label("Close").content(x))
                         }
                     }
                     nav aria-labelledby=(title_id) { (nav) }
@@ -147,12 +150,7 @@ impl Render for Drawer<'_> {
 /// Styles for this component; included in [`crate::stylesheet`].
 pub const CSS: &str = r#"
 .nojs-drawer { display: grid; gap: calc(var(--nojs-space) * 2); }
-.nojs-drawer-open {
-  justify-self: start; display: inline-flex; align-items: center; min-height: 2.25rem; padding: 0.375rem 1rem;
-  font-size: 0.875rem; line-height: 1.25rem; font-weight: 500; color: var(--nojs-fg); text-decoration: none;
-  background: var(--nojs-bg); border: 1px solid var(--nojs-input); border-radius: var(--nojs-radius-sm); box-shadow: var(--nojs-shadow-xs);
-}
-.nojs-drawer-open:hover { background: var(--nojs-accent); color: var(--nojs-on-accent); }
+.nojs-drawer-open { justify-self: start; }
 /* shadcn Sheet, side="left": full height, max-w-sm, border on the open edge, shadow-lg. */
 .nojs-drawer-panel {
   box-sizing: border-box; margin: 0; padding: calc(var(--nojs-space) * 2);
@@ -169,11 +167,8 @@ pub const CSS: &str = r#"
 .nojs-drawer-panel:not(:modal):not(:target)[open] { position: static; width: auto; border: 1px solid var(--nojs-line); border-radius: var(--nojs-radius); }
 .nojs-drawer-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: calc(var(--nojs-space) * 2); }
 .nojs-drawer-title { margin: 0; font-weight: 600; }
-.nojs-drawer-close {
-  width: 1.75rem; height: 1.75rem; padding: 0; font-size: 1.25rem; line-height: 1; display: inline-flex; align-items: center; justify-content: center;
-  color: var(--nojs-fg); opacity: 0.7; background: none; border: 0; border-radius: var(--nojs-radius-sm); text-decoration: none;
-}
-.nojs-drawer-close:hover { opacity: 1; background: var(--nojs-accent); }
+.nojs-drawer-close { opacity: 0.7; }
+.nojs-drawer-close:hover { opacity: 1; }
 /* Links as shadcn sidebar menu buttons: text-sm, rounded-md, accent on hover and when current. */
 .nojs-drawer-panel ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.25rem; }
 .nojs-drawer-panel li a {

@@ -46,6 +46,7 @@
 
 use maud::{Markup, Render, html};
 
+use crate::input::Input;
 use crate::{Cap, Ui};
 
 /// One option: its value, its text (what the filter matches), an optional icon and optional
@@ -204,7 +205,9 @@ impl Render for Select<'_> {
         let rich = ui.has(Cap::BaseSelect);
         let total: usize = groups.iter().map(|g| g.options.len()).sum();
         let search = search.filter(|_| total > search_over);
-        let q = ui.param(&format!("{name}-q")).unwrap_or("");
+        let q_name = format!("{name}-q");
+        let q_id = format!("{name}-filter");
+        let q = ui.param(&q_name).unwrap_or("");
         let query = if search.is_some() {
             q.trim().to_lowercase()
         } else {
@@ -228,8 +231,8 @@ impl Render for Select<'_> {
                 span class="nojs-select" {
                     @if let Some(action) = search {
                         span class="nojs-select-search" {
-                            input type="search" name={ (name) "-q" } value=(q) placeholder="Filter" aria-label="Filter options";
-                            button type="submit" formmethod="get" formaction=(action) formnovalidate { "Filter" }
+                            (Input::search_box(&q_name, "Filter options", q).id(&q_id).placeholder("Filter"))
+                            (ui.button("Filter").formmethod("get").formaction(action).formnovalidate())
                         }
                     }
                     select id=(name) name=(name) {

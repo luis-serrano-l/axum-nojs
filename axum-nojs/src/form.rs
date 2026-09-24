@@ -61,8 +61,9 @@
 
 use maud::{Markup, Render, html};
 
+use crate::button::Button;
 use crate::input::{Field, FieldKind};
-use crate::{Ui, enhance};
+use crate::{Caps, Ui, enhance};
 
 /// A POST form of fields, made by [`Ui::form`], or the fields alone, made by [`Ui::fields`].
 /// Fields are added in order; `required`, `help`, `maxlength`, `value`, `error`,
@@ -139,7 +140,14 @@ impl<'a> Form<'a> {
 
     /// A whole number from `min` to `max`, inclusive.
     pub fn number(self, name: &'a str, label: &'a str, min: i64, max: i64) -> Self {
-        self.add(name, label, FieldKind::Number { min, max })
+        self.add(
+            name,
+            label,
+            FieldKind::Number {
+                min: Some(min),
+                max: Some(max),
+            },
+        )
     }
 
     /// Text that must match `pattern` (the HTML `pattern` attribute); `hint` explains the
@@ -348,7 +356,7 @@ impl Render for Form<'_> {
             form id=(enhance::swap_id("nojs-form", self.id.unwrap_or(action))) data-nojs="swap" class=(class) method="post" action=(action)
                 enctype=[multipart.then_some("multipart/form-data")] {
                 (self.fields())
-                div class="nojs-form-actions" { button type="submit" class="nojs-primary" { (self.submit) } }
+                div class="nojs-form-actions" { (Button::new(Caps::NONE, self.submit).primary()) }
             }
         }
     }

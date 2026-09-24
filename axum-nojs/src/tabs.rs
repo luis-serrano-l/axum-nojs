@@ -162,7 +162,7 @@ impl Render for Tabs<'_> {
                                 option value=(i) selected[i == active] { (t.title) @if let Some(n) = t.badge { " (" (n) ")" } }
                             }
                         }
-                        button type="submit" { "Go" }
+                        (ui.button("Go"))
                     }
                 }
                 @for (i, t) in tabs.iter().enumerate() {

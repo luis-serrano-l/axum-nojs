@@ -44,9 +44,10 @@ use crate::Ui;
 #[derive(Clone, Debug)]
 pub(crate) enum FieldKind<'a> {
     Text,
+    Search,
     Email,
     Password,
-    Number { min: i64, max: i64 },
+    Number { min: Option<i64>, max: Option<i64> },
     Pattern { pattern: &'a str, hint: &'a str },
     Textarea { rows: u8 },
     File { accept: &'a str, multiple: bool },
@@ -72,6 +73,20 @@ pub(crate) struct Field<'a> {
     pub(crate) maxlength: Option<usize>,
     pub(crate) placeholder: Option<&'a str>,
     pub(crate) id: Option<&'a str>,
+    pub(crate) extra: Extra<'a>,
+}
+
+/// Attributes only some fields need, each set by the `Input` setter of the same name.
+#[derive(Clone, Debug, Default)]
+pub(crate) struct Extra<'a> {
+    hide_label: bool,
+    list: Option<&'a str>,
+    autocomplete: Option<&'a str>,
+    autofocus: bool,
+    inputmode: Option<&'a str>,
+    step: Option<i64>,
+    aria_controls: Option<&'a str>,
+    class: Option<&'a str>,
 }
 
 impl<'a> Field<'a> {
@@ -87,6 +102,7 @@ impl<'a> Field<'a> {
             maxlength: None,
             placeholder: None,
             id: None,
+            extra: Extra::default(),
         }
     }
 
@@ -120,6 +136,23 @@ impl Ui {
 }
 
 impl<'a> Input<'a> {
+    /// A number field whose bounds a component may not have (the counter's).
+    pub(crate) fn number_within(
+        name: &'a str,
+        label: &'a str,
+        min: Option<i64>,
+        max: Option<i64>,
+    ) -> Self {
+        Input(Field::new(name, label, FieldKind::Number { min, max }))
+    }
+
+    /// A search box with no visible label: `label` is its `aria-label`, `value` the query.
+    pub(crate) fn search_box(name: &'a str, label: &'a str, value: &'a str) -> Self {
+        Input(Field::new(name, label, FieldKind::Search))
+            .hide_label()
+            .value(value)
+    }
+
     fn kind(mut self, kind: FieldKind<'a>) -> Self {
         self.0.kind = kind;
         self
@@ -137,7 +170,10 @@ impl<'a> Input<'a> {
 
     /// A whole number from `min` to `max`, inclusive.
     pub fn number(self, min: i64, max: i64) -> Self {
-        self.kind(FieldKind::Number { min, max })
+        self.kind(FieldKind::Number {
+            min: Some(min),
+            max: Some(max),
+        })
     }
 
     /// Text that must match `pattern`; `hint` explains the rule under the field and as the
@@ -221,6 +257,60 @@ impl<'a> Input<'a> {
         self
     }
 
+    /// `type="search"`: a filter box, with the browser's clear button.
+    pub fn search(self) -> Self {
+        self.kind(FieldKind::Search)
+    }
+
+    /// Only the control, the label kept as its `aria-label`: a filter box in a toolbar, a
+    /// number beside buttons. Help, counter and error are left out.
+    pub fn hide_label(mut self) -> Self {
+        self.0.extra.hide_label = true;
+        self
+    }
+
+    /// `list`: the id of a `<datalist>` of suggestions.
+    pub fn list(mut self, id: &'a str) -> Self {
+        self.0.extra.list = Some(id);
+        self
+    }
+
+    /// `autocomplete` (`"off"`, `"email"`, `"new-password"`).
+    pub fn autocomplete(mut self, value: &'a str) -> Self {
+        self.0.extra.autocomplete = Some(value);
+        self
+    }
+
+    /// `autofocus`: focused when the page or the popover around it opens.
+    pub fn autofocus(mut self) -> Self {
+        self.0.extra.autofocus = true;
+        self
+    }
+
+    /// `inputmode` (`"numeric"`), the on-screen keyboard to show.
+    pub fn inputmode(mut self, mode: &'a str) -> Self {
+        self.0.extra.inputmode = Some(mode);
+        self
+    }
+
+    /// `step` of a number field.
+    pub fn step(mut self, step: i64) -> Self {
+        self.0.extra.step = Some(step);
+        self
+    }
+
+    /// `aria-controls`: the id of the region this field updates (a results list).
+    pub fn aria_controls(mut self, id: &'a str) -> Self {
+        self.0.extra.aria_controls = Some(id);
+        self
+    }
+
+    /// A class on the control, for a component's part name.
+    pub fn class(mut self, class: &'a str) -> Self {
+        self.0.extra.class = Some(class);
+        self
+    }
+
     /// The control's id, `f-<name>` by default.
     pub fn id(mut self, id: &'a str) -> Self {
         self.0.id = Some(id);
@@ -254,12 +344,13 @@ impl Render for Field<'_> {
             FieldKind::Text | FieldKind::Textarea { .. } | FieldKind::Select(_) => {
                 ("text", None, None, None, None, false)
             }
+            FieldKind::Search => ("search", None, None, None, None, false),
             FieldKind::Email => ("email", None, None, None, None, false),
             FieldKind::Password => ("password", None, None, None, None, false),
             FieldKind::Number { min, max } => (
                 "number",
-                Some(min.to_string()),
-                Some(max.to_string()),
+                min.map(|m| m.to_string()),
+                max.map(|m| m.to_string()),
                 None,
                 None,
                 false,
@@ -300,6 +391,18 @@ impl Render for Field<'_> {
             };
         }
         let echo = !matches!(f.kind, FieldKind::File { .. } | FieldKind::Password);
+        let x = &f.extra;
+        let control = html! {
+            input id=(id) class=[x.class] name=(f.name) type=(kind) value=[echo.then_some(f.value)]
+                required[f.required] min=[min] max=[max] step=[x.step] pattern=[pattern] title=[pattern.and(help)]
+                accept=[accept] multiple[multiple] maxlength=[f.maxlength] placeholder=[f.placeholder]
+                list=[x.list] autocomplete=[x.autocomplete] autofocus[x.autofocus] inputmode=[x.inputmode]
+                aria-label=[x.hide_label.then_some(f.label)] aria-controls=[x.aria_controls]
+                aria-invalid=[invalid] aria-describedby=[described.as_deref()];
+        };
+        if x.hide_label && !matches!(f.kind, FieldKind::Textarea { .. } | FieldKind::Select(_)) {
+            return control;
+        }
         html! {
             div class="nojs-field" {
                 label for=(id) { (f.label) @if f.required { " *" } }
@@ -311,10 +414,7 @@ impl Render for Field<'_> {
                         @for o in options { option value=(o) selected[*o == f.value] { (o) } }
                     }
                 } @else {
-                    input id=(id) name=(f.name) type=(kind) value=[echo.then_some(f.value)]
-                        required[f.required] min=[min] max=[max] pattern=[pattern] title=[pattern.and(help)]
-                        accept=[accept] multiple[multiple] maxlength=[f.maxlength] placeholder=[f.placeholder]
-                        aria-invalid=[invalid] aria-describedby=[described.as_deref()];
+                    (control)
                 }
                 @if let Some(h) = help { small id={ (id) "-help" } class="nojs-field-help" { (h) } }
                 @if let Some(max) = f.maxlength {

@@ -27,7 +27,8 @@
 
 use maud::{Markup, Render, html};
 
-use crate::{Redirect, Ui};
+use crate::button::Button;
+use crate::{Caps, Redirect, Ui};
 
 /// Name of the cookie that remembers the chosen theme.
 pub const THEME_COOKIE: &str = "theme";
@@ -96,10 +97,7 @@ impl Render for ThemeToggle<'_> {
         html! {
             form id="nojs-theme" data-nojs="swap" class="nojs-theme" method="post" action=(self.action) {
                 @for choice in [Theme::Auto, Theme::Light, Theme::Dark] {
-                    button type="submit" name="theme" value=(choice.as_str())
-                        aria-pressed=(if choice == self.current { "true" } else { "false" }) {
-                        (choice.as_str())
-                    }
+                    (Button::new(Caps::NONE, choice.as_str()).ghost().small().name("theme").value(choice.as_str()).pressed(choice == self.current))
                 }
             }
         }
@@ -109,7 +107,7 @@ impl Render for ThemeToggle<'_> {
 pub const CSS: &str = r#"
 /* shadcn ToggleGroup, outline variant: one bordered strip, the pressed item on the accent. */
 .nojs-theme { display: inline-flex; gap: 0; border: 1px solid var(--nojs-input); border-radius: var(--nojs-radius-sm); overflow: hidden; box-shadow: var(--nojs-shadow-xs); }
-.nojs-theme button { min-height: 2rem; border: 0; border-radius: 0; box-shadow: none; background: transparent; padding: 0.25rem 0.75rem; text-transform: capitalize; }
-.nojs-theme button + button { border-inline-start: 1px solid var(--nojs-input); }
-.nojs-theme button[aria-pressed="true"] { background: var(--nojs-accent); color: var(--nojs-on-accent); }
+.nojs-theme .nojs-button { border-radius: 0; text-transform: capitalize; }
+.nojs-theme .nojs-button + .nojs-button { border-inline-start: 1px solid var(--nojs-input); }
+.nojs-theme .nojs-button[aria-pressed="true"] { background: var(--nojs-accent); color: var(--nojs-on-accent); }
 "#;

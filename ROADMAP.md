@@ -439,10 +439,24 @@ layered design system: primitives → existing components rebuilt on them → fl
 
 ## M22 · Components rebuilt on primitives
 One change to the button restyles every dialog, pager and table.
-- [ ] Every component that renders a `button`, `input`, label+field or chip uses the primitive
+- [x] Every component that renders a `button`, `input`, label+field or chip uses the primitive
   builders internally: dialog, drawer, popover/menu, counter, pager, table, paged_table,
   form, wizard, select, combobox, color, range, theme, tabs, palette, empty_state.
   Public API unchanged.
+  Done: every visible button, and every link or `<summary>` drawn as one, is `Button` (menu
+  triggers, dialog/drawer open-cancel-close with `Icon::X`, counter ±/Reset/Set, "Load more",
+  pagination links as ghost/outline link buttons, filter/Go/Show, bulk actions, wizard
+  Back/Skip/Next, theme toggle group, colour swatches, empty-state actions, palette trigger);
+  `<summary>` fallbacks carry `class="nojs-button"`. Search/filter/number boxes are `Input`
+  (`.hide_label()` keeps the label as `aria-label`). `Button` now holds `Caps` rather than
+  `&Ui` (components holding only caps build one with `Button::new`), and gained `.content()`,
+  `.id/.role/.title/.style/.aria_haspopup/.pressed/.accesskey/.aria_keyshortcuts/.rel/.current`
+  and `.formmethod/.formaction/.formnovalidate`; `Input` gained `.search/.hide_label/.list/
+  .autocomplete/.autofocus/.inputmode/.step/.aria_controls/.class`. A table row's menu trigger
+  is a small ghost icon button (`Icon::Ellipsis`, "Row actions"). Left as they are, on purpose:
+  menu items (shadcn's DropdownMenuItem is not a Button either), tab summaries, `<select>`,
+  range sliders (range.rs is itself the slider primitive), row checkboxes and hidden inputs.
+  The demo's own raw buttons moved to `ui.button` too.
 - [ ] `form.rs` fields delegate to `input.rs` (one field renderer, not two).
 - [ ] Delete the per-component button/input CSS the primitives now carry; measure
   `stylesheet()` bytes and the bench before and after.

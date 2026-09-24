@@ -37,7 +37,7 @@
 
 use maud::{Markup, Render, html};
 
-use crate::{Cap, Ui};
+use crate::{Cap, Caps, Ui};
 
 /// The colour a button takes.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -53,8 +53,9 @@ enum Tone {
 /// A `<button>` or a link that looks like one, made by [`Ui::button`] or [`Ui::link_button`].
 #[derive(Clone, Debug)]
 pub struct Button<'a> {
-    ui: &'a Ui,
+    caps: Caps,
     text: &'a str,
+    content: Option<Markup>,
     href: Option<&'a str>,
     tone: Tone,
     small: bool,
@@ -69,15 +70,51 @@ pub struct Button<'a> {
     class: Option<&'a str>,
     disabled: bool,
     loading: bool,
+    attrs: Attrs<'a>,
+}
+
+/// The less common attributes, each set by the setter of the same name.
+#[derive(Clone, Debug, Default)]
+struct Attrs<'a> {
+    id: Option<&'a str>,
+    role: Option<&'a str>,
+    title: Option<&'a str>,
+    style: Option<String>,
+    aria_haspopup: Option<&'a str>,
+    aria_pressed: Option<bool>,
+    accesskey: Option<&'a str>,
+    aria_keyshortcuts: Option<&'a str>,
+    formmethod: Option<&'a str>,
+    formaction: Option<&'a str>,
+    formnovalidate: bool,
+    rel: Option<&'a str>,
+    current: bool,
 }
 
 impl Ui {
     /// A button reading `text`. It submits its form unless it is given a command or a
     /// popover target, which make it a plain `type="button"`.
-    pub fn button<'a>(&'a self, text: &'a str) -> Button<'a> {
+    pub fn button<'a>(&self, text: &'a str) -> Button<'a> {
+        Button::new(self.caps, text)
+    }
+
+    /// A link to `href` that looks like a button. The button-only setters (`.submit()`,
+    /// `.command()`, `.form()`, `.name()`, `.value()`, `.popovertarget()`) do nothing on it.
+    pub fn link_button<'a>(&self, text: &'a str, href: &'a str) -> Button<'a> {
         Button {
-            ui: self,
+            href: Some(href),
+            ..self.button(text)
+        }
+    }
+}
+
+impl<'a> Button<'a> {
+    /// A button for a component that holds only `caps` (they decide the popover fallback).
+    pub(crate) fn new(caps: Caps, text: &'a str) -> Self {
+        Button {
+            caps,
             text,
+            content: None,
             href: None,
             tone: Tone::Outline,
             small: false,
@@ -92,20 +129,18 @@ impl Ui {
             class: None,
             disabled: false,
             loading: false,
+            attrs: Attrs::default(),
         }
     }
 
-    /// A link to `href` that looks like a button. The button-only setters (`.submit()`,
-    /// `.command()`, `.form()`, `.name()`, `.value()`, `.popovertarget()`) do nothing on it.
-    pub fn link_button<'a>(&'a self, text: &'a str, href: &'a str) -> Button<'a> {
+    /// A link for a component that holds only `caps`.
+    pub(crate) fn link(caps: Caps, text: &'a str, href: &'a str) -> Self {
         Button {
             href: Some(href),
-            ..self.button(text)
+            ..Button::new(caps, text)
         }
     }
-}
 
-impl<'a> Button<'a> {
     /// The main action of a form or page: filled with `--nojs-primary`.
     pub fn primary(mut self) -> Self {
         self.tone = Tone::Primary;
@@ -203,6 +238,90 @@ impl<'a> Button<'a> {
         self
     }
 
+    /// Markup to show instead of the text: an icon beside it, a count, a formatted string.
+    pub fn content(mut self, markup: Markup) -> Self {
+        self.content = Some(markup);
+        self
+    }
+
+    /// The element's `id`.
+    pub fn id(mut self, id: &'a str) -> Self {
+        self.attrs.id = Some(id);
+        self
+    }
+
+    /// `role`, for a button that is a menu item or a tab, or a link that acts as a button.
+    pub fn role(mut self, role: &'a str) -> Self {
+        self.attrs.role = Some(role);
+        self
+    }
+
+    /// `title`: the tooltip.
+    pub fn title(mut self, title: &'a str) -> Self {
+        self.attrs.title = Some(title);
+        self
+    }
+
+    /// Inline `style`, for a per-element custom property or anchor name.
+    pub fn style(mut self, style: impl Into<String>) -> Self {
+        self.attrs.style = Some(style.into());
+        self
+    }
+
+    /// `aria-haspopup` (`"menu"`, `"dialog"`).
+    pub fn aria_haspopup(mut self, kind: &'a str) -> Self {
+        self.attrs.aria_haspopup = Some(kind);
+        self
+    }
+
+    /// `aria-pressed`, for a toggle button; set from the state it shows.
+    pub fn pressed(mut self, on: bool) -> Self {
+        self.attrs.aria_pressed = Some(on);
+        self
+    }
+
+    /// `accesskey`.
+    pub fn accesskey(mut self, key: &'a str) -> Self {
+        self.attrs.accesskey = Some(key);
+        self
+    }
+
+    /// `aria-keyshortcuts`, the shortcut spelled out for assistive technology.
+    pub fn aria_keyshortcuts(mut self, keys: &'a str) -> Self {
+        self.attrs.aria_keyshortcuts = Some(keys);
+        self
+    }
+
+    /// `formmethod`: submit the form with this method instead of its own.
+    pub fn formmethod(mut self, method: &'a str) -> Self {
+        self.attrs.formmethod = Some(method);
+        self
+    }
+
+    /// `formaction`: submit the form to this URL instead of its own.
+    pub fn formaction(mut self, action: &'a str) -> Self {
+        self.attrs.formaction = Some(action);
+        self
+    }
+
+    /// `formnovalidate`: submit without the browser's constraint checks.
+    pub fn formnovalidate(mut self) -> Self {
+        self.attrs.formnovalidate = true;
+        self
+    }
+
+    /// `rel` of a link (`"prev"`, `"next"`).
+    pub fn rel(mut self, rel: &'a str) -> Self {
+        self.attrs.rel = Some(rel);
+        self
+    }
+
+    /// `aria-current="page"`: the link to the page being shown; set from a condition.
+    pub fn current(mut self, on: bool) -> Self {
+        self.attrs.current = on;
+        self
+    }
+
     fn classes(&self) -> String {
         let mut c = String::from("nojs-button");
         match self.tone {
@@ -238,19 +357,23 @@ fn popover_action(command: &str) -> Option<&'static str> {
 impl Render for Button<'_> {
     fn render(&self) -> Markup {
         let class = self.classes();
+        let a = &self.attrs;
+        let text = html! { @if let Some(m) = &self.content { (m) } @else { (self.text) } };
         let spinner =
             html! { @if self.loading { span class="nojs-button-spinner" aria-hidden="true" {} } };
         if let Some(href) = self.href {
             let off = self.disabled || self.loading;
             return html! {
-                a class=(class) href=[(!off).then_some(href)] role=[off.then_some("link")]
+                a class=(class) href=[(!off).then_some(href)] role=[a.role.or(off.then_some("link"))]
                     aria-disabled=[off.then_some("true")] aria-busy=[self.loading.then_some("true")]
-                    aria-label=[self.label] { (spinner) (self.text) }
+                    aria-label=[self.label] id=[a.id] title=[a.title] style=[a.style.as_deref()]
+                    rel=[a.rel] aria-current=[a.current.then_some("page")]
+                    accesskey=[a.accesskey] aria-keyshortcuts=[a.aria_keyshortcuts] { (spinner) (text) }
             };
         }
         // Without invoker commands, a popover command becomes the older popovertarget pair.
         let (command, fallback) = match self.command {
-            Some((cmd, target)) if !self.ui.has(Cap::Invokers) => match popover_action(cmd) {
+            Some((cmd, target)) if !self.caps.has(Cap::Invokers) => match popover_action(cmd) {
                 Some(action) => (None, Some((target, action))),
                 None => (self.command, None),
             },
@@ -270,7 +393,11 @@ impl Render for Button<'_> {
                 popovertarget=[target] popovertargetaction=[fallback.map(|(_, a)| a)]
                 form=[self.form] name=[self.name] value=[self.value] aria-label=[self.label]
                 aria-busy=[self.loading.then_some("true")] disabled[self.disabled || self.loading]
-                { (spinner) (self.text) }
+                id=[a.id] role=[a.role] title=[a.title] style=[a.style.as_deref()]
+                aria-haspopup=[a.aria_haspopup] aria-pressed=[a.aria_pressed.map(|p| if p { "true" } else { "false" })]
+                accesskey=[a.accesskey] aria-keyshortcuts=[a.aria_keyshortcuts]
+                formmethod=[a.formmethod] formaction=[a.formaction] formnovalidate[a.formnovalidate]
+                { (spinner) (text) }
         }
     }
 }

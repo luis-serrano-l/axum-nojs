@@ -64,7 +64,7 @@
 
 use maud::{Markup, Render, html};
 
-use crate::{Cap, Ui, slug};
+use crate::{Cap, Icon, Ui, slug};
 
 /// Width of a dialog: `max-width` of 20, 28 or 40 rem.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -227,12 +227,13 @@ impl Render for Dialog<'_> {
         let returns_to = (!returns_to.is_empty()).then_some(returns_to);
         let invokers = ui.has(Cap::Invokers);
         let title_id = format!("{id}-title");
+        let open_href = format!("#{id}");
         html! {
             div class={ "nojs-dialog" @if danger { " nojs-dialog-danger" } } {
                 @if invokers {
-                    button type="button" command="show-modal" commandfor=(id) { (trigger) }
+                    (ui.button(trigger).command("show-modal", id).aria_haspopup("dialog"))
                 } @else {
-                    a class="nojs-dialog-open" role="button" href={ "#" (id) } { (trigger) }
+                    (ui.link_button(trigger, &open_href).class("nojs-dialog-open").role("button"))
                 }
                 dialog id=(id) class=(size.class()) closedby=(closedby) aria-labelledby=[title.map(|_| &title_id)] open[open] {
                     @if let Some(t) = title { h2 id=(title_id) class="nojs-dialog-title" { (t) } }
@@ -242,29 +243,30 @@ impl Render for Dialog<'_> {
                             @if let Some(to) = returns_to { input type="hidden" name="returns_to" value=(to); }
                             div class="nojs-dialog-actions" {
                                 @if invokers {
-                                    button type="button" command="close" commandfor=(id) { (cancel) }
+                                    (ui.button(cancel).command("close", id))
                                 } @else {
-                                    a href="#" role="button" class="nojs-dialog-cancel" { (cancel) }
+                                    (ui.link_button(cancel, "#").class("nojs-dialog-cancel").role("button"))
                                 }
-                                button type="submit" class={ @if danger { "nojs-danger" } @else { "nojs-primary" } } { (label) }
+                                @if danger { (ui.button(label).danger()) } @else { (ui.button(label).primary()) }
                             }
                         }
                     } @else {
                         div class="nojs-dialog-body" { (body) }
                         @if invokers {
                             form method="dialog" class="nojs-dialog-actions" {
-                                button type="submit" class="nojs-primary" { (close) }
+                                (ui.button(close).primary())
                             }
                         } @else {
-                            p class="nojs-dialog-actions" { a href="#" role="button" { (close) } }
+                            p class="nojs-dialog-actions" { (ui.link_button(close, "#").primary().role("button")) }
                         }
                     }
                     // Last in the markup so the dialog's focusing steps skip it for the first field.
                     @if title.is_some() {
+                        @let x = html! { (Icon::X) };
                         @if invokers {
-                            button type="button" command="close" commandfor=(id) class="nojs-dialog-close" aria-label="Close" { "\u{d7}" }
+                            (ui.button("").ghost().small().icon().class("nojs-dialog-close").label("Close").content(x).command("close", id))
                         } @else {
-                            a href="#" class="nojs-dialog-close" aria-label="Close" { "\u{d7}" }
+                            (ui.link_button("", "#").ghost().small().icon().class("nojs-dialog-close").label("Close").content(x))
                         }
                     }
                 }
@@ -296,23 +298,9 @@ pub const CSS: &str = r#"
 .nojs-dialog-body label { display: block; margin: var(--nojs-space) 0; color: var(--nojs-fg); }
 .nojs-dialog-body input:not([type=hidden]), .nojs-dialog-body textarea { display: block; width: 100%; box-sizing: border-box; margin-top: 0.5rem; }
 .nojs-dialog-actions { display: flex; flex-wrap: wrap-reverse; justify-content: flex-end; gap: var(--nojs-space); margin: calc(var(--nojs-space) * 3) 0 0; }
-/* Links that act as buttons: the outline button, and the primary one for the confirm. */
-.nojs-dialog-open, .nojs-dialog-actions a[role="button"] {
-  display: inline-flex; align-items: center; justify-content: center; min-height: 2.25rem; padding: 0.375rem 1rem;
-  font-size: 0.875rem; line-height: 1.25rem; font-weight: 500; color: var(--nojs-fg); text-decoration: none;
-  background: var(--nojs-bg); border: 1px solid var(--nojs-input); border-radius: var(--nojs-radius-sm); box-shadow: var(--nojs-shadow-xs);
-}
-.nojs-dialog-open:hover, .nojs-dialog-actions a[role="button"]:hover { background: var(--nojs-accent); color: var(--nojs-on-accent); }
-.nojs-dialog-actions a[role="button"]:not(.nojs-dialog-cancel) { background: var(--nojs-primary); color: var(--nojs-on-primary); border-color: transparent; }
-.nojs-dialog-danger .nojs-dialog-actions a[role="button"]:not(.nojs-dialog-cancel) { background: var(--nojs-danger); }
-/* The close control is a ghost icon button: rounded-sm, 70% opacity until hovered. */
-.nojs-dialog-close {
-  position: absolute; top: calc(var(--nojs-space) * 2); right: calc(var(--nojs-space) * 2);
-  width: 1.75rem; height: 1.75rem; min-height: 0; padding: 0; line-height: 1; font-size: 1.25rem;
-  display: inline-flex; align-items: center; justify-content: center; opacity: 0.7;
-  color: var(--nojs-fg); background: none; border: 0; box-shadow: none; border-radius: var(--nojs-radius-sm); text-decoration: none;
-}
-.nojs-dialog-close:hover { opacity: 1; background: var(--nojs-accent); }
+/* The close control is a small ghost icon button in the corner, 70% opacity until hovered. */
+.nojs-dialog-close { position: absolute; top: calc(var(--nojs-space) * 1.5); right: calc(var(--nojs-space) * 1.5); opacity: 0.7; }
+.nojs-dialog-close:hover { opacity: 1; }
 
 /* Narrow screens: the footer stacks, full width, confirm on top (shadcn's flex-col-reverse). */
 @media (max-width: 40rem) {

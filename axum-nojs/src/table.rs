@@ -67,9 +67,11 @@
 
 use maud::{Markup, Render, html};
 
+use crate::button::Button;
+use crate::input::Input;
 use crate::paged_table::{PagedTableOptions, paged_table_with};
 use crate::popover::{MenuItem, Placement, menu};
-use crate::{Cap, Caps, Ui, enhance, slug};
+use crate::{Cap, Caps, Icon, Ui, enhance, slug};
 
 /// One column: the query key it sorts by, its header text, whether it can be sorted, how
 /// its cells align and how wide it is.
@@ -351,6 +353,7 @@ pub(crate) fn table_in(
         loading,
     } = options;
     let root = enhance::swap_id("nojs-table", id);
+    let filter_id = format!("{root}-q");
     let bulk_id = format!("{root}-bulk");
     let vt = caps
         .has(Cap::ViewTransitions)
@@ -423,8 +426,8 @@ pub(crate) fn table_in(
                             input type="hidden" name="dir" value=(if desc { "desc" } else { "asc" });
                         }
                         @for (k, v) in &carried { @if *k != "q" { input type="hidden" name=(k) value=(v); } }
-                        input type="search" name="q" value=(filter) placeholder="Filter rows…" aria-label="Filter rows" autocomplete="off";
-                        button type="submit" { "Filter" }
+                        (Input::search_box("q", "Filter rows", filter).id(&filter_id).placeholder("Filter rows…").autocomplete("off"))
+                        (Button::new(*caps, "Filter"))
                         @if !filter.is_empty() {
                             a class="nojs-table-clear" href={ (href) (query(sort, &carried.iter().copied().filter(|(k, _)| *k != "q").collect::<Vec<_>>())) } { "Clear" }
                         }
@@ -432,7 +435,7 @@ pub(crate) fn table_in(
                 }
                 @if choose_columns || cols.is_some() {
                     details class="nojs-table-cols" {
-                        summary { "Columns" }
+                        summary class="nojs-button" { "Columns" (Icon::ChevronDown) }
                         ul {
                             @for c in columns {
                                 @let on = shown(c);
@@ -498,7 +501,7 @@ pub(crate) fn table_in(
                         @if has_menu {
                             td class="nojs-table-menu" {
                                 @if let (Some(k), false) = (row.key, row.menu.is_empty()) {
-                                    (menu(caps, &format!("{root}-{}", slug(k)), "\u{22ef}", &row.menu, Placement::BottomEnd))
+                                    (menu(caps, &format!("{root}-{}", slug(k)), "Row actions", &row.menu, Placement::BottomEnd, true))
                                 }
                             }
                         }
@@ -508,7 +511,7 @@ pub(crate) fn table_in(
             @if let Some((action, buttons)) = bulk {
                 form method="post" action=(action) id=(bulk_id) class="nojs-table-bulk" {
                     span { "With the selected rows:" }
-                    @for (value, label) in buttons { button type="submit" name="action" value=(value) { (label) } }
+                    @for (value, label) in buttons { (Button::new(*caps, label).small().name("action").value(value)) }
                 }
             }
         }
@@ -748,11 +751,7 @@ pub const CSS: &str = r#"
 .nojs-table-clear, .nojs-table-csv { color: var(--nojs-muted); font-size: 0.875rem; }
 .nojs-table-clear:hover, .nojs-table-csv:hover { color: var(--nojs-fg); }
 .nojs-table-cols { position: relative; font-size: 0.875rem; }
-.nojs-table-cols summary {
-  cursor: pointer; list-style: none; display: inline-flex; align-items: center; min-height: 2.25rem; padding: 0.375rem 0.75rem; font-weight: 500;
-  border: 1px solid var(--nojs-input); border-radius: var(--nojs-radius-sm); background: var(--nojs-bg); box-shadow: var(--nojs-shadow-xs);
-}
-.nojs-table-cols summary:hover { background: var(--nojs-accent); color: var(--nojs-on-accent); }
+.nojs-table-cols summary { list-style: none; }
 .nojs-table-cols summary::-webkit-details-marker { display: none; }
 .nojs-table-cols ul {
   position: absolute; right: 0; z-index: 2; margin: 0.25rem 0 0; padding: 0.25rem; list-style: none; min-width: 10rem;
@@ -778,11 +777,6 @@ pub const CSS: &str = r#"
 .nojs-table-select { width: 2.5rem; text-align: center; }
 .nojs-table-menu { width: 3.5rem; text-align: center; text-wrap: nowrap; }
 .nojs-table-select input { margin: 0; }
-/* The row menu trigger is a ghost icon button. */
-.nojs-table-menu .nojs-popover > button, .nojs-table-menu .nojs-popover summary {
-  min-height: 2rem; padding: 0 0.5rem; border-color: transparent; background: none; box-shadow: none;
-}
-.nojs-table-menu .nojs-popover > button:hover, .nojs-table-menu .nojs-popover summary:hover { background: var(--nojs-accent); }
 .nojs-table-empty { color: var(--nojs-muted); text-align: center; padding: 1.5rem; height: 6rem; }
 .nojs-table-detail summary { cursor: pointer; list-style: none; font-weight: 400; }
 .nojs-table-detail summary::-webkit-details-marker { display: none; }
@@ -882,7 +876,7 @@ mod tests {
         .into_string();
         assert!(m.contains("aria-busy=\"true\"") && m.contains("nojs-table-skeleton"));
         assert!(m.contains("<form method=\"post\" action=\"/b\" id=\"nojs-table-t-bulk\""));
-        assert!(m.contains("<button type=\"submit\" name=\"action\" value=\"x\">X</button>"));
+        assert!(m.contains("<button type=\"submit\" class=\"nojs-button nojs-button-small\" name=\"action\" value=\"x\">X</button>"), "{m}");
         assert_eq!(slug("src/a.txt"), "src-a-txt");
     }
 }

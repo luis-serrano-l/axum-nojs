@@ -39,7 +39,8 @@
 
 use maud::{Markup, Render, html};
 
-use crate::{Cap, Ui};
+use crate::input::Input;
+use crate::{Cap, Icon, Ui};
 
 /// One destination in the palette.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -171,6 +172,7 @@ impl Render for Palette<'_> {
         } = *self;
         let query = ui.param("q").filter(|q| !q.trim().is_empty());
         let list_id = format!("{id}-list");
+        let input_id = format!("{id}-q");
         let shortcut = format!("Alt+Shift+{}", key.to_ascii_uppercase());
         let key = key.to_string();
         let hint = html! { kbd class="nojs-palette-kbd" { (shortcut) } };
@@ -188,9 +190,8 @@ impl Render for Palette<'_> {
         let form = html! {
             search {
                 form method="get" action=(action) class="nojs-palette-form" {
-                    input type="search" name="q" list=(list_id) autofocus autocomplete="off"
-                        placeholder="Type a command or a page" aria-label=(label) value=[query];
-                    button type="submit" class="nojs-primary" { "Go" }
+                    (Input::search_box("q", label, query.unwrap_or("")).id(&input_id).list(&list_id).autofocus().autocomplete("off").placeholder("Type a command or a page"))
+                    (ui.button("Go").primary().small())
                 }
             }
             datalist id=(list_id) { @for c in commands { option value=(c.label) {} } }
@@ -198,15 +199,13 @@ impl Render for Palette<'_> {
         html! {
             div class="nojs-palette" {
                 @if popover {
-                    button type="button" class="nojs-palette-open" popovertarget=(id) accesskey=(key) aria-keyshortcuts=(shortcut) {
-                        (label) " " (hint)
-                    }
+                    (ui.button(label).class("nojs-palette-open").popovertarget(id).accesskey(&key).aria_keyshortcuts(&shortcut).content(html! { (Icon::Search) span { (label) } (hint) }))
                     div id=(id) class="nojs-palette-panel" popover { (form) (grouped(commands.iter().collect())) }
                     // A popover cannot arrive open, so the results of a search sit in the page.
                     @if let Some(r) = results { (r) }
                 } @else {
                     details class="nojs-palette-details" id=(id) open[query.is_some()] {
-                        summary class="nojs-palette-open" accesskey=(key) aria-keyshortcuts=(shortcut) { (label) " " (hint) }
+                        summary class="nojs-button nojs-palette-open" accesskey=(key) aria-keyshortcuts=(shortcut) { (Icon::Search) span { (label) } (hint) }
                         div class="nojs-palette-panel" {
                             (form)
                             @if let Some(r) = results { (r) } @else { (grouped(commands.iter().collect())) }
@@ -238,13 +237,9 @@ fn grouped(commands: Vec<&Command>) -> Markup {
 pub const CSS: &str = r#"
 /* shadcn Command in a CommandDialog: a search-bar trigger with its shortcut, a popover
    panel, a borderless input over a rule, grouped items with small muted headings. */
-.nojs-palette-open {
-  display: inline-flex; align-items: center; gap: var(--nojs-space); min-width: 16rem; justify-content: space-between;
-  min-height: 2.25rem; padding: 0.375rem 0.5rem 0.375rem 0.75rem; font: inherit; font-size: 0.875rem; font-weight: 400;
-  color: var(--nojs-muted); background: var(--nojs-surface); cursor: pointer; list-style: none;
-  border: 1px solid var(--nojs-input); border-radius: var(--nojs-radius-sm); box-shadow: var(--nojs-shadow-xs);
-}
-.nojs-palette-open:hover { background: var(--nojs-accent); color: var(--nojs-on-accent); }
+/* The trigger is an outline button drawn as a search bar: muted text, the shortcut at the end. */
+.nojs-palette-open { min-width: 16rem; justify-content: flex-start; padding: 0.375rem 0.5rem 0.375rem 0.75rem; font-weight: 400; color: var(--nojs-muted); background: var(--nojs-surface); list-style: none; }
+.nojs-palette-open .nojs-palette-kbd { margin-left: auto; }
 .nojs-palette-open::-webkit-details-marker { display: none; }
 .nojs-palette-kbd {
   font-family: var(--nojs-font-mono); font-size: 0.75rem; font-weight: 500; padding: 0 0.375rem; line-height: 1.25rem;
@@ -261,7 +256,6 @@ pub const CSS: &str = r#"
 .nojs-palette-form { display: flex; gap: var(--nojs-space); align-items: center; margin: -0.25rem -0.25rem 0.25rem; padding: 0.25rem 0.5rem; border-bottom: 1px solid var(--nojs-line); }
 .nojs-palette-form input { flex: 1; min-height: 2.75rem; padding: 0.5rem 0.25rem; border: 0; box-shadow: none; background: transparent; }
 .nojs-palette-form input:focus-visible { outline: none; }
-.nojs-palette-form button { min-height: 2rem; padding: 0.25rem 0.75rem; }
 .nojs-palette-heading { margin: 0; padding: 0.375rem 0.5rem; font-size: 0.75rem; font-weight: 500; color: var(--nojs-muted); }
 .nojs-palette ul { list-style: none; margin: 0; padding: 0; }
 .nojs-palette li { max-width: none; }

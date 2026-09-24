@@ -25,7 +25,8 @@
 
 use maud::{Markup, Render, html};
 
-use crate::Ui;
+use crate::button::Button;
+use crate::{Caps, Ui};
 
 /// What a list shows when there is nothing in it, made by [`Ui::empty_state`].
 #[derive(Clone, Debug, Default)]
@@ -83,9 +84,9 @@ impl Render for EmptyState<'_> {
                 @if self.link.is_some() || self.post.is_some() {
                     div class="nojs-empty-actions" {
                         @if let Some((label, action)) = self.post {
-                            form method="post" action=(action) { button type="submit" class="nojs-primary" { (label) } }
+                            form method="post" action=(action) { (Button::new(Caps::NONE, label).primary()) }
                         }
-                        @if let Some((label, href)) = self.link { a href=(href) { (label) } }
+                        @if let Some((label, href)) = self.link { (Button::link(Caps::NONE, label, href)) }
                     }
                 }
             }

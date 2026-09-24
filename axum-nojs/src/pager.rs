@@ -32,6 +32,7 @@
 
 use maud::{Markup, Render, html};
 
+use crate::button::Button;
 use crate::{Cap, Caps, Ui, enhance};
 
 /// A load-more list, made by [`Ui::pager`]: pages 1 to `?page=` of the rows, 10 per page
@@ -97,6 +98,7 @@ impl Render for Pager<'_> {
         let vt = caps.has(Cap::ViewTransitions);
         let shown = self.shown();
         let first_new = (page - 1) * per_page;
+        let next = format!("{href}?page={}#more", page + 1);
         html! {
             div id=(enhance::swap_id("nojs-pager", href)) data-nojs="swap" class="nojs-pager" {
                 ol class="nojs-pager-list" style=[vt.then_some("view-transition-name: nojs-pager-list")] {
@@ -112,7 +114,7 @@ impl Render for Pager<'_> {
                 }
                 p class="nojs-note" { "Showing " (shown) " of " (total) }
                 @if page * per_page < total {
-                    a class="nojs-pager-more" href={ (href) "?page=" (page + 1) "#more" } { "Load more" }
+                    (Button::link(caps, "Load more", &next).class("nojs-pager-more"))
                 }
             }
         }
@@ -123,11 +125,6 @@ pub const CSS: &str = r#"
 .nojs-pager-list { margin: 0; padding-left: 1.5rem; font-size: 0.875rem; }
 .nojs-pager-list li { padding: 0.5rem 0; border-bottom: 1px solid var(--nojs-line); }
 .nojs-pager-anchor { scroll-margin-top: 4rem; }
-/* "Load more" is shadcn's outline button, full width under the list. */
-.nojs-pager-more {
-  display: flex; align-items: center; justify-content: center; min-height: 2.25rem; margin-top: 1rem; padding: 0.375rem 1rem;
-  font-size: 0.875rem; font-weight: 500; color: var(--nojs-fg); text-decoration: none;
-  background: var(--nojs-bg); border: 1px solid var(--nojs-input); border-radius: var(--nojs-radius-sm); box-shadow: var(--nojs-shadow-xs);
-}
-.nojs-pager-more:hover { background: var(--nojs-accent); color: var(--nojs-on-accent); }
+/* "Load more" is the outline button, full width under the list. */
+.nojs-pager-more { display: flex; margin-top: 1rem; }
 "#;

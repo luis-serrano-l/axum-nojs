@@ -46,7 +46,8 @@
 
 use maud::{Markup, Render, html};
 
-use crate::{Ui, state::encode};
+use crate::input::Input;
+use crate::{Icon, Ui, state::encode};
 
 /// A search form sending `name` (the text) and `sel` (the selection) by GET, made by
 /// [`Ui::combobox`]. Single choice, labelled "Search", unless told otherwise.
@@ -155,6 +156,7 @@ impl Render for Combobox<'_> {
         };
         let list_id = format!("{name}-options");
         let results_id = format!("{name}-results");
+        let input_id = format!("{name}-input");
         let link = |q: &str, sel: &[&str]| {
             let mut parts = vec![format!("{}={}", encode(name), encode(q))];
             parts.extend(sel.iter().map(|s| format!("sel={}", encode(s))));
@@ -184,8 +186,7 @@ impl Render for Combobox<'_> {
                             }
                         }
                     }
-                    input type="search" name=(name) list=(list_id) value=(query) aria-label=(label)
-                        aria-controls=(results_id) placeholder=(placeholder) autocomplete="off";
+                    (Input::search_box(name, label, query).id(&input_id).list(&list_id).aria_controls(&results_id).placeholder(placeholder).autocomplete("off"))
                     datalist id=(list_id) {
                         @for (group, values) in suggestions {
                             @match group {
@@ -194,7 +195,7 @@ impl Render for Combobox<'_> {
                             }
                         }
                     }
-                    button type="submit" class="nojs-primary" { "Search" }
+                    (ui.button("Search").primary())
                 }
                 div id=(results_id) class="nojs-combobox-results" aria-live="polite" {
                     @if !results.is_empty() {
@@ -214,7 +215,7 @@ impl Render for Combobox<'_> {
                             form method="post" action=(to) class="nojs-combobox-create" {
                                 @for v in &selected { input type="hidden" name="sel" value=(v); }
                                 input type="hidden" name="name" value=(query);
-                                button type="submit" { "Create \u{201c}" (query) "\u{201d}" }
+                                (ui.button("Create").content(html! { (Icon::Plus) "Create \u{201c}" (query) "\u{201d}" }))
                             }
                         }
                     }

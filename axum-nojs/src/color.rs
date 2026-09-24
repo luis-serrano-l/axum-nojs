@@ -32,7 +32,8 @@
 
 use maud::{Markup, Render, html};
 
-use crate::Ui;
+use crate::button::Button;
+use crate::{Caps, Ui};
 
 /// A colour input with a swatch of its current value, made by [`Ui::color`].
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -94,6 +95,7 @@ impl Render for Color<'_> {
         } = *self;
         let id = format!("f-{name}");
         let pct = alpha.unwrap_or(100);
+        let preset_name = format!("{name}-preset");
         crate::labelled(
             label,
             &id,
@@ -112,8 +114,8 @@ impl Render for Color<'_> {
                     @if !presets.is_empty() {
                         span class="nojs-color-presets" role="group" aria-label="Presets" {
                             @for p in presets {
-                                button type="submit" name={ (name) "-preset" } value=(p) aria-label={ "Use " (p) }
-                                    aria-pressed=(if p.eq_ignore_ascii_case(value) { "true" } else { "false" }) style={ "--nojs-color-value: " (p) } {}
+                                @let use_p = format!("Use {p}");
+                                (Button::new(Caps::NONE, "").name(&preset_name).value(p).label(&use_p).pressed(p.eq_ignore_ascii_case(value)).style(format!("--nojs-color-value: {p}")))
                             }
                         }
                     }
@@ -135,10 +137,11 @@ pub const CSS: &str = r#"
 .nojs-color-alpha input { width: 8rem; accent-color: var(--nojs-primary); }
 .nojs-color-alpha output { min-width: 3ch; text-align: right; font-variant-numeric: tabular-nums; }
 .nojs-color-presets { display: flex; flex-basis: 100%; gap: 0.5rem; }
-.nojs-color-presets button {
-  width: 1.75rem; height: 1.75rem; min-height: 0; padding: 0; border-radius: 50%; cursor: pointer;
+/* A preset is a button drawn as a round swatch of its colour. */
+.nojs-color-presets .nojs-button {
+  width: 1.75rem; height: 1.75rem; min-height: 0; padding: 0; border-radius: 50%;
   background: var(--nojs-color-value); border: 2px solid var(--nojs-bg); box-shadow: 0 0 0 1px var(--nojs-input);
 }
-.nojs-color-presets button:hover { background: var(--nojs-color-value); box-shadow: 0 0 0 1px var(--nojs-ring); }
-.nojs-color-presets button[aria-pressed=true] { box-shadow: 0 0 0 2px var(--nojs-fg); }
+.nojs-color-presets .nojs-button:hover { background: var(--nojs-color-value); box-shadow: 0 0 0 1px var(--nojs-ring); }
+.nojs-color-presets .nojs-button[aria-pressed=true] { box-shadow: 0 0 0 2px var(--nojs-fg); }
 "#;

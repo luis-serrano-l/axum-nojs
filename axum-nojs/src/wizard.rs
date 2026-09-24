@@ -313,9 +313,12 @@ impl Render for Wizard<'_> {
                         }
                     }
                     p class="nojs-wizard-actions" {
-                        @if current > 0 { a class="nojs-wizard-back" href=(self.link(current - 1)) { "Back" } }
-                        @if step.optional && !last { button type="submit" name="skip" value="1" formnovalidate { "Skip" } }
-                        button type="submit" class="nojs-primary" { @if last { (finish) } @else { "Next" } }
+                        @if current > 0 {
+                            @let back = self.link(current - 1).to_string();
+                            (ui.link_button("Back", &back).ghost().class("nojs-wizard-back"))
+                        }
+                        @if step.optional && !last { (ui.button("Skip").ghost().name("skip").value("1").formnovalidate()) }
+                        (ui.button(if last { finish } else { "Next" }).primary())
                     }
                 }
             }

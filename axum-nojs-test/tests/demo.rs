@@ -71,7 +71,7 @@ async fn dialog_variants_follow_caps() {
     assert!(page.exists("dialog.nojs-dialog-sm[aria-labelledby='confirm-title']"));
     assert!(
         page.is_visible(
-            ".nojs-dialog-danger form[method=post][action='/dialog/delete'] button.nojs-danger"
+            ".nojs-dialog-danger form[method=post][action='/dialog/delete'] button.nojs-button-danger"
         ),
         "confirm is a real form"
     );

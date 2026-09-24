@@ -28,7 +28,7 @@
 //! let bounded = ui.counter("/counter", 10).min(0).max(10).step(2).typed();
 //! let html = bounded.render().into_string();
 //! assert!(html.contains("value=\"inc\" aria-label=\"increment\" disabled"));
-//! assert!(html.contains("type=\"number\" name=\"value\" min=\"0\" max=\"10\" step=\"2\" value=\"10\""));
+//! assert!(html.contains("name=\"value\" type=\"number\" value=\"10\" min=\"0\" max=\"10\" step=\"2\""));
 //! // The handler's half: the same counter applies the posted `op`, clamped to its bounds.
 //! assert_eq!(bounded.apply("dec", None), 8);
 //! # let _ = plain;
@@ -36,7 +36,9 @@
 
 use maud::{Markup, Render, html};
 
-use crate::{Cap, Caps, Ui, enhance};
+use crate::button::Button;
+use crate::input::Input;
+use crate::{Cap, Caps, Icon, Ui, enhance};
 
 /// A number with buttons posting `op` to `action`, made by [`Ui::counter`]. Unbounded and
 /// stepping by 1 unless told otherwise.
@@ -121,18 +123,22 @@ impl Render for Counter<'_> {
             .then_some("view-transition-name: nojs-counter");
         let at_min = min.is_some_and(|m| value <= m);
         let at_max = max.is_some_and(|m| value >= m);
+        let value_text = value.to_string();
+        let typed_id = format!("{}-value", enhance::swap_id("nojs-counter", action));
+        // Every button posts `op`; `dec` and `inc` switch off at their bound.
+        let op = |op: &'static str, off: bool| {
+            let b = Button::new(caps, "").name("op").value(op);
+            if off { b.disabled() } else { b }
+        };
         html! {
             form id=(enhance::swap_id("nojs-counter", action)) data-nojs="swap" class="nojs-counter" method="post" action=(action) {
-                button type="submit" name="op" value="dec" aria-label="decrement" disabled[at_min] { "−" }
+                (op("dec", at_min).icon().label("decrement").content(html! { (Icon::Minus) }))
                 output style=[vt] { (value) }
-                button type="submit" name="op" value="inc" aria-label="increment" disabled[at_max] { "+" }
-                button type="submit" name="op" value="reset" { "reset" }
+                (op("inc", at_max).icon().label("increment").content(html! { (Icon::Plus) }))
+                (op("reset", false).ghost().content(html! { "Reset" }))
                 @if typed {
-                    label class="nojs-counter-typed" {
-                        span class="nojs-sr" { "Value" }
-                        input type="number" name="value" min=[min] max=[max] step=(step) value=(value) inputmode="numeric";
-                    }
-                    button type="submit" name="op" value="set" { "Set" }
+                    (Input::number_within("value", "Value", min, max).hide_label().step(step).inputmode("numeric").id(&typed_id).value(&value_text))
+                    (op("set", false).content(html! { "Set" }))
                 }
                 @if min.is_some() || max.is_some() {
                     small class="nojs-counter-bounds" {
@@ -153,7 +159,7 @@ impl Render for Counter<'_> {
 pub const CSS: &str = r#"
 .nojs-counter { display: inline-flex; flex-wrap: wrap; align-items: center; gap: var(--nojs-space); }
 .nojs-counter output { min-width: 3ch; text-align: center; font-size: 1.5rem; font-weight: 600; font-variant-numeric: tabular-nums; }
-.nojs-counter-typed input { width: 6em; }
+.nojs-counter input[name=value] { width: 6em; }
 .nojs-counter-bounds { flex-basis: 100%; color: var(--nojs-muted); font-size: 0.875rem; }
 "#;
 
