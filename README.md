@@ -121,13 +121,13 @@ browser-compat-data; `no` means unshipped, so that browser gets the fallback.
 | Paged table | `?page=n`, `<select>`, `<input type="number">`, `<output>` | 1 / 1 / 1; 1 / 1 / 1; 6 / 29 / 5.1; 10 / 4 / 7 | none needed: every control is a link or a form | No |
 | Wizard | `<form method="post">`, `aria-current="step"`, `<fieldset>`, `formnovalidate`, `<progress>` | 1 / 1 / 1; 1 / 1 / 1; 1 / 1 / 1; 4 / 4 / 5; 8 / 16 / 6 | none needed: one form per step, PRG between them | No |
 | Validated form | `required`, `pattern`, `:user-invalid`, `<fieldset>`, `<output>`, `type=date`, `accept`, `field-sizing` | 4 / 4 / 5; 4 / 4 / 5; 119 / 88 / 16.5; 1 / 1 / 1; 10 / 4 / 7; 20 / 57 / 14.1; 1 / 1 / 1; 123 / no / no | server re-renders with messages; no early styling; textareas keep their rows; the counter shows the submitted length | No |
-| Counter | `<form method="post">`, `<button name value>`, `cookie` | 1 / 1 / 1; 1 / 1 / 1; 1 / 1 / 1 | none needed | No |
+| Counter | `<form method="post">`, `<button name value>`, `<input type="number">`, `cookie` | 1 / 1 / 1; 1 / 1 / 1; 6 / 29 / 5.1; 1 / 1 / 1 | none needed | No |
 | Theme toggle | `prefers-color-scheme`, `color-scheme`, `cookie` | 76 / 67 / 12.1; 81 / 96 / 13; 1 / 1 / 1 | OS preference | No |
 | Flash | `cookie`, `role="status"` | 1 / 1 / 1; 1 / 1 / 1 | none needed | No |
 | UI state | `links`, `cookies`, `303 See Other` | 1 / 1 / 1; 1 / 1 / 1; 1 / 1 / 1 | without cookies, state still travels in links on one page | No |
-| Select | `<selectedcontent>`, `appearance: base-select` | 135 / no / 27; 135 / no / 27 | plain <select>, chosen server-side | No |
-| Range | `<input type="range">`, `<datalist>` | 4 / 23 / 3.1; 20 / 110 / 12.1 | ticks not drawn | Partly: value shown after submit; live mirroring needs script |
-| Color | `<input type="color">` | 20 / 29 / 12.1 | text field accepting #rrggbb | No |
+| Select | `<selectedcontent>`, `appearance: base-select`, `<optgroup label>`, `formmethod` | 135 / no / 27; 135 / no / 27; 1 / 1 / 1; 9 / 4 / 5.1 | plain <select>, chosen server-side | No |
+| Range | `<input type="range">`, `<datalist>`, `pointer-events` | 4 / 23 / 3.1; 20 / 110 / 12.1; 1 / 1 / 1 | ticks not drawn | Partly: value shown after submit; live mirroring needs script |
+| Color | `<input type="color">`, `color-mix()` | 20 / 29 / 12.1; 111 / 113 / 16.2 | text field accepting #rrggbb | No |
 | Streaming | `<template shadowrootmode="open">`, `<slot name`, `Chunked transfer` | 111 / 123 / 16.4; 53 / 63 / 10; 1 / 1 / 1 | in-order streaming with in-place splicing | No |
 <!-- matrix:end -->
 

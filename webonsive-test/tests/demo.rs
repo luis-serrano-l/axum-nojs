@@ -262,6 +262,33 @@ async fn swap_targets_render_without_script() {
     assert!(!page.exists("[data-wo-busy], [aria-busy]"), "nothing is busy without the script");
 }
 
+/// `/counter` and `/inputs`: bounds switch the stepper off, the pair shares one track, presets
+/// and opacity sit beside the picker, and a long select gets a filter box and groups.
+#[tokio::test]
+async fn counter_and_inputs() {
+    let top = Page::render(demo::router(), "/counter", &format!("{MODERN}; count=20")).await;
+    assert!(top.exists(".wo-counter button[value=inc][disabled]") && !top.exists(".wo-counter button[value=dec][disabled]"), "+ is off at the maximum");
+    assert!(top.is_visible(".wo-counter input[type=number][name=value][min='0'][max='20'][step='2'][value='20']"));
+    assert_eq!(top.text(".wo-counter-bounds").as_deref(), Some("0 to 20, in steps of 2"));
+
+    let page = Page::render(demo::router(), "/inputs", &format!("{MODERN}; inputs=l|40|%23b3261e|60|10|90|jp")).await;
+    let (lo, hi) = (page.bbox("#f-price_min").unwrap(), page.bbox("#f-price_max").unwrap());
+    assert!((lo.x - hi.x).abs() < 1.0 && (lo.y - hi.y).abs() < 1.0 && (lo.width - hi.width).abs() < 1.0, "both thumbs on one track: {lo:?} {hi:?}");
+    assert_eq!(page.text("output[for=f-price_min]").as_deref(), Some("10"));
+    assert_eq!(page.count(".wo-color-presets button"), 5);
+    assert!(page.exists(".wo-color-presets button[aria-pressed=true][value='#b3261e']"), "the saved colour is the pressed preset");
+    assert_eq!(page.text(".wo-color code").as_deref(), Some("#b3261e99"), "opacity 60% in the code");
+    assert!(page.exists(".wo-color input[type=range][name=accent-alpha][value='60']"));
+    assert_eq!(page.count("#country optgroup"), 3, "grouped countries");
+    assert!(page.exists("#country option[value=jp][selected]"));
+    assert!(page.is_visible(".wo-select-search input[name=country-q]") && page.exists(".wo-select-search button[formmethod=get][formaction='/inputs']"), "21 options: a filter box");
+    assert!(!page.exists(".wo-select-search input[name=size-q]"), "3 options: none");
+    assert!(page.exists("#size option[value=l] .wo-select-icon"), "icons in options");
+
+    let filtered = Page::render(demo::router(), "/inputs?country=es&country-q=arg", MODERN).await;
+    assert!(filtered.exists("#country option[value=es]") && filtered.exists("#country option[value=ar]") && !filtered.exists("#country option[value=jp]"), "filter keeps matches and the selected option");
+}
+
 /// `/form`: groups with legends, help and counters tied to their fields, a multipart form for
 /// the file field, and labels beside the fields in the inline layout.
 #[tokio::test]

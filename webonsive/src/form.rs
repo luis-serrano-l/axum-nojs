@@ -285,7 +285,8 @@ pub const CSS: &str = r#"
 .wo-form-group legend { padding: 0 0.5rem; font-weight: 600; }
 .wo-field { display: grid; gap: 4px; }
 .wo-field label { font-weight: 600; }
-.wo-field input:not([type=file]), .wo-field textarea { width: 100%; box-sizing: border-box; }
+/* :where keeps this at one class, so a component inside a field (colour, range) sizes itself. */
+.wo-field :where(input:not([type=file], [type=color], [type=range], [type=checkbox], [type=radio]), textarea) { width: 100%; box-sizing: border-box; }
 .wo-field textarea { resize: vertical; field-sizing: content; min-height: 3lh; max-height: 20lh; font: inherit; }
 .wo-field-help { color: var(--wo-muted); font-size: 0.875rem; }
 .wo-field-count { justify-self: end; color: var(--wo-muted); font-size: 0.8rem; font-variant-numeric: tabular-nums; }

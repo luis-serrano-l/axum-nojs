@@ -13,7 +13,7 @@ use maud::{Markup, html};
 use serde::Deserialize;
 use webonsive::{
     Cap, Caps, Field, FieldGroup, FieldKind, FormLayout, FormOptions, Streamed, Theme, UiState, accordion, accordion::{AccordionItem, AccordionOptions}, caps, color, combobox, combobox::{ComboboxOptions, OptionGroup},
-    counter, dialog, dialog::{DialogOptions, DialogSize}, flash, form, layout, layout::{Palette, Tokens, layout_with}, paged_table, paged_table::PagedTableOptions,
+    counter, counter::CounterOptions, color::ColorOptions, select::{Group as SelectGroup, SelectOption, SelectOptions}, dialog, dialog::{DialogOptions, DialogSize}, flash, form, layout, layout::{Palette, Tokens, layout_with}, paged_table, paged_table::PagedTableOptions,
     pager, pager::PagerOptions, popover::{MenuItem, Placement, PopoverOptions}, popover_menu, prg, range, range::RangeOptions, select, slot, tabs::{Tab, TabsOptions},
     table::{Column, Row, TableOptions, cols_from_query, sort_from_query}, tabs, theme_toggle, wizard, wizard::{Step, WizardOptions},
 };
@@ -71,8 +71,8 @@ const COMPONENTS: [(&str, &str, &str, &str); 15] = [
     ("/combobox", "Combobox", "Input", "<datalist>, <optgroup>, <search>, aria-live"),
     ("/form", "Validated form", "Input", ":user-invalid, <fieldset>, <output> counters, field-sizing, multipart, PRG"),
     ("/wizard", "Wizard", "Input", "one form per step, PRG, formnovalidate, <progress>, UiState"),
-    ("/inputs", "Select, range, colour", "Input", "<selectedcontent>, type=range, type=color"),
-    ("/counter", "Counter", "Server state", "form POST + cookie"),
+    ("/inputs", "Select, range, colour", "Input", "<selectedcontent>, <optgroup>, formmethod, two-thumb range, color-mix()"),
+    ("/counter", "Counter", "Server state", "form POST + cookie, type=number, disabled"),
     ("/settings", "Settings", "Server state", "UiState, PRG + flash"),
     ("/list", "Load-more list", "Server state", "links + view transitions"),
     ("/table", "Table", "Server state", "sort links, <search> filter, form= checkboxes, ?cols=, <details> rows, sticky header, ?page=n"),
@@ -496,17 +496,22 @@ async fn form_submit(caps: Caps, jar: CookieJar, state: UiState, mut parts: axum
     (axum::http::StatusCode::UNPROCESSABLE_ENTITY, form_view(&caps, &jar, &state, false, &v, &errors)).into_response()
 }
 
+const COUNTER: CounterOptions = CounterOptions { min: Some(0), max: Some(20), step: 2, typed: true };
+
 async fn counter_page(caps: Caps, jar: CookieJar) -> Markup {
     let n: i64 = jar.get("count").and_then(|c| c.value().parse().ok()).unwrap_or(0);
-    page(&caps, &jar, "Counter", html! { (counter(&caps, "/counter", n)) })
+    page(&caps, &jar, "Counter", html! {
+        p { "Steps of two between 0 and 20. The buttons switch off at the ends; a typed value off the step or the bounds is refused by the browser and clamped by the server." }
+        (counter(&caps, "/counter", n, COUNTER))
+    })
 }
 
 #[derive(Deserialize)]
-struct CounterOp { op: String }
+struct CounterOp { op: String, value: Option<i64> }
 
 async fn counter_submit(jar: CookieJar, Form(f): Form<CounterOp>) -> (CookieJar, Redirect) {
     let n: i64 = jar.get("count").and_then(|c| c.value().parse().ok()).unwrap_or(0);
-    let n = match f.op.as_str() { "inc" => n + 1, "dec" => n - 1, _ => 0 };
+    let n = COUNTER.apply(n, &f.op, f.value);
     (jar.add(Cookie::new("count", n.to_string())), Redirect::to("/counter"))
 }
 
@@ -592,36 +597,69 @@ async fn settings_submit(jar: CookieJar, Form(f): Form<SettingsForm>) -> (Cookie
     (jar.add(Cookie::new("settings", value)), prg(&to, Some("Settings saved.")))
 }
 
-#[derive(Deserialize)]
-struct Inputs { size: String, volume: i64, accent: String }
+/// The inputs page's values: from the query while filtering (unsaved), else from the cookie.
+#[derive(Deserialize, Default)]
+struct Inputs {
+    size: Option<String>, volume: Option<i64>, accent: Option<String>,
+    #[serde(rename = "accent-alpha")] alpha: Option<u8>,
+    #[serde(rename = "accent-preset")] preset: Option<String>,
+    price_min: Option<i64>, price_max: Option<i64>, country: Option<String>,
+    #[serde(rename = "country-q")] country_q: Option<String>,
+}
 
-const SIZES: [(&str, &str); 3] = [("s", "Small"), ("m", "Medium"), ("l", "Large")];
+const SIZES: [(&str, &str, &str); 3] = [("s", "Small", "🐭"), ("m", "Medium", "🐕"), ("l", "Large", "🐘")];
+const ACCENTS: [&str; 5] = ["#1f6f5f", "#2f5bea", "#b3261e", "#8a5a00", "#6b3fa0"];
+/// `(value, name, flag)`.
+type Country = (&'static str, &'static str, &'static str);
+const COUNTRIES: [(&str, [Country; 7]); 3] = [
+    ("Europe", [("es", "Spain", "🇪🇸"), ("fr", "France", "🇫🇷"), ("de", "Germany", "🇩🇪"), ("it", "Italy", "🇮🇹"), ("pt", "Portugal", "🇵🇹"), ("nl", "Netherlands", "🇳🇱"), ("se", "Sweden", "🇸🇪")]),
+    ("Americas", [("us", "United States", "🇺🇸"), ("ca", "Canada", "🇨🇦"), ("mx", "Mexico", "🇲🇽"), ("br", "Brazil", "🇧🇷"), ("ar", "Argentina", "🇦🇷"), ("cl", "Chile", "🇨🇱"), ("co", "Colombia", "🇨🇴")]),
+    ("Asia", [("jp", "Japan", "🇯🇵"), ("kr", "South Korea", "🇰🇷"), ("in", "India", "🇮🇳"), ("id", "Indonesia", "🇮🇩"), ("vn", "Vietnam", "🇻🇳"), ("th", "Thailand", "🇹🇭"), ("ph", "Philippines", "🇵🇭")]),
+];
 
-/// Select, range and colour in one form; the chosen values live in an `inputs` cookie.
-async fn inputs_page(caps: Caps, jar: CookieJar, state: UiState) -> (UiState, Markup) {
+/// The saved values: `size|volume|accent|alpha|price_min|price_max|country`.
+fn saved_inputs(jar: &CookieJar) -> Inputs {
     let saved = jar.get("inputs").map(|c| c.value().to_string()).unwrap_or_default();
-    let mut parts = saved.split('|');
-    let (size, volume, accent) = (parts.next().unwrap_or("m"), parts.next().unwrap_or("40"), parts.next().unwrap_or("#1f6f5f"));
-    let options: Vec<(&str, Markup)> = SIZES.iter()
-        .map(|(v, l)| (*v, html! { span class="wo-swatch" style={ "background: " (accent) } {} (l) }))
-        .collect();
+    let p: Vec<&str> = saved.split('|').collect();
+    let at = |i: usize| p.get(i).filter(|v| !v.is_empty()).map(|v| v.to_string());
+    Inputs {
+        size: at(0), volume: at(1).and_then(|v| v.parse().ok()), accent: at(2), alpha: at(3).and_then(|v| v.parse().ok()),
+        price_min: at(4).and_then(|v| v.parse().ok()), price_max: at(5).and_then(|v| v.parse().ok()), country: at(6), ..Inputs::default()
+    }
+}
+
+/// Select, range and colour in one form; the chosen values live in an `inputs` cookie. The
+/// country filter is a GET through the same form, so its values come from the query.
+async fn inputs_page(caps: Caps, jar: CookieJar, state: UiState, Query(q): Query<Inputs>) -> (UiState, Markup) {
+    let v = if q.country_q.is_some() { q } else { saved_inputs(&jar) };
+    let accent = v.accent.as_deref().unwrap_or("#1f6f5f");
+    let (lo, hi) = range::order(v.price_min.unwrap_or(20), v.price_max.unwrap_or(80));
+    let sizes: Vec<SelectOption> = SIZES.iter().map(|(v, l, i)| SelectOption::new(v, l).icon(i)).collect();
+    let countries: Vec<Vec<SelectOption>> = COUNTRIES.iter().map(|(_, cs)| cs.iter().map(|(v, l, i)| SelectOption::new(v, l).icon(i)).collect()).collect();
+    let groups: Vec<SelectGroup> = COUNTRIES.iter().zip(&countries).map(|((g, _), cs)| SelectGroup::new(g, cs)).collect();
     let body = page(&caps, &jar, "Select, range, colour", html! {
         (flash(&caps, state.flash()))
         form id="inputs" data-wo="swap" class="wo-form" method="post" action="/inputs" {
-            div class="wo-field" { label for="size" { "Size" } (select(&caps, "size", &options, size)) }
-            div class="wo-field" { label for="f-volume" { "Volume" } (range(&caps, "volume", volume.parse().unwrap_or(40), RangeOptions::default().step(5))) }
-            div class="wo-field" { label for="f-accent" { "Accent" } (color(&caps, "accent", accent)) }
+            div class="wo-field" { label for="size" { "Size" } (select(&caps, "size", &[SelectGroup::flat(&sizes)], v.size.as_deref().unwrap_or("m"), Default::default())) }
+            div class="wo-field" { label for="country" { "Country" }
+                (select(&caps, "country", &groups, v.country.as_deref().unwrap_or("es"), SelectOptions::default().search("/inputs", v.country_q.as_deref().unwrap_or("")))) }
+            div class="wo-field" { label for="f-volume" { "Volume" } (range(&caps, "volume", v.volume.unwrap_or(40), RangeOptions::default().step(5))) }
+            div class="wo-field" { label for="f-price_min" { "Price" } (range::range_pair(&caps, "price", (lo, hi), RangeOptions::default().step(5))) }
+            div class="wo-field" { label for="f-accent" { "Accent" } (color(&caps, "accent", accent, ColorOptions::default().presets(&ACCENTS).alpha(v.alpha.unwrap_or(100)))) }
             button type="submit" class="wo-primary" { "Save" }
         }
-        p class="wo-note" { "Without the enhancement script the output and the swatch show the last saved values and update on submit." }
+        p class="wo-note" { "Without the enhancement script the outputs and the swatch show the last saved values and update on submit, and the country filter needs its button." }
     });
     (state, body)
 }
 
 async fn inputs_submit(jar: CookieJar, Form(f): Form<Inputs>) -> (CookieJar, axum::response::Response) {
-    let size = SIZES.iter().find(|(v, _)| *v == f.size).map(|(v, _)| *v).unwrap_or("m");
-    let accent = if f.accent.len() == 7 && f.accent.starts_with('#') { f.accent.as_str() } else { "#1f6f5f" };
-    let value = format!("{size}|{}|{accent}", f.volume.clamp(0, 100));
+    let size = SIZES.iter().find(|(v, ..)| Some(*v) == f.size.as_deref()).map(|(v, ..)| *v).unwrap_or("m");
+    let hex = |c: &Option<String>| c.as_deref().filter(|c| c.len() == 7 && c.starts_with('#')).map(str::to_string);
+    let accent = hex(&f.preset).or(hex(&f.accent)).unwrap_or_else(|| "#1f6f5f".into());
+    let country = COUNTRIES.iter().flat_map(|(_, cs)| cs).find(|c| Some(c.0) == f.country.as_deref()).map(|c| c.0).unwrap_or("es");
+    let (lo, hi) = range::order(f.price_min.unwrap_or(20).clamp(0, 100), f.price_max.unwrap_or(80).clamp(0, 100));
+    let value = format!("{size}|{}|{accent}|{}|{lo}|{hi}|{country}", f.volume.unwrap_or(40).clamp(0, 100), f.alpha.unwrap_or(100).min(100));
     (jar.add(Cookie::new("inputs", value)), prg("/inputs", Some("Inputs saved.")))
 }
 

@@ -41,6 +41,17 @@ follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); the project us
   the `form` attribute), `csv`, `empty`, `loading` (skeleton rows, `aria-busy`);
   `Column::numeric` and `Column::width`. `PagedTableOptions::table` carries them through the
   pager. **Breaking:** rows were `Vec<Markup>`; `Column` has two more fields.
+- `counter` takes `CounterOptions` (`min`, `max`, `step`, `typed`): buttons disabled at the
+  bounds, a number field posting `op=set`, and `CounterOptions::apply` for the handler.
+- `range::range_pair` (two thumbs on one track, `<name>_min`/`<name>_max`) and `range::order`.
+- `color` takes `ColorOptions` (`presets` posting `<name>-preset`, `alpha` slider posting
+  `<name>-alpha`); `color::hex_alpha`. The swatch paints through `--wo-color-value`.
+- `select` takes `&[select::Group]` of `SelectOption` (`icon`, `content`) and `SelectOptions`
+  (`search(action, query)`, `search_over`): optgroups, icons, and a GET filter box over 15
+  options. The root is now a `span.wo-select` around the `<select id=name>`.
+- Enhancement script: honours a submitter's `formmethod` and `formaction`; a search box
+  followed by a submit button filters through it.
+- **Breaking:** `counter`, `color` and `select` signatures changed.
 - `form` takes `&[FieldGroup]` (a `<fieldset>` and `<legend>` each, or `FieldGroup::plain`)
   and `FormOptions` (`submit`, `layout: FormLayout::Stacked|Inline`). `Field::new` with
   `value`, `error`, `required`, `help` (tied by `aria-describedby`) and `max_len` (a

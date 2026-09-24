@@ -169,6 +169,7 @@
       "features": [
         { "name": "<form method=\"post\">", "baseline": { "chrome": "1", "firefox": "1", "safari": "1" } },
         { "name": "<button name value>", "baseline": { "chrome": "1", "firefox": "1", "safari": "1" } },
+        { "name": "<input type=\"number\">", "baseline": { "chrome": "6", "firefox": "29", "safari": "5.1" } },
         { "name": "cookie", "baseline": { "chrome": "1", "firefox": "1", "safari": "1" } }
       ],
       "fallback": "none needed",
@@ -211,7 +212,9 @@
       "module": "select",
       "features": [
         { "name": "<selectedcontent>", "baseline": { "chrome": "135", "firefox": "no", "safari": "27" } },
-        { "name": "appearance: base-select", "baseline": { "chrome": "135", "firefox": "no", "safari": "27" } }
+        { "name": "appearance: base-select", "baseline": { "chrome": "135", "firefox": "no", "safari": "27" } },
+        { "name": "<optgroup label>", "baseline": { "chrome": "1", "firefox": "1", "safari": "1" } },
+        { "name": "formmethod", "baseline": { "chrome": "9", "firefox": "4", "safari": "5.1" } }
       ],
       "fallback": "plain <select>, chosen server-side",
       "needs_js": "no"
@@ -221,7 +224,8 @@
       "module": "range",
       "features": [
         { "name": "<input type=\"range\">", "baseline": { "chrome": "4", "firefox": "23", "safari": "3.1" } },
-        { "name": "<datalist>", "baseline": { "chrome": "20", "firefox": "110", "safari": "12.1" } }
+        { "name": "<datalist>", "baseline": { "chrome": "20", "firefox": "110", "safari": "12.1" } },
+        { "name": "pointer-events", "baseline": { "chrome": "1", "firefox": "1", "safari": "1" } }
       ],
       "fallback": "ticks not drawn",
       "needs_js": "partial",
@@ -231,7 +235,8 @@
       "name": "Color",
       "module": "color",
       "features": [
-        { "name": "<input type=\"color\">", "baseline": { "chrome": "20", "firefox": "29", "safari": "12.1" } }
+        { "name": "<input type=\"color\">", "baseline": { "chrome": "20", "firefox": "29", "safari": "12.1" } },
+        { "name": "color-mix()", "baseline": { "chrome": "111", "firefox": "113", "safari": "16.2" } }
       ],
       "fallback": "text field accepting #rrggbb",
       "needs_js": "no"

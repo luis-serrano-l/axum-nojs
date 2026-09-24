@@ -194,6 +194,7 @@ engine, so passing there is proof the page needs none.
 | `<dialog open>` is 114 px wide: absolutely positioned box sized by its DOM parent | [#764](https://github.com/DioxusLabs/blitz/issues/764) |
 | Header reads "webonsive· zero": leading space of a span after an inline is trimmed | [#857](https://github.com/DioxusLabs/blitz/pull/857) (open PR, whitespace collapsing across spans) |
 | `/tabs` vertical strip: the panel's left rule spans one row, not the column: Blitz builds boxes only for `::before`/`::after` (`blitz-dom/src/layout/construct.rs`), so `::details-content` never gets one; the panel's own padding is what keeps the shot readable | tracked under [#119](https://github.com/DioxusLabs/blitz/issues/119) (roadmap: pseudo-elements); no dedicated issue |
+| `/inputs`: selects render as an empty box (option text and `<selectedcontent>` not drawn), range inputs as a plain box with no thumb, the colour input as a blank box; the two-thumb pair shows only its track. `blitz-paint` `render/form_controls.rs` draws only checkboxes and radios. The Blitz test asserts on attributes and geometry (both thumbs share one track) instead | [#258](https://github.com/DioxusLabs/blitz/issues/258) ("Tracking: Form controls") |
 | `/table`: the sticky header cells paint at the top of the viewport, leaving an empty row in the table | `stylo_taffy::convert::position` maps `sticky` to `relative` with a `TODO`; tracked under [#389](https://github.com/DioxusLabs/blitz/issues/389) ("position sticky") |
 
 The DSD gap is pinned by a test (`blitz_has_no_declarative_shadow_dom`) that fails the day
@@ -290,6 +291,18 @@ never learns of edits that were not submitted. The honest no-script substitute i
 leaving cheap: the wizard stores each step as it is posted and resumes from the cookie. The
 character counter is the same shape of problem: `maxlength` enforces the limit natively, but
 the `<output>` only moves while typing when the enhancement script is there.
+
+**A long select filters through the form it lives in.** A search box cannot live inside a
+`<select>` picker, and a second `<form>` cannot nest inside the one that saves, so the filter
+is a button with `formmethod="get"` and `formaction`: it re-requests the page with every field
+of the form in the query, unsaved, and the server renders only the matching options (plus the
+selected one). The enhancement script had to learn to honour a submitter's `formmethod` and
+`formaction`; before that it would have posted, and saved, on every keystroke.
+
+**Two thumbs, two inputs.** There is no native dual-thumb range. Two range inputs in one grid
+cell with `pointer-events: none` on the inputs and `auto` on their thumbs give it without
+script; the thumbs can cross, so the server orders the pair (`range::order`). The fill between
+them would need the live values, so the track stays neutral.
 
 **`field-sizing: content` is Chrome only (123).** Firefox and Safari keep the textarea at its
 `rows` with a vertical resize handle, which is the fallback and needs no branch on `Caps`.

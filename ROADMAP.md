@@ -153,7 +153,7 @@ involved) a Firefox check.
   file inputs with accepted types, date/time/number inputs with min/max, textarea autosize via
   `field-sizing: content`, inline and stacked layouts, a "dirty" warning link-back is not
   possible without script and is recorded in FINDINGS.
-- [ ] Counter, range, color, select: stepper with min/max/step and a typed value, range with
+- [x] Counter, range, color, select: stepper with min/max/step and a typed value, range with
   two thumbs (min/max pair as two inputs), colour with a preset swatch row and alpha, select
   with option groups, icons in options and a search box when it has more than ~15 options.
 - [ ] Flash and status: variants (`info|ok|warn|danger`), dismiss is a link that clears the

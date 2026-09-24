@@ -61,7 +61,7 @@ async fn handle(req: Request<Incoming>) -> Result<Reply, Infallible> {
                 (tabs(&caps, "demo", &[Tab::new("First", html! { p { "Tab state lives in the URL and a cookie." } }),
                                       Tab::new("Second", html! { p { "Reload, leave, come back: still here." } })], TabsOptions::default().state(&state)))
                 h2 { "Counter" }
-                (counter(&caps, "/counter", count))
+                (counter(&caps, "/counter", count, Default::default()))
             });
             html_reply(page.into_string(), state.set_cookies())
         }

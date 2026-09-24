@@ -174,10 +174,11 @@ function submit(form, submitter) {
   if (!t) return false;
   var data = new FormData(form);
   if (submitter && submitter.name) data.append(submitter.name, submitter.value);
-  var url = new URL(form.getAttribute("action") || location.href, location.href);
+  var at = function (a) { return submitter && submitter.getAttribute("form" + a) || form.getAttribute(a); };
+  var url = new URL(at("action") || location.href, location.href);
   var init = { credentials: "same-origin", headers: { "Wo-Enhance": "1" } };
   var params = new URLSearchParams(data);
-  if ((form.method || "get").toLowerCase() === "post") { init.method = "POST"; init.body = form.enctype === "multipart/form-data" ? data : params; }
+  if ((at("method") || "get").toLowerCase() === "post") { init.method = "POST"; init.body = form.enctype === "multipart/form-data" ? data : params; }
   else url.search = params.toString();
   request(t, form, url.href, init, function () { HTMLFormElement.prototype.submit.call(form); });
   return true;
@@ -214,18 +215,20 @@ document.addEventListener("change", function (e) {
 var typing;
 document.addEventListener("input", function (e) {
   var t = e.target, out = t.id && document.querySelector("output[for='" + t.id + "']");
-  // A range shows its value; a field with maxlength shows its length out of the limit.
+  // Range: its value. Field with maxlength: length / limit.
   if (out) out.textContent = t.maxLength > 0 ? t.value.length + " / " + t.maxLength : t.value;
   if (t.type === "color") {
     var box = t.closest(".wo-color");
     if (box) {
       var sw = box.querySelector(".wo-color-swatch"), code = box.querySelector("code");
-      if (sw) sw.style.background = t.value;
+      if (sw) sw.style.setProperty("--wo-color-value", t.value);
       if (code) code.textContent = t.value;
     }
   } else if (t.type === "search" && t.form && t.closest(roots)) {
     clearTimeout(typing);
-    typing = setTimeout(function () { submit(t.form, null); }, 150);
+    // Submit through an adjacent button (a select filter's formmethod=get).
+    var b = t.nextElementSibling;
+    typing = setTimeout(function () { submit(t.form, b && b.type === "submit" ? b : null); }, 150);
   }
 });
 

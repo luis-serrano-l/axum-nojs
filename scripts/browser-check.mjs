@@ -48,8 +48,12 @@ try {
   await click("button[value=reset]");
   await until(async () => (await text(".wo-counter output")) === "0", "reset");
   for (let i = 0; i < 5; i++) await click("button[value=inc]");
-  await until(async () => (await text(".wo-counter output")) === "5", "counter to reach 5");
+  await until(async () => (await text(".wo-counter output")) === "10", "counter to reach 10 in steps of 2");
   assert(await navigations() === 1, "counter: 5 quick clicks counted in place, no reload");
+  await js("document.querySelector('.wo-counter input[name=value]').value = 20");
+  await click(".wo-counter button[value=set]");
+  await until(async () => (await text(".wo-counter output")) === "20", "typed value set");
+  assert(await js("return document.querySelector('.wo-counter button[value=inc]').disabled"), "counter: + switches off at the maximum");
 
   // Tabs: click a title, panel switches, URL updated, no reload.
   await go("/tabs");
@@ -232,8 +236,18 @@ try {
 
   // Range: output mirrors while moving, before any submit.
   await go("/inputs");
-  await type("input[type=range]", ""); // ArrowRight
+  await type("#f-volume", ""); // ArrowRight
   assert((await text(".wo-range output")) !== "40", "range: output mirrors the slider live");
+  await type("#f-price_max", ""); // ArrowLeft
+  assert((await text("output[for=f-price_max]")) === "75", "range pair: the high thumb mirrors into its own output");
+  // Select: typing in the filter re-renders the options through a GET, nothing is saved.
+  await type("input[name=country-q]", "jap");
+  await until(async () => (await js("return [...document.querySelectorAll('#country option')].map(o => o.value).join()")) === "es,jp", "filtered to Japan plus the selected Spain");
+  assert(await js("return location.search").then(q => q.includes("country-q=jap")), "select: the filter is a GET in the URL");
+  assert(await navigations() === 1, "select: filtered in place");
+  await click(".wo-color-presets button[value='#b3261e']");
+  await until(async () => (await js("return document.querySelector('.wo-color-presets button[aria-pressed=true]')?.value")) === "#b3261e", "preset saved");
+  assert(/Inputs saved/.test(await js("return document.querySelector('.wo-flash')?.textContent || ''")), "color: a preset posts the form");
 
   // Theme: applied in place.
   await click(".wo-theme button[value=dark]");

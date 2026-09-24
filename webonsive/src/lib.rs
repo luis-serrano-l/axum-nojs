@@ -165,7 +165,7 @@ mod tests {
         let caps = Caps::all();
         let parts = [
             flash(&caps, Some("hi")),
-            counter(&caps, "/counter", 3),
+            counter(&caps, "/counter", 3, Default::default()),
             theme_toggle(&caps, "/theme", Theme::Auto),
         ];
         for part in &parts {

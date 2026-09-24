@@ -226,7 +226,7 @@ pub const SPECS: &[ComponentSpec] = &[
     ComponentSpec {
         name: "Counter",
         module: "counter",
-        features: &[f("<form method=\"post\">", ALWAYS), f("<button name value>", ALWAYS), COOKIE],
+        features: &[f("<form method=\"post\">", ALWAYS), f("<button name value>", ALWAYS), f("<input type=\"number\">", b("6", "29", "5.1")), COOKIE],
         fallback: "none needed",
         needs_js: NeedsJs::No,
     },
@@ -257,6 +257,8 @@ pub const SPECS: &[ComponentSpec] = &[
         features: &[
             f("<selectedcontent>", b("135", "no", "27")),
             f("appearance: base-select", b("135", "no", "27")),
+            f("<optgroup label>", ALWAYS),
+            f("formmethod", b("9", "4", "5.1")),
         ],
         fallback: "plain <select>, chosen server-side",
         needs_js: NeedsJs::No,
@@ -264,14 +266,14 @@ pub const SPECS: &[ComponentSpec] = &[
     ComponentSpec {
         name: "Range",
         module: "range",
-        features: &[f("<input type=\"range\">", b("4", "23", "3.1")), f("<datalist>", b("20", "110", "12.1"))],
+        features: &[f("<input type=\"range\">", b("4", "23", "3.1")), f("<datalist>", b("20", "110", "12.1")), f("pointer-events", ALWAYS)],
         fallback: "ticks not drawn",
         needs_js: NeedsJs::Partial("value shown after submit; live mirroring needs script"),
     },
     ComponentSpec {
         name: "Color",
         module: "color",
-        features: &[f("<input type=\"color\">", b("20", "29", "12.1"))],
+        features: &[f("<input type=\"color\">", b("20", "29", "12.1")), f("color-mix()", b("111", "113", "16.2"))],
         fallback: "text field accepting #rrggbb",
         needs_js: NeedsJs::No,
     },
