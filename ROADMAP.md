@@ -332,10 +332,13 @@ Done before M21 so the primitives are born in this look.
   `--nojs-accent` is now the hover surface. Status colours use Radix step 11 (red/green/amber),
   the text step, so each clears 4.5:1; danger buttons put `on-primary` on it (5.0 / 8.4).
   `--nojs-radius-sm/-lg` are derived as radius ∓ 4px, so a radius needs a unit (`"0px"`).
-- [ ] Type: system stack only (`ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+- [x] Type: system stack only (`ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
   "Helvetica Neue", Arial, sans-serif`, mono `ui-monospace, SFMono-Regular, Menlo, Consolas`),
   shadcn's scale (text-sm 0.875rem body in controls, 1.25/1.5 line heights, 500/600 weights),
   `-webkit-font-smoothing: antialiased`, tabular numbers in tables and stats.
+  Done: the stacks are `--nojs-font-sans`/`--nojs-font-mono` on `:root` (base rules, not
+  `Tokens` fields); every component's sizes snapped to the scale (0.75/0.875/1/1.125/1.25/1.5/
+  2.25rem) and 700 weights to 600.
 - [ ] Base styles in `layout.rs`: shadcn heights and paddings (controls h-9 = 2.25rem, px-3/px-4),
   1px `--nojs-input` borders, `shadow-xs` on controls, `shadow-lg` on dialog/popover,
   focus-visible as a 3px `--nojs-ring` at 50% opacity, `aria-invalid` red ring, disabled at

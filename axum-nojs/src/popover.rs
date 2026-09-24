@@ -370,7 +370,7 @@ pub const CSS: &str = r#"
 .nojs-popover-danger .nojs-popover-icon { color: inherit; }
 .nojs-popover-disabled { color: var(--nojs-muted); cursor: default; }
 .nojs-popover-disabled:hover { background: none; }
-.nojs-popover-heading { padding: 0.25rem 1rem; font-size: 0.8rem; color: var(--nojs-muted); }
+.nojs-popover-heading { padding: 0.25rem 1rem; font-size: 0.75rem; color: var(--nojs-muted); }
 .nojs-popover-sep { margin: var(--nojs-space) 0; border-top: 1px solid var(--nojs-line); }
 .nojs-popover-sub { position: relative; }
 /* <details> fallback: summary styled as the button, menu absolutely positioned by placement. */

@@ -332,7 +332,7 @@ pub const CSS: &str = r#"
 .nojs-wizard-steps small { font-size: 0.8em; }
 .nojs-wizard-current { color: var(--nojs-on-primary) !important; background: var(--nojs-primary); border-color: transparent !important; }
 .nojs-wizard-steps .nojs-wizard-error { border-color: var(--nojs-danger) !important; }
-.nojs-wizard-steps .nojs-wizard-error::before { content: "! " counter(nojs-step) ". "; color: var(--nojs-danger); font-weight: 700; }
+.nojs-wizard-steps .nojs-wizard-error::before { content: "! " counter(nojs-step) ". "; color: var(--nojs-danger); font-weight: 600; }
 .nojs-wizard-steps .nojs-wizard-current.nojs-wizard-error { background: var(--nojs-danger); }
 .nojs-wizard-steps .nojs-wizard-current.nojs-wizard-error::before { color: inherit; }
 .nojs-wizard-progress { display: block; width: 100%; max-width: 32rem; height: 0.5rem; margin: 0 0 calc(var(--nojs-space) * 2); accent-color: var(--nojs-primary); }

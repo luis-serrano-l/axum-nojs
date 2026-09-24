@@ -273,9 +273,16 @@ pub const CSS: &str = r#"
 /* The --nojs-* tokens come first in stylesheet(), from Tokens::default().css(). */
 
 * { box-sizing: border-box; }
+/* Type: the system stack only, no web font. Body text is 1rem/1.5; controls, tables and
+   menus use shadcn's text-sm (0.875rem/1.25rem); weights are 500 for labels and buttons,
+   600 for headings. Numbers in tables and stats are tabular. */
+:root {
+  --nojs-font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --nojs-font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
 html {
-  font-family: "Avenir Next", "Segoe UI Variable Text", "Segoe UI", Ubuntu, Cantarell, "Noto Sans", system-ui, sans-serif;
-  line-height: 1.55; -webkit-text-size-adjust: 100%;
+  font-family: var(--nojs-font-sans); line-height: 1.5;
+  -webkit-text-size-adjust: 100%; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
 }
 body { margin: 0; background: var(--nojs-bg); color: var(--nojs-fg); }
 main { max-width: 52rem; margin: 0 auto; padding: calc(var(--nojs-space) * 4) calc(var(--nojs-space) * 2) calc(var(--nojs-space) * 8); }
@@ -285,17 +292,20 @@ p, li { max-width: 44rem; }
   max-width: 52rem; margin: 0 auto; padding: calc(var(--nojs-space) * 2);
   color: var(--nojs-muted);
 }
-.nojs-header a { color: var(--nojs-fg); text-decoration: none; font-size: 1.125rem; letter-spacing: -0.01em; }
-.nojs-header strong { font-weight: 700; }
-h1 { font-size: 2.25rem; line-height: 1.15; letter-spacing: -0.01em; font-weight: 700; margin: 0 0 0.75rem; }
-h2 { font-size: 1.375rem; line-height: 1.25; letter-spacing: -0.005em; margin: 2rem 0 0.5rem; }
+.nojs-header a { color: var(--nojs-fg); text-decoration: none; font-size: 1rem; letter-spacing: -0.01em; }
+.nojs-header span { font-size: 0.875rem; }
+.nojs-header strong { font-weight: 600; }
+h1 { font-size: 2.25rem; line-height: 2.5rem; letter-spacing: -0.025em; font-weight: 600; margin: 0 0 0.75rem; }
+h2 { font-size: 1.5rem; line-height: 2rem; letter-spacing: -0.0125em; font-weight: 600; margin: 2rem 0 0.5rem; }
+h3 { font-size: 1.125rem; line-height: 1.75rem; font-weight: 600; }
 p { margin: 0 0 1rem; }
 a { color: var(--nojs-primary); text-underline-offset: 0.15em; text-decoration-thickness: 1px; }
 code {
-  font-family: ui-monospace, "Cascadia Mono", "JetBrains Mono", Menlo, Consolas, monospace; font-size: 0.875em;
+  font-family: var(--nojs-font-mono); font-size: 0.875em;
   background: var(--nojs-surface); border: 1px solid var(--nojs-line); border-radius: var(--nojs-radius); padding: 0.05em 0.35em;
 }
-button, input, select, textarea { font: inherit; color: inherit; }
+button, input, select, textarea { font: inherit; font-size: 0.875rem; line-height: 1.25rem; color: inherit; }
+button, label { font-weight: 500; }
 button { cursor: pointer; background: var(--nojs-surface); border: 1px solid var(--nojs-line); border-radius: var(--nojs-radius); padding: 0.5rem 1rem; }
 button:hover { border-color: var(--nojs-primary); }
 button.nojs-primary { background: var(--nojs-primary); color: var(--nojs-on-primary); border-color: transparent; }
@@ -306,10 +316,10 @@ input, select, textarea { background: var(--nojs-surface); border: 1px solid var
    fade waits so a fast answer never flickers; --nojs-busy: 1 turns it off. */
 .nojs-sr { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50%); text-wrap: nowrap; border: 0; }
 [data-nojs-busy] { opacity: var(--nojs-busy, 0.6); transition: opacity 0.15s 0.2s; cursor: progress; }
-table { border-collapse: collapse; width: 100%; }
+table { border-collapse: collapse; width: 100%; font-size: 0.875rem; line-height: 1.25rem; font-variant-numeric: tabular-nums; }
 th, td { text-align: left; padding: 0.5rem; border-bottom: 1px solid var(--nojs-line); vertical-align: top; }
-th { color: var(--nojs-muted); font-weight: 600; }
-.nojs-note { color: var(--nojs-muted); font-size: 0.9rem; }
+th { color: var(--nojs-muted); font-weight: 500; }
+.nojs-note { color: var(--nojs-muted); font-size: 0.875rem; }
 .nojs-yes { color: var(--nojs-ok); font-weight: 600; }
 .nojs-no { color: var(--nojs-danger); font-weight: 600; }
 
@@ -321,7 +331,7 @@ th { color: var(--nojs-muted); font-weight: 600; }
 .nojs-back::before { content: "\2190"; margin-right: 0.35em; }
 .nojs-back:hover { color: var(--nojs-primary); text-decoration: underline; }
 .nojs-lede { font-size: 1.125rem; color: var(--nojs-muted); margin-bottom: 1.5rem; }
-.nojs-built { color: var(--nojs-muted); font-size: 0.9rem; margin: -0.5rem 0 1.5rem; }
+.nojs-built { color: var(--nojs-muted); font-size: 0.875rem; margin: -0.5rem 0 1.5rem; }
 .nojs-built code, .nojs-index li code { color: var(--nojs-fg); margin: 0 0.25rem 0.25rem 0; display: inline-block; white-space: nowrap; }
 /* A component page's plate: the live component on a stage, the code that drew it joined
    underneath. One per page; no transform, overflow or contain on the stage, so dialogs,
@@ -344,7 +354,7 @@ th { color: var(--nojs-muted); font-weight: 600; }
   padding: 0.5rem calc(var(--nojs-space) * 2); border-bottom: 1px solid var(--nojs-line);
   color: var(--nojs-muted); font-size: 0.8125rem;
 }
-.nojs-snippet figcaption span:first-child { color: var(--nojs-fg); font-weight: 600; font-family: ui-monospace, "Cascadia Mono", "JetBrains Mono", Menlo, Consolas, monospace; }
+.nojs-snippet figcaption span:first-child { color: var(--nojs-fg); font-weight: 500; font-family: var(--nojs-font-mono); }
 .nojs-snippet pre { margin: 0; padding: calc(var(--nojs-space) * 2); overflow-x: auto; scrollbar-color: var(--nojs-line) transparent; line-height: 1.55; tab-size: 4; }
 .nojs-snippet pre code { background: none; border: 0; padding: 0; font-size: 0.8125rem; color: var(--nojs-fg); }
 /* Highlighted Rust: keyword, string, number and type, comment, macro, method. */
@@ -362,7 +372,7 @@ th { color: var(--nojs-muted); font-weight: 600; }
 .nojs-index li a { font-size: 1.25rem; font-weight: 600; line-height: 1.3; text-decoration: none; color: var(--nojs-fg); }
 .nojs-index li a:hover { color: var(--nojs-primary); text-decoration: underline; }
 .nojs-index li p { margin: 0 0 0.4rem; }
-.nojs-index li span { display: block; font-size: 0.9rem; }
+.nojs-index li span { display: block; font-size: 0.875rem; }
 @media (max-width: 40rem) { .nojs-index li { grid-template-columns: 1fr; } }
 
 @media (prefers-reduced-motion: reduce) {

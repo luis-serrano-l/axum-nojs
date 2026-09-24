@@ -164,7 +164,7 @@ pub const CSS: &str = r#"
 .nojs-drawer-panel::backdrop { background: color-mix(in srgb, var(--nojs-fg) 45%, transparent); }
 .nojs-drawer-panel:not(:modal):not(:target)[open] { position: static; width: auto; border: 1px solid var(--nojs-line); border-radius: var(--nojs-radius); }
 .nojs-drawer-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--nojs-space); }
-.nojs-drawer-title { margin: 0; font-weight: 700; }
+.nojs-drawer-title { margin: 0; font-weight: 600; }
 .nojs-drawer-close {
   width: 2rem; height: 2rem; padding: 0; font-size: 1.25rem; line-height: 1; display: inline-flex; align-items: center; justify-content: center;
   color: var(--nojs-muted); background: none; border: 1px solid transparent; border-radius: var(--nojs-radius); text-decoration: none;

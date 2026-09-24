@@ -253,7 +253,7 @@ pub const CSS: &str = r#"
 .nojs-palette-details .nojs-palette-panel { margin-top: var(--nojs-space); }
 .nojs-palette-form { display: flex; gap: var(--nojs-space); margin-bottom: var(--nojs-space); }
 .nojs-palette-form input { flex: 1; font-size: 1.125rem; padding: 0.5rem 0.75rem; }
-.nojs-palette-heading { margin: calc(var(--nojs-space) * 1.5) 0 0.25rem; font-size: 0.8rem; color: var(--nojs-muted); }
+.nojs-palette-heading { margin: calc(var(--nojs-space) * 1.5) 0 0.25rem; font-size: 0.75rem; color: var(--nojs-muted); }
 .nojs-palette ul { list-style: none; margin: 0; padding: 0; }
 .nojs-palette li a { display: block; padding: 0.4rem 0.75rem; border-radius: var(--nojs-radius); color: var(--nojs-fg); text-decoration: none; }
 .nojs-palette li a:hover, .nojs-palette li a:focus-visible { background: var(--nojs-bg); }

@@ -149,12 +149,12 @@ pub const CSS: &str = r#"
 .nojs-stat p { margin: 0; max-width: none; }
 .nojs-stat-link:hover { border-color: var(--nojs-primary); }
 .nojs-stat-label { color: var(--nojs-muted); font-size: 0.875rem; }
-.nojs-stat-value { font-size: 1.75rem; font-weight: 700; line-height: 1.2; margin-block: 0.25rem; font-variant-numeric: tabular-nums; }
+.nojs-stat-value { font-size: 1.75rem; font-weight: 600; line-height: 1.2; margin-block: 0.25rem; font-variant-numeric: tabular-nums; }
 .nojs-stat-delta { font-size: 0.875rem; font-weight: 600; }
 .nojs-stat-good { color: var(--nojs-ok); }
 .nojs-stat-bad { color: var(--nojs-danger); }
 .nojs-stat-flat { color: var(--nojs-muted); }
-.nojs-stat-note { color: var(--nojs-muted); font-size: 0.8rem; margin-top: 0.25rem; }
+.nojs-stat-note { color: var(--nojs-muted); font-size: 0.75rem; margin-top: 0.25rem; }
 "#;
 
 #[cfg(test)]
