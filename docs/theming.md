@@ -2,7 +2,7 @@
 
 Every colour, corner and gap in `webonsive` is a `--wo-*` custom property. The components never
 name a colour of their own (a test in `webonsive/src/lib.rs` fails if one does), so a theme is
-eleven values, not a stylesheet. `layout::Tokens` holds them; `layout_with` emits them once per
+twelve values, not a stylesheet. `layout::Tokens` holds them; `layout_with` emits them once per
 page.
 
 ## The tokens
@@ -16,8 +16,9 @@ page.
 | `--wo-surface` | `#ffffff` / `#171f1b` | Raised things: inputs, buttons, `<code>`, dialogs, popovers, open accordion panels, streamed slots, the flash banner. |
 | `--wo-accent` | `#1f6f5f` / `#62c9a8` | Links, primary buttons, the active tab's underline, the current page, the current wizard step, the range slider, the focus ring, hover borders. |
 | `--wo-on-accent` | `#ffffff` / `#08110d` | Text on the accent: primary buttons, current page link, current wizard step, the pager's "Load more". |
-| `--wo-danger` | `#b3261e` / `#ff8a80` | Form validation messages and `:user-invalid` borders, the "no" cells on `/caps`. |
-| `--wo-ok` | `#2f7a3a` / `#7bd389` | The "yes" cells on `/caps`; free for your own success states. |
+| `--wo-danger` | `#b3261e` / `#ff8a80` | Form validation messages and `:user-invalid` borders, the "no" cells on `/caps`, danger flashes. |
+| `--wo-ok` | `#2f7a3a` / `#7bd389` | The "yes" cells on `/caps`, ok flashes; free for your own success states. |
+| `--wo-warn` | `#8a5a00` / `#e6b450` | Warning flashes. |
 | `--wo-radius` | `6px` | Corners of buttons, inputs, dialogs, popovers, chips, `<code>`, the colour swatch. |
 | `--wo-space` | `8px` | The unit every gap, margin and padding is a multiple of (`calc(var(--wo-space) * 3)`). |
 | `--wo-busy` | `0.6` | Not a `Tokens` field: the opacity of a swap root or form while the enhancement script has a request in flight (`[data-wo-busy]`). Set it to `1` on `:root` or on one root to turn the fade off. |
@@ -41,6 +42,7 @@ focus indicators). The pairs to check, with the default palette's ratios:
 | `on-accent` on `accent` | primary buttons | 6.0 | 9.5 | 4.5 |
 | `danger` on `bg` | validation messages | 5.7 | 8.1 | 4.5 |
 | `ok` on `bg` | success text | 4.6 | 10.1 | 4.5 |
+| `warn` on `bg` | warning text | 5.2 | 9.7 | 4.5 |
 | `line` on `bg` | borders | 1.4 | 1.5 | none: borders are not the only cue |
 
 `muted` is the one most palettes get wrong: a grey that reads fine on white drops under 4.5
@@ -61,11 +63,11 @@ use webonsive::{Caps, Theme, layout::{Palette, Tokens, layout_with}};
 const LINEN: Tokens = Tokens {
     light: Palette {
         bg: "#f4efe6", fg: "#1d1a17", muted: "#5d574f", line: "#d6cdbf", surface: "#fffdf9",
-        accent: "#8a3b12", on_accent: "#ffffff", danger: "#a0261c", ok: "#2f6b3a",
+        accent: "#8a3b12", on_accent: "#ffffff", danger: "#a0261c", ok: "#2f6b3a", warn: "#7a5500",
     },
     dark: Palette {
         bg: "#161311", fg: "#ece6dc", muted: "#a59c90", line: "#3a332c", surface: "#1f1b18",
-        accent: "#e8965a", on_accent: "#1a0f06", danger: "#ff8f85", ok: "#8fd39a",
+        accent: "#e8965a", on_accent: "#1a0f06", danger: "#ff8f85", ok: "#8fd39a", warn: "#f0c060",
     },
     radius: "3px",
     space: "8px",

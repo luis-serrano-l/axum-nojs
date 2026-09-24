@@ -159,10 +159,17 @@ async fn popover_variants() {
 
 #[tokio::test]
 async fn settings_flash_and_form_values() {
-    let cookie = format!("{MODERN}; wo-flash=Settings%20saved.; settings=Ada%7C1; wo-ui=tab.settings=1");
+    let cookie = format!("{MODERN}; wo-flash=ok%3ASettings%20saved.%0Awarn%3ANo%20releases.%0Adanger%3AReserved.; settings=Ada%7C1; wo-ui=tab.settings=1");
     let page = Page::render(demo::router(), "/settings", &cookie).await;
-    assert_eq!(page.text(".wo-flash").as_deref(), Some("Settings saved."));
+    assert_eq!(page.text(".wo-flash-ok .wo-flash-text").as_deref(), Some("Settings saved."));
     assert!(page.is_visible(".wo-flash"));
+    // Stacked in order, one per level, danger announced as an alert, each with a dismiss link.
+    let (ok, warn, danger) = (page.bbox(".wo-flash-ok").unwrap(), page.bbox(".wo-flash-warn").unwrap(), page.bbox(".wo-flash-danger").unwrap());
+    assert!(ok.y + ok.height <= warn.y + 1.0 && warn.y + warn.height <= danger.y + 1.0, "messages stack top to bottom");
+    assert!(page.exists(".wo-flash-danger[role=alert]") && page.exists(".wo-flash-ok[role=status]"));
+    assert!(page.exists(".wo-flash-ok.wo-flash-auto") && !page.exists(".wo-flash-danger.wo-flash-auto"), "only calm levels auto-hide");
+    assert!(page.exists(".wo-flash-warn a.wo-flash-dismiss[href='/settings?tab.settings=1']"));
+    assert!(page.is_visible(".wo-flash-dismiss"));
     assert!(page.is_visible("input[name=notify]"), "notifications tab is open");
     assert!(!page.is_visible("input[name=name][id]"), "profile tab is closed");
     let flash = page.bbox(".wo-flash").unwrap();

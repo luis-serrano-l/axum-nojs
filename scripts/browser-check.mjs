@@ -234,6 +234,15 @@ try {
   await click("#account form button");
   await until(async () => /Signed out/.test(await js("return document.querySelector('.wo-flash')?.textContent || ''")), "flash after the action");
 
+  // Flash: saving with notifications off stacks ok + warn; ok fades by CSS; dismiss clears both.
+  await go("/settings?tab.settings=1");
+  await click(".wo-tabs details[open] button[type=submit]");
+  await until(async () => (await js("return document.querySelectorAll('.wo-flash-item').length")) === 2, "flash: ok and warn stacked");
+  assert(await js("return getComputedStyle(document.querySelector('.wo-flash-ok')).animationName") === "wo-flash-hide", "flash: ok auto-hides by CSS animation");
+  assert(await js("return getComputedStyle(document.querySelector('.wo-flash-warn')).animationName") === "none", "flash: warn stays");
+  await click(".wo-flash-warn .wo-flash-dismiss");
+  await until(async () => (await js("return document.querySelectorAll('.wo-flash-item').length")) === 0, "flash: dismiss link clears the stack");
+
   // Range: output mirrors while moving, before any submit.
   await go("/inputs");
   await type("#f-volume", ""); // ArrowRight

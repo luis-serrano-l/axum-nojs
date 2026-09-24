@@ -36,7 +36,7 @@ what HTTP means by a *safe* method. Application data still changes only through 
 
 Form values, the counter, the theme. They change through `<form method="post">` and the
 handler answers with `prg(redirect_to, flash)`: a `303 See Other` plus a one-shot `wo-flash`
-cookie (60 seconds). The next GET renders it with `flash(&caps, state.flash())` and, because
+cookie (60 seconds). The next GET renders it with `flash(&caps, state.flash(), Default::default())` and, because
 the handler returns its `UiState`, clears the cookie in the same response. Reloading the page
 does not resubmit and does not show the message twice.
 

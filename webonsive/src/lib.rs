@@ -39,7 +39,7 @@
 //! use webonsive::{Caps, Theme, flash, stylesheet, theme_toggle};
 //!
 //! let caps = Caps::all();
-//! let body: String = flash(&caps, Some("Saved.")).into_string()
+//! let body: String = flash(&caps, Some("Saved."), Default::default()).into_string()
 //!     + &theme_toggle(&caps, "/theme", Theme::Auto).into_string();
 //! let page = format!("<!DOCTYPE html><style>{}</style><main>{body}</main>", stylesheet());
 //! assert!(page.contains("class=\"wo-theme\""));
@@ -84,7 +84,7 @@ pub use color::color;
 pub use combobox::{ComboboxOptions, OptionGroup, combobox};
 pub use counter::counter;
 pub use dialog::{DialogOptions, DialogSize, dialog};
-pub use flash::flash;
+pub use flash::{FlashOptions, flash};
 pub use form::{Field, FieldGroup, FieldKind, FormLayout, FormOptions, form};
 pub use layout::{Tokens, layout, layout_with};
 pub use paged_table::{PagedTableOptions, paged_table};
@@ -164,7 +164,7 @@ mod tests {
         fn renders<T: maud::Render>(_: &T) {}
         let caps = Caps::all();
         let parts = [
-            flash(&caps, Some("hi")),
+            flash(&caps, Some("hi"), Default::default()),
             counter(&caps, "/counter", 3, Default::default()),
             theme_toggle(&caps, "/theme", Theme::Auto),
         ];

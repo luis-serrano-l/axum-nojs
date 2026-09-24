@@ -13,7 +13,7 @@ use maud::{Markup, html};
 use serde::Deserialize;
 use webonsive::{
     Cap, Caps, Field, FieldGroup, FieldKind, FormLayout, FormOptions, Streamed, Theme, UiState, accordion, accordion::{AccordionItem, AccordionOptions}, caps, color, combobox, combobox::{ComboboxOptions, OptionGroup},
-    counter, counter::CounterOptions, color::ColorOptions, select::{Group as SelectGroup, SelectOption, SelectOptions}, dialog, dialog::{DialogOptions, DialogSize}, flash, form, layout, layout::{Palette, Tokens, layout_with}, paged_table, paged_table::PagedTableOptions,
+    counter, counter::CounterOptions, color::ColorOptions, select::{Group as SelectGroup, SelectOption, SelectOptions}, dialog, dialog::{DialogOptions, DialogSize}, flash, flash::{FlashOptions, Level, stack}, form, layout, layout::{Palette, Tokens, layout_with}, paged_table, paged_table::PagedTableOptions,
     pager, pager::PagerOptions, popover::{MenuItem, Placement, PopoverOptions}, popover_menu, prg, range, range::RangeOptions, select, slot, tabs::{Tab, TabsOptions},
     table::{Column, Row, TableOptions, cols_from_query, sort_from_query}, tabs, theme_toggle, wizard, wizard::{Step, WizardOptions},
 };
@@ -73,7 +73,7 @@ const COMPONENTS: [(&str, &str, &str, &str); 15] = [
     ("/wizard", "Wizard", "Input", "one form per step, PRG, formnovalidate, <progress>, UiState"),
     ("/inputs", "Select, range, colour", "Input", "<selectedcontent>, <optgroup>, formmethod, two-thumb range, color-mix()"),
     ("/counter", "Counter", "Server state", "form POST + cookie, type=number, disabled"),
-    ("/settings", "Settings", "Server state", "UiState, PRG + flash"),
+    ("/settings", "Settings", "Server state", "UiState, PRG + flash, role=alert, CSS auto-hide"),
     ("/list", "Load-more list", "Server state", "links + view transitions"),
     ("/table", "Table", "Server state", "sort links, <search> filter, form= checkboxes, ?cols=, <details> rows, sticky header, ?page=n"),
     ("/caps", "Capabilities", "Server state", "@supports beacons + cookie"),
@@ -115,11 +115,11 @@ fn page_with(caps: &Caps, jar: &CookieJar, title: &str, tokens: Option<&Tokens>,
 const LINEN: Tokens = Tokens {
     light: Palette {
         bg: "#f4efe6", fg: "#1d1a17", muted: "#5d574f", line: "#d6cdbf", surface: "#fffdf9",
-        accent: "#8a3b12", on_accent: "#ffffff", danger: "#a0261c", ok: "#2f6b3a",
+        accent: "#8a3b12", on_accent: "#ffffff", danger: "#a0261c", ok: "#2f6b3a", warn: "#7a5500",
     },
     dark: Palette {
         bg: "#161311", fg: "#ece6dc", muted: "#a59c90", line: "#3a332c", surface: "#1f1b18",
-        accent: "#e8965a", on_accent: "#1a0f06", danger: "#ff8f85", ok: "#8fd39a",
+        accent: "#e8965a", on_accent: "#1a0f06", danger: "#ff8f85", ok: "#8fd39a", warn: "#f0c060",
     },
     radius: "3px",
     space: "8px",
@@ -147,7 +147,7 @@ async fn index(caps: Caps, jar: CookieJar, Query(q): Query<IndexQuery>) -> Marku
 
 async fn dialog_page(caps: Caps, jar: CookieJar, state: UiState) -> Markup {
     page(&caps, &jar, "Dialog", html! {
-        (flash(&caps, jar.get("wo-flash").map(|c| c.value().to_string()).as_deref()))
+        (flash(&caps, state.flash(), Default::default()))
         (dialog(&caps, "confirm", "Delete account", html! {
             p { "This cannot be undone. Everything you wrote goes with it." }
             label { "Tell us why (optional)" input name="reason" placeholder="Moving on"; }
@@ -168,10 +168,10 @@ async fn dialog_delete(Form(f): Form<DeleteForm>) -> axum::response::Response {
     prg::<axum::body::Body>(back, Some(&msg))
 }
 
-async fn popover_page(caps: Caps, jar: CookieJar) -> Markup {
+async fn popover_page(caps: Caps, jar: CookieJar, state: UiState) -> Markup {
     const THEME: &[MenuItem] = &[MenuItem::link("Light", "/popover?theme=light"), MenuItem::link("Dark", "/popover?theme=dark")];
     page(&caps, &jar, "Popover menu", html! {
-        (flash(&caps, jar.get("wo-flash").map(|c| c.value().to_string()).as_deref()))
+        (flash(&caps, state.flash(), Default::default()))
         div class="wo-popover-row" {
             (popover_menu(&caps, "account", "Account", &[
                 MenuItem::heading("Signed in as Ada"),
@@ -256,7 +256,7 @@ async fn combobox_page(caps: Caps, jar: CookieJar, state: UiState, Query(pairs):
     let hits: Vec<&str> = LANGS.iter().flat_map(|g| g.values().iter().copied())
         .filter(|l| !q.is_empty() && l.to_lowercase().contains(&q.to_lowercase())).collect();
     let body = page(&caps, &jar, "Combobox", html! {
-        (flash(&caps, state.flash()))
+        (flash(&caps, state.flash(), Default::default()))
         // One swap root around the form and its results: the script searches as you type.
         div id="langs" data-wo="swap" {
             (combobox(&caps, "q", "/combobox", ComboboxOptions::default()
@@ -328,7 +328,7 @@ async fn table_page(caps: Caps, jar: CookieJar, state: UiState, Query(t): Query<
     let options = TableOptions::default().cols(cols.as_deref()).choose_columns(true).bulk("/table/bulk", &[("archive", "Archive"), ("delete", "Delete")])
         .csv("/table.csv").empty("No files match this filter.").loading(t.loading == Some(1));
     let body = page(&caps, &jar, "Table", html! {
-        (flash(&caps, state.flash()))
+        (flash(&caps, state.flash(), Default::default()))
         p { "Click a header to sort, again to flip. Type to filter. Hide columns, tick rows for the bulk form, open a row's menu or its detail. The page size you pick is remembered for your next visit. Every state is a URL, including " a href="/table?loading=1" { "the loading one" } "." }
         (paged_table(&caps, "files", "/table", &FILE_COLS, &rows, files.len(), PagedTableOptions::default().sort(sort).filter(&q).page(pg).per_page(per).state(&state).table(options)))
     });
@@ -398,7 +398,7 @@ fn wizard_steps(state: &UiState, data: &[(String, String)], errors: &[(&str, &st
 
 fn wizard_view(caps: &Caps, jar: &CookieJar, state: &UiState, data: &[(String, String)], errors: &[(&str, &str)]) -> Markup {
     page(caps, jar, "Wizard", html! {
-        (flash(caps, state.flash()))
+        (flash(caps, state.flash(), Default::default()))
         p { "Three steps, one form each. The server checks every step; the second can be skipped. Close the tab and come back to " a href="/wizard" { "/wizard" } ": you resume where you left off." }
         (wizard(caps, "signup", "/wizard", &wizard_steps(state, data, errors), state, WizardOptions::default().finish("Create account")))
     })
@@ -461,7 +461,7 @@ fn form_view(caps: &Caps, jar: &CookieJar, state: &UiState, inline: bool, v: &Si
     ];
     let layout = if inline { FormLayout::Inline } else { FormLayout::Stacked };
     page(caps, jar, "Validated form", html! {
-        (flash(caps, state.flash()))
+        (flash(caps, state.flash(), Default::default()))
         p { "Labels " @if inline { "beside the fields. " a href="/form" { "Put them above" } } @else { "above the fields. " a href="/form?layout=inline" { "Put them beside" } } "." }
         @if !errors.is_empty() { p class="wo-error" { "Server-side checks failed. Browser validation passed, these rules only live on the server." } }
         (form(caps, "/form", &[FieldGroup::new("Account", &account), FieldGroup::new("Profile", &profile)], FormOptions::default().submit("Sign up").layout(layout)))
@@ -524,10 +524,10 @@ fn notes_of(jar: &CookieJar) -> Vec<String> {
 
 /// Two controls outside any swap root that name their target: the link swaps one `<span>`,
 /// the form appends to a list. The same requests are plain navigations without the script.
-async fn swap_page(caps: Caps, jar: CookieJar, Query(q): Query<SwapQuery>) -> Markup {
+async fn swap_page(caps: Caps, jar: CookieJar, state: UiState, Query(q): Query<SwapQuery>) -> Markup {
     let n = q.n.unwrap_or(1);
     page(&caps, &jar, "Swap targets", html! {
-        (flash(&caps, jar.get("wo-flash").map(|c| c.value().to_string()).as_deref()))
+        (flash(&caps, state.flash(), Default::default()))
         p class="wo-note" { "Neither control sits inside a swap root. " code { "data-wo-target" } " names the root to update and " code { "data-wo-swap" } " how; without the script both are ordinary navigations to the same URL." }
         p { "Count: " span id="count" data-wo="swap" { (n) } " " a href={ "/swap?n=" (n + 1) } data-wo-target="#count" { "Add one" }
             " · " a href={ "/swap?n=" (n + 10) } data-wo-target="#count" data-wo-push="false" { "Add ten, keep the URL" } }
@@ -572,8 +572,9 @@ fn settings_of(jar: &CookieJar) -> Settings {
 async fn settings_page(caps: Caps, jar: CookieJar, state: UiState) -> (UiState, Markup) {
     let current = settings_of(&jar);
     let hidden = html! { input type="hidden" name="tab" value=(state.tab("settings")); };
+    let here = format!("/settings?tab.settings={}", state.tab("settings"));
     let body = page(&caps, &jar, "Settings", html! {
-        (flash(&caps, state.flash()))
+        (flash(&caps, state.flash(), FlashOptions::default().dismiss(&here).auto_hide(true)))
         (tabs(&caps, "settings", &[
             Tab::new("Profile", html! { form class="wo-form" method="post" action="/settings" { (hidden)
                 div class="wo-field" { label for="name" { "Display name" } input id="name" name="name" value=(current.name) required; }
@@ -583,7 +584,7 @@ async fn settings_page(caps: Caps, jar: CookieJar, state: UiState) -> (UiState, 
                 label { input type="checkbox" name="notify" value="true" checked[current.notify]; " Email me about releases" }
                 button type="submit" class="wo-primary" { "Save" } } }),
         ], TabsOptions::default().state(&state)))
-        p class="wo-note" { "Go to " a href="/" { "the index" } " and come back: the open tab and the values are remembered." }
+        p class="wo-note" { "Go to " a href="/" { "the index" } " and come back: the open tab and the values are remembered. Saving with notifications off stacks a warning under the confirmation; the name " code { "admin" } " is refused with an alert. The confirmation fades after six seconds unless reduced motion is on." }
     });
     (state, body)
 }
@@ -591,10 +592,16 @@ async fn settings_page(caps: Caps, jar: CookieJar, state: UiState) -> (UiState, 
 #[derive(Deserialize)]
 struct SettingsForm { name: String, #[serde(default)] notify: bool, tab: usize }
 
+/// Saves and says so; a warning stacks when notifications go off; `admin` is refused.
 async fn settings_submit(jar: CookieJar, Form(f): Form<SettingsForm>) -> (CookieJar, axum::response::Response) {
-    let value = format!("{}|{}", f.name.replace('|', ""), u8::from(f.notify));
     let to = format!("/settings?tab.settings={}", f.tab);
-    (jar.add(Cookie::new("settings", value)), prg(&to, Some("Settings saved.")))
+    if f.name.trim().eq_ignore_ascii_case("admin") {
+        return (jar, prg(&to, Some(&stack(&[(Level::Danger, "The name admin is reserved; nothing was saved.")]))));
+    }
+    let value = format!("{}|{}", f.name.replace('|', ""), u8::from(f.notify));
+    let mut said = vec![(Level::Ok, "Settings saved.")];
+    if !f.notify { said.push((Level::Warn, "You will not hear about releases.")); }
+    (jar.add(Cookie::new("settings", value)), prg(&to, Some(&stack(&said))))
 }
 
 /// The inputs page's values: from the query while filtering (unsaved), else from the cookie.
@@ -638,7 +645,7 @@ async fn inputs_page(caps: Caps, jar: CookieJar, state: UiState, Query(q): Query
     let countries: Vec<Vec<SelectOption>> = COUNTRIES.iter().map(|(_, cs)| cs.iter().map(|(v, l, i)| SelectOption::new(v, l).icon(i)).collect()).collect();
     let groups: Vec<SelectGroup> = COUNTRIES.iter().zip(&countries).map(|((g, _), cs)| SelectGroup::new(g, cs)).collect();
     let body = page(&caps, &jar, "Select, range, colour", html! {
-        (flash(&caps, state.flash()))
+        (flash(&caps, state.flash(), Default::default()))
         form id="inputs" data-wo="swap" class="wo-form" method="post" action="/inputs" {
             div class="wo-field" { label for="size" { "Size" } (select(&caps, "size", &[SelectGroup::flat(&sizes)], v.size.as_deref().unwrap_or("m"), Default::default())) }
             div class="wo-field" { label for="country" { "Country" }
@@ -822,7 +829,7 @@ mod tests {
         assert_eq!(res.status(), 303);
         assert_eq!(res.headers().get("location").unwrap(), "/settings?tab.settings=1");
         let cookies: Vec<String> = res.headers().get_all("set-cookie").iter().map(|v| v.to_str().unwrap().to_string()).collect();
-        assert!(cookies.iter().any(|c| c.starts_with("wo-flash=Settings%20saved.")), "{cookies:?}");
+        assert!(cookies.iter().any(|c| c.starts_with("wo-flash=ok%3ASettings%20saved.")), "{cookies:?}");
         assert!(cookies.iter().any(|c| c.starts_with("settings=Ada")), "{cookies:?}");
         // GET the redirect target: flash shown and cleared, tab persisted to wo-ui, values filled in.
         let req = Request::get("/settings?tab.settings=1").header("cookie", "wo-flash=Settings%20saved.; settings=Ada|1").body(Body::empty()).unwrap();

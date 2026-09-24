@@ -191,9 +191,12 @@
       "module": "flash",
       "features": [
         { "name": "cookie", "baseline": { "chrome": "1", "firefox": "1", "safari": "1" } },
-        { "name": "role=\"status\"", "baseline": { "chrome": "1", "firefox": "1", "safari": "1" } }
+        { "name": "role=\"status\"", "baseline": { "chrome": "1", "firefox": "1", "safari": "1" } },
+        { "name": "role=\"alert\"", "baseline": { "chrome": "1", "firefox": "1", "safari": "1" } },
+        { "name": "@keyframes", "baseline": { "chrome": "43", "firefox": "16", "safari": "9" } },
+        { "name": "prefers-reduced-motion", "baseline": { "chrome": "74", "firefox": "63", "safari": "10.1" } }
       ],
-      "fallback": "none needed",
+      "fallback": "without CSS animations the message stays",
       "needs_js": "no"
     },
     {

@@ -342,3 +342,13 @@ the URL would leak names and emails into history and logs.
 **Not possible without script, still:** inline cell editing, drag to reorder columns, row
 selection that survives paging without a form round trip, and "unsaved changes" warnings
 when leaving a wizard step.
+
+**A flash stack is one cookie.** Several messages travel as one `wo-flash` value, one line
+each, prefixed with their level (`ok:Saved.\nwarn:Look.`); plain text stays `info`, so older
+`prg(to, Some("Saved."))` calls keep working. Dismiss is a link back to the page: reading the
+flash already queued the cookie's deletion, so the next render is clean. Auto-hide is a CSS
+animation on info and ok only (an error that vanishes before it is read is worse than one that
+stays), and `prefers-reduced-motion: reduce` turns it off. Blitz renders the first frame of an
+animation, so the Blitz shots always show the message; Firefox confirms the computed
+`animation-name` in `scripts/browser-check.mjs`. What it cannot do without script is vanish
+in place when dismissed: the dismiss link is a navigation.

@@ -52,14 +52,16 @@ pub struct Palette {
     pub danger: &'static str,
     /// Success and "yes" (`--wo-ok`).
     pub ok: &'static str,
+    /// Warnings: worked, but look (`--wo-warn`).
+    pub warn: &'static str,
 }
 
 impl Palette {
     /// The custom property declarations for this palette, one per line.
     fn declarations(&self) -> String {
         format!(
-            "  --wo-bg: {}; --wo-fg: {}; --wo-muted: {}; --wo-line: {};\n  --wo-surface: {}; --wo-accent: {}; --wo-on-accent: {};\n  --wo-danger: {}; --wo-ok: {};\n",
-            self.bg, self.fg, self.muted, self.line, self.surface, self.accent, self.on_accent, self.danger, self.ok
+            "  --wo-bg: {}; --wo-fg: {}; --wo-muted: {}; --wo-line: {};\n  --wo-surface: {}; --wo-accent: {}; --wo-on-accent: {};\n  --wo-danger: {}; --wo-ok: {}; --wo-warn: {};\n",
+            self.bg, self.fg, self.muted, self.line, self.surface, self.accent, self.on_accent, self.danger, self.ok, self.warn
         )
     }
 }
@@ -84,11 +86,11 @@ impl Default for Tokens {
         Tokens {
             light: Palette {
                 bg: "#eef1ec", fg: "#14201a", muted: "#566158", line: "#c9d2cb", surface: "#ffffff",
-                accent: "#1f6f5f", on_accent: "#ffffff", danger: "#b3261e", ok: "#2f7a3a",
+                accent: "#1f6f5f", on_accent: "#ffffff", danger: "#b3261e", ok: "#2f7a3a", warn: "#8a5a00",
             },
             dark: Palette {
                 bg: "#0f1512", fg: "#e4ebe6", muted: "#97a59c", line: "#2b3630", surface: "#171f1b",
-                accent: "#62c9a8", on_accent: "#08110d", danger: "#ff8a80", ok: "#7bd389",
+                accent: "#62c9a8", on_accent: "#08110d", danger: "#ff8a80", ok: "#7bd389", warn: "#e6b450",
             },
             radius: "6px",
             space: "8px",

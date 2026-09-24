@@ -52,6 +52,11 @@ follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); the project us
 - Enhancement script: honours a submitter's `formmethod` and `formaction`; a search box
   followed by a submit button filters through it.
 - **Breaking:** `counter`, `color` and `select` signatures changed.
+- `flash` takes `FlashOptions` (`dismiss(href)`, `auto_hide`): levels `info|ok|warn|danger`
+  from a `level:` prefix per line (`flash::stack`, `flash::parse`, `flash::Level`), several
+  messages stacked, `role="alert"` for danger, a CSS fade for info and ok that reduced motion
+  turns off. `--wo-warn` token (`Palette::warn`). **Breaking:** `flash` gained an argument;
+  `Palette` gained a field.
 - `form` takes `&[FieldGroup]` (a `<fieldset>` and `<legend>` each, or `FieldGroup::plain`)
   and `FormOptions` (`submit`, `layout: FormLayout::Stacked|Inline`). `Field::new` with
   `value`, `error`, `required`, `help` (tied by `aria-describedby`) and `max_len` (a

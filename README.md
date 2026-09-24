@@ -65,7 +65,7 @@ component gives the HTML to another template engine.
   (`Caps::from_cookie_header`, `Caps::from_query`, `caps::beacon_cookie`); Axum only wraps them.
 - Output HTML is semantic with one `wo-<component>` class per root. `curl` any page and read it.
 - CSS lives beside its component as `const CSS`. Theming is via `--wo-*` custom properties only
-  (`bg`, `surface`, `fg`, `muted`, `line`, `accent`, `on-accent`, `danger`, `ok`, `radius`, `space`).
+  (`bg`, `surface`, `fg`, `muted`, `line`, `accent`, `on-accent`, `danger`, `ok`, `warn`, `radius`, `space`).
   `layout::Tokens` holds them for light and dark, `layout_with` applies another set once per
   page, and `docs/theming.md` says what each one affects and which pairs must keep contrast.
   `/?palette=linen` in the demo is the same index under a second palette.
@@ -123,7 +123,7 @@ browser-compat-data; `no` means unshipped, so that browser gets the fallback.
 | Validated form | `required`, `pattern`, `:user-invalid`, `<fieldset>`, `<output>`, `type=date`, `accept`, `field-sizing` | 4 / 4 / 5; 4 / 4 / 5; 119 / 88 / 16.5; 1 / 1 / 1; 10 / 4 / 7; 20 / 57 / 14.1; 1 / 1 / 1; 123 / no / no | server re-renders with messages; no early styling; textareas keep their rows; the counter shows the submitted length | No |
 | Counter | `<form method="post">`, `<button name value>`, `<input type="number">`, `cookie` | 1 / 1 / 1; 1 / 1 / 1; 6 / 29 / 5.1; 1 / 1 / 1 | none needed | No |
 | Theme toggle | `prefers-color-scheme`, `color-scheme`, `cookie` | 76 / 67 / 12.1; 81 / 96 / 13; 1 / 1 / 1 | OS preference | No |
-| Flash | `cookie`, `role="status"` | 1 / 1 / 1; 1 / 1 / 1 | none needed | No |
+| Flash | `cookie`, `role="status"`, `role="alert"`, `@keyframes`, `prefers-reduced-motion` | 1 / 1 / 1; 1 / 1 / 1; 1 / 1 / 1; 43 / 16 / 9; 74 / 63 / 10.1 | without CSS animations the message stays | No |
 | UI state | `links`, `cookies`, `303 See Other` | 1 / 1 / 1; 1 / 1 / 1; 1 / 1 / 1 | without cookies, state still travels in links on one page | No |
 | Select | `<selectedcontent>`, `appearance: base-select`, `<optgroup label>`, `formmethod` | 135 / no / 27; 135 / no / 27; 1 / 1 / 1; 9 / 4 / 5.1 | plain <select>, chosen server-side | No |
 | Range | `<input type="range">`, `<datalist>`, `pointer-events` | 4 / 23 / 3.1; 20 / 110 / 12.1; 1 / 1 / 1 | ticks not drawn | Partly: value shown after submit; live mirroring needs script |

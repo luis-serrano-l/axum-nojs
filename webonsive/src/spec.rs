@@ -240,8 +240,14 @@ pub const SPECS: &[ComponentSpec] = &[
     ComponentSpec {
         name: "Flash",
         module: "flash",
-        features: &[COOKIE, f("role=\"status\"", ALWAYS)],
-        fallback: "none needed",
+        features: &[
+            COOKIE,
+            f("role=\"status\"", ALWAYS),
+            f("role=\"alert\"", ALWAYS),
+            f("@keyframes", b("43", "16", "9")),
+            f("prefers-reduced-motion", b("74", "63", "10.1")),
+        ],
+        fallback: "without CSS animations the message stays",
         needs_js: NeedsJs::No,
     },
     ComponentSpec {

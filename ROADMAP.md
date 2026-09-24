@@ -156,7 +156,7 @@ involved) a Firefox check.
 - [x] Counter, range, color, select: stepper with min/max/step and a typed value, range with
   two thumbs (min/max pair as two inputs), colour with a preset swatch row and alpha, select
   with option groups, icons in options and a search box when it has more than ~15 options.
-- [ ] Flash and status: variants (`info|ok|warn|danger`), dismiss is a link that clears the
+- [x] Flash and status: variants (`info|ok|warn|danger`), dismiss is a link that clears the
   cookie, multiple flashes stack, a `role="alert"` variant for errors, auto-hide via CSS
   animation with reduced-motion respected.
 - [ ] New: toast list, breadcrumbs, skeleton placeholders for streamed slots, empty states, a
