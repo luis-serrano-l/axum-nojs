@@ -127,17 +127,18 @@ pub const CSS: &str = r#"
 .nojs-color { display: inline-flex; flex-wrap: wrap; align-items: center; gap: var(--nojs-space); }
 .nojs-color > input { width: 3rem; height: 2.25rem; padding: 2px; }
 .nojs-color-swatch {
-  width: 2rem; height: 2rem; border-radius: var(--nojs-radius); border: 1px solid var(--nojs-line);
+  width: 2.25rem; height: 2.25rem; border-radius: var(--nojs-radius-sm); border: 1px solid var(--nojs-input); box-shadow: var(--nojs-shadow-xs);
   background: linear-gradient(color-mix(in srgb, var(--nojs-color-value) var(--nojs-color-alpha, 100%), transparent) 0 0),
     repeating-conic-gradient(var(--nojs-line) 0 25%, var(--nojs-surface) 0 50%) 0 0 / 0.75rem 0.75rem;
 }
 .nojs-color-alpha { display: inline-flex; align-items: center; gap: 0.5rem; font-weight: 400; }
 .nojs-color-alpha input { width: 8rem; accent-color: var(--nojs-primary); }
 .nojs-color-alpha output { min-width: 3ch; text-align: right; font-variant-numeric: tabular-nums; }
-.nojs-color-presets { display: flex; flex-basis: 100%; gap: 0.4rem; }
+.nojs-color-presets { display: flex; flex-basis: 100%; gap: 0.5rem; }
 .nojs-color-presets button {
-  width: 1.75rem; height: 1.75rem; padding: 0; border-radius: 50%; cursor: pointer;
-  background: var(--nojs-color-value); border: 2px solid var(--nojs-surface); box-shadow: 0 0 0 1px var(--nojs-line);
+  width: 1.75rem; height: 1.75rem; min-height: 0; padding: 0; border-radius: 50%; cursor: pointer;
+  background: var(--nojs-color-value); border: 2px solid var(--nojs-bg); box-shadow: 0 0 0 1px var(--nojs-input);
 }
+.nojs-color-presets button:hover { background: var(--nojs-color-value); box-shadow: 0 0 0 1px var(--nojs-ring); }
 .nojs-color-presets button[aria-pressed=true] { box-shadow: 0 0 0 2px var(--nojs-fg); }
 "#;

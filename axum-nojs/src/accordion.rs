@@ -177,26 +177,37 @@ impl Render for Accordion<'_> {
 }
 /// Styles for this component; included in [`crate::stylesheet`].
 pub const CSS: &str = r#"
-/* interpolate-size (Chrome 129) lets height animate to auto; elsewhere it snaps. */
-.nojs-accordion { border: 1px solid var(--nojs-line); border-radius: var(--nojs-radius); overflow: hidden; interpolate-size: allow-keywords; }
-.nojs-accordion details + details { border-top: 1px solid var(--nojs-line); }
-.nojs-accordion summary { display: flex; align-items: center; gap: 0.5rem; list-style: none; cursor: pointer; padding: 0.75rem 1rem; font-weight: 600; }
+/* shadcn Accordion: items divided by a bottom rule, text-sm font-medium triggers that
+   underline on hover, a chevron on the right that turns when open. interpolate-size
+   (Chrome 129) lets height animate to auto; elsewhere it snaps. */
+.nojs-accordion { interpolate-size: allow-keywords; }
+.nojs-accordion details { border-bottom: 1px solid var(--nojs-line); }
+.nojs-accordion summary {
+  display: flex; align-items: flex-start; gap: 0.5rem; list-style: none; cursor: pointer;
+  padding: 1rem 0; font-size: 0.875rem; line-height: 1.25rem; font-weight: 500;
+}
 .nojs-accordion summary::-webkit-details-marker { display: none; }
-.nojs-accordion summary::before { content: "\25B8"; color: var(--nojs-muted); }
-.nojs-accordion details[open] > summary::before { content: "\25BE"; }
-.nojs-accordion summary:hover { background: var(--nojs-surface); }
+/* The chevron is two borders of a rotated square in the muted colour. */
+.nojs-accordion summary::after {
+  content: ""; flex: none; order: 2; width: 0.45rem; height: 0.45rem; margin: 0.3rem 0.25rem 0 auto;
+  border-right: 1.5px solid var(--nojs-muted); border-bottom: 1.5px solid var(--nojs-muted);
+  rotate: 45deg; transition: rotate 0.2s;
+}
+.nojs-accordion details[open] > summary::after { rotate: 225deg; margin-top: 0.5rem; }
 /* The link fills the rest of the summary so a click never toggles natively without the server. */
-.nojs-accordion summary a, .nojs-accordion-title { flex: 1; margin: -0.75rem -1rem -0.75rem 0; padding: 0.75rem 1rem 0.75rem 0; color: inherit; text-decoration: none; }
+.nojs-accordion summary a, .nojs-accordion-title { flex: 1; margin: -1rem 0; padding: 1rem 0; color: inherit; text-decoration: none; }
+.nojs-accordion summary a:hover { text-decoration: underline; }
 .nojs-accordion-icon { font-size: 1.1em; line-height: 1; }
 .nojs-accordion-summary { display: block; font-weight: 400; font-size: 0.875rem; color: var(--nojs-muted); margin-top: 0.15rem; }
 .nojs-accordion details[open] > summary .nojs-accordion-summary { display: none; }
-.nojs-accordion-body { padding: 0 1rem 1rem; }
+.nojs-accordion-body { padding: 0 0 1rem; font-size: 0.875rem; }
 .nojs-accordion details::details-content { transition: height 0.2s, content-visibility 0.2s allow-discrete; height: 0; overflow: hidden; }
 .nojs-accordion details[open]::details-content { height: auto; }
-.nojs-accordion-controls { display: flex; gap: calc(var(--nojs-space) * 2); margin: 0; max-width: none; padding: 0.5rem 1rem; font-size: 0.875rem; border-bottom: 1px solid var(--nojs-line); background: var(--nojs-surface); }
-/* A nested accordion sits inside a body: lighter, indented by the body's own padding. */
-.nojs-accordion .nojs-accordion { margin-top: 0.5rem; }
-.nojs-accordion .nojs-accordion summary { padding: 0.5rem 0.75rem; font-weight: 500; }
-.nojs-accordion .nojs-accordion summary a, .nojs-accordion .nojs-accordion .nojs-accordion-title { margin: -0.5rem -0.75rem -0.5rem 0; padding: 0.5rem 0.75rem 0.5rem 0; }
-.nojs-accordion .nojs-accordion .nojs-accordion-body { padding: 0 0.75rem 0.75rem; }
+.nojs-accordion-controls { display: flex; gap: calc(var(--nojs-space) * 2); margin: 0; max-width: none; padding: 0 0 0.5rem; font-size: 0.875rem; border-bottom: 1px solid var(--nojs-line); }
+/* A nested accordion sits inside a body, indented. */
+.nojs-accordion .nojs-accordion { margin: 0.5rem 0 0 1rem; }
+.nojs-accordion .nojs-accordion details:last-child { border-bottom: 0; }
+.nojs-accordion .nojs-accordion summary { padding: 0.5rem 0; }
+.nojs-accordion .nojs-accordion summary a, .nojs-accordion .nojs-accordion .nojs-accordion-title { margin: -0.5rem 0; padding: 0.5rem 0; }
+.nojs-accordion .nojs-accordion .nojs-accordion-body { padding: 0 0 0.75rem; }
 "#;

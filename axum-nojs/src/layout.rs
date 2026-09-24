@@ -169,7 +169,7 @@ impl Tokens {
     pub fn css(&self) -> String {
         let (light, dark) = (self.light.declarations(), self.dark.declarations());
         format!(
-            ":root {{\n  color-scheme: light dark;\n{light}  --nojs-radius: {}; --nojs-space: {};\n  --nojs-radius-sm: max(0px, var(--nojs-radius) - 2px); --nojs-radius-lg: calc(var(--nojs-radius) + 4px);\n  --nojs-shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.05);\n  --nojs-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);\n}}\n\
+            ":root {{\n  color-scheme: light dark;\n{light}  --nojs-radius: {}; --nojs-space: {};\n  --nojs-radius-sm: max(0px, var(--nojs-radius) - 2px); --nojs-radius-lg: calc(var(--nojs-radius) + 4px);\n  --nojs-shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.05);\n  --nojs-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);\n  --nojs-overlay: rgb(0 0 0 / 0.5);\n}}\n\
              @media (prefers-color-scheme: dark) {{\n  :root:not([data-theme=\"light\"]) {{\n{dark}  }}\n}}\n\
              :root[data-theme=\"dark\"] {{\n  color-scheme: dark;\n{dark}}}\n\
              :root[data-theme=\"light\"] {{ color-scheme: light; }}\n",
@@ -353,8 +353,11 @@ details > summary { cursor: pointer; font-weight: 500; }
 .nojs-sr { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50%); text-wrap: nowrap; border: 0; }
 [data-nojs-busy] { opacity: var(--nojs-busy, 0.6); transition: opacity 0.15s 0.2s; cursor: progress; }
 table { border-collapse: collapse; width: 100%; font-size: 0.875rem; line-height: 1.25rem; font-variant-numeric: tabular-nums; }
-th, td { text-align: left; padding: 0.5rem; border-bottom: 1px solid var(--nojs-line); vertical-align: top; }
-th { color: var(--nojs-muted); font-weight: 500; }
+/* shadcn Table: h-10 heads in the muted colour, p-2 cells, a rule under each row, muted/50 hover. */
+th, td { text-align: left; padding: 0.5rem; border-bottom: 1px solid var(--nojs-line); vertical-align: middle; }
+th { height: 2.5rem; color: var(--nojs-muted); font-weight: 500; white-space: nowrap; }
+tbody tr { transition: background-color 0.15s; }
+tbody tr:hover { background: color-mix(in srgb, var(--nojs-accent) 50%, transparent); }
 .nojs-note { color: var(--nojs-muted); font-size: 0.875rem; }
 .nojs-yes { color: var(--nojs-ok); font-weight: 600; }
 .nojs-no { color: var(--nojs-danger); font-weight: 600; }

@@ -10,8 +10,8 @@
 //!   items of the strip; `order` on `::details-content` (Chrome 131, Firefox 143,
 //!   Safari 18.4) pushes every panel to a full-width row below all the summaries, or to the
 //!   column beside them when `vertical`.
-//! - `view-transition-name` (Chrome 111, Firefox 144, Safari 18) on the open tab's underline
-//!   (an empty `.nojs-tabs-mark`, never the title, so no text moves): the accent bar slides to
+//! - `view-transition-name` (Chrome 111, Firefox 144, Safari 18) on the open tab's chip
+//!   (an empty `.nojs-tabs-mark`, never the title, so no text moves): the raised chip slides to
 //!   the new tab, across documents through the layout's `@view-transition` rule and in place
 //!   with the enhancement script.
 //!
@@ -193,38 +193,51 @@ fn badge(t: &Tab) -> Markup {
 /// Styles for this component; included in [`crate::stylesheet`].
 pub const CSS: &str = r#"
 .nojs-tabs:not(.nojs-accordion) { display: flex; flex-wrap: wrap; }
-/* The strip's rule is drawn by the titles and by a stretching pseudo-element that fills the
-   rest of their row, so it sits under the titles and not under the panels. */
-.nojs-tabs:not(.nojs-accordion):not(.nojs-tabs-vertical)::after { content: ""; order: 0; flex: 1; border-bottom: 1px solid var(--nojs-line); }
+/* Fills the rest of the titles' row so the panels start on the next one. */
+.nojs-tabs:not(.nojs-accordion):not(.nojs-tabs-vertical)::after { content: ""; order: 0; flex: 1; }
+/* shadcn Tabs: the titles sit in a muted pill (secondary, 3px padding, rounded-lg); the open
+   one is a raised chip on the page background. Each summary paints its slice of the pill. */
 .nojs-tabs:not(.nojs-accordion) summary {
-  order: 0; position: relative; list-style: none; cursor: pointer; padding: 0.5rem 1rem;
-  border-bottom: 1px solid var(--nojs-line); color: var(--nojs-muted);
+  order: 0; position: relative; list-style: none; cursor: pointer; padding: 3px;
+  background: var(--nojs-secondary); color: var(--nojs-muted);
 }
+.nojs-tabs:not(.nojs-accordion):not(.nojs-tabs-vertical) > details:first-of-type > summary { border-radius: var(--nojs-radius) 0 0 var(--nojs-radius); }
+.nojs-tabs:not(.nojs-accordion):not(.nojs-tabs-vertical) > details:last-of-type > summary { border-radius: 0 var(--nojs-radius) var(--nojs-radius) 0; }
+.nojs-tabs:not(.nojs-accordion):not(.nojs-tabs-vertical) > details:only-of-type > summary { border-radius: var(--nojs-radius); }
 .nojs-tabs summary::-webkit-details-marker { display: none; }
 /* The link fills the summary, so every click goes through the server (a click on bare summary
    padding would toggle natively and be undone by the next render). */
 .nojs-tabs summary a { display: block; color: inherit; text-decoration: none; }
-.nojs-tabs:not(.nojs-accordion) summary a { margin: -0.5rem -1rem; padding: 0.5rem 1rem; }
+.nojs-tabs:not(.nojs-accordion) summary a {
+  position: relative; z-index: 1; display: flex; align-items: center; gap: 0.375rem;
+  padding: 0.25rem 0.75rem; font-size: 0.875rem; line-height: 1.25rem; font-weight: 500; white-space: nowrap;
+}
+.nojs-tabs:not(.nojs-accordion) summary a:hover { color: var(--nojs-fg); }
 .nojs-tabs:not(.nojs-accordion) details[open] summary { color: var(--nojs-fg); }
-/* The underline is its own empty element so the view transition moves a 2px bar, not the text. */
-.nojs-tabs-mark { position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; background: var(--nojs-primary); }
+/* The chip is its own empty element so the view transition slides it, not the text. */
+.nojs-tabs-mark {
+  position: absolute; inset: 3px; border-radius: var(--nojs-radius-sm);
+  background: var(--nojs-bg); box-shadow: var(--nojs-shadow-xs);
+}
 .nojs-tabs-badge {
-  display: inline-block; min-width: 1.5em; padding: 0 0.4em; border-radius: 1em; text-align: center;
-  font-size: 0.75em; font-weight: 600; line-height: 1.6; background: var(--nojs-line); color: var(--nojs-fg);
+  display: inline-block; min-width: 1.25rem; padding: 0 0.3rem; border-radius: 1em; text-align: center;
+  font-size: 0.75rem; font-weight: 500; line-height: 1.25rem; background: var(--nojs-line); color: var(--nojs-fg);
 }
 .nojs-tabs details[open] .nojs-tabs-badge { background: var(--nojs-primary); color: var(--nojs-on-primary); }
 /* Push every panel to a full-width row under the strip. */
 .nojs-tabs details::details-content { order: 1; flex-basis: 100%; }
 .nojs-tabs .nojs-tabs-panel { order: 1; flex-basis: 100%; padding: 1rem 0; }
 .nojs-tabs:not(.nojs-accordion) details { display: contents; }
-/* Vertical: titles in the first column, the open panel spans every row of the second. The rule
-   goes on ::details-content, the grid item, so it runs the full height; the padding stays on the
+/* Vertical: a plain list with a rule, the open title marked by a bar on the rule. The titles
+   are in the first column, the open panel spans every row of the second. The rule goes on
+   ::details-content, the grid item, so it runs the full height; the padding stays on the
    panel (Blitz builds no ::details-content box, see FINDINGS). */
 .nojs-tabs.nojs-tabs-vertical { display: grid; grid-template-columns: max-content 1fr; }
 .nojs-tabs.nojs-tabs-vertical summary {
-  grid-column: 1; border-bottom: 0; border-right: 1px solid var(--nojs-line); margin: 0 -1px 0 0;
+  grid-column: 1; padding: 0; background: none; border-right: 1px solid var(--nojs-line); margin: 0 -1px 0 0;
 }
-.nojs-tabs.nojs-tabs-vertical .nojs-tabs-mark { left: auto; right: -1px; top: 0; bottom: 0; width: 2px; height: auto; }
+.nojs-tabs.nojs-tabs-vertical summary a { padding: 0.5rem 1rem; }
+.nojs-tabs.nojs-tabs-vertical .nojs-tabs-mark { inset: 0 -1px 0 auto; width: 2px; border-radius: 0; background: var(--nojs-fg); box-shadow: none; }
 .nojs-tabs.nojs-tabs-vertical details::details-content {
   grid-column: 2; grid-row: 1 / span var(--nojs-tabs-n, 1); border-left: 1px solid var(--nojs-line);
 }

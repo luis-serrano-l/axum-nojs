@@ -143,14 +143,15 @@ impl Render for Stat<'_> {
 pub const CSS: &str = r#"
 .nojs-stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); gap: calc(var(--nojs-space) * 2); margin-block: calc(var(--nojs-space) * 2); }
 .nojs-stat {
-  display: block; padding: calc(var(--nojs-space) * 2); color: var(--nojs-fg); text-decoration: none;
-  background: var(--nojs-surface); border: 1px solid var(--nojs-line); border-radius: var(--nojs-radius);
+  display: block; padding: calc(var(--nojs-space) * 3); color: var(--nojs-fg); text-decoration: none;
+  background: var(--nojs-card); border: 1px solid var(--nojs-line); border-radius: var(--nojs-radius-lg); box-shadow: var(--nojs-shadow-xs);
+  transition: background-color 0.15s;
 }
 .nojs-stat p { margin: 0; max-width: none; }
-.nojs-stat-link:hover { border-color: var(--nojs-primary); }
-.nojs-stat-label { color: var(--nojs-muted); font-size: 0.875rem; }
-.nojs-stat-value { font-size: 1.75rem; font-weight: 600; line-height: 1.2; margin-block: 0.25rem; font-variant-numeric: tabular-nums; }
-.nojs-stat-delta { font-size: 0.875rem; font-weight: 600; }
+.nojs-stat-link:hover { background: color-mix(in srgb, var(--nojs-accent) 50%, var(--nojs-card)); }
+.nojs-stat-label { color: var(--nojs-muted); font-size: 0.875rem; font-weight: 500; }
+.nojs-stat-value { font-size: 1.5rem; font-weight: 600; line-height: 2rem; margin-block: 0.25rem; font-variant-numeric: tabular-nums; }
+.nojs-stat-delta { font-size: 0.75rem; font-weight: 500; }
 .nojs-stat-good { color: var(--nojs-ok); }
 .nojs-stat-bad { color: var(--nojs-danger); }
 .nojs-stat-flat { color: var(--nojs-muted); }

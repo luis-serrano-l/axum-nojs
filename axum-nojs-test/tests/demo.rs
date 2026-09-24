@@ -129,16 +129,19 @@ async fn tabs_strip_versus_accordion() {
         modern.exists("#nojs-tabs-demo details:nth-of-type(3) .nojs-tabs-lazy"),
         "lazy tab has no body until opened"
     );
-    assert!(modern.exists("#nojs-tabs-demo details[open] summary .nojs-tabs-mark[style*='view-transition-name: nojs-tabs-demo']"), "only the underline carries the name");
+    assert!(modern.exists("#nojs-tabs-demo details[open] summary .nojs-tabs-mark[style*='view-transition-name: nojs-tabs-demo']"), "only the chip carries the name");
     let mark = modern
         .bbox("#nojs-tabs-demo details[open] .nojs-tabs-mark")
         .unwrap();
     let open_title = modern
         .bbox("#nojs-tabs-demo details[open] summary")
         .unwrap();
+    // The mark is shadcn's active-tab chip: the open title inset by the pill's 3px padding.
     assert!(
-        (mark.height - 2.0).abs() < 0.5 && (mark.width - open_title.width).abs() < 1.0,
-        "underline spans the open title: {mark:?} {open_title:?}"
+        (mark.width - (open_title.width - 6.0)).abs() < 1.0
+            && (mark.height - (open_title.height - 6.0)).abs() < 1.0
+            && (mark.x - open_title.x - 3.0).abs() < 1.0,
+        "chip fills the open title inside the pill: {mark:?} {open_title:?}"
     );
     assert!(modern.exists("#nojs-tabs-demo form.nojs-tabs-select select[name='tab.demo'] option[value='1'][selected]") && !modern.is_visible(".nojs-tabs-select"), "select is there but hidden on a wide screen");
     let lazy = Page::render(demo::router(), "/tabs?tab.demo=2", MODERN).await;

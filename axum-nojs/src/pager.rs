@@ -120,9 +120,14 @@ impl Render for Pager<'_> {
 }
 /// Styles for this component; included in [`crate::stylesheet`].
 pub const CSS: &str = r#"
-.nojs-pager-list { margin: 0; padding-left: 1.5rem; }
-.nojs-pager-list li { padding: 0.4rem 0; border-bottom: 1px solid var(--nojs-line); }
+.nojs-pager-list { margin: 0; padding-left: 1.5rem; font-size: 0.875rem; }
+.nojs-pager-list li { padding: 0.5rem 0; border-bottom: 1px solid var(--nojs-line); }
 .nojs-pager-anchor { scroll-margin-top: 4rem; }
-.nojs-pager-more { display: inline-block; margin-top: 1rem; padding: 0.5rem 1rem;
-  background: var(--nojs-primary); color: var(--nojs-on-primary); border-radius: var(--nojs-radius); text-decoration: none; }
+/* "Load more" is shadcn's outline button, full width under the list. */
+.nojs-pager-more {
+  display: flex; align-items: center; justify-content: center; min-height: 2.25rem; margin-top: 1rem; padding: 0.375rem 1rem;
+  font-size: 0.875rem; font-weight: 500; color: var(--nojs-fg); text-decoration: none;
+  background: var(--nojs-bg); border: 1px solid var(--nojs-input); border-radius: var(--nojs-radius-sm); box-shadow: var(--nojs-shadow-xs);
+}
+.nojs-pager-more:hover { background: var(--nojs-accent); color: var(--nojs-on-accent); }
 "#;

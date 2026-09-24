@@ -485,20 +485,20 @@ fn field(f: &Field) -> Markup {
 
 /// Styles for this component; included in [`crate::stylesheet`].
 pub const CSS: &str = r#"
-.nojs-form { display: grid; gap: calc(var(--nojs-space) * 2); max-width: 28rem; }
+.nojs-form { display: grid; gap: calc(var(--nojs-space) * 3); max-width: 28rem; }
 .nojs-form-inline { max-width: 40rem; }
-.nojs-form-group { display: grid; gap: calc(var(--nojs-space) * 2); margin: 0; padding: calc(var(--nojs-space) * 2); border: 1px solid var(--nojs-line); border-radius: var(--nojs-radius); }
+.nojs-form-group { display: grid; gap: calc(var(--nojs-space) * 2); margin: 0; padding: calc(var(--nojs-space) * 3); border: 1px solid var(--nojs-line); border-radius: var(--nojs-radius-lg); }
 .nojs-form-group legend { padding: 0 0.5rem; font-weight: 600; }
-.nojs-field { display: grid; gap: 4px; }
-.nojs-field label { font-weight: 600; }
-.nojs-field-check label { font-weight: 400; }
+.nojs-field { display: grid; gap: 0.5rem; }
+.nojs-field label { font-size: 0.875rem; line-height: 1; font-weight: 500; }
+.nojs-field-check label { display: flex; align-items: center; gap: 0.5rem; }
 /* :where keeps this at one class, so a component inside a field (colour, range) sizes itself. */
 .nojs-field :where(input:not([type=file], [type=color], [type=range], [type=checkbox], [type=radio]), textarea) { width: 100%; box-sizing: border-box; }
 .nojs-field textarea { resize: vertical; field-sizing: content; min-height: 3lh; max-height: 20lh; font: inherit; }
 .nojs-field-help { color: var(--nojs-muted); font-size: 0.875rem; }
 .nojs-field-count { justify-self: end; color: var(--nojs-muted); font-size: 0.75rem; font-variant-numeric: tabular-nums; }
 .nojs-field :is(input, textarea):user-invalid, .nojs-field [aria-invalid=true] { border-color: var(--nojs-danger); }
-.nojs-field :is(input, textarea):user-valid { border-color: color-mix(in srgb, var(--nojs-primary) 60%, transparent); }
+.nojs-field [aria-invalid=true] ~ label, .nojs-field:has([aria-invalid=true]) > label { color: var(--nojs-danger); }
 .nojs-error { color: var(--nojs-danger); margin: 0; font-size: 0.875rem; }
 @media (min-width: 40rem) {
   .nojs-form-inline .nojs-field { grid-template-columns: 10rem 1fr; column-gap: calc(var(--nojs-space) * 2); }

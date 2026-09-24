@@ -158,7 +158,7 @@ pub const CSS: &str = r#"
 .nojs-range output { min-width: 3ch; text-align: right; font-variant-numeric: tabular-nums; }
 /* Two inputs share one grid cell; only their thumbs catch the pointer. */
 .nojs-range-track { flex: 1; display: grid; align-items: center; min-height: 1.5rem; }
-.nojs-range-track::before { content: ""; grid-area: 1 / 1; height: 4px; border-radius: 2px; background: var(--nojs-line); }
+.nojs-range-track::before { content: ""; grid-area: 1 / 1; height: 6px; border-radius: 3px; background: var(--nojs-secondary); }
 .nojs-range-track input {
   grid-area: 1 / 1; appearance: none; width: 100%; height: 1.5rem; margin: 0; padding: 0;
   border: 0; background: none; pointer-events: none;
@@ -167,15 +167,15 @@ pub const CSS: &str = r#"
 .nojs-range-track input::-moz-range-track { background: none; }
 .nojs-range-track input::-moz-range-progress { background: none; }
 .nojs-range-track input::-webkit-slider-thumb {
-  appearance: none; pointer-events: auto; cursor: pointer; width: 1.1rem; height: 1.1rem; border-radius: 50%;
-  background: var(--nojs-primary); border: 2px solid var(--nojs-surface); box-shadow: 0 0 0 1px var(--nojs-line);
+  appearance: none; pointer-events: auto; cursor: pointer; width: 1rem; height: 1rem; border-radius: 50%;
+  background: var(--nojs-bg); border: 1px solid var(--nojs-primary); box-shadow: var(--nojs-shadow-xs);
 }
 .nojs-range-track input::-moz-range-thumb {
-  pointer-events: auto; cursor: pointer; width: 1.1rem; height: 1.1rem; border-radius: 50%; box-sizing: border-box;
-  background: var(--nojs-primary); border: 2px solid var(--nojs-surface); box-shadow: 0 0 0 1px var(--nojs-line);
+  pointer-events: auto; cursor: pointer; width: 1rem; height: 1rem; border-radius: 50%; box-sizing: border-box;
+  background: var(--nojs-bg); border: 1px solid var(--nojs-primary); box-shadow: var(--nojs-shadow-xs);
 }
 .nojs-range-track input:focus-visible { outline: none; }
-.nojs-range-track input:focus-visible::-webkit-slider-thumb { outline: 2px solid var(--nojs-primary); outline-offset: 2px; }
-.nojs-range-track input:focus-visible::-moz-range-thumb { outline: 2px solid var(--nojs-primary); outline-offset: 2px; }
+.nojs-range-track input:focus-visible::-webkit-slider-thumb { outline: 4px solid color-mix(in srgb, var(--nojs-ring) 50%, transparent); outline-offset: 0; }
+.nojs-range-track input:focus-visible::-moz-range-thumb { outline: 4px solid color-mix(in srgb, var(--nojs-ring) 50%, transparent); outline-offset: 0; }
 .nojs-range-values { text-wrap: nowrap; font-variant-numeric: tabular-nums; }
 "#;

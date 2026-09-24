@@ -258,14 +258,14 @@ pub const CSS: &str = r#"
 /* base-select draws its own ::picker-icon; drop the gradient chevron from layout.rs. */
 @supports (appearance: base-select) { .nojs-select select { background-image: none; padding-right: 0.75rem; } }
 .nojs-select select::picker(select) {
-  border: 1px solid var(--nojs-line); border-radius: var(--nojs-radius); padding: var(--nojs-space) 0;
-  background: var(--nojs-surface); color: var(--nojs-fg); box-shadow: 0 8px 24px color-mix(in srgb, var(--nojs-fg) 14%, transparent);
+  border: 1px solid var(--nojs-line); border-radius: var(--nojs-radius); padding: 0.25rem;
+  background: var(--nojs-popover); color: var(--nojs-fg); box-shadow: var(--nojs-shadow-lg);
   max-height: 20rem;
 }
-.nojs-select option { padding: 0.4rem 1rem; }
-.nojs-select option:hover, .nojs-select option:checked { background: var(--nojs-bg); }
+.nojs-select option { padding: 0.375rem 0.5rem; border-radius: var(--nojs-radius-sm); font-size: 0.875rem; }
+.nojs-select option:hover, .nojs-select option:focus-visible { background: var(--nojs-accent); color: var(--nojs-on-accent); }
 .nojs-select option::checkmark { order: 1; margin-left: auto; }
-.nojs-select optgroup { font-weight: 600; color: var(--nojs-muted); padding: 0.25rem 0; }
+.nojs-select optgroup { font-size: 0.75rem; font-weight: 500; color: var(--nojs-muted); padding: 0.375rem 0.5rem 0; }
 .nojs-select optgroup option { font-weight: 400; color: var(--nojs-fg); }
 .nojs-select-icon { display: inline-block; width: 1.25em; text-align: center; }
 .nojs-swatch { display: inline-block; width: 1em; height: 1em; border-radius: 50%; vertical-align: -0.15em; margin-right: 0.4em; border: 1px solid var(--nojs-line); }

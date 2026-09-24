@@ -92,19 +92,20 @@ impl Render for Breadcrumbs<'_> {
 pub const CSS: &str = r#"
 .nojs-breadcrumbs { font-size: 0.875rem; color: var(--nojs-muted); margin-bottom: calc(var(--nojs-space) * 2); }
 .nojs-breadcrumbs > ol { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.25rem 0; list-style: none; margin: 0; padding: 0; }
-.nojs-breadcrumbs > ol > li + li::before { content: "/"; margin-inline: 0.5rem; color: var(--nojs-line); }
-.nojs-breadcrumbs a { color: var(--nojs-muted); }
-.nojs-breadcrumbs a:hover { color: var(--nojs-primary); }
-.nojs-breadcrumbs [aria-current] { color: var(--nojs-fg); font-weight: 600; }
+.nojs-breadcrumbs > ol > li + li::before { content: "/"; margin-inline: 0.625rem; color: var(--nojs-muted); }
+.nojs-breadcrumbs a { color: var(--nojs-muted); text-decoration: none; transition: color 0.15s; }
+.nojs-breadcrumbs a:hover { color: var(--nojs-fg); }
+.nojs-breadcrumbs [aria-current] { color: var(--nojs-fg); font-weight: 400; }
 .nojs-breadcrumbs-fold { position: relative; }
 .nojs-breadcrumbs-fold details { display: inline-block; }
-.nojs-breadcrumbs-fold summary { display: inline; list-style: none; cursor: pointer; padding-inline: 0.25rem; border-radius: var(--nojs-radius); }
+.nojs-breadcrumbs-fold summary { display: inline; list-style: none; cursor: pointer; padding-inline: 0.25rem; border-radius: var(--nojs-radius-sm); }
 .nojs-breadcrumbs-fold summary::-webkit-details-marker { display: none; }
-.nojs-breadcrumbs-fold summary:hover { background: var(--nojs-surface); }
+.nojs-breadcrumbs-fold summary:hover { background: var(--nojs-accent); color: var(--nojs-on-accent); }
 .nojs-breadcrumbs-fold ol {
-  position: absolute; z-index: 5; top: 100%; left: 0; margin: 0.25rem 0 0; padding: var(--nojs-space) 0;
-  list-style: none; min-width: 10rem; background: var(--nojs-surface);
-  border: 1px solid var(--nojs-line); border-radius: var(--nojs-radius);
+  position: absolute; z-index: 5; top: 100%; left: 0; margin: 0.25rem 0 0; padding: 0.25rem;
+  list-style: none; min-width: 10rem; background: var(--nojs-popover);
+  border: 1px solid var(--nojs-line); border-radius: var(--nojs-radius); box-shadow: var(--nojs-shadow-lg);
 }
-.nojs-breadcrumbs-fold ol a { display: block; padding: 0.25rem 1rem; }
+.nojs-breadcrumbs-fold ol a { display: block; padding: 0.375rem 0.5rem; border-radius: var(--nojs-radius-sm); color: var(--nojs-fg); }
+.nojs-breadcrumbs-fold ol a:hover { background: var(--nojs-accent); color: var(--nojs-on-accent); }
 "#;

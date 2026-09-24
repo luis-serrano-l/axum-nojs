@@ -152,10 +152,9 @@ impl Render for Counter<'_> {
 /// Styles for this component; included in [`crate::stylesheet`].
 pub const CSS: &str = r#"
 .nojs-counter { display: inline-flex; flex-wrap: wrap; align-items: center; gap: var(--nojs-space); }
-.nojs-counter output { min-width: 3ch; text-align: center; font-size: 1.5rem; font-variant-numeric: tabular-nums; }
-.nojs-counter button:disabled { opacity: 0.45; cursor: not-allowed; }
+.nojs-counter output { min-width: 3ch; text-align: center; font-size: 1.5rem; font-weight: 600; font-variant-numeric: tabular-nums; }
 .nojs-counter-typed input { width: 6em; }
-.nojs-counter-bounds { flex-basis: 100%; color: var(--nojs-muted); }
+.nojs-counter-bounds { flex-basis: 100%; color: var(--nojs-muted); font-size: 0.875rem; }
 "#;
 
 #[cfg(test)]

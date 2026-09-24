@@ -276,44 +276,48 @@ impl Render for Dialog<'_> {
 /// Styles for this component; included in [`crate::stylesheet`].
 pub const CSS: &str = r#"
 .nojs-dialog { display: inline-flex; gap: var(--nojs-space); align-items: center; }
+/* shadcn Dialog: popover surface, rounded-lg, p-6, shadow-lg, the --nojs-overlay backdrop. */
 .nojs-dialog dialog {
-  background: var(--nojs-surface); color: var(--nojs-fg);
+  background: var(--nojs-popover); color: var(--nojs-fg);
   border: 1px solid var(--nojs-line); border-radius: var(--nojs-radius);
-  padding: calc(var(--nojs-space) * 3); width: calc(100% - 2rem);
+  padding: calc(var(--nojs-space) * 3); width: calc(100% - 2rem); box-shadow: var(--nojs-shadow-lg);
 }
 /* Server-opened (non-modal) dialogs sit in the flow; positioned so the close control anchors. */
 .nojs-dialog dialog:not(:modal):not(:target) { position: relative; }
 .nojs-dialog-sm { max-width: 20rem; }
-.nojs-dialog-md { max-width: 28rem; }
-.nojs-dialog-lg { max-width: 40rem; }
-.nojs-dialog dialog::backdrop { background: color-mix(in srgb, var(--nojs-fg) 45%, transparent); }
+.nojs-dialog-md { max-width: 32rem; }
+.nojs-dialog-lg { max-width: 42rem; }
+.nojs-dialog dialog::backdrop { background: var(--nojs-overlay); }
 .nojs-dialog dialog h2 { margin-top: 0; }
-.nojs-dialog-title {
-  font-size: 1.25rem; margin: 0 2rem calc(var(--nojs-space) * 2) 0; padding-bottom: var(--nojs-space);
-  border-bottom: 1px solid var(--nojs-line);
-}
-.nojs-dialog-danger .nojs-dialog-title { border-bottom-color: var(--nojs-danger); }
+.nojs-dialog-title { font-size: 1.125rem; line-height: 1.75rem; font-weight: 600; margin: 0 2rem var(--nojs-space) 0; }
+.nojs-dialog-danger .nojs-dialog-title { color: var(--nojs-danger); }
+.nojs-dialog-body { font-size: 0.875rem; color: var(--nojs-muted); }
 .nojs-dialog-body > :last-child { margin-bottom: 0; }
-.nojs-dialog-body label { display: block; margin: var(--nojs-space) 0; }
-.nojs-dialog-body input:not([type=hidden]), .nojs-dialog-body textarea { display: block; width: 100%; box-sizing: border-box; margin-top: 0.25rem; }
-.nojs-dialog-actions { display: flex; justify-content: flex-end; gap: var(--nojs-space); margin: calc(var(--nojs-space) * 2) 0 0; }
+.nojs-dialog-body label { display: block; margin: var(--nojs-space) 0; color: var(--nojs-fg); }
+.nojs-dialog-body input:not([type=hidden]), .nojs-dialog-body textarea { display: block; width: 100%; box-sizing: border-box; margin-top: 0.5rem; }
+.nojs-dialog-actions { display: flex; flex-wrap: wrap-reverse; justify-content: flex-end; gap: var(--nojs-space); margin: calc(var(--nojs-space) * 3) 0 0; }
+/* Links that act as buttons: the outline button, and the primary one for the confirm. */
 .nojs-dialog-open, .nojs-dialog-actions a[role="button"] {
-  display: inline-block; padding: 0.5rem 1rem; border: 1px solid var(--nojs-line);
-  border-radius: var(--nojs-radius); background: var(--nojs-surface); color: inherit; text-decoration: none;
+  display: inline-flex; align-items: center; justify-content: center; min-height: 2.25rem; padding: 0.375rem 1rem;
+  font-size: 0.875rem; line-height: 1.25rem; font-weight: 500; color: var(--nojs-fg); text-decoration: none;
+  background: var(--nojs-bg); border: 1px solid var(--nojs-input); border-radius: var(--nojs-radius-sm); box-shadow: var(--nojs-shadow-xs);
 }
+.nojs-dialog-open:hover, .nojs-dialog-actions a[role="button"]:hover { background: var(--nojs-accent); color: var(--nojs-on-accent); }
 .nojs-dialog-actions a[role="button"]:not(.nojs-dialog-cancel) { background: var(--nojs-primary); color: var(--nojs-on-primary); border-color: transparent; }
+.nojs-dialog-danger .nojs-dialog-actions a[role="button"]:not(.nojs-dialog-cancel) { background: var(--nojs-danger); }
+/* The close control is a ghost icon button: rounded-sm, 70% opacity until hovered. */
 .nojs-dialog-close {
   position: absolute; top: calc(var(--nojs-space) * 2); right: calc(var(--nojs-space) * 2);
-  width: 2rem; height: 2rem; padding: 0; line-height: 1; font-size: 1.25rem;
-  display: inline-flex; align-items: center; justify-content: center;
-  color: var(--nojs-muted); background: none; border: 1px solid transparent; border-radius: var(--nojs-radius); text-decoration: none;
+  width: 1.75rem; height: 1.75rem; min-height: 0; padding: 0; line-height: 1; font-size: 1.25rem;
+  display: inline-flex; align-items: center; justify-content: center; opacity: 0.7;
+  color: var(--nojs-fg); background: none; border: 0; box-shadow: none; border-radius: var(--nojs-radius-sm); text-decoration: none;
 }
-.nojs-dialog-close:hover { color: var(--nojs-fg); border-color: var(--nojs-line); }
+.nojs-dialog-close:hover { opacity: 1; background: var(--nojs-accent); }
 
 /* :target fallback: a dialog that is the URL fragment renders as a fixed overlay. */
 .nojs-dialog dialog:target {
   display: block; position: fixed; inset: 0; margin: auto; height: fit-content; z-index: 10;
-  box-shadow: 0 0 0 100vmax color-mix(in srgb, var(--nojs-fg) 45%, transparent);
+  box-shadow: var(--nojs-shadow-lg), 0 0 0 100vmax var(--nojs-overlay);
 }
 "#;
 

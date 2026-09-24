@@ -210,5 +210,5 @@ impl axum::response::IntoResponse for Streamed {
 /// Styles for this component; included in [`crate::stylesheet`].
 pub const CSS: &str = r#"
 .nojs-stream-pending { color: var(--nojs-muted); font-style: italic; }
-.nojs-stream-section { border: 1px solid var(--nojs-line); border-radius: var(--nojs-radius); padding: 1rem; margin-bottom: var(--nojs-space); background: var(--nojs-surface); }
+.nojs-stream-section { border: 1px solid var(--nojs-line); border-radius: var(--nojs-radius-lg); padding: 1.5rem; margin-bottom: calc(var(--nojs-space) * 2); background: var(--nojs-card); box-shadow: var(--nojs-shadow-xs); }
 "#;

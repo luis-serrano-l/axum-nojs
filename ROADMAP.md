@@ -349,9 +349,15 @@ Done before M21 so the primitives are born in this look.
   on shadcn's 6px `rounded-md`. The plain button is shadcn's outline variant. The select
   chevron is two gradients in `--nojs-muted` (no data-URI SVG, which would need a literal);
   `select.rs` drops it where `appearance: base-select` draws its own picker icon.
-- [ ] Every existing component's CSS re-tuned to these values (dialog, drawer as shadcn sheet,
+- [x] Every existing component's CSS re-tuned to these values (dialog, drawer as shadcn sheet,
   popover/menu as dropdown-menu, tabs as the muted pill list, accordion, toast as sonner-style
   cards, table, pager as pagination, badge-like chips, skeleton, palette as command).
+  Done: `Tokens::css()` also emits `--nojs-overlay` (black/50, as shadcn), used by every
+  backdrop; all floating layers take `--nojs-popover` and `--nojs-shadow-lg`. Tabs: each
+  summary paints its slice of the muted pill and `.nojs-tabs-mark` became the raised chip
+  (the Blitz test now checks the chip, inset 3px). Toasts and flashes are neutral cards with
+  a level dot. Link-as-button rules repeat the button values until M22 builds them on the
+  primitive.
 - [ ] The demo takes the same look (index, plate, code box); syntect classes recoloured.
 - [ ] Side-by-side check: for each component, a Firefox screenshot of the demo (light and dark,
   1280 and 420 wide) next to the shadcn docs page for the same component; mismatches fixed

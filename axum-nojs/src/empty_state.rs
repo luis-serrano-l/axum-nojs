@@ -96,12 +96,12 @@ impl Render for EmptyState<'_> {
 pub const CSS: &str = r#"
 .nojs-empty {
   display: grid; justify-items: center; gap: var(--nojs-space); text-align: center;
-  padding: calc(var(--nojs-space) * 5) calc(var(--nojs-space) * 2);
-  border: 1px dashed var(--nojs-line); border-radius: var(--nojs-radius);
+  padding: calc(var(--nojs-space) * 6) calc(var(--nojs-space) * 3);
+  border: 1px dashed var(--nojs-line); border-radius: var(--nojs-radius-lg);
 }
-.nojs-empty-icon { font-size: 2rem; line-height: 1; }
-.nojs-empty-title { margin: 0; font-size: 1.125rem; font-weight: 600; }
-.nojs-empty-text { margin: 0; color: var(--nojs-muted); max-width: 32rem; }
+.nojs-empty-icon { display: grid; place-items: center; width: 2.5rem; height: 2.5rem; font-size: 1.25rem; line-height: 1; border-radius: var(--nojs-radius-sm); background: var(--nojs-secondary); }
+.nojs-empty-title { margin: 0; font-size: 1.125rem; font-weight: 500; letter-spacing: -0.0125em; }
+.nojs-empty-text { margin: 0; color: var(--nojs-muted); max-width: 24rem; font-size: 0.875rem; }
 .nojs-empty-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: calc(var(--nojs-space) * 2); margin-top: var(--nojs-space); }
 .nojs-empty-actions form { margin: 0; }
 "#;

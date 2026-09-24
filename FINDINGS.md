@@ -250,7 +250,8 @@ fade in under the old ones and the button simply re-renders where it belongs.
 **A named tab title is the same block, sideways.** The first tabs morph put the name on the
 open `<summary>`; every switch slid the old title's snapshot, text included, across the strip
 and cross-faded it into the new one: a flicker and a bounce to the left. The name now sits on an
-empty `.nojs-tabs-mark`, the 2px underline, so the bar glides and the titles stay still. Rule of
+empty `.nojs-tabs-mark` (then a 2px underline, since M20 shadcn's raised chip behind the open
+title), so the highlight glides and the titles stay still. Rule of
 thumb: name the highlight, never the thing that holds text.
 
 **Two behaviours on one summary.** The tab and accordion titles were links inside a padded

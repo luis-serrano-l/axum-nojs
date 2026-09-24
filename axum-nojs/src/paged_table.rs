@@ -334,11 +334,15 @@ impl fmt::Display for PageLink<'_> {
 
 /// Styles for this component; included in [`crate::stylesheet`].
 pub const CSS: &str = r#"
-.nojs-paged-table-nav { display: flex; flex-wrap: wrap; align-items: center; gap: var(--nojs-space) calc(var(--nojs-space) * 2); margin-top: var(--nojs-space); color: var(--nojs-muted); }
+/* shadcn Pagination: ghost page links, the current one an outline button, h-9 squares. */
+.nojs-paged-table-nav { display: flex; flex-wrap: wrap; align-items: center; gap: var(--nojs-space) calc(var(--nojs-space) * 2); margin-top: calc(var(--nojs-space) * 2); font-size: 0.875rem; color: var(--nojs-muted); }
 .nojs-paged-table-pages { display: flex; flex-wrap: wrap; gap: 0.25rem; list-style: none; margin: 0; padding: 0; }
-.nojs-paged-table-pages a { display: inline-block; min-width: 2rem; padding: 0.25rem 0.5rem; text-align: center; text-decoration: none; border: 1px solid var(--nojs-line); border-radius: var(--nojs-radius); color: var(--nojs-fg); }
-.nojs-paged-table-pages a:hover { border-color: var(--nojs-primary); }
-.nojs-paged-table-pages a[aria-current="page"] { background: var(--nojs-primary); color: var(--nojs-on-primary); border-color: transparent; }
+.nojs-paged-table-pages a {
+  display: inline-flex; align-items: center; justify-content: center; min-width: 2.25rem; height: 2.25rem; padding: 0 0.625rem;
+  font-weight: 500; text-decoration: none; color: var(--nojs-fg); border: 1px solid transparent; border-radius: var(--nojs-radius-sm);
+}
+.nojs-paged-table-pages a:hover { background: var(--nojs-accent); color: var(--nojs-on-accent); }
+.nojs-paged-table-pages a[aria-current="page"] { background: var(--nojs-bg); border-color: var(--nojs-input); box-shadow: var(--nojs-shadow-xs); }
 .nojs-paged-table-gap { align-self: center; padding: 0 0.25rem; }
 .nojs-paged-table-jump, .nojs-paged-table-per { display: flex; align-items: center; gap: var(--nojs-space); }
 .nojs-paged-table-jump { margin-left: auto; }

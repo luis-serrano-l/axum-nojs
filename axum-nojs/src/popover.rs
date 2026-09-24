@@ -346,11 +346,13 @@ fn item(menu_id: &str, it: &MenuItem, popover: bool, anchor: bool) -> Markup {
 /// Styles for this component; included in [`crate::stylesheet`].
 pub const CSS: &str = r#"
 .nojs-popover { display: inline-block; position: relative; }
+/* shadcn DropdownMenu: popover surface, p-1, rounded-md, shadow; items text-sm, rounded-sm,
+   accent on hover and focus. */
 .nojs-popover nav {
-  padding: var(--nojs-space) 0; min-width: 14rem;
-  background: var(--nojs-surface); color: var(--nojs-fg);
+  padding: 0.25rem; min-width: 14rem;
+  background: var(--nojs-popover); color: var(--nojs-fg);
   border: 1px solid var(--nojs-line); border-radius: var(--nojs-radius);
-  box-shadow: 0 8px 24px color-mix(in srgb, var(--nojs-fg) 14%, transparent);
+  box-shadow: var(--nojs-shadow-lg);
 }
 .nojs-popover-anchored > nav, .nojs-popover-details > nav, .nojs-popover-subnav { margin: 0; }
 .nojs-popover-anchored > nav { margin-top: 4px; }
@@ -358,30 +360,36 @@ pub const CSS: &str = r#"
 .nojs-popover ul { list-style: none; margin: 0; padding: 0; }
 .nojs-popover form { margin: 0; }
 .nojs-popover-item {
-  display: flex; align-items: center; gap: var(--nojs-space); width: 100%; box-sizing: border-box;
-  padding: 0.4rem 1rem; color: inherit; text-decoration: none; text-align: left; font: inherit;
-  background: none; border: 0; border-radius: 0; cursor: pointer;
+  display: flex; align-items: center; gap: var(--nojs-space); width: 100%; min-height: 0; box-sizing: border-box;
+  padding: 0.375rem 0.5rem; color: inherit; text-decoration: none; text-align: left; font: inherit;
+  font-size: 0.875rem; line-height: 1.25rem; font-weight: 400;
+  background: none; border: 0; border-radius: var(--nojs-radius-sm); box-shadow: none; cursor: pointer; justify-content: flex-start;
 }
-.nojs-popover-item:hover, .nojs-popover-item:focus-visible { background: var(--nojs-bg); outline-offset: -2px; }
-.nojs-popover-icon { width: 1.25em; text-align: center; color: var(--nojs-muted); }
+.nojs-popover-item:hover, .nojs-popover-item:focus-visible { background: var(--nojs-accent); color: var(--nojs-on-accent); outline: none; }
+.nojs-popover-icon { width: 1rem; text-align: center; color: var(--nojs-muted); }
 .nojs-popover-text { flex: 1; }
-.nojs-popover-kbd { font: inherit; font-size: 0.8em; color: var(--nojs-muted); background: none; border: 0; padding: 0; }
+.nojs-popover-kbd { font: inherit; font-size: 0.75rem; letter-spacing: 0.1em; color: var(--nojs-muted); background: none; border: 0; padding: 0; margin-left: auto; }
 .nojs-popover-danger { color: var(--nojs-danger); }
+.nojs-popover-danger:hover, .nojs-popover-danger:focus-visible { color: var(--nojs-danger); background: color-mix(in srgb, var(--nojs-danger) 10%, transparent); }
 .nojs-popover-danger .nojs-popover-icon { color: inherit; }
-.nojs-popover-disabled { color: var(--nojs-muted); cursor: default; }
-.nojs-popover-disabled:hover { background: none; }
-.nojs-popover-heading { padding: 0.25rem 1rem; font-size: 0.75rem; color: var(--nojs-muted); }
-.nojs-popover-sep { margin: var(--nojs-space) 0; border-top: 1px solid var(--nojs-line); }
+.nojs-popover-disabled { opacity: 0.5; cursor: default; }
+.nojs-popover-disabled:hover { background: none; color: inherit; }
+.nojs-popover-heading { padding: 0.375rem 0.5rem; font-size: 0.875rem; font-weight: 500; color: var(--nojs-fg); }
+.nojs-popover-sep { margin: 0.25rem -0.25rem; border-top: 1px solid var(--nojs-line); }
 .nojs-popover-sub { position: relative; }
-/* <details> fallback: summary styled as the button, menu absolutely positioned by placement. */
+/* <details> fallback: summary styled as the outline button, menu absolutely positioned by placement. */
 .nojs-popover-details > summary {
-  list-style: none; cursor: pointer; background: var(--nojs-surface);
-  border: 1px solid var(--nojs-line); border-radius: var(--nojs-radius); padding: 0.5rem 1rem;
+  list-style: none; cursor: pointer; display: inline-flex; align-items: center; min-height: 2.25rem; padding: 0.375rem 1rem;
+  font-size: 0.875rem; line-height: 1.25rem; background: var(--nojs-bg); box-shadow: var(--nojs-shadow-xs);
+  border: 1px solid var(--nojs-input); border-radius: var(--nojs-radius-sm);
 }
+.nojs-popover-details > summary:hover { background: var(--nojs-accent); color: var(--nojs-on-accent); }
 .nojs-popover-details > summary::-webkit-details-marker { display: none; }
 .nojs-popover-details > nav { position: absolute; z-index: 10; }
 .nojs-popover-start.nojs-popover-details > nav { top: 100%; left: 0; margin-top: 4px; }
 .nojs-popover-end.nojs-popover-details > nav { top: 100%; right: 0; margin-top: 4px; }
 .nojs-popover-right.nojs-popover-details > nav { top: 0; left: 100%; margin-left: 4px; }
-.nojs-popover-sub > .nojs-popover-details > summary { border: 0; border-radius: 0; background: none; }
+.nojs-popover-sub > .nojs-popover-details > summary {
+  display: flex; min-height: 0; padding: 0.375rem 0.5rem; font-weight: 400; border: 0; border-radius: var(--nojs-radius-sm); background: none; box-shadow: none;
+}
 "#;

@@ -75,14 +75,14 @@ impl Render for Skeleton<'_> {
 }
 /// Styles for this component; included in [`crate::stylesheet`].
 pub const CSS: &str = r#"
+/* shadcn Skeleton: accent-coloured blocks, rounded-md, a slow pulse. */
 .nojs-skeleton { display: grid; gap: calc(var(--nojs-space) * 1.25); padding-block: var(--nojs-space); }
 .nojs-skeleton-line, .nojs-skeleton-heading {
-  display: block; height: 0.8rem; border-radius: var(--nojs-radius);
-  background: linear-gradient(90deg, var(--nojs-line) 0%, color-mix(in srgb, var(--nojs-line) 40%, var(--nojs-surface)) 50%, var(--nojs-line) 100%);
-  background-size: 200% 100%; animation: nojs-skeleton-shimmer 1.4s linear infinite;
+  display: block; height: 1rem; border-radius: var(--nojs-radius-sm); background: var(--nojs-accent);
+  animation: nojs-skeleton-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
-.nojs-skeleton-heading { height: 1.3rem; width: 45%; margin-bottom: calc(var(--nojs-space) * 0.5); }
+.nojs-skeleton-heading { height: 1.5rem; width: 45%; margin-bottom: calc(var(--nojs-space) * 0.5); }
 .nojs-skeleton-last { width: 60%; }
-@keyframes nojs-skeleton-shimmer { from { background-position: 100% 0; } to { background-position: -100% 0; } }
+@keyframes nojs-skeleton-pulse { 50% { opacity: 0.5; } }
 @media (prefers-reduced-motion: reduce) { .nojs-skeleton-line, .nojs-skeleton-heading { animation: none; } }
 "#;

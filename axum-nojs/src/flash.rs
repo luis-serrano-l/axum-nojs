@@ -165,15 +165,18 @@ pub const CSS: &str = r#"
   --nojs-flash-tone: var(--nojs-primary);
   display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between;
   gap: calc(var(--nojs-space) * 1) calc(var(--nojs-space) * 2); margin: 0;
-  padding: 0.6rem 1rem; border-radius: var(--nojs-radius);
-  background: color-mix(in srgb, var(--nojs-flash-tone) 14%, var(--nojs-surface));
-  border: 1px solid var(--nojs-flash-tone); border-inline-start-width: 4px; color: var(--nojs-fg);
+  padding: 0.75rem 1rem; border-radius: var(--nojs-radius); font-size: 0.875rem;
+  background: var(--nojs-card); border: 1px solid var(--nojs-line); color: var(--nojs-fg);
 }
+/* shadcn Alert: a neutral card; the level is a dot in its colour, and danger colours the text. */
+.nojs-flash-item::before { content: ""; flex: none; align-self: center; width: 0.5rem; height: 0.5rem; margin-right: -0.5rem; border-radius: 50%; background: var(--nojs-flash-tone); }
+.nojs-flash-item > :first-child { flex: 1; }
 .nojs-flash-info { --nojs-flash-tone: var(--nojs-muted); }
 .nojs-flash-ok { --nojs-flash-tone: var(--nojs-ok); }
 .nojs-flash-warn { --nojs-flash-tone: var(--nojs-warn); }
-.nojs-flash-danger { --nojs-flash-tone: var(--nojs-danger); }
-.nojs-flash-dismiss { color: var(--nojs-fg); font-size: 0.875rem; }
+.nojs-flash-danger { --nojs-flash-tone: var(--nojs-danger); color: var(--nojs-danger); }
+.nojs-flash-dismiss { color: var(--nojs-muted); font-size: 0.875rem; }
+.nojs-flash-dismiss:hover { color: var(--nojs-fg); }
 .nojs-flash-auto { animation: nojs-flash-hide 0.4s ease-in 6s forwards; }
 @keyframes nojs-flash-hide {
   to { opacity: 0; visibility: hidden; height: 0; padding-block: 0; margin-block: -0.5rem 0; border-width: 0; }

@@ -79,26 +79,34 @@ impl Render for Toasts<'_> {
 }
 /// Styles for this component; included in [`crate::stylesheet`].
 pub const CSS: &str = r#"
+/* Sonner-style cards: bottom-right stack, popover surface, rounded, shadow-lg, text-sm; the
+   level shows as a small dot in its colour rather than a tinted card. */
 .nojs-toasts {
-  position: fixed; z-index: 20; inset-inline-end: calc(var(--nojs-space) * 2); bottom: calc(var(--nojs-space) * 2);
-  display: grid; gap: var(--nojs-space); width: min(22rem, calc(100vw - 2rem));
+  position: fixed; z-index: 20; inset-inline-end: calc(var(--nojs-space) * 3); bottom: calc(var(--nojs-space) * 3);
+  display: grid; gap: 0.875rem; width: min(22.25rem, calc(100vw - 2rem));
   list-style: none; margin: 0; padding: 0;
 }
 .nojs-toast {
   --nojs-toast-tone: var(--nojs-muted);
-  display: flex; align-items: baseline; justify-content: space-between; gap: calc(var(--nojs-space) * 2);
-  padding: 0.75rem 1rem; color: var(--nojs-fg); background: var(--nojs-surface);
-  border: 1px solid var(--nojs-line); border-inline-start: 4px solid var(--nojs-toast-tone); border-radius: var(--nojs-radius);
-  box-shadow: 0 8px 24px color-mix(in srgb, var(--nojs-fg) 14%, transparent);
+  display: flex; align-items: center; gap: 0.625rem;
+  padding: 1rem; color: var(--nojs-fg); background: var(--nojs-popover);
+  font-size: 0.875rem; line-height: 1.25rem;
+  border: 1px solid var(--nojs-line); border-radius: var(--nojs-radius);
+  box-shadow: var(--nojs-shadow-lg);
   animation: nojs-toast-out 0.4s ease-in 5s forwards;
 }
+.nojs-toast::before { content: ""; flex: none; width: 0.5rem; height: 0.5rem; border-radius: 50%; background: var(--nojs-toast-tone); }
+.nojs-toast-text { flex: 1; font-weight: 500; }
 .nojs-toast:hover, .nojs-toast:focus-within { animation-play-state: paused; }
 .nojs-toast-ok { --nojs-toast-tone: var(--nojs-ok); }
 .nojs-toast-warn { --nojs-toast-tone: var(--nojs-warn); }
 .nojs-toast-danger { --nojs-toast-tone: var(--nojs-danger); animation: none; }
-.nojs-toast-close { color: var(--nojs-muted); text-decoration: none; font-size: 1.25rem; line-height: 1; }
-.nojs-toast-close:hover { color: var(--nojs-fg); }
+.nojs-toast-close {
+  display: inline-flex; align-items: center; justify-content: center; width: 1.25rem; height: 1.25rem;
+  color: var(--nojs-muted); text-decoration: none; font-size: 1rem; line-height: 1; border-radius: 50%;
+}
+.nojs-toast-close:hover { color: var(--nojs-fg); background: var(--nojs-accent); }
 @keyframes nojs-toast-out { to { opacity: 0; visibility: hidden; transform: translateY(0.5rem); } }
 @media (prefers-reduced-motion: reduce) { .nojs-toast { animation: none; } }
-@media (max-width: 40rem) { .nojs-toasts { bottom: auto; top: calc(var(--nojs-space) * 2); } }
+@media (max-width: 40rem) { .nojs-toasts { bottom: auto; top: calc(var(--nojs-space) * 2); inset-inline: 1rem; width: auto; } }
 "#;

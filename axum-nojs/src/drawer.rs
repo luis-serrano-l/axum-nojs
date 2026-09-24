@@ -148,32 +148,40 @@ impl Render for Drawer<'_> {
 pub const CSS: &str = r#"
 .nojs-drawer { display: grid; gap: calc(var(--nojs-space) * 2); }
 .nojs-drawer-open {
-  justify-self: start; display: inline-block; padding: 0.5rem 1rem; color: inherit; text-decoration: none;
-  background: var(--nojs-surface); border: 1px solid var(--nojs-line); border-radius: var(--nojs-radius);
+  justify-self: start; display: inline-flex; align-items: center; min-height: 2.25rem; padding: 0.375rem 1rem;
+  font-size: 0.875rem; line-height: 1.25rem; font-weight: 500; color: var(--nojs-fg); text-decoration: none;
+  background: var(--nojs-bg); border: 1px solid var(--nojs-input); border-radius: var(--nojs-radius-sm); box-shadow: var(--nojs-shadow-xs);
 }
+.nojs-drawer-open:hover { background: var(--nojs-accent); color: var(--nojs-on-accent); }
+/* shadcn Sheet, side="left": full height, max-w-sm, border on the open edge, shadow-lg. */
 .nojs-drawer-panel {
   box-sizing: border-box; margin: 0; padding: calc(var(--nojs-space) * 2);
-  color: var(--nojs-fg); background: var(--nojs-surface); border: 0; border-inline-end: 1px solid var(--nojs-line);
+  color: var(--nojs-fg); background: var(--nojs-popover); border: 0; border-inline-end: 1px solid var(--nojs-line);
 }
 .nojs-drawer-panel:modal, .nojs-drawer-panel:target {
-  display: block; position: fixed; inset: 0 auto 0 0; height: 100dvh; max-height: none; width: min(20rem, 85vw); z-index: 10;
-  transition: translate 0.2s ease-out, display 0.2s allow-discrete, overlay 0.2s allow-discrete;
+  display: block; position: fixed; inset: 0 auto 0 0; height: 100dvh; max-height: none; width: min(24rem, 75vw); z-index: 10;
+  padding: calc(var(--nojs-space) * 3); box-shadow: var(--nojs-shadow-lg);
+  transition: translate 0.3s ease-in-out, display 0.3s allow-discrete, overlay 0.3s allow-discrete;
 }
-.nojs-drawer-panel:target { box-shadow: 0 0 0 100vmax color-mix(in srgb, var(--nojs-fg) 45%, transparent); }
+.nojs-drawer-panel:target { box-shadow: var(--nojs-shadow-lg), 0 0 0 100vmax var(--nojs-overlay); }
 @starting-style { .nojs-drawer-panel:modal { translate: -100% 0; } }
-.nojs-drawer-panel::backdrop { background: color-mix(in srgb, var(--nojs-fg) 45%, transparent); }
+.nojs-drawer-panel::backdrop { background: var(--nojs-overlay); }
 .nojs-drawer-panel:not(:modal):not(:target)[open] { position: static; width: auto; border: 1px solid var(--nojs-line); border-radius: var(--nojs-radius); }
-.nojs-drawer-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--nojs-space); }
+.nojs-drawer-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: calc(var(--nojs-space) * 2); }
 .nojs-drawer-title { margin: 0; font-weight: 600; }
 .nojs-drawer-close {
-  width: 2rem; height: 2rem; padding: 0; font-size: 1.25rem; line-height: 1; display: inline-flex; align-items: center; justify-content: center;
-  color: var(--nojs-muted); background: none; border: 1px solid transparent; border-radius: var(--nojs-radius); text-decoration: none;
+  width: 1.75rem; height: 1.75rem; padding: 0; font-size: 1.25rem; line-height: 1; display: inline-flex; align-items: center; justify-content: center;
+  color: var(--nojs-fg); opacity: 0.7; background: none; border: 0; border-radius: var(--nojs-radius-sm); text-decoration: none;
 }
-.nojs-drawer-close:hover { color: var(--nojs-fg); border-color: var(--nojs-line); }
-.nojs-drawer-panel ul { list-style: none; margin: 0; padding: 0; }
-.nojs-drawer-panel li a { display: block; padding: 0.4rem 0.75rem; border-radius: var(--nojs-radius); color: var(--nojs-fg); text-decoration: none; }
-.nojs-drawer-panel li a:hover { background: var(--nojs-bg); }
-.nojs-drawer-panel li a[aria-current] { background: var(--nojs-primary); color: var(--nojs-on-primary); }
+.nojs-drawer-close:hover { opacity: 1; background: var(--nojs-accent); }
+/* Links as shadcn sidebar menu buttons: text-sm, rounded-md, accent on hover and when current. */
+.nojs-drawer-panel ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.25rem; }
+.nojs-drawer-panel li a {
+  display: block; padding: 0.375rem 0.5rem; border-radius: var(--nojs-radius-sm);
+  font-size: 0.875rem; line-height: 1.25rem; color: var(--nojs-fg); text-decoration: none;
+}
+.nojs-drawer-panel li a:hover { background: var(--nojs-accent); color: var(--nojs-on-accent); }
+.nojs-drawer-panel li a[aria-current] { background: var(--nojs-accent); color: var(--nojs-on-accent); font-weight: 500; }
 .nojs-drawer-content { min-width: 0; }
 @media (prefers-reduced-motion: reduce) { .nojs-drawer-panel:modal { transition: none; } }
 @media (min-width: 60rem) {
@@ -181,6 +189,7 @@ pub const CSS: &str = r#"
   .nojs-drawer-sidebar > .nojs-drawer-open { display: none; }
   .nojs-drawer-sidebar > .nojs-drawer-panel:not(:modal) {
     display: block; position: sticky; top: calc(var(--nojs-space) * 2); width: auto; height: auto; box-shadow: none;
+    padding: var(--nojs-space); background: var(--nojs-surface);
     border: 1px solid var(--nojs-line); border-radius: var(--nojs-radius); z-index: auto;
   }
   .nojs-drawer-sidebar .nojs-drawer-close { display: none; }

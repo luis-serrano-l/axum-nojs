@@ -236,27 +236,37 @@ fn grouped(commands: Vec<&Command>) -> Markup {
 
 /// Styles for this component; included in [`crate::stylesheet`].
 pub const CSS: &str = r#"
+/* shadcn Command in a CommandDialog: a search-bar trigger with its shortcut, a popover
+   panel, a borderless input over a rule, grouped items with small muted headings. */
 .nojs-palette-open {
   display: inline-flex; align-items: center; gap: var(--nojs-space); min-width: 16rem; justify-content: space-between;
-  padding: 0.5rem 0.75rem; color: var(--nojs-muted); background: var(--nojs-surface); cursor: pointer; font: inherit;
-  border: 1px solid var(--nojs-line); border-radius: var(--nojs-radius); list-style: none;
+  min-height: 2.25rem; padding: 0.375rem 0.5rem 0.375rem 0.75rem; font: inherit; font-size: 0.875rem; font-weight: 400;
+  color: var(--nojs-muted); background: var(--nojs-surface); cursor: pointer; list-style: none;
+  border: 1px solid var(--nojs-input); border-radius: var(--nojs-radius-sm); box-shadow: var(--nojs-shadow-xs);
 }
+.nojs-palette-open:hover { background: var(--nojs-accent); color: var(--nojs-on-accent); }
 .nojs-palette-open::-webkit-details-marker { display: none; }
-.nojs-palette-kbd { font-size: 0.75rem; padding: 0.1rem 0.4rem; border: 1px solid var(--nojs-line); border-radius: var(--nojs-radius); }
+.nojs-palette-kbd {
+  font-family: var(--nojs-font-mono); font-size: 0.75rem; font-weight: 500; padding: 0 0.375rem; line-height: 1.25rem;
+  color: var(--nojs-muted); background: var(--nojs-secondary); border: 1px solid var(--nojs-line); border-radius: var(--nojs-radius-sm);
+}
 .nojs-palette-panel {
-  box-sizing: border-box; width: min(36rem, calc(100vw - 2rem)); padding: calc(var(--nojs-space) * 2);
-  color: var(--nojs-fg); background: var(--nojs-surface); border: 1px solid var(--nojs-line); border-radius: var(--nojs-radius);
-  box-shadow: 0 16px 48px color-mix(in srgb, var(--nojs-fg) 20%, transparent);
+  box-sizing: border-box; width: min(32rem, calc(100vw - 2rem)); padding: 0.25rem;
+  color: var(--nojs-fg); background: var(--nojs-popover); border: 1px solid var(--nojs-line); border-radius: var(--nojs-radius);
+  box-shadow: var(--nojs-shadow-lg);
 }
 .nojs-palette-panel[popover] { margin: 12vh auto auto; max-height: 70vh; overflow: auto; }
-.nojs-palette-panel[popover]::backdrop { background: color-mix(in srgb, var(--nojs-fg) 25%, transparent); }
+.nojs-palette-panel[popover]::backdrop { background: var(--nojs-overlay); }
 .nojs-palette-details .nojs-palette-panel { margin-top: var(--nojs-space); }
-.nojs-palette-form { display: flex; gap: var(--nojs-space); margin-bottom: var(--nojs-space); }
-.nojs-palette-form input { flex: 1; font-size: 1.125rem; padding: 0.5rem 0.75rem; }
-.nojs-palette-heading { margin: calc(var(--nojs-space) * 1.5) 0 0.25rem; font-size: 0.75rem; color: var(--nojs-muted); }
+.nojs-palette-form { display: flex; gap: var(--nojs-space); align-items: center; margin: -0.25rem -0.25rem 0.25rem; padding: 0.25rem 0.5rem; border-bottom: 1px solid var(--nojs-line); }
+.nojs-palette-form input { flex: 1; min-height: 2.75rem; padding: 0.5rem 0.25rem; border: 0; box-shadow: none; background: transparent; }
+.nojs-palette-form input:focus-visible { outline: none; }
+.nojs-palette-form button { min-height: 2rem; padding: 0.25rem 0.75rem; }
+.nojs-palette-heading { margin: 0; padding: 0.375rem 0.5rem; font-size: 0.75rem; font-weight: 500; color: var(--nojs-muted); }
 .nojs-palette ul { list-style: none; margin: 0; padding: 0; }
-.nojs-palette li a { display: block; padding: 0.4rem 0.75rem; border-radius: var(--nojs-radius); color: var(--nojs-fg); text-decoration: none; }
-.nojs-palette li a:hover, .nojs-palette li a:focus-visible { background: var(--nojs-bg); }
+.nojs-palette li { max-width: none; }
+.nojs-palette li a { display: block; padding: 0.375rem 0.5rem; border-radius: var(--nojs-radius-sm); font-size: 0.875rem; color: var(--nojs-fg); text-decoration: none; }
+.nojs-palette li a:hover, .nojs-palette li a:focus-visible { background: var(--nojs-accent); color: var(--nojs-on-accent); outline: none; }
 .nojs-palette-results { margin-top: calc(var(--nojs-space) * 3); }
 .nojs-palette-results h2 { font-size: 1.125rem; }
 "#;

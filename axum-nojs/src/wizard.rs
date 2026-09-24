@@ -325,7 +325,7 @@ impl Render for Wizard<'_> {
 /// Styles for this component; included in [`crate::stylesheet`].
 pub const CSS: &str = r#"
 .nojs-wizard-steps { display: flex; flex-wrap: wrap; gap: var(--nojs-space); list-style: none; counter-reset: nojs-step; margin: 0 0 calc(var(--nojs-space) * 2); padding: 0; }
-.nojs-wizard-steps li { counter-increment: nojs-step; color: var(--nojs-muted); padding: 0.25rem 0.75rem; border: 1px solid var(--nojs-line); border-radius: var(--nojs-radius); }
+.nojs-wizard-steps li { counter-increment: nojs-step; color: var(--nojs-muted); padding: 0.25rem 0.75rem; font-size: 0.875rem; font-weight: 500; border: 1px solid var(--nojs-line); border-radius: var(--nojs-radius-sm); }
 .nojs-wizard-steps li::before { content: counter(nojs-step) ". "; }
 .nojs-wizard-steps li a { color: var(--nojs-fg); text-decoration: none; }
 .nojs-wizard-steps li a:hover { text-decoration: underline; }
@@ -335,13 +335,13 @@ pub const CSS: &str = r#"
 .nojs-wizard-steps .nojs-wizard-error::before { content: "! " counter(nojs-step) ". "; color: var(--nojs-danger); font-weight: 600; }
 .nojs-wizard-steps .nojs-wizard-current.nojs-wizard-error { background: var(--nojs-danger); }
 .nojs-wizard-steps .nojs-wizard-current.nojs-wizard-error::before { color: inherit; }
-.nojs-wizard-progress { display: block; width: 100%; max-width: 32rem; height: 0.5rem; margin: 0 0 calc(var(--nojs-space) * 2); accent-color: var(--nojs-primary); }
-.nojs-wizard-resume { padding: var(--nojs-space) calc(var(--nojs-space) * 2); border-left: 3px solid var(--nojs-primary); background: var(--nojs-surface); max-width: none; }
-.nojs-wizard-form fieldset { border: 1px solid var(--nojs-line); border-radius: var(--nojs-radius); padding: 1rem 1.25rem; }
+.nojs-wizard-progress { display: block; width: 100%; max-width: 32rem; height: 0.5rem; border-radius: 1rem; margin: 0 0 calc(var(--nojs-space) * 2); accent-color: var(--nojs-primary); }
+.nojs-wizard-resume { padding: 0.75rem 1rem; font-size: 0.875rem; border: 1px solid var(--nojs-line); border-radius: var(--nojs-radius); background: var(--nojs-card); max-width: none; }
+.nojs-wizard-form fieldset { border: 1px solid var(--nojs-line); border-radius: var(--nojs-radius-lg); padding: 1.5rem; }
 .nojs-wizard-form fieldset[aria-invalid=true] { border-color: var(--nojs-danger); }
-.nojs-wizard-form legend { padding: 0 0.5rem; color: var(--nojs-muted); }
-.nojs-wizard-form label { display: block; margin: 0.5rem 0; }
-.nojs-wizard-form input:not([type=checkbox]), .nojs-wizard-form select { display: block; width: 100%; max-width: 24rem; margin-top: 0.25rem; }
+.nojs-wizard-form legend { padding: 0 0.5rem; font-weight: 600; }
+.nojs-wizard-form label { display: block; margin: 0.75rem 0; font-size: 0.875rem; }
+.nojs-wizard-form input:not([type=checkbox]), .nojs-wizard-form select { display: block; width: 100%; max-width: 24rem; margin-top: 0.5rem; }
 .nojs-wizard-form [aria-invalid=true]:is(input, select) { border-color: var(--nojs-danger); }
 .nojs-wizard-actions { display: flex; align-items: center; gap: calc(var(--nojs-space) * 2); margin-top: 1rem; }
 .nojs-wizard-review { margin: 0; }

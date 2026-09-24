@@ -228,20 +228,25 @@ pub const CSS: &str = r#"
 .nojs-combobox form { display: flex; flex-wrap: wrap; gap: var(--nojs-space); align-items: center; }
 .nojs-combobox input[type=search] { flex: 1; min-width: 10rem; }
 .nojs-combobox-chips { display: contents; }
+/* Picked values are shadcn secondary badges with a remove link. */
 .nojs-combobox-chip {
-  display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.15rem 0.35rem 0.15rem 0.6rem;
-  border: 1px solid var(--nojs-line); border-radius: 1rem; background: var(--nojs-surface); font-size: 0.875rem;
+  display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.125rem 0.25rem 0.125rem 0.5rem;
+  border: 1px solid transparent; border-radius: var(--nojs-radius-sm); background: var(--nojs-secondary);
+  font-size: 0.75rem; line-height: 1rem; font-weight: 500;
 }
-.nojs-combobox-chip a { color: var(--nojs-muted); text-decoration: none; padding: 0 0.3rem; border-radius: 1rem; line-height: 1.2; }
+.nojs-combobox-chip a { color: var(--nojs-muted); text-decoration: none; padding: 0 0.25rem; border-radius: var(--nojs-radius-sm); line-height: 1rem; }
 .nojs-combobox-chip a:hover { color: var(--nojs-fg); background: var(--nojs-bg); }
+/* Results are a Command list: a bordered rounded box of items with accent hover. */
 .nojs-combobox-results { margin: var(--nojs-space) 0 calc(var(--nojs-space) * 2); }
 .nojs-combobox-status { margin: 0 0 var(--nojs-space); font-size: 0.875rem; color: var(--nojs-muted); }
-.nojs-combobox-results [role=listbox] { list-style: none; margin: 0; padding: 0; border: 1px solid var(--nojs-line); border-radius: var(--nojs-radius); overflow: hidden; }
-.nojs-combobox-results [role=option] { max-width: none; }
-.nojs-combobox-results [role=option] + [role=option] { border-top: 1px solid var(--nojs-line); }
-.nojs-combobox-results [role=option] a { display: block; padding: 0.5rem 0.75rem; text-decoration: none; color: inherit; }
-.nojs-combobox-results [role=option] a:hover, .nojs-combobox-results [role=option] a:focus-visible { background: var(--nojs-surface); outline-offset: -2px; }
-.nojs-combobox-results [role=option][aria-selected=true] { padding: 0.5rem 0.75rem; color: var(--nojs-muted); }
+.nojs-combobox-results [role=listbox] {
+  list-style: none; margin: 0; padding: 0.25rem; background: var(--nojs-popover);
+  border: 1px solid var(--nojs-line); border-radius: var(--nojs-radius); box-shadow: var(--nojs-shadow-xs);
+}
+.nojs-combobox-results [role=option] { max-width: none; font-size: 0.875rem; }
+.nojs-combobox-results [role=option] a { display: block; padding: 0.375rem 0.5rem; border-radius: var(--nojs-radius-sm); text-decoration: none; color: inherit; }
+.nojs-combobox-results [role=option] a:hover, .nojs-combobox-results [role=option] a:focus-visible { background: var(--nojs-accent); color: var(--nojs-on-accent); outline: none; }
+.nojs-combobox-results [role=option][aria-selected=true] { padding: 0.375rem 0.5rem; color: var(--nojs-muted); }
 .nojs-combobox-picked { font-size: 0.875rem; }
 .nojs-combobox-create { display: inline-block; }
 "#;

@@ -739,40 +739,58 @@ impl std::fmt::Display for Encoded<'_> {
 
 /// Styles for this component; included in [`crate::stylesheet`].
 pub const CSS: &str = r#"
-.nojs-table-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--nojs-space) calc(var(--nojs-space) * 2); margin-bottom: var(--nojs-space); }
+/* shadcn Data Table: a toolbar (filter input, outline buttons), a bordered rounded frame
+   round the table, text-sm cells, muted/50 row hover, a DropdownMenu for columns. */
+.nojs-table-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--nojs-space); margin-bottom: calc(var(--nojs-space) * 2); }
 .nojs-table-filter { flex: 1; min-width: 14rem; }
 .nojs-table-filter form { display: flex; gap: var(--nojs-space); align-items: center; }
-.nojs-table-filter input { flex: 1; min-width: 8rem; }
+.nojs-table-filter input { flex: 1; min-width: 8rem; max-width: 24rem; }
 .nojs-table-clear, .nojs-table-csv { color: var(--nojs-muted); font-size: 0.875rem; }
+.nojs-table-clear:hover, .nojs-table-csv:hover { color: var(--nojs-fg); }
 .nojs-table-cols { position: relative; font-size: 0.875rem; }
-.nojs-table-cols summary { cursor: pointer; list-style: none; padding: 0.35rem 0.75rem; border: 1px solid var(--nojs-line); border-radius: var(--nojs-radius); background: var(--nojs-surface); }
+.nojs-table-cols summary {
+  cursor: pointer; list-style: none; display: inline-flex; align-items: center; min-height: 2.25rem; padding: 0.375rem 0.75rem; font-weight: 500;
+  border: 1px solid var(--nojs-input); border-radius: var(--nojs-radius-sm); background: var(--nojs-bg); box-shadow: var(--nojs-shadow-xs);
+}
+.nojs-table-cols summary:hover { background: var(--nojs-accent); color: var(--nojs-on-accent); }
 .nojs-table-cols summary::-webkit-details-marker { display: none; }
-.nojs-table-cols ul { position: absolute; right: 0; z-index: 2; margin: 0.25rem 0 0; padding: 0.25rem 0; list-style: none; min-width: 10rem; background: var(--nojs-surface); border: 1px solid var(--nojs-line); border-radius: var(--nojs-radius); box-shadow: 0 8px 24px color-mix(in srgb, var(--nojs-fg) 12%, transparent); }
+.nojs-table-cols ul {
+  position: absolute; right: 0; z-index: 2; margin: 0.25rem 0 0; padding: 0.25rem; list-style: none; min-width: 10rem;
+  background: var(--nojs-popover); border: 1px solid var(--nojs-line); border-radius: var(--nojs-radius); box-shadow: var(--nojs-shadow-lg);
+}
 .nojs-table-cols li { max-width: none; }
-.nojs-table-cols a { display: block; padding: 0.35rem 0.75rem; color: inherit; text-decoration: none; }
-.nojs-table-cols a:hover { background: var(--nojs-bg); }
-.nojs-table-cols-mark { color: var(--nojs-primary); }
-.nojs-table table { table-layout: auto; }
+.nojs-table-cols a { display: flex; gap: 0.5rem; padding: 0.375rem 0.5rem; border-radius: var(--nojs-radius-sm); color: inherit; text-decoration: none; }
+.nojs-table-cols a:hover { background: var(--nojs-accent); color: var(--nojs-on-accent); }
+.nojs-table-cols-mark { color: var(--nojs-fg); }
+.nojs-table > table { border: 1px solid var(--nojs-line); border-radius: var(--nojs-radius); }
+.nojs-table table { table-layout: auto; border-collapse: separate; border-spacing: 0; }
+.nojs-table tbody tr:last-child > * { border-bottom: 0; }
 .nojs-table thead th { position: sticky; top: 0; background: var(--nojs-bg); z-index: 1; }
-.nojs-table th a { color: inherit; text-decoration: none; }
-.nojs-table th a:hover { color: var(--nojs-primary); text-decoration: underline; }
+.nojs-table thead th:first-child { border-top-left-radius: var(--nojs-radius); }
+.nojs-table thead th:last-child { border-top-right-radius: var(--nojs-radius); }
+.nojs-table th a { color: inherit; text-decoration: none; display: inline-flex; align-items: center; gap: 0.25rem; }
+.nojs-table th a:hover { color: var(--nojs-fg); }
 .nojs-table th.nojs-table-sorted { color: var(--nojs-fg); }
-.nojs-table-arrow { font-size: 0.7em; margin-left: 0.3em; }
+.nojs-table-arrow { font-size: 0.75em; margin-left: 0.25em; }
 .nojs-table-num { text-align: right; font-variant-numeric: tabular-nums; }
 .nojs-table-select { width: 2.5rem; text-align: center; }
 .nojs-table-menu { width: 3.5rem; text-align: center; text-wrap: nowrap; }
 .nojs-table-select input { margin: 0; }
-.nojs-table-menu .nojs-popover > button, .nojs-table-menu .nojs-popover summary { padding: 0 0.5rem; line-height: 1.6; }
-.nojs-table-empty { color: var(--nojs-muted); text-align: center; padding: 1.5rem; }
-.nojs-table-detail summary { cursor: pointer; list-style: none; }
+/* The row menu trigger is a ghost icon button. */
+.nojs-table-menu .nojs-popover > button, .nojs-table-menu .nojs-popover summary {
+  min-height: 2rem; padding: 0 0.5rem; border-color: transparent; background: none; box-shadow: none;
+}
+.nojs-table-menu .nojs-popover > button:hover, .nojs-table-menu .nojs-popover summary:hover { background: var(--nojs-accent); }
+.nojs-table-empty { color: var(--nojs-muted); text-align: center; padding: 1.5rem; height: 6rem; }
+.nojs-table-detail summary { cursor: pointer; list-style: none; font-weight: 400; }
 .nojs-table-detail summary::-webkit-details-marker { display: none; }
 .nojs-table-detail summary::before { content: "\25B8"; color: var(--nojs-muted); margin-right: 0.4em; }
 .nojs-table-detail[open] summary::before { content: "\25BE"; }
 .nojs-table-detail-body { margin: 0.5rem 0 0.25rem 1.2em; font-size: 0.875rem; color: var(--nojs-muted); }
 .nojs-table-detail-body > :last-child { margin-bottom: 0; }
-.nojs-table-bulk { display: flex; flex-wrap: wrap; align-items: center; gap: var(--nojs-space); margin-top: var(--nojs-space); font-size: 0.875rem; color: var(--nojs-muted); }
-.nojs-table-skeleton td span { display: block; height: 0.9em; margin: 0.2em 0; border-radius: 0.45em; background: var(--nojs-line); animation: nojs-table-pulse 1.2s ease-in-out infinite; }
-@keyframes nojs-table-pulse { 50% { opacity: 0.45; } }
+.nojs-table-bulk { display: flex; flex-wrap: wrap; align-items: center; gap: var(--nojs-space); margin-top: calc(var(--nojs-space) * 2); font-size: 0.875rem; color: var(--nojs-muted); }
+.nojs-table-skeleton td span { display: block; height: 1rem; margin: 0.125rem 0; border-radius: var(--nojs-radius-sm); background: var(--nojs-accent); animation: nojs-table-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+@keyframes nojs-table-pulse { 50% { opacity: 0.5; } }
 @media (prefers-reduced-motion: reduce) { .nojs-table-skeleton td span { animation: none; } }
 "#;
 
