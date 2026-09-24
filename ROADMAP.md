@@ -407,8 +407,16 @@ layered design system: primitives → existing components rebuilt on them → fl
   `.file()`, `.date()`, `.time()`) plus `.id()`; `ui.checkbox`/`ui.switch` share the builder
   (`.checked(bool)`); `ui.radio_group(name, legend).option(value, label)` is a fieldset with
   one `required` radio. The switch is `appearance: none` with a `::before` thumb.
-- [ ] `badge.rs`, `card.rs` (`.header/.body/.footer`), `icon.rs` (small inline-SVG set, no
+- [x] `badge.rs`, `card.rs` (`.header/.body/.footer`), `icon.rs` (small inline-SVG set, no
   font), `avatar.rs`.
+  Done: `ui.badge(text)` (primary fill; `.secondary/.danger/.outline/.ok/.warn`, `.href`);
+  `ui.card()` with `.title/.description/.header(markup)` (the header markup is the top-right
+  action), `.body`, `.footer`, `.id`; `Icon` (28 Lucide shapes, ISC, in the prelude, renders
+  decoratively on its own) and `ui.icon(Icon::X).label(..)` for a named one; `ui.avatar(name)`
+  with `.src/.small/.large`: initials under the `<img alt="">`, so a failed load shows them
+  with no `onerror` (the img overhangs the clipped circle by 2px to hide Firefox's broken-image
+  frame). Found on the way: a crate using `html!` from the prelude still needs its own `maud`
+  dependency, since the macro expands to `maud::` paths; M24's docs must say so.
 - [ ] Layout primitives: `ui.stack()`, `ui.cluster()`, `ui.grid(min)`, `ui.split()`, CSS-only,
   gaps from `--nojs-space-*` tokens.
 - [ ] Demo pages, `PATHS` entries, doctests and README matrix for each; Blitz test for button

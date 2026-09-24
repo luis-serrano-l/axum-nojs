@@ -51,8 +51,11 @@
 #![warn(missing_docs)]
 
 pub mod accordion;
+pub mod avatar;
+pub mod badge;
 pub mod breadcrumbs;
 pub mod button;
+pub mod card;
 pub mod color;
 pub mod combobox;
 pub mod counter;
@@ -62,6 +65,7 @@ pub mod empty_state;
 pub mod enhance;
 pub mod flash;
 pub mod form;
+pub mod icon;
 pub mod input;
 pub mod layout;
 pub mod paged_table;
@@ -90,6 +94,7 @@ pub mod wizard;
 pub use axum_nojs_caps as caps;
 
 pub use axum_nojs_caps::{Cap, Caps};
+pub use icon::Icon;
 pub use popover::MenuItem;
 #[cfg(feature = "axum")]
 pub use saved::Saved;
@@ -104,7 +109,7 @@ pub use ui::{Page, Redirect, Ui};
 pub mod prelude {
     #[cfg(feature = "axum")]
     pub use crate::Saved;
-    pub use crate::{Cap, Caps, MenuItem, Page, Redirect, Theme, Ui};
+    pub use crate::{Cap, Caps, Icon, MenuItem, Page, Redirect, Theme, Ui};
     pub use maud::{Markup, Render, html};
 }
 
@@ -210,6 +215,10 @@ pub const COMPONENT_CSS: &[&str] = &[
     layout::CSS,
     button::CSS,
     input::CSS,
+    badge::CSS,
+    card::CSS,
+    icon::CSS,
+    avatar::CSS,
     dialog::CSS,
     popover::CSS,
     tabs::CSS,
