@@ -751,11 +751,11 @@ pub const CSS: &str = r#"
 .nojs-table-cols li { max-width: none; }
 .nojs-table-cols a { display: block; padding: 0.35rem 0.75rem; color: inherit; text-decoration: none; }
 .nojs-table-cols a:hover { background: var(--nojs-bg); }
-.nojs-table-cols-mark { color: var(--nojs-accent); }
+.nojs-table-cols-mark { color: var(--nojs-primary); }
 .nojs-table table { table-layout: auto; }
 .nojs-table thead th { position: sticky; top: 0; background: var(--nojs-bg); z-index: 1; }
 .nojs-table th a { color: inherit; text-decoration: none; }
-.nojs-table th a:hover { color: var(--nojs-accent); text-decoration: underline; }
+.nojs-table th a:hover { color: var(--nojs-primary); text-decoration: underline; }
 .nojs-table th.nojs-table-sorted { color: var(--nojs-fg); }
 .nojs-table-arrow { font-size: 0.7em; margin-left: 0.3em; }
 .nojs-table-num { text-align: right; font-variant-numeric: tabular-nums; }

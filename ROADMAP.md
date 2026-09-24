@@ -323,11 +323,15 @@ plain HTML/CSS) for markup structure; Radix Colors for status scales; Pico CSS /
 native elements shadcn replaces with React (`<dialog>`, `<details>`, `<select>`, date, range);
 Vercel Geist for dense tables and stats. Paid kits (Tailwind UI, Catalyst) are not copied.
 Done before M21 so the primitives are born in this look.
-- [ ] Tokens: `Palette` gains the shadcn roles it lacks (`card`, `popover`, `secondary`,
+- [x] Tokens: `Palette` gains the shadcn roles it lacks (`card`, `popover`, `secondary`,
   `accent` as hover surface, `primary`/`on_primary`, `input`, `ring`), keeping `--nojs-*`
   names; `Tokens::default()` is shadcn's neutral (zinc) light and dark, primary near-black /
   near-white. `radius` 0.5rem with derived `--nojs-radius-sm/-lg`. ok/warn/danger from Radix
   Colors steps 9/11. Docs and `docs/theming` updated; the "ink and moss" wording removed.
+  Done: the old brand token became `--nojs-primary`/`--nojs-on-primary` everywhere and
+  `--nojs-accent` is now the hover surface. Status colours use Radix step 11 (red/green/amber),
+  the text step, so each clears 4.5:1; danger buttons put `on-primary` on it (5.0 / 8.4).
+  `--nojs-radius-sm/-lg` are derived as radius ∓ 4px, so a radius needs a unit (`"0px"`).
 - [ ] Type: system stack only (`ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
   "Helvetica Neue", Arial, sans-serif`, mono `ui-monospace, SFMono-Regular, Menlo, Consolas`),
   shadcn's scale (text-sm 0.875rem body in controls, 1.25/1.5 line heights, 500/600 weights),

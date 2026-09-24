@@ -94,7 +94,7 @@ pub const CSS: &str = r#"
 .nojs-breadcrumbs > ol { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.25rem 0; list-style: none; margin: 0; padding: 0; }
 .nojs-breadcrumbs > ol > li + li::before { content: "/"; margin-inline: 0.5rem; color: var(--nojs-line); }
 .nojs-breadcrumbs a { color: var(--nojs-muted); }
-.nojs-breadcrumbs a:hover { color: var(--nojs-accent); }
+.nojs-breadcrumbs a:hover { color: var(--nojs-primary); }
 .nojs-breadcrumbs [aria-current] { color: var(--nojs-fg); font-weight: 600; }
 .nojs-breadcrumbs-fold { position: relative; }
 .nojs-breadcrumbs-fold details { display: inline-block; }

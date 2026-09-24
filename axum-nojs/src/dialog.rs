@@ -301,7 +301,7 @@ pub const CSS: &str = r#"
   display: inline-block; padding: 0.5rem 1rem; border: 1px solid var(--nojs-line);
   border-radius: var(--nojs-radius); background: var(--nojs-surface); color: inherit; text-decoration: none;
 }
-.nojs-dialog-actions a[role="button"]:not(.nojs-dialog-cancel) { background: var(--nojs-accent); color: var(--nojs-on-accent); border-color: transparent; }
+.nojs-dialog-actions a[role="button"]:not(.nojs-dialog-cancel) { background: var(--nojs-primary); color: var(--nojs-on-primary); border-color: transparent; }
 .nojs-dialog-close {
   position: absolute; top: calc(var(--nojs-space) * 2); right: calc(var(--nojs-space) * 2);
   width: 2rem; height: 2rem; padding: 0; line-height: 1; font-size: 1.25rem;

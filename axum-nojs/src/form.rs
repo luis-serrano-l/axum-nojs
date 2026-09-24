@@ -498,7 +498,7 @@ pub const CSS: &str = r#"
 .nojs-field-help { color: var(--nojs-muted); font-size: 0.875rem; }
 .nojs-field-count { justify-self: end; color: var(--nojs-muted); font-size: 0.8rem; font-variant-numeric: tabular-nums; }
 .nojs-field :is(input, textarea):user-invalid, .nojs-field [aria-invalid=true] { border-color: var(--nojs-danger); }
-.nojs-field :is(input, textarea):user-valid { border-color: color-mix(in srgb, var(--nojs-accent) 60%, transparent); }
+.nojs-field :is(input, textarea):user-valid { border-color: color-mix(in srgb, var(--nojs-primary) 60%, transparent); }
 .nojs-error { color: var(--nojs-danger); margin: 0; font-size: 0.9rem; }
 @media (min-width: 40rem) {
   .nojs-form-inline .nojs-field { grid-template-columns: 10rem 1fr; column-gap: calc(var(--nojs-space) * 2); }

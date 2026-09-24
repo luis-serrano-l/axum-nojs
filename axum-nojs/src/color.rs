@@ -132,7 +132,7 @@ pub const CSS: &str = r#"
     repeating-conic-gradient(var(--nojs-line) 0 25%, var(--nojs-surface) 0 50%) 0 0 / 0.75rem 0.75rem;
 }
 .nojs-color-alpha { display: inline-flex; align-items: center; gap: 0.5rem; font-weight: 400; }
-.nojs-color-alpha input { width: 8rem; accent-color: var(--nojs-accent); }
+.nojs-color-alpha input { width: 8rem; accent-color: var(--nojs-primary); }
 .nojs-color-alpha output { min-width: 3ch; text-align: right; font-variant-numeric: tabular-nums; }
 .nojs-color-presets { display: flex; flex-basis: 100%; gap: 0.4rem; }
 .nojs-color-presets button {

@@ -109,5 +109,5 @@ impl Render for ThemeToggle<'_> {
 pub const CSS: &str = r#"
 .nojs-theme { display: inline-flex; gap: 0; border: 1px solid var(--nojs-line); border-radius: var(--nojs-radius); overflow: hidden; }
 .nojs-theme button { border: 0; border-radius: 0; background: transparent; padding: 0.4rem 0.8rem; text-transform: capitalize; }
-.nojs-theme button[aria-pressed="true"] { background: var(--nojs-accent); color: var(--nojs-on-accent); }
+.nojs-theme button[aria-pressed="true"] { background: var(--nojs-primary); color: var(--nojs-on-primary); }
 "#;

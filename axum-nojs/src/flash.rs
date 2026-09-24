@@ -162,7 +162,7 @@ impl Render for Flash<'_> {
 pub const CSS: &str = r#"
 .nojs-flash { display: grid; gap: calc(var(--nojs-space) * 1); margin-block: calc(var(--nojs-space) * 2); }
 .nojs-flash-item {
-  --nojs-flash-tone: var(--nojs-accent);
+  --nojs-flash-tone: var(--nojs-primary);
   display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between;
   gap: calc(var(--nojs-space) * 1) calc(var(--nojs-space) * 2); margin: 0;
   padding: 0.6rem 1rem; border-radius: var(--nojs-radius);

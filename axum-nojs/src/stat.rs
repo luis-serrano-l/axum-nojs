@@ -147,7 +147,7 @@ pub const CSS: &str = r#"
   background: var(--nojs-surface); border: 1px solid var(--nojs-line); border-radius: var(--nojs-radius);
 }
 .nojs-stat p { margin: 0; max-width: none; }
-.nojs-stat-link:hover { border-color: var(--nojs-accent); }
+.nojs-stat-link:hover { border-color: var(--nojs-primary); }
 .nojs-stat-label { color: var(--nojs-muted); font-size: 0.875rem; }
 .nojs-stat-value { font-size: 1.75rem; font-weight: 700; line-height: 1.2; margin-block: 0.25rem; font-variant-numeric: tabular-nums; }
 .nojs-stat-delta { font-size: 0.875rem; font-weight: 600; }

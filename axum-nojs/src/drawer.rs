@@ -173,7 +173,7 @@ pub const CSS: &str = r#"
 .nojs-drawer-panel ul { list-style: none; margin: 0; padding: 0; }
 .nojs-drawer-panel li a { display: block; padding: 0.4rem 0.75rem; border-radius: var(--nojs-radius); color: var(--nojs-fg); text-decoration: none; }
 .nojs-drawer-panel li a:hover { background: var(--nojs-bg); }
-.nojs-drawer-panel li a[aria-current] { background: var(--nojs-accent); color: var(--nojs-on-accent); }
+.nojs-drawer-panel li a[aria-current] { background: var(--nojs-primary); color: var(--nojs-on-primary); }
 .nojs-drawer-content { min-width: 0; }
 @media (prefers-reduced-motion: reduce) { .nojs-drawer-panel:modal { transition: none; } }
 @media (min-width: 60rem) {

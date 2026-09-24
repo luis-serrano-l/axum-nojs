@@ -337,8 +337,8 @@ pub const CSS: &str = r#"
 .nojs-paged-table-nav { display: flex; flex-wrap: wrap; align-items: center; gap: var(--nojs-space) calc(var(--nojs-space) * 2); margin-top: var(--nojs-space); color: var(--nojs-muted); }
 .nojs-paged-table-pages { display: flex; flex-wrap: wrap; gap: 0.25rem; list-style: none; margin: 0; padding: 0; }
 .nojs-paged-table-pages a { display: inline-block; min-width: 2rem; padding: 0.25rem 0.5rem; text-align: center; text-decoration: none; border: 1px solid var(--nojs-line); border-radius: var(--nojs-radius); color: var(--nojs-fg); }
-.nojs-paged-table-pages a:hover { border-color: var(--nojs-accent); }
-.nojs-paged-table-pages a[aria-current="page"] { background: var(--nojs-accent); color: var(--nojs-on-accent); border-color: transparent; }
+.nojs-paged-table-pages a:hover { border-color: var(--nojs-primary); }
+.nojs-paged-table-pages a[aria-current="page"] { background: var(--nojs-primary); color: var(--nojs-on-primary); border-color: transparent; }
 .nojs-paged-table-gap { align-self: center; padding: 0 0.25rem; }
 .nojs-paged-table-jump, .nojs-paged-table-per { display: flex; align-items: center; gap: var(--nojs-space); }
 .nojs-paged-table-jump { margin-left: auto; }

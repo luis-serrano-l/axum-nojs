@@ -330,13 +330,13 @@ pub const CSS: &str = r#"
 .nojs-wizard-steps li a { color: var(--nojs-fg); text-decoration: none; }
 .nojs-wizard-steps li a:hover { text-decoration: underline; }
 .nojs-wizard-steps small { font-size: 0.8em; }
-.nojs-wizard-current { color: var(--nojs-on-accent) !important; background: var(--nojs-accent); border-color: transparent !important; }
+.nojs-wizard-current { color: var(--nojs-on-primary) !important; background: var(--nojs-primary); border-color: transparent !important; }
 .nojs-wizard-steps .nojs-wizard-error { border-color: var(--nojs-danger) !important; }
 .nojs-wizard-steps .nojs-wizard-error::before { content: "! " counter(nojs-step) ". "; color: var(--nojs-danger); font-weight: 700; }
 .nojs-wizard-steps .nojs-wizard-current.nojs-wizard-error { background: var(--nojs-danger); }
 .nojs-wizard-steps .nojs-wizard-current.nojs-wizard-error::before { color: inherit; }
-.nojs-wizard-progress { display: block; width: 100%; max-width: 32rem; height: 0.5rem; margin: 0 0 calc(var(--nojs-space) * 2); accent-color: var(--nojs-accent); }
-.nojs-wizard-resume { padding: var(--nojs-space) calc(var(--nojs-space) * 2); border-left: 3px solid var(--nojs-accent); background: var(--nojs-surface); max-width: none; }
+.nojs-wizard-progress { display: block; width: 100%; max-width: 32rem; height: 0.5rem; margin: 0 0 calc(var(--nojs-space) * 2); accent-color: var(--nojs-primary); }
+.nojs-wizard-resume { padding: var(--nojs-space) calc(var(--nojs-space) * 2); border-left: 3px solid var(--nojs-primary); background: var(--nojs-surface); max-width: none; }
 .nojs-wizard-form fieldset { border: 1px solid var(--nojs-line); border-radius: var(--nojs-radius); padding: 1rem 1.25rem; }
 .nojs-wizard-form fieldset[aria-invalid=true] { border-color: var(--nojs-danger); }
 .nojs-wizard-form legend { padding: 0 0.5rem; color: var(--nojs-muted); }

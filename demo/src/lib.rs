@@ -243,7 +243,7 @@ const GROUPS: [&str; 6] = [
     "Server state",
 ];
 
-/// The second palette from `docs/theming.md`: warm paper, copper accent, amber in the dark.
+/// The second palette from `docs/theming.md`: warm paper, copper primary, amber in the dark.
 const LINEN: Tokens = Tokens {
     light: Palette {
         bg: "#f4efe6",
@@ -251,8 +251,15 @@ const LINEN: Tokens = Tokens {
         muted: "#5d574f",
         line: "#d6cdbf",
         surface: "#fffdf9",
-        accent: "#8a3b12",
-        on_accent: "#ffffff",
+        card: "#fffdf9",
+        popover: "#fffdf9",
+        secondary: "#ebe3d6",
+        accent: "#ebe3d6",
+        on_accent: "#1d1a17",
+        primary: "#8a3b12",
+        on_primary: "#ffffff",
+        input: "#d6cdbf",
+        ring: "#b5764f",
         danger: "#a0261c",
         ok: "#2f6b3a",
         warn: "#7a5500",
@@ -263,8 +270,15 @@ const LINEN: Tokens = Tokens {
         muted: "#a59c90",
         line: "#3a332c",
         surface: "#1f1b18",
-        accent: "#e8965a",
-        on_accent: "#1a0f06",
+        card: "#1f1b18",
+        popover: "#1f1b18",
+        secondary: "#2b2521",
+        accent: "#2b2521",
+        on_accent: "#ece6dc",
+        primary: "#e8965a",
+        on_primary: "#1a0f06",
+        input: "#4a4038",
+        ring: "#a8683a",
         danger: "#ff8f85",
         ok: "#8fd39a",
         warn: "#f0c060",
@@ -415,7 +429,7 @@ async fn index(ui: Ui) -> Page {
         html! {
             p class="nojs-lede" { (COMPONENTS.len()) " interactive components for Axum and Maud that work with JavaScript turned off. The HTML platform and plain form posts do the work. Each page loads one optional script, " code { "/nojs/enhance.js" } ", which updates the same markup in place instead of reloading. Block it and every page still works." }
             @if !ui.has(Cap::Probed) { p class="nojs-note" { "First visit: this page is the fallback variant. Reload and the server will know your browser." } }
-            p class="nojs-note" { "Theme: " @if linen { a href="/" { "ink and moss" } " · linen and copper" } @else { "ink and moss · " a href="/?palette=linen" { "linen and copper" } } ", see " code { "docs/theming.md" } }
+            p class="nojs-note" { "Theme: " @if linen { a href="/" { "neutral" } " · linen and copper" } @else { "neutral · " a href="/?palette=linen" { "linen and copper" } } ", see " code { "docs/theming.md" } }
             div class="nojs-index" { @for group in GROUPS {
                 h2 { (group) }
                 ul { @for (href, title, _, feats, what) in COMPONENTS.iter().filter(|c| c.2 == group) {

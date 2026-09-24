@@ -154,7 +154,7 @@ pub fn order(a: i64, b: i64) -> (i64, i64) {
 /// Styles for this component; included in [`crate::stylesheet`].
 pub const CSS: &str = r#"
 .nojs-range { display: flex; align-items: center; gap: var(--nojs-space); }
-.nojs-range input { flex: 1; accent-color: var(--nojs-accent); }
+.nojs-range input { flex: 1; accent-color: var(--nojs-primary); }
 .nojs-range output { min-width: 3ch; text-align: right; font-variant-numeric: tabular-nums; }
 /* Two inputs share one grid cell; only their thumbs catch the pointer. */
 .nojs-range-track { flex: 1; display: grid; align-items: center; min-height: 1.5rem; }
@@ -168,14 +168,14 @@ pub const CSS: &str = r#"
 .nojs-range-track input::-moz-range-progress { background: none; }
 .nojs-range-track input::-webkit-slider-thumb {
   appearance: none; pointer-events: auto; cursor: pointer; width: 1.1rem; height: 1.1rem; border-radius: 50%;
-  background: var(--nojs-accent); border: 2px solid var(--nojs-surface); box-shadow: 0 0 0 1px var(--nojs-line);
+  background: var(--nojs-primary); border: 2px solid var(--nojs-surface); box-shadow: 0 0 0 1px var(--nojs-line);
 }
 .nojs-range-track input::-moz-range-thumb {
   pointer-events: auto; cursor: pointer; width: 1.1rem; height: 1.1rem; border-radius: 50%; box-sizing: border-box;
-  background: var(--nojs-accent); border: 2px solid var(--nojs-surface); box-shadow: 0 0 0 1px var(--nojs-line);
+  background: var(--nojs-primary); border: 2px solid var(--nojs-surface); box-shadow: 0 0 0 1px var(--nojs-line);
 }
 .nojs-range-track input:focus-visible { outline: none; }
-.nojs-range-track input:focus-visible::-webkit-slider-thumb { outline: 2px solid var(--nojs-accent); outline-offset: 2px; }
-.nojs-range-track input:focus-visible::-moz-range-thumb { outline: 2px solid var(--nojs-accent); outline-offset: 2px; }
+.nojs-range-track input:focus-visible::-webkit-slider-thumb { outline: 2px solid var(--nojs-primary); outline-offset: 2px; }
+.nojs-range-track input:focus-visible::-moz-range-thumb { outline: 2px solid var(--nojs-primary); outline-offset: 2px; }
 .nojs-range-values { text-wrap: nowrap; font-variant-numeric: tabular-nums; }
 "#;

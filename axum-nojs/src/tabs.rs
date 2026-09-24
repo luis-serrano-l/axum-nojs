@@ -207,12 +207,12 @@ pub const CSS: &str = r#"
 .nojs-tabs:not(.nojs-accordion) summary a { margin: -0.5rem -1rem; padding: 0.5rem 1rem; }
 .nojs-tabs:not(.nojs-accordion) details[open] summary { color: var(--nojs-fg); }
 /* The underline is its own empty element so the view transition moves a 2px bar, not the text. */
-.nojs-tabs-mark { position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; background: var(--nojs-accent); }
+.nojs-tabs-mark { position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; background: var(--nojs-primary); }
 .nojs-tabs-badge {
   display: inline-block; min-width: 1.5em; padding: 0 0.4em; border-radius: 1em; text-align: center;
   font-size: 0.75em; font-weight: 600; line-height: 1.6; background: var(--nojs-line); color: var(--nojs-fg);
 }
-.nojs-tabs details[open] .nojs-tabs-badge { background: var(--nojs-accent); color: var(--nojs-on-accent); }
+.nojs-tabs details[open] .nojs-tabs-badge { background: var(--nojs-primary); color: var(--nojs-on-primary); }
 /* Push every panel to a full-width row under the strip. */
 .nojs-tabs details::details-content { order: 1; flex-basis: 100%; }
 .nojs-tabs .nojs-tabs-panel { order: 1; flex-basis: 100%; padding: 1rem 0; }

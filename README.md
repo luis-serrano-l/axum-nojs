@@ -102,7 +102,9 @@ component gives the HTML to another template engine.
   (`Caps::from_cookie_header`, `Caps::from_query`, `caps::beacon_cookie`); Axum only wraps them.
 - Output HTML is semantic with one `nojs-<component>` class per root. `curl` any page and read it.
 - CSS lives beside its component as `const CSS`. Theming is via `--nojs-*` custom properties only
-  (`bg`, `surface`, `fg`, `muted`, `line`, `accent`, `on-accent`, `danger`, `ok`, `warn`, `radius`, `space`).
+  (shadcn/ui's roles: `bg`, `fg`, `muted`, `line`, `surface`, `card`, `popover`, `secondary`,
+  `accent`, `on-accent`, `primary`, `on-primary`, `input`, `ring`, `danger`, `ok`, `warn`, `radius`, `space`;
+  the default is shadcn's neutral zinc theme).
   `layout::Tokens` holds them for light and dark, `ui.page(..).tokens(&t)` applies another set
   once per page, and `docs/theming.md` says what each one affects and which pairs must keep contrast.
   `/?palette=linen` in the demo is the same index under a second palette.

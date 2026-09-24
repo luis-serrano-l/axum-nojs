@@ -124,5 +124,5 @@ pub const CSS: &str = r#"
 .nojs-pager-list li { padding: 0.4rem 0; border-bottom: 1px solid var(--nojs-line); }
 .nojs-pager-anchor { scroll-margin-top: 4rem; }
 .nojs-pager-more { display: inline-block; margin-top: 1rem; padding: 0.5rem 1rem;
-  background: var(--nojs-accent); color: var(--nojs-on-accent); border-radius: var(--nojs-radius); text-decoration: none; }
+  background: var(--nojs-primary); color: var(--nojs-on-primary); border-radius: var(--nojs-radius); text-decoration: none; }
 "#;
