@@ -146,7 +146,7 @@ involved) a Firefox check.
   current filter.
 - [x] Paged table: jump-to-page form, first/last links, ellipsis for long ranges, page size
   remembered per table in `UiState`, total row count formatted with separators.
-- [ ] Wizard: per-step server validation with messages beside the field and the step marked
+- [x] Wizard: per-step server validation with messages beside the field and the step marked
   in error in the step list, optional steps that can be skipped, a progress bar, a summary
   that links each field back to its step, resume from the cookie after closing the tab.
 - [ ] Form: field groups with legends, help text and character counters (`<output>`),

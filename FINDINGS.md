@@ -283,6 +283,19 @@ query, so no action forgets the others; `paged_table` threads `per` through both
 still names it, so a URL someone sends shows the same rows for everyone; only a bare `/table`
 differs per visitor.
 
+**A wizard step that fails answers, it does not redirect.** A valid step is stored and
+redirected (PRG); an invalid one answers `422` with the same step, the typed values and the
+messages beside the fields, because a redirect would need the messages parked somewhere for
+one request. The enhancement script swaps the `422` body like any other, so the in-place path
+and the no-script path show the same thing. Skipping an optional step uses `formnovalidate`,
+so the browser does not demand its fields first.
+
+**Resuming is the cookie doing its job.** The step already lived in the `wo-ui` cookie; a bare
+visit to the wizard lands on it. `UiState::remembered` tells the two apart (the key came from
+the cookie, not the link), so the page can say "Picked up where you left off" and offer Start
+over. The entered values need their own persistent cookie (the demo keeps them a week) or a
+session store; a session cookie would be lost with the browser.
+
 **The pager went stale behind an in-place sort.** The table was the swap root and the pager
 sat outside it, so after a sort through the enhancement script the page links still carried
 the old sort. The paged table is now the swap root and its inner table is not, so a sort,

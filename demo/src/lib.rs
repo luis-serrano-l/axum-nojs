@@ -70,7 +70,7 @@ const COMPONENTS: [(&str, &str, &str, &str); 15] = [
     ("/accordion", "Accordion", "Disclosure", "<details name>, ::details-content, interpolate-size"),
     ("/combobox", "Combobox", "Input", "<datalist>, <optgroup>, <search>, aria-live"),
     ("/form", "Validated form", "Input", ":user-invalid, PRG"),
-    ("/wizard", "Wizard", "Input", "one form per step, PRG, UiState"),
+    ("/wizard", "Wizard", "Input", "one form per step, PRG, formnovalidate, <progress>, UiState"),
     ("/inputs", "Select, range, colour", "Input", "<selectedcontent>, type=range, type=color"),
     ("/counter", "Counter", "Server state", "form POST + cookie"),
     ("/settings", "Settings", "Server state", "UiState, PRG + flash"),
@@ -363,47 +363,75 @@ fn wizard_data(jar: &CookieJar) -> Vec<(String, String)> {
     raw.split('&').filter_map(|p| p.split_once('=')).map(|(k, v)| (k.to_string(), v.replace('+', " "))).collect()
 }
 
-fn wizard_steps(data: &[(String, String)]) -> [Step; 3] {
+/// Server rules for a wizard step: `(field, message)` per problem.
+fn wizard_check(step: usize, data: &[(String, String)]) -> Vec<(&'static str, &'static str)> {
+    let get = |k: &str| data.iter().find(|(n, _)| n == k).map(|(_, v)| v.trim()).unwrap_or("");
+    let mut errors = Vec::new();
+    if step == 0 {
+        if get("name").is_empty() { errors.push(("name", "Enter your name.")); }
+        if !get("email").contains('@') { errors.push(("email", "Enter an email address with an @.")); }
+        else if get("email").ends_with("@example.com") { errors.push(("email", "example.com addresses are not accepted.")); }
+    }
+    errors
+}
+
+fn wizard_steps(state: &UiState, data: &[(String, String)], errors: &[(&str, &str)]) -> [Step; 3] {
     let get = |k: &str| data.iter().find(|(n, _)| n == k).map(|(_, v)| v.as_str()).unwrap_or("");
+    let err = |k: &str| errors.iter().find(|(n, _)| *n == k).map(|(_, m)| *m);
+    let field = |name: &'static str, label: &str, kind: &str| html! {
+        label for={ "w-" (name) } { (label) }
+        input id={ "w-" (name) } type=(kind) name=(name) value=(get(name)) required
+            aria-invalid=[err(name).map(|_| "true")] aria-describedby=[err(name).map(|_| format!("w-{name}-error"))];
+        @if let Some(m) = err(name) { p id={ "w-" (name) "-error" } class="wo-error" { (m) } }
+    };
     [
-        Step { title: "Account", body: html! {
-            label { "Name" input type="text" name="name" value=(get("name")) required; }
-            label { "Email" input type="email" name="email" value=(get("email")) required; }
-        } },
-        Step { title: "Preferences", body: html! {
+        Step::new("Account", html! { (field("name", "Name", "text")) (field("email", "Email", "email")) }).error(!errors.is_empty()),
+        Step::new("Newsletter", html! {
             label { "Digest" select name="digest" { @for d in ["daily", "weekly", "never"] { option value=(d) selected[get("digest") == d] { (d) } } } }
-            label { input type="checkbox" name="news" value="1" checked[get("news") == "1"]; " Product news" }
-        } },
-        Step { title: "Review", body: html! { dl class="wo-wizard-review" {
-            @for (k, v) in data { dt { (k) } dd { @if v.is_empty() { span class="wo-note" { "(empty)" } } @else { (v) } } }
-        } } },
+            label { "Topics" input type="text" name="topics" value=(get("topics")) placeholder="rust, html"; }
+        }).optional(true),
+        Step::new("Review", wizard::summary(state, "signup", &[
+            ("Name", get("name"), 0), ("Email", get("email"), 0), ("Digest", get("digest"), 1), ("Topics", get("topics"), 1),
+        ])),
     ]
 }
 
+fn wizard_view(caps: &Caps, jar: &CookieJar, state: &UiState, data: &[(String, String)], errors: &[(&str, &str)]) -> Markup {
+    page(caps, jar, "Wizard", html! {
+        (flash(caps, state.flash()))
+        p { "Three steps, one form each. The server checks every step; the second can be skipped. Close the tab and come back to " a href="/wizard" { "/wizard" } ": you resume where you left off." }
+        (wizard(caps, "signup", "/wizard", &wizard_steps(state, data, errors), state, WizardOptions::default().finish("Create account")))
+    })
+}
+
 async fn wizard_page(caps: Caps, jar: CookieJar, state: UiState) -> (UiState, Markup) {
-    let steps = wizard_steps(&wizard_data(&jar));
-    let body = page(&caps, &jar, "Wizard", html! {
-        (flash(&caps, state.flash()))
-        p { "Three steps, one form each. Back is a link; what you typed is kept on the server." }
-        (wizard(&caps, "signup", "/wizard", &steps, &state, WizardOptions::default().finish("Create account")))
-    });
+    let body = wizard_view(&caps, &jar, &state, &wizard_data(&jar), &[]);
     (state, body)
 }
 
-/// Merge this step's fields into the cookie, then redirect to the next step (or finish).
-async fn wizard_submit(jar: CookieJar, headers: HeaderMap, Form(fields): Form<Vec<(String, String)>>) -> (CookieJar, axum::response::Response) {
-    let step = fields.iter().find(|(k, _)| k == "step").and_then(|(_, v)| v.parse().ok()).unwrap_or(0);
+/// Check this step: answer 422 with the same step and its messages, or merge the fields into
+/// the cookie (kept a week, so closing the browser loses nothing) and redirect to the next step.
+async fn wizard_submit(caps: Caps, jar: CookieJar, headers: HeaderMap, Form(fields): Form<Vec<(String, String)>>) -> axum::response::Response {
+    let field = |k: &str| fields.iter().find(|(n, _)| n == k).map(|(_, v)| v.as_str());
+    let step: usize = field("step").and_then(|v| v.parse().ok()).unwrap_or(0);
+    let skip = field("skip") == Some("1");
+    let cookie = headers.get("cookie").and_then(|v| v.to_str().ok()).unwrap_or("");
+    let state = UiState::from_request("/wizard", &format!("step.signup={step}"), cookie);
     let mut data = wizard_data(&jar);
-    for (k, v) in fields.into_iter().filter(|(k, _)| k != "step") {
-        data.retain(|(n, _)| *n != k);
-        data.push((k, v));
+    for (k, v) in fields.iter().filter(|(k, _)| !skip && k != "step" && k != "skip") {
+        data.retain(|(n, _)| n != k);
+        data.push((k.clone(), v.clone()));
     }
-    let state = UiState::from_request("/wizard", "", headers.get("cookie").and_then(|v| v.to_str().ok()).unwrap_or(""));
+    let errors = if skip { Vec::new() } else { wizard_check(step, &data) };
+    if !errors.is_empty() {
+        return (axum::http::StatusCode::UNPROCESSABLE_ENTITY, wizard_view(&caps, &jar, &state, &data, &errors)).into_response();
+    }
     if step + 1 >= 3 {
-        return (jar.remove(Cookie::from("wizard")), prg(&state.link("step.signup", "0"), Some("Account created (well, the cookie was cleared).")));
+        return (jar.remove(Cookie::from("wizard")), prg::<axum::body::Body>(&state.link("step.signup", "0"), Some("Account created (well, the cookie was cleared)."))).into_response();
     }
     let value: String = data.iter().map(|(k, v)| format!("{k}={}", v.replace(' ', "+"))).collect::<Vec<_>>().join("&");
-    (jar.add(Cookie::new("wizard", value)), prg(&state.link("step.signup", &(step + 1).to_string()), None))
+    let kept = Cookie::parse(format!("wizard={value}; Path=/; Max-Age=604800; SameSite=Lax")).expect("cookie");
+    (jar.add(kept), prg::<axum::body::Body>(&state.link("step.signup", &(step + 1).to_string()), None)).into_response()
 }
 
 #[derive(Deserialize, Default)]

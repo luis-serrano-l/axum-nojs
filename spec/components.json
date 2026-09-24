@@ -140,7 +140,9 @@
       "features": [
         { "name": "<form method=\"post\">", "baseline": { "chrome": "1", "firefox": "1", "safari": "1" } },
         { "name": "aria-current=\"step\"", "baseline": { "chrome": "1", "firefox": "1", "safari": "1" } },
-        { "name": "<fieldset>", "baseline": { "chrome": "1", "firefox": "1", "safari": "1" } }
+        { "name": "<fieldset>", "baseline": { "chrome": "1", "firefox": "1", "safari": "1" } },
+        { "name": "formnovalidate", "baseline": { "chrome": "4", "firefox": "4", "safari": "5" } },
+        { "name": "<progress>", "baseline": { "chrome": "8", "firefox": "16", "safari": "6" } }
       ],
       "fallback": "none needed: one form per step, PRG between them",
       "needs_js": "no"

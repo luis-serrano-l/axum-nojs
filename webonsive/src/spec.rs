@@ -201,6 +201,8 @@ pub const SPECS: &[ComponentSpec] = &[
             f("<form method=\"post\">", b("1", "1", "1")),
             f("aria-current=\"step\"", b("1", "1", "1")),
             f("<fieldset>", b("1", "1", "1")),
+            f("formnovalidate", b("4", "4", "5")),
+            f("<progress>", b("8", "16", "6")),
         ],
         fallback: "none needed: one form per step, PRG between them",
         needs_js: NeedsJs::No,

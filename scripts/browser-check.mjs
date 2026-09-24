@@ -123,14 +123,25 @@ try {
   assert(await navigations() === 1, "table: jumped without a reload");
 
   // Wizard: Next posts, PRG lands on step 2 in place, Back keeps the value.
-  await go("/wizard");
+  await go("/wizard?step.signup=0");
   await type("input[name=name]", "Ada");
+  await type("input[name=email]", "ada@example.com");
+  await click(".wo-wizard button.wo-primary");
+  await until(async () => (await js("return document.querySelector('#w-email-error')?.textContent || ''")).includes("example.com"), "server message beside the field");
+  assert(await js("return document.querySelector('.wo-wizard-steps li[aria-current=step]').classList.contains('wo-wizard-error')"), "wizard: the step is marked in error");
+  await js("const e = document.querySelector('input[name=email]'); e.value = ''");
   await type("input[name=email]", "ada@example.org");
-  await click(".wo-wizard button[type=submit]");
-  await until(async () => (await text(".wo-wizard li[aria-current=step]")) === "Preferences", "wizard step 2");
+  await click(".wo-wizard button.wo-primary");
+  await until(async () => (await text(".wo-wizard li[aria-current=step]")) === "Newsletter (optional)", "wizard step 2");
   assert(await navigations() === 1, "wizard: advanced without a reload");
   await click(".wo-wizard-back");
   await until(async () => (await js("return document.querySelector('input[name=name]')?.value")) === "Ada", "wizard back keeps the name");
+  await click(".wo-wizard button.wo-primary");
+  await until(async () => (await text(".wo-wizard li[aria-current=step]")) === "Newsletter (optional)", "wizard step 2 again");
+  await click(".wo-wizard button[name=skip]");
+  await until(async () => (await js("return document.querySelector('.wo-wizard-review')?.textContent || ''")).includes("(skipped)"), "skipped straight to the review");
+  await go("/wizard");
+  assert(await js("return !!document.querySelector('.wo-wizard-resume')") && await text(".wo-wizard li[aria-current=step]") === "Review", "wizard: a new visit resumes at the review");
 
   // Swap targets: a link outside any root updates only #count; a form appends to #log.
   await go("/swap");

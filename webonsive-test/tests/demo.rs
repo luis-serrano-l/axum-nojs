@@ -266,7 +266,7 @@ async fn swap_targets_render_without_script() {
 async fn wizard_marks_steps() {
     let page = Page::render(demo::router(), "/wizard?step.signup=1", MODERN).await;
     assert_eq!(page.count(".wo-wizard-steps li"), 3);
-    assert_eq!(page.text("li[aria-current=step]").as_deref(), Some("Preferences"));
+    assert_eq!(page.text("li[aria-current=step]").as_deref(), Some("Newsletter (optional)"));
     assert!(page.exists(".wo-wizard-done a[href='/wizard?step.signup=0']"), "done step links back");
     assert!(!page.exists(".wo-wizard-steps li:nth-child(3) a"), "future step is not a link");
     assert!(page.is_visible("input[type=hidden][name=step][value='1'] ~ fieldset") || page.is_visible(".wo-wizard-form fieldset"));
@@ -276,4 +276,16 @@ async fn wizard_marks_steps() {
     let first = Page::render(demo::router(), "/wizard", MODERN).await;
     assert_eq!(first.text("li[aria-current=step]").as_deref(), Some("Account"));
     assert!(!first.exists(".wo-wizard-back"), "no Back on the first step");
+    assert!(first.is_visible("progress.wo-wizard-progress[value='0'][max='2']"), "progress bar");
+    assert!(!first.exists(".wo-wizard-resume"), "nothing to resume");
+    assert!(page.exists(".wo-wizard-steps li:nth-child(2) small"), "the optional step says so");
+    assert!(page.is_visible("button[name=skip][value='1'][formnovalidate]"), "and can be skipped");
+
+    // Coming back to the bare path: the cookie resumes at the review, every value links back.
+    let back = Page::render(demo::router(), "/wizard", &format!("{MODERN}; wo-ui=step.signup=2; wizard=name=Ada&email=ada@example.org&digest=weekly")).await;
+    assert_eq!(back.text("li[aria-current=step]").as_deref(), Some("Review"));
+    assert!(back.is_visible(".wo-wizard-resume a[href='/wizard?step.signup=0']"), "resume notice with Start over");
+    assert_eq!(back.count(".wo-wizard-review dd a.wo-wizard-edit"), 4, "an Edit link per value");
+    assert!(back.exists("a.wo-wizard-edit[aria-label='Edit Topics'][href='/wizard?step.signup=1']"));
+    assert_eq!(back.text(".wo-wizard-review dd:nth-of-type(4) .wo-note").as_deref(), Some("(skipped)"));
 }

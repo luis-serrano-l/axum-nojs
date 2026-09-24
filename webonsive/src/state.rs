@@ -188,6 +188,12 @@ impl UiState {
         self.get(&format!("step.{id}")).and_then(|v| v.parse().ok()).unwrap_or(0)
     }
 
+    /// Whether `key` comes from the `wo-ui` cookie alone, not from this request's query: the
+    /// visitor came back without a link naming it (a new tab, a bookmark of the bare path).
+    pub fn remembered(&self, key: &str) -> bool {
+        !self.from_query.contains_key(key) && self.from_cookie.contains_key(key)
+    }
+
     /// Rows per page remembered for the paged table `id` (`per.<id>`); `None` when unknown.
     pub fn per_page(&self, id: &str) -> Option<usize> {
         self.get(&format!("per.{id}")).and_then(|v| v.parse().ok()).filter(|&n| n > 0)
