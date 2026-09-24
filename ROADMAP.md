@@ -557,7 +557,14 @@ The showcase for "wait, this needs no JS?".
   root, and `view-transition-name` per card where supported, so the card slides across with the
   script. The board scrolls sideways with snap on narrow screens. Demo `/kanban` (per visitor,
   in a cookie); the browser check moves a card and back.
-- [ ] Demo pages, Blitz screenshots, browser-check steps for the calendar swap.
+- [x] Demo pages, Blitz screenshots, browser-check steps for the calendar swap.
+  Done: `/calendar` (calendar plus a date-picker form), `/upload`, `/kanban` and the table's
+  edit state are in `PATHS` (Blitz shots for each) and `COMPONENTS`. The Blitz test
+  `calendar_date_picker_upload_and_kanban` checks the week rows, picked and blocked days, the
+  month link, the closed popover, the in-page calendar after a month link, the multipart form
+  and the kanban columns. The browser check changes month and picks a day in place, opens the
+  date picker, uploads a file, moves a kanban card and edits a table row. Blitz draws no file
+  picker (#258, in FINDINGS). README's summary lists the new widgets.
 
 ## M24 · Write your own component
 The React idea worth keeping: a component model users extend, not a closed catalogue.

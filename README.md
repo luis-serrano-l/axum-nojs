@@ -210,7 +210,8 @@ issues.
 - **Works with no script:** dialog, popover, tabs, accordion, server-side feature detection,
   out-of-order streaming, URL + cookie state with Post/Redirect/Get, cross-navigation view
   transitions, constraint validation with `:user-invalid`, sortable/filterable/paged tables,
-  multi-step wizards, headless layout tests through Blitz.
+  multi-step wizards, a month calendar and a date picker, file uploads, table rows edited in
+  place, a kanban board whose moves are form posts, headless layout tests through Blitz.
 - **Needs a fallback today:** invoker commands, anchor positioning, `popover`,
   `::details-content`, `<details name>`, cross-document view transitions in Firefox,
   declarative shadow DOM, and the first page view of every browser (beacons not fired yet).

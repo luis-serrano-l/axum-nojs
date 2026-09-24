@@ -313,6 +313,15 @@ try {
   await until(async () => await js("return !!document.querySelector('.nojs-kanban-column:nth-child(1) input[value=docs]')"), "kanban: card moved back");
   assert(true, "kanban: and back again");
 
+  // Calendar: the next-month link swaps the calendar in place; picking a day follows.
+  await go("/calendar?month.day=2026-09");
+  await click("#nojs-calendar-day a[aria-label='Next month']");
+  await until(async () => (await text("#nojs-calendar-day .nojs-calendar-title")) === "October 2026", "calendar: next month");
+  assert(await navigations() === 1 && (await js("return location.search")).includes("month.day=2026-10"), "calendar: month changed in place, URL follows");
+  await click("#nojs-calendar-day a[href*='day=2026-10-15']");
+  await until(async () => await js("return !!document.querySelector('.nojs-calendar-picked[href*=\"2026-10-15\"]')"), "calendar: day picked");
+  assert(await navigations() === 1, "calendar: a day picked in place");
+
   // Date picker: the button opens the calendar popover; a day is a radio the form posts.
   await go("/calendar?due=2026-09-24");
   await click("#f-due");

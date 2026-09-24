@@ -610,6 +610,10 @@ and the bar fills as the body goes out. That took the script from about 10.2 KB 
   3 files of 200 KB per visitor, for 100 visitors, in memory. It serves PNG, JPEG, GIF and
   WebP inline and everything else as `Content-Disposition: attachment`, so an uploaded HTML
   or SVG file never runs in the demo's origin.
+- **Blitz has no file-picker widget.** `<input type="file">` paints as an empty box, so the
+  upload page's Blitz shot shows the drop zone around nothing. The markup is asserted instead
+  (multipart form, `name`, `multiple`, the hidden progress bar). Form controls are tracked in
+  [blitz#258](https://github.com/DioxusLabs/blitz/issues/258).
 - **`Saved<T>` needs a struct with named fields.** The cookie is URL-encoded, so a newtype such
   as `Uploader(String)` does not serialise and is silently not saved (a sequence of pairs,
   `Kinds(Vec<(String, String)>)`, does work). The fix is `struct Uploader { id: String }`;

@@ -1049,3 +1049,86 @@ async fn fields_cards_and_layouts() {
         "grid.gap(2) is 8px"
     );
 }
+
+#[tokio::test]
+async fn calendar_date_picker_upload_and_kanban() {
+    let page = Page::render(
+        demo::router(),
+        "/calendar?month.day=2026-09&day=2026-09-17",
+        MODERN,
+    )
+    .await;
+    assert_eq!(
+        page.count("#nojs-calendar-day .nojs-calendar-grid thead th"),
+        7
+    );
+    let (mo, tu) = (
+        page.bbox("#nojs-calendar-day .nojs-calendar-grid tbody tr:first-child td:nth-child(1)")
+            .unwrap(),
+        page.bbox("#nojs-calendar-day .nojs-calendar-grid tbody tr:first-child td:nth-child(2)")
+            .unwrap(),
+    );
+    assert!(
+        (mo.y - tu.y).abs() < 1.0 && tu.x > mo.x,
+        "a week is one row of seven cells"
+    );
+    assert!(
+        page.is_visible("#nojs-calendar-day a.nojs-calendar-picked[href*='day=2026-09-17']"),
+        "the picked day is drawn"
+    );
+    assert!(
+        page.exists("#nojs-calendar-day span.nojs-calendar-off[aria-disabled=true]"),
+        "weekends cannot be picked"
+    );
+    assert!(
+        page.exists("#nojs-calendar-day a[aria-label='Next month'][href*='month.day=2026-10']")
+    );
+    assert!(
+        page.is_visible("#f-due[popovertarget='f-due-calendar']"),
+        "the date picker is a button with a popover"
+    );
+    assert!(
+        !page.is_visible("#f-due-calendar"),
+        "the popover starts closed"
+    );
+
+    let page = Page::render(demo::router(), "/calendar?month.due=2026-10", MODERN).await;
+    assert!(
+        page.is_visible(".nojs-date-picker > .nojs-calendar"),
+        "after a month link the picker's calendar is in the page"
+    );
+
+    let page = Page::render(demo::router(), "/upload", MODERN).await;
+    assert!(page.exists(
+        "form[method=post][enctype='multipart/form-data'] input[type=file][name=file][multiple]"
+    ));
+    assert!(
+        page.exists("progress[data-nojs-progress][hidden]"),
+        "the progress bar waits for the script"
+    );
+    assert!(page.is_visible(".nojs-upload-drop"));
+
+    let page = Page::render(demo::router(), "/kanban", MODERN).await;
+    assert_eq!(page.count(".nojs-kanban-column"), 3);
+    let (a, b) = (
+        page.bbox(".nojs-kanban-column:nth-child(1)").unwrap(),
+        page.bbox(".nojs-kanban-column:nth-child(2)").unwrap(),
+    );
+    assert!(
+        (a.y - b.y).abs() < 1.0 && b.x > a.x + a.width,
+        "columns side by side"
+    );
+    assert!(
+        page.exists(".nojs-kanban-over"),
+        "Doing is past its limit in the starting board"
+    );
+    assert!(
+        page.exists(
+            ".nojs-kanban-column:nth-child(1) .nojs-kanban-card button[name=to][value=doing]"
+        )
+    );
+    assert!(
+        !page.exists(".nojs-kanban-column:nth-child(1) .nojs-kanban-card button[value=todo]"),
+        "no arrow off the board"
+    );
+}
