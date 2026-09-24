@@ -129,6 +129,13 @@ browser-compat-data; `no` means unshipped, so that browser gets the fallback.
 | Range | `<input type="range">`, `<datalist>`, `pointer-events` | 4 / 23 / 3.1; 20 / 110 / 12.1; 1 / 1 / 1 | ticks not drawn | Partly: value shown after submit; live mirroring needs script |
 | Color | `<input type="color">`, `color-mix()` | 20 / 29 / 12.1; 111 / 113 / 16.2 | text field accepting #rrggbb | No |
 | Streaming | `<template shadowrootmode="open">`, `<slot name`, `Chunked transfer` | 111 / 123 / 16.4; 53 / 63 / 10; 1 / 1 / 1 | in-order streaming with in-place splicing | No |
+| Toast | `position: fixed`, `role="status"`, `role="alert"`, `@keyframes`, `prefers-reduced-motion` | 1 / 1 / 1; 1 / 1 / 1; 1 / 1 / 1; 43 / 16 / 9; 74 / 63 / 10.1 | without CSS animations toasts stay until the next page | No |
+| Breadcrumbs | `aria-current="page"`, `::before`, `<details>` | 1 / 1 / 1; 1 / 1 / 1; 12 / 49 / 6 | none needed | No |
+| Skeleton | `aria-busy`, `role="status"`, `@keyframes`, `prefers-reduced-motion` | 1 / 1 / 1; 1 / 1 / 1; 43 / 16 / 9; 74 / 63 / 10.1 | without CSS animations the bars are still | No |
+| Empty state | `<form method="post">` | 1 / 1 / 1 | none needed | No |
+| Stat | `repeat(auto-fit` | 57 / 52 / 10.1 | none needed | No |
+| Drawer | `<dialog>`, `command="show-modal"`, `closedby`, `@starting-style`, `@media` | 37 / 98 / 15.4; 135 / 144 / 26.2; 134 / 141 / 26; 117 / 129 / 17.5; 1 / 1 / 1 | link to #id and a :target rule; open from the server | No |
+| Command palette | `popover`, `<datalist>`, `<search>`, `accesskey` | 114 / 125 / 17; 20 / 4 / 12.1; 118 / 118 / 17; 1 / 1 / 1 | a <details> disclosure with the same form | Partly: arrow keys through live results and a global Ctrl+K need script |
 <!-- matrix:end -->
 
 ## Findings
@@ -162,7 +169,7 @@ wo-caps/examples/hyper.rs   the beacons on raw hyper, one line per flag
 webonsive/src/layout.rs     page shell + base CSS + beacons
 webonsive/src/stream.rs     Streamed response: DSD slots out of order, in-order fallback (http feature)
 webonsive/src/state.rs      UiState (query + cookie), prg_parts()/prg() redirect with flash
-webonsive/src/flash.rs      one-shot status banner
+webonsive/src/flash.rs      one-shot status banners: levels, stacked, dismiss, auto-hide
 webonsive/src/select.rs     <select> with <selectedcontent> where supported
 webonsive/src/range.rs      <input type=range> with ticks and a server-rendered <output>
 webonsive/src/color.rs      <input type=color> with a swatch of the saved value
@@ -173,7 +180,8 @@ docs/state.md               how state works with no script
 docs/caps.md                how the beacons work, cookie format, the first view, adding a flag
 docs/theming.md             every --wo-* token, contrast pairs, a second palette as a Tokens value
 webonsive/src/<name>.rs     one component each: dialog, popover, tabs, accordion, table, paged_table, wizard,
-                            combobox, pager, form, counter, theme
+                            combobox, pager, form, counter, theme, toast, breadcrumbs, skeleton,
+                            empty_state, stat, drawer, palette (command palette)
 demo/src/lib.rs             Axum routes, ≤15 lines each, plus the no-script test
 webonsive-test/src/lib.rs   Page: render a route through Blitz, assert layout, screenshot
 webonsive-test/tests/       every route rendered and captured; layout assertions

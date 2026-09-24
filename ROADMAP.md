@@ -159,7 +159,7 @@ involved) a Firefox check.
 - [x] Flash and status: variants (`info|ok|warn|danger`), dismiss is a link that clears the
   cookie, multiple flashes stack, a `role="alert"` variant for errors, auto-hide via CSS
   animation with reduced-motion respected.
-- [ ] New: toast list, breadcrumbs, skeleton placeholders for streamed slots, empty states, a
+- [x] New: toast list, breadcrumbs, skeleton placeholders for streamed slots, empty states, a
   stat card, a sidebar/drawer navigation (`<dialog>` non-modal or popover), a command palette
   (search + datalist + popover) as the flagship "no script needed" demo.
 - [ ] Every options struct grows only setters that map to real HTML/CSS; the doc header of each

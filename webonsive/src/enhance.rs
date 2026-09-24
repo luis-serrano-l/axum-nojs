@@ -16,7 +16,7 @@
 //! **Contract:** an element with an `id` and `data-wo="swap"` is a swap root. Submitting a
 //! form or following a same-origin link inside it fetches the response, parses it, and
 //! replaces the root with the element of the same `id` from the new document. The flash
-//! message, `<title>` and `data-theme` are synced too, and the URL follows the response.
+//! messages, the toast list, `<title>` and `data-theme` are synced too, and the URL follows the response.
 //! A form or link anywhere may name its root instead with `data-wo-target="#id"`, and
 //! `data-wo-swap="outer|inner|append|prepend"` (default `outer`) says how the new element
 //! lands: replace the root, replace its children, or add them at the end or the start. The
@@ -108,10 +108,10 @@ function apply(doc, id, url, hist, mode) {
       if (here) place(here, el, how || "outer");
     });
     var anchor = place(root, fresh, mode);
-    var oldFlash = document.querySelector(".wo-flash"), newFlash = doc.querySelector(".wo-flash");
-    if (oldFlash && newFlash) oldFlash.replaceWith(newFlash);
-    else if (oldFlash) oldFlash.remove();
-    else if (newFlash) anchor.before(newFlash);
+    [".wo-flash", ".wo-toasts"].forEach(function (s, i) {
+      var o = document.querySelector(s), n = doc.querySelector(s);
+      if (o && n) o.replaceWith(n); else if (o) o.remove(); else if (n) i ? document.body.append(n) : anchor.before(n);
+    });
     if (doc.title) document.title = doc.title;
     var theme = doc.documentElement.getAttribute("data-theme");
     if (theme) document.documentElement.setAttribute("data-theme", theme);

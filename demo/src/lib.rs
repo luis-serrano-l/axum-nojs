@@ -16,14 +16,17 @@ use webonsive::{
     counter, counter::CounterOptions, color::ColorOptions, select::{Group as SelectGroup, SelectOption, SelectOptions}, dialog, dialog::{DialogOptions, DialogSize}, flash, flash::{FlashOptions, Level, stack}, form, layout, layout::{Palette, Tokens, layout_with}, paged_table, paged_table::PagedTableOptions,
     pager, pager::PagerOptions, popover::{MenuItem, Placement, PopoverOptions}, popover_menu, prg, range, range::RangeOptions, select, slot, tabs::{Tab, TabsOptions},
     table::{Column, Row, TableOptions, cols_from_query, sort_from_query}, tabs, theme_toggle, wizard, wizard::{Step, WizardOptions},
+    breadcrumbs, command_palette, drawer, empty_state, palette::{self, Command, PaletteOptions}, skeleton, skeleton::SkeletonOptions, stat, stat::{StatOptions, Trend},
+    toasts, toast::ToastOptions, drawer::DrawerOptions, empty_state::EmptyOptions,
 };
 use std::time::Duration;
 
 /// Every demo path the no-script test and the screenshot test visit.
-pub const PATHS: [&str; 17] = [
+pub const PATHS: [&str; 21] = [
     "/", "/caps", "/stream", "/settings", "/dialog?dialog=confirm", "/popover", "/tabs?tab.demo=1",
     "/accordion?open.faq=0,2&open.faq-more=0", "/combobox?q=r&sel=Zig", "/list?page=2", "/form", "/form?layout=inline", "/counter", "/inputs",
     "/table?sort=size&dir=desc&q=a&per.files=5&page=2&cols=name,size", "/wizard?step.signup=1", "/swap?n=3",
+    "/toast", "/nav", "/dashboard?orders=none", "/palette?q=ta",
 ];
 
 /// The whole demo app.
@@ -51,6 +54,10 @@ pub fn router() -> Router {
         .route("/inputs", get(inputs_page).post(inputs_submit))
         .route("/theme", post(theme_submit))
         .route("/swap", get(swap_page).post(swap_submit))
+        .route("/toast", get(toast_page).post(toast_submit))
+        .route("/nav", get(nav_page))
+        .route("/dashboard", get(dashboard_page))
+        .route("/palette", get(palette_page))
         .merge(caps::router())
         .merge(webonsive::enhance::router())
 }
@@ -63,7 +70,11 @@ fn theme_of(jar: &CookieJar) -> Theme {
 
 /// Every component in the index: path, title (what each route passes to `page`), group, and
 /// the platform features it is built on.
-const COMPONENTS: [(&str, &str, &str, &str); 15] = [
+const COMPONENTS: [(&str, &str, &str, &str); 19] = [
+    ("/palette", "Command palette", "Navigation", "popover, <datalist>, <search>, accesskey, GET + 303"),
+    ("/nav", "Drawer and breadcrumbs", "Navigation", "<dialog>, invoker commands, closedby, @starting-style, <details>"),
+    ("/toast", "Toasts", "Feedback", "position: fixed, role=alert, CSS fade, PRG"),
+    ("/dashboard", "Stats and empty states", "Feedback", "auto-fit grid, form POST"),
     ("/dialog", "Dialog", "Overlays", "<dialog>, closedby, invoker commands, form footer"),
     ("/popover", "Popover menu", "Overlays", "popover, anchor positioning, nested popover, form actions"),
     ("/tabs", "Tabs", "Disclosure", "<details name>, ::details-content, view-transition-name, grid"),
@@ -77,10 +88,10 @@ const COMPONENTS: [(&str, &str, &str, &str); 15] = [
     ("/list", "Load-more list", "Server state", "links + view transitions"),
     ("/table", "Table", "Server state", "sort links, <search> filter, form= checkboxes, ?cols=, <details> rows, sticky header, ?page=n"),
     ("/caps", "Capabilities", "Server state", "@supports beacons + cookie"),
-    ("/stream", "Streaming", "Server state", "declarative shadow DOM slots"),
+    ("/stream", "Streaming", "Server state", "declarative shadow DOM slots, skeleton placeholders, aria-busy"),
     ("/swap", "Swap targets", "Server state", "data-wo-target, data-wo-swap, data-wo-oob, data-wo-indicator, data-wo-push, Wo-Enhance header"),
 ];
-const GROUPS: [&str; 4] = ["Overlays", "Disclosure", "Input", "Server state"];
+const GROUPS: [&str; 6] = ["Overlays", "Disclosure", "Navigation", "Input", "Feedback", "Server state"];
 
 /// The row above every title: the way back to the index (not on the index) and the theme switch.
 fn toolbar(caps: &Caps, theme: Theme, back: bool) -> Markup {
@@ -670,6 +681,95 @@ async fn inputs_submit(jar: CookieJar, Form(f): Form<Inputs>) -> (CookieJar, axu
     (jar.add(Cookie::new("inputs", value)), prg("/inputs", Some("Inputs saved.")))
 }
 
+/// Toasts come back from a post like a flash: the one-shot cookie, several at once.
+async fn toast_page(caps: Caps, jar: CookieJar, state: UiState) -> (UiState, Markup) {
+    let body = page(&caps, &jar, "Toasts", html! {
+        p { "Each button posts, the server redirects back, and the answer shows in the corner. Calm ones fade after five seconds (hover to keep them); errors stay until dismissed." }
+        form method="post" action="/toast" {
+            button type="submit" name="kind" value="ok" class="wo-primary" { "Send invite" } " "
+            button type="submit" name="kind" value="warn" { "Copy link" } " "
+            button type="submit" name="kind" value="danger" { "Sync now" } " "
+            button type="submit" name="kind" value="all" { "All three" }
+        }
+        (toasts(&caps, state.flash(), ToastOptions::default().dismiss("/toast")))
+    });
+    (state, body)
+}
+
+#[derive(Deserialize)]
+struct ToastForm { kind: String }
+
+async fn toast_submit(Form(f): Form<ToastForm>) -> axum::response::Response {
+    let all = [(Level::Ok, "Invite sent to ada@example.org."), (Level::Warn, "Link copied; it expires in an hour."), (Level::Danger, "Sync failed: the server did not answer.")];
+    let picked: Vec<_> = all.into_iter().filter(|(l, _)| f.kind == "all" || l.as_str() == f.kind).collect();
+    prg("/toast", Some(&stack(&picked)))
+}
+
+/// A sidebar on wide screens, a drawer on narrow ones, and breadcrumbs above the content.
+async fn nav_page(caps: Caps, jar: CookieJar, state: UiState) -> Markup {
+    let links = html! { ul {
+        li { a href="/nav" aria-current="page" { "Overview" } }
+        li { a href="/table" { "Files" } } li { a href="/dashboard" { "Reports" } } li { a href="/settings" { "Settings" } }
+    } };
+    page(&caps, &jar, "Drawer and breadcrumbs", drawer(&caps, "site", "Menu", links, html! {
+        (breadcrumbs(&caps, &[("Home", "/"), ("Projects", "/nav"), ("Webonsive", "")]))
+        p { "Wider than 60rem the navigation is a sidebar; narrower, the menu button opens it as a drawer. Escape or a click outside closes it." }
+        p { "A long trail folds its middle so both ends stay readable:" }
+        (breadcrumbs(&caps, &[("Home", "/"), ("Projects", "/nav"), ("Webonsive", "/nav"), ("Components", "/"), ("Navigation", "/nav"), ("Breadcrumbs", "")]))
+        p class="wo-note" { "Server-opened: " a href="/nav?dialog=site" { "?dialog=site" } }
+    }, DrawerOptions::default().title("Webonsive").sidebar(true).open(state.dialog() == Some("site"))))
+}
+
+#[derive(Deserialize)]
+struct DashboardQuery { orders: Option<String> }
+
+/// Stat cards over a list that may be empty (`?orders=none`).
+async fn dashboard_page(caps: Caps, jar: CookieJar, Query(q): Query<DashboardQuery>) -> Markup {
+    let none = q.orders.as_deref() == Some("none");
+    page(&caps, &jar, "Stats and empty states", html! {
+        div class="wo-stat-grid" {
+            (stat(&caps, "Visitors", "12,480", StatOptions::default().delta("+8.2%", Trend::Up).note("last 7 days")))
+            (stat(&caps, "Orders", if none { "0" } else { "3" }, StatOptions::default().delta(if none { "-3" } else { "0" }, if none { Trend::Down } else { Trend::Flat })))
+            (stat(&caps, "Error rate", "0.4%", StatOptions::default().delta("-0.2 pt", Trend::Down).down_is_good(true).href("/table")))
+            (stat(&caps, "p95 latency", "38 ms", StatOptions::default().delta("+6 ms", Trend::Up).down_is_good(true)))
+        }
+        h2 { "Recent orders" }
+        @if none {
+            (empty_state(&caps, "No orders yet", EmptyOptions::default().icon("\u{1f4e6}")
+                .text(html! { "Orders show up here as soon as a customer checks out." })
+                .link("Show sample orders", "/dashboard")))
+        } @else {
+            ul { li { "#1042, Ada Lovelace, 3 items" } li { "#1041, Grace Hopper, 1 item" } li { "#1040, Alan Turing, 2 items" } }
+            p class="wo-note" { a href="/dashboard?orders=none" { "See the empty state" } }
+        }
+    })
+}
+
+/// Every demo page as a command, plus a few deep links.
+fn commands() -> Vec<Command<'static>> {
+    COMPONENTS.iter().map(|(href, title, ..)| Command::new(title, href).group("Components"))
+        .chain([
+            Command::new("Notification settings", "/settings?tab.settings=1").group("Shortcuts").keywords("email releases"),
+            Command::new("Largest files", "/table?sort=size&dir=desc").group("Shortcuts").keywords("sort size big"),
+            Command::new("Open the delete dialog", "/dialog?dialog=confirm").group("Shortcuts").keywords("account remove"),
+        ]).collect()
+}
+
+#[derive(Deserialize)]
+struct PaletteQuery { q: Option<String> }
+
+/// An exact command name redirects; anything else lists the matches.
+async fn palette_page(caps: Caps, jar: CookieJar, Query(p): Query<PaletteQuery>) -> axum::response::Response {
+    let cmds = commands();
+    let q = p.q.as_deref().filter(|q| !q.trim().is_empty());
+    if let Some(c) = q.and_then(|q| palette::exact(&cmds, q)) { return Redirect::to(c.href).into_response(); }
+    let options = q.map_or(PaletteOptions::default(), |q| PaletteOptions::default().query(q));
+    page(&caps, &jar, "Command palette", html! {
+        p { "Open it with the button or the access key, type, pick a suggestion and press Enter. An exact name goes straight to the page; anything else lists what matches." }
+        (command_palette(&caps, "cmd", "/palette", &cmds, options))
+    }).into_response()
+}
+
 /// Three sections declared slowest first, so out-of-order arrival is visible.
 async fn stream_page(caps: Caps, jar: CookieJar) -> Streamed {
     let sections = [("slow", 2000), ("medium", 800), ("fast", 100)];
@@ -680,7 +780,9 @@ async fn stream_page(caps: Caps, jar: CookieJar) -> Streamed {
         p { @if caps.has(Cap::StreamingDsd) { "Sections arrive out of order into named slots." }
             @else { "This browser has no declarative shadow DOM: sections stream in document order." } }
         @for (id, ms) in sections {
-            (slot(&caps, id, html! { section class="wo-stream-section wo-stream-pending" { "Loading " (id) " (" (ms) " ms)…" } }))
+            (slot(&caps, id, html! { section class="wo-stream-section wo-stream-pending" {
+                (skeleton(&caps, 2, SkeletonOptions::default().label(&format!("Loading {id} ({ms} ms)")).heading(true)))
+            } }))
         }
     });
     sections.into_iter().fold(page, |page, (id, ms)| page.fill(id, section(id, ms)))
@@ -818,6 +920,19 @@ mod tests {
         let pos = |s: &str| html.find(s).unwrap();
         assert!(pos("slow</strong>") < pos("medium</strong>") && pos("medium</strong>") < pos("fast</strong>"));
         assert!(chunks.len() >= 4, "streamed in pieces, got {}", chunks.len());
+    }
+
+    #[tokio::test]
+    async fn palette_exact_name_redirects_and_toast_posts_stack() {
+        let res = router().oneshot(Request::get("/palette?q=largest%20FILES").body(Body::empty()).unwrap()).await.unwrap();
+        assert_eq!(res.status(), 303);
+        assert_eq!(res.headers().get("location").unwrap(), "/table?sort=size&dir=desc");
+        let res = router().oneshot(Request::get("/palette?q=zzz").body(Body::empty()).unwrap()).await.unwrap();
+        assert_eq!(res.status(), 200);
+        let req = Request::post("/toast").header("content-type", "application/x-www-form-urlencoded").body(Body::from("kind=all")).unwrap();
+        let res = router().oneshot(req).await.unwrap();
+        let cookie = res.headers().get("set-cookie").unwrap().to_str().unwrap();
+        assert!(cookie.starts_with("wo-flash=ok%3AInvite") && cookie.contains("%0Awarn%3A") && cookie.contains("%0Adanger%3A"), "{cookie}");
     }
 
     #[tokio::test]

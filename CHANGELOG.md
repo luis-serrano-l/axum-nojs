@@ -57,6 +57,15 @@ follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); the project us
   messages stacked, `role="alert"` for danger, a CSS fade for info and ok that reduced motion
   turns off. `--wo-warn` token (`Palette::warn`). **Breaking:** `flash` gained an argument;
   `Palette` gained a field.
+- New components: `toasts` (`ToastOptions`; the flash cookie in a fixed corner stack that
+  fades, pauses on hover, danger stays), `breadcrumbs` (folds the middle of a long trail
+  into `<details>`), `skeleton` (`SkeletonOptions`; shimmer bars with `aria-busy`, used as the
+  streamed slot placeholder in the demo), `empty_state` (`EmptyOptions`: icon, text, link,
+  post), `stat` (`StatOptions`, `Trend`; `.wo-stat-grid`), `drawer` (`DrawerOptions`;
+  sidebar above 60rem, modal drawer below, `:target` fallback) and `command_palette`
+  (`palette::Command`, `PaletteOptions`, `palette::exact`, `palette::matches`; popover +
+  datalist + GET, `accesskey`).
+- Enhancement script: carries the toast list across a swap like the flash.
 - `form` takes `&[FieldGroup]` (a `<fieldset>` and `<legend>` each, or `FieldGroup::plain`)
   and `FormOptions` (`submit`, `layout: FormLayout::Stacked|Inline`). `Field::new` with
   `value`, `error`, `required`, `help` (tied by `aria-describedby`) and `max_len` (a

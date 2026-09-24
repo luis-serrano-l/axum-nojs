@@ -254,6 +254,86 @@
       ],
       "fallback": "in-order streaming with in-place splicing",
       "needs_js": "no"
+    },
+    {
+      "name": "Toast",
+      "module": "toast",
+      "features": [
+        { "name": "position: fixed", "baseline": { "chrome": "1", "firefox": "1", "safari": "1" } },
+        { "name": "role=\"status\"", "baseline": { "chrome": "1", "firefox": "1", "safari": "1" } },
+        { "name": "role=\"alert\"", "baseline": { "chrome": "1", "firefox": "1", "safari": "1" } },
+        { "name": "@keyframes", "baseline": { "chrome": "43", "firefox": "16", "safari": "9" } },
+        { "name": "prefers-reduced-motion", "baseline": { "chrome": "74", "firefox": "63", "safari": "10.1" } }
+      ],
+      "fallback": "without CSS animations toasts stay until the next page",
+      "needs_js": "no"
+    },
+    {
+      "name": "Breadcrumbs",
+      "module": "breadcrumbs",
+      "features": [
+        { "name": "aria-current=\"page\"", "baseline": { "chrome": "1", "firefox": "1", "safari": "1" } },
+        { "name": "::before", "baseline": { "chrome": "1", "firefox": "1", "safari": "1" } },
+        { "name": "<details>", "baseline": { "chrome": "12", "firefox": "49", "safari": "6" } }
+      ],
+      "fallback": "none needed",
+      "needs_js": "no"
+    },
+    {
+      "name": "Skeleton",
+      "module": "skeleton",
+      "features": [
+        { "name": "aria-busy", "baseline": { "chrome": "1", "firefox": "1", "safari": "1" } },
+        { "name": "role=\"status\"", "baseline": { "chrome": "1", "firefox": "1", "safari": "1" } },
+        { "name": "@keyframes", "baseline": { "chrome": "43", "firefox": "16", "safari": "9" } },
+        { "name": "prefers-reduced-motion", "baseline": { "chrome": "74", "firefox": "63", "safari": "10.1" } }
+      ],
+      "fallback": "without CSS animations the bars are still",
+      "needs_js": "no"
+    },
+    {
+      "name": "Empty state",
+      "module": "empty_state",
+      "features": [
+        { "name": "<form method=\"post\">", "baseline": { "chrome": "1", "firefox": "1", "safari": "1" } }
+      ],
+      "fallback": "none needed",
+      "needs_js": "no"
+    },
+    {
+      "name": "Stat",
+      "module": "stat",
+      "features": [
+        { "name": "repeat(auto-fit", "baseline": { "chrome": "57", "firefox": "52", "safari": "10.1" } }
+      ],
+      "fallback": "none needed",
+      "needs_js": "no"
+    },
+    {
+      "name": "Drawer",
+      "module": "drawer",
+      "features": [
+        { "name": "<dialog>", "baseline": { "chrome": "37", "firefox": "98", "safari": "15.4" } },
+        { "name": "command=\"show-modal\"", "baseline": { "chrome": "135", "firefox": "144", "safari": "26.2" } },
+        { "name": "closedby", "baseline": { "chrome": "134", "firefox": "141", "safari": "26" } },
+        { "name": "@starting-style", "baseline": { "chrome": "117", "firefox": "129", "safari": "17.5" } },
+        { "name": "@media", "baseline": { "chrome": "1", "firefox": "1", "safari": "1" } }
+      ],
+      "fallback": "link to #id and a :target rule; open from the server",
+      "needs_js": "no"
+    },
+    {
+      "name": "Command palette",
+      "module": "palette",
+      "features": [
+        { "name": "popover", "baseline": { "chrome": "114", "firefox": "125", "safari": "17" } },
+        { "name": "<datalist>", "baseline": { "chrome": "20", "firefox": "4", "safari": "12.1" } },
+        { "name": "<search>", "baseline": { "chrome": "118", "firefox": "118", "safari": "17" } },
+        { "name": "accesskey", "baseline": { "chrome": "1", "firefox": "1", "safari": "1" } }
+      ],
+      "fallback": "a <details> disclosure with the same form",
+      "needs_js": "partial",
+      "needs_js_note": "arrow keys through live results and a global Ctrl+K need script"
     }
   ]
 }

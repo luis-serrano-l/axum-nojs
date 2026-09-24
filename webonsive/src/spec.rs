@@ -294,6 +294,66 @@ pub const SPECS: &[ComponentSpec] = &[
         fallback: "in-order streaming with in-place splicing",
         needs_js: NeedsJs::No,
     },
+    ComponentSpec {
+        name: "Toast",
+        module: "toast",
+        features: &[f("position: fixed", ALWAYS), f("role=\"status\"", ALWAYS), f("role=\"alert\"", ALWAYS), f("@keyframes", b("43", "16", "9")), f("prefers-reduced-motion", b("74", "63", "10.1"))],
+        fallback: "without CSS animations toasts stay until the next page",
+        needs_js: NeedsJs::No,
+    },
+    ComponentSpec {
+        name: "Breadcrumbs",
+        module: "breadcrumbs",
+        features: &[f("aria-current=\"page\"", ALWAYS), f("::before", ALWAYS), f("<details>", b("12", "49", "6"))],
+        fallback: "none needed",
+        needs_js: NeedsJs::No,
+    },
+    ComponentSpec {
+        name: "Skeleton",
+        module: "skeleton",
+        features: &[f("aria-busy", ALWAYS), f("role=\"status\"", ALWAYS), f("@keyframes", b("43", "16", "9")), f("prefers-reduced-motion", b("74", "63", "10.1"))],
+        fallback: "without CSS animations the bars are still",
+        needs_js: NeedsJs::No,
+    },
+    ComponentSpec {
+        name: "Empty state",
+        module: "empty_state",
+        features: &[f("<form method=\"post\">", ALWAYS)],
+        fallback: "none needed",
+        needs_js: NeedsJs::No,
+    },
+    ComponentSpec {
+        name: "Stat",
+        module: "stat",
+        features: &[f("repeat(auto-fit", b("57", "52", "10.1"))],
+        fallback: "none needed",
+        needs_js: NeedsJs::No,
+    },
+    ComponentSpec {
+        name: "Drawer",
+        module: "drawer",
+        features: &[
+            f("<dialog>", b("37", "98", "15.4")),
+            f("command=\"show-modal\"", b("135", "144", "26.2")),
+            f("closedby", b("134", "141", "26")),
+            f("@starting-style", b("117", "129", "17.5")),
+            f("@media", ALWAYS),
+        ],
+        fallback: "link to #id and a :target rule; open from the server",
+        needs_js: NeedsJs::No,
+    },
+    ComponentSpec {
+        name: "Command palette",
+        module: "palette",
+        features: &[
+            f("popover", b("114", "125", "17")),
+            f("<datalist>", b("20", "4", "12.1")),
+            f("<search>", b("118", "118", "17")),
+            f("accesskey", ALWAYS),
+        ],
+        fallback: "a <details> disclosure with the same form",
+        needs_js: NeedsJs::Partial("arrow keys through live results and a global Ctrl+K need script"),
+    },
 ];
 
 fn json_str(s: &str) -> String {
@@ -387,6 +447,13 @@ mod tests {
         ("range", include_str!("range.rs")),
         ("color", include_str!("color.rs")),
         ("stream", include_str!("stream.rs")),
+        ("toast", include_str!("toast.rs")),
+        ("breadcrumbs", include_str!("breadcrumbs.rs")),
+        ("skeleton", include_str!("skeleton.rs")),
+        ("empty_state", include_str!("empty_state.rs")),
+        ("stat", include_str!("stat.rs")),
+        ("drawer", include_str!("drawer.rs")),
+        ("palette", include_str!("palette.rs")),
     ];
 
     fn header(source: &str) -> String {

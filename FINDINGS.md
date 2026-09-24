@@ -352,3 +352,23 @@ stays), and `prefers-reduced-motion: reduce` turns it off. Blitz renders the fir
 animation, so the Blitz shots always show the message; Firefox confirms the computed
 `animation-name` in `scripts/browser-check.mjs`. What it cannot do without script is vanish
 in place when dismissed: the dismiss link is a navigation.
+
+**A command palette needs no script, only a server that answers "what did they mean".**
+The palette is a `popover` holding a GET `<search>` form whose input has a `<datalist>` of
+every command, so the browser filters suggestions as the user types. Enter sends `q`: an
+exact name answers `303` to its page (`palette::exact`), anything else renders the matches
+(`palette::matches`). The opener carries `accesskey="k"`, so Alt+Shift+K opens it with no
+key handler. A popover cannot arrive open, so the results of a search are rendered in the
+page below the opener; without `Popover` the palette is a `<details>` that arrives open with
+the results inside. What still needs script: arrow keys through a live list and a global
+Ctrl+K.
+
+**A sidebar and a drawer are one `<dialog>`.** Above 60rem a media query shows the closed
+dialog in a grid column and hides the menu button; below, the button opens it as a modal
+with `command="show-modal"`, sliding in through `@starting-style`. Blitz renders the sidebar
+(the closed `<dialog>` with `display: block` lays out like any block), so the layout is
+asserted there; the modal and the slide are checked in Firefox.
+
+**Toasts are flashes in another place.** Same cookie, same `level:` lines, rendered as a
+`position: fixed` list. Danger never fades; the others pause on `:hover`/`:focus-within`.
+Blitz paints them at the right edge of its viewport as Firefox does.

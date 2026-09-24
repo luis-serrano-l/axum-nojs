@@ -1,0 +1,136 @@
+//! # Drawer
+//!
+//! Site navigation that is a sidebar on a wide screen and a drawer sliding in from the edge on
+//! a narrow one, from the same markup: a menu button opens it, Escape, a click outside or the
+//! close button shuts it. No script.
+//!
+//! **Platform features:**
+//! - `<dialog>` opened as a modal by an invoker button, `command="show-modal"` (Chrome 135+,
+//!   Firefox 144+, Safari 26.2+), closed by `command="close"` and by `closedby="any"` for
+//!   Escape and light dismiss.
+//! - `@starting-style` (Chrome 117, Firefox 129, Safari 17.5) for the slide in, off under
+//!   `prefers-reduced-motion`.
+//! - Sidebar mode: above 60rem a `@media` rule shows the closed `<dialog>` in a grid column
+//!   and hides the menu button, so desktop gets a permanent sidebar with no request.
+//!
+//! **Fallback:** without `Caps` `Invokers`, the menu button is a link to `#id` and a `:target`
+//! rule shows the drawer; its close control is a link to `#`. `DrawerOptions::open` renders it
+//! open from the server (`UiState::dialog()` after `?dialog=<id>`).
+//!
+//! **What it does not do without script:** swipe to close; focus is not trapped in the
+//! `:target` fallback.
+//!
+//! ```rust
+//! use maud::html;
+//! use webonsive::{Caps, drawer, drawer::DrawerOptions};
+//! let nav = html! { ul { li { a href="/" { "Home" } } } };
+//! let m = drawer(&Caps::all(), "site", "Menu", nav.clone(), html! { p { "Page" } }, Default::default()).into_string();
+//! assert!(m.contains(r#"command="show-modal" commandfor="site""#) && m.contains(r#"closedby="any""#));
+//! let m = drawer(&Caps::all(), "site", "Menu", nav, html! { p { "Page" } },
+//!     DrawerOptions::default().title("Browse").sidebar(true).open(true)).into_string();
+//! assert!(m.contains("wo-drawer-sidebar") && m.contains(" open>"));
+//! ```
+
+use maud::{Markup, html};
+
+use crate::{Cap, Caps};
+
+/// Options for [`drawer`].
+#[derive(Clone, Debug, Default)]
+pub struct DrawerOptions<'a> {
+    /// Heading at the top of the panel (also its accessible name).
+    pub title: Option<&'a str>,
+    /// Permanent sidebar above 60rem; a drawer below.
+    pub sidebar: bool,
+    /// Render it open (non-modal) from the server.
+    pub open: bool,
+}
+
+impl<'a> DrawerOptions<'a> {
+    /// Heading at the top of the panel.
+    pub fn title(mut self, title: &'a str) -> Self {
+        self.title = Some(title);
+        self
+    }
+    /// Sidebar on wide screens.
+    pub fn sidebar(mut self, on: bool) -> Self {
+        self.sidebar = on;
+        self
+    }
+    /// Open on arrival.
+    pub fn open(mut self, open: bool) -> Self {
+        self.open = open;
+        self
+    }
+}
+
+/// A navigation drawer `id` opened by a button labelled `label`, holding `nav`, beside `content`.
+pub fn drawer(caps: &Caps, id: &str, label: &str, nav: Markup, content: Markup, options: DrawerOptions) -> Markup {
+    let invokers = caps.has(Cap::Invokers);
+    let title = options.title.unwrap_or(label);
+    let title_id = format!("{id}-title");
+    html! {
+        div class={ "wo-drawer" @if options.sidebar { " wo-drawer-sidebar" } } {
+            @if invokers {
+                button type="button" class="wo-drawer-open" command="show-modal" commandfor=(id) aria-haspopup="dialog" { "\u{2630} " (label) }
+            } @else {
+                a class="wo-drawer-open" role="button" href={ "#" (id) } { "\u{2630} " (label) }
+            }
+            dialog id=(id) class="wo-drawer-panel" closedby="any" aria-labelledby=(title_id) open[options.open] {
+                div class="wo-drawer-head" {
+                    p id=(title_id) class="wo-drawer-title" { (title) }
+                    @if invokers {
+                        button type="button" class="wo-drawer-close" command="close" commandfor=(id) aria-label="Close" { "\u{d7}" }
+                    } @else {
+                        a href="#" class="wo-drawer-close" aria-label="Close" { "\u{d7}" }
+                    }
+                }
+                nav aria-labelledby=(title_id) { (nav) }
+            }
+            div class="wo-drawer-content" { (content) }
+        }
+    }
+}
+
+/// Styles for this component; included in [`crate::stylesheet`].
+pub const CSS: &str = r#"
+.wo-drawer { display: grid; gap: calc(var(--wo-space) * 2); }
+.wo-drawer-open {
+  justify-self: start; display: inline-block; padding: 0.5rem 1rem; color: inherit; text-decoration: none;
+  background: var(--wo-surface); border: 1px solid var(--wo-line); border-radius: var(--wo-radius);
+}
+.wo-drawer-panel {
+  box-sizing: border-box; margin: 0; padding: calc(var(--wo-space) * 2);
+  color: var(--wo-fg); background: var(--wo-surface); border: 0; border-inline-end: 1px solid var(--wo-line);
+}
+.wo-drawer-panel:modal, .wo-drawer-panel:target {
+  display: block; position: fixed; inset: 0 auto 0 0; height: 100dvh; max-height: none; width: min(20rem, 85vw); z-index: 10;
+  transition: translate 0.2s ease-out, display 0.2s allow-discrete, overlay 0.2s allow-discrete;
+}
+.wo-drawer-panel:target { box-shadow: 0 0 0 100vmax color-mix(in srgb, var(--wo-fg) 45%, transparent); }
+@starting-style { .wo-drawer-panel:modal { translate: -100% 0; } }
+.wo-drawer-panel::backdrop { background: color-mix(in srgb, var(--wo-fg) 45%, transparent); }
+.wo-drawer-panel:not(:modal):not(:target)[open] { position: static; width: auto; border: 1px solid var(--wo-line); border-radius: var(--wo-radius); }
+.wo-drawer-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--wo-space); }
+.wo-drawer-title { margin: 0; font-weight: 700; }
+.wo-drawer-close {
+  width: 2rem; height: 2rem; padding: 0; font-size: 1.25rem; line-height: 1; display: inline-flex; align-items: center; justify-content: center;
+  color: var(--wo-muted); background: none; border: 1px solid transparent; border-radius: var(--wo-radius); text-decoration: none;
+}
+.wo-drawer-close:hover { color: var(--wo-fg); border-color: var(--wo-line); }
+.wo-drawer-panel ul { list-style: none; margin: 0; padding: 0; }
+.wo-drawer-panel li a { display: block; padding: 0.4rem 0.75rem; border-radius: var(--wo-radius); color: var(--wo-fg); text-decoration: none; }
+.wo-drawer-panel li a:hover { background: var(--wo-bg); }
+.wo-drawer-panel li a[aria-current] { background: var(--wo-accent); color: var(--wo-on-accent); }
+.wo-drawer-content { min-width: 0; }
+@media (prefers-reduced-motion: reduce) { .wo-drawer-panel:modal { transition: none; } }
+@media (min-width: 60rem) {
+  .wo-drawer-sidebar { grid-template-columns: 14rem 1fr; align-items: start; }
+  .wo-drawer-sidebar > .wo-drawer-open { display: none; }
+  .wo-drawer-sidebar > .wo-drawer-panel:not(:modal) {
+    display: block; position: sticky; top: calc(var(--wo-space) * 2); width: auto; height: auto; box-shadow: none;
+    border: 1px solid var(--wo-line); border-radius: var(--wo-radius); z-index: auto;
+  }
+  .wo-drawer-sidebar .wo-drawer-close { display: none; }
+}
+"#;

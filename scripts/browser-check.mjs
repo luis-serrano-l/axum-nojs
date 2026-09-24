@@ -243,6 +243,20 @@ try {
   await click(".wo-flash-warn .wo-flash-dismiss");
   await until(async () => (await js("return document.querySelectorAll('.wo-flash-item').length")) === 0, "flash: dismiss link clears the stack");
 
+  // Command palette: the popover opens with the caret in the box; an exact name redirects.
+  await go("/palette");
+  await click(".wo-palette-open");
+  await until(async () => await js("return document.querySelector('#cmd').matches(':popover-open') && document.activeElement.name === 'q'"), "palette: opens focused");
+  await type("#cmd input[name=q]", "Toasts\ue007"); // Enter
+  await until(async () => (await js("return location.pathname")) === "/toast", "palette: exact name goes to its page");
+
+  // Toasts: posted, stacked in the corner, calm ones fade, danger stays.
+  await click("button[value=all]");
+  await until(async () => (await js("return document.querySelectorAll('.wo-toast').length")) === 3, "toasts: three stacked");
+  assert(await js("return getComputedStyle(document.querySelector('.wo-toasts')).position") === "fixed", "toasts: out of the flow");
+  assert(await js("return getComputedStyle(document.querySelector('.wo-toast-ok')).animationName") === "wo-toast-out", "toasts: ok fades");
+  assert(await js("return getComputedStyle(document.querySelector('.wo-toast-danger')).animationName") === "none", "toasts: danger stays");
+
   // Range: output mirrors while moving, before any submit.
   await go("/inputs");
   await type("#f-volume", ""); // ArrowRight

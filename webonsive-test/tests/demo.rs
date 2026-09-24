@@ -343,3 +343,58 @@ async fn wizard_marks_steps() {
     assert!(back.exists("a.wo-wizard-edit[aria-label='Edit Topics'][href='/wizard?step.signup=1']"));
     assert_eq!(back.text(".wo-wizard-review dd:nth-of-type(4) .wo-note").as_deref(), Some("(skipped)"));
 }
+
+#[tokio::test]
+async fn toasts_stack_in_the_corner() {
+    let cookie = format!("{MODERN}; wo-flash=ok%3AInvite%20sent.%0Adanger%3ASync%20failed.");
+    let page = Page::render(demo::router(), "/toast", &cookie).await;
+    assert_eq!(page.count(".wo-toast"), 2);
+    assert!(page.exists(".wo-toast-danger[role=alert]") && page.exists(".wo-toast-ok[role=status]"));
+    assert!(page.exists(".wo-toast a.wo-toast-close[href='/toast']"));
+    let (list, h1) = (page.bbox(".wo-toasts").unwrap(), page.bbox("h1").unwrap());
+    assert!(list.x > h1.x + 100.0, "toasts sit at the right edge, out of the flow");
+    let empty = Page::render(demo::router(), "/toast", MODERN).await;
+    assert!(!empty.exists(".wo-toasts"));
+}
+
+#[tokio::test]
+async fn drawer_is_a_sidebar_when_wide_and_breadcrumbs_fold() {
+    let page = Page::render(demo::router(), "/nav", MODERN).await;
+    assert!(page.exists("button.wo-drawer-open[command=show-modal][commandfor=site]"));
+    assert!(page.is_visible(".wo-drawer-panel nav a[aria-current=page]"), "wide viewport: the closed dialog shows as a sidebar");
+    assert!(!page.is_visible(".wo-drawer-open"), "wide viewport: no menu button");
+    let (side, content) = (page.bbox(".wo-drawer-panel").unwrap(), page.bbox(".wo-drawer-content").unwrap());
+    assert!(side.x + side.width <= content.x + 1.0, "sidebar left of the content");
+    assert_eq!(page.count(".wo-breadcrumbs"), 2);
+    assert!(page.exists(".wo-breadcrumbs li:last-child [aria-current=page]"));
+    assert!(page.exists(".wo-breadcrumbs-fold details"), "the long trail folds");
+    assert!(!page.is_visible(".wo-breadcrumbs-fold ol"), "folded middle is closed");
+    let old = Page::render(demo::router(), "/nav", OLD).await;
+    assert!(old.exists("a.wo-drawer-open[href='#site']"), "fallback opener is a :target link");
+}
+
+#[tokio::test]
+async fn stats_and_empty_state() {
+    let page = Page::render(demo::router(), "/dashboard?orders=none", MODERN).await;
+    assert_eq!(page.count(".wo-stat"), 4);
+    let (a, b) = (page.bbox(".wo-stat-grid > :nth-child(1)").unwrap(), page.bbox(".wo-stat-grid > :nth-child(2)").unwrap());
+    assert!((a.y - b.y).abs() < 1.0 && b.x > a.x, "cards sit side by side when there is room");
+    assert!(page.exists(".wo-stat-good") && page.exists(".wo-stat-bad"), "down_is_good flips the colour");
+    assert!(page.exists("a.wo-stat[href='/table']"), "a card can be a link");
+    assert!(page.is_visible(".wo-empty-title"));
+    assert!(page.exists(".wo-empty-actions a[href='/dashboard']"));
+    let full = Page::render(demo::router(), "/dashboard", MODERN).await;
+    assert!(!full.exists(".wo-empty"));
+}
+
+#[tokio::test]
+async fn command_palette_suggests_and_lists_matches() {
+    let page = Page::render(demo::router(), "/palette?q=ta", MODERN).await;
+    assert!(page.exists("button.wo-palette-open[popovertarget=cmd][accesskey=k]"));
+    assert!(page.exists("#cmd[popover] input[type=search][list=cmd-list][autofocus]"));
+    assert!(page.count("datalist#cmd-list option") >= 19);
+    assert!(!page.is_visible("#cmd"), "the popover is closed on arrival");
+    assert!(page.is_visible(".wo-palette-results a[href='/table']"), "results for a partial query");
+    let old = Page::render(demo::router(), "/palette?q=ta", OLD).await;
+    assert!(old.exists("details#cmd[open] input[name=q]"), "fallback is an open disclosure after a search");
+}

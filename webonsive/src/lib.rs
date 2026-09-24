@@ -52,26 +52,33 @@
 #![warn(missing_docs)]
 
 pub mod accordion;
+pub mod breadcrumbs;
 pub mod color;
 pub mod combobox;
 pub mod counter;
 pub mod dialog;
+pub mod drawer;
+pub mod empty_state;
 pub mod enhance;
 pub mod flash;
 pub mod form;
 pub mod layout;
 pub mod paged_table;
 pub mod pager;
+pub mod palette;
 pub mod popover;
 pub mod range;
 pub mod select;
+pub mod skeleton;
 pub mod spec;
+pub mod stat;
 pub mod state;
 #[cfg(feature = "http")]
 pub mod stream;
 pub mod table;
 pub mod tabs;
 pub mod theme;
+pub mod toast;
 pub mod wizard;
 
 /// Server-side feature detection: the [`wo_caps`] crate, re-exported so `webonsive::caps`
@@ -79,19 +86,25 @@ pub mod wizard;
 pub use wo_caps as caps;
 
 pub use accordion::{AccordionItem, AccordionOptions, accordion};
+pub use breadcrumbs::breadcrumbs;
 pub use wo_caps::{Cap, Caps};
 pub use color::color;
 pub use combobox::{ComboboxOptions, OptionGroup, combobox};
 pub use counter::counter;
 pub use dialog::{DialogOptions, DialogSize, dialog};
+pub use drawer::{DrawerOptions, drawer};
+pub use empty_state::{EmptyOptions, empty_state};
 pub use flash::{FlashOptions, flash};
 pub use form::{Field, FieldGroup, FieldKind, FormLayout, FormOptions, form};
 pub use layout::{Tokens, layout, layout_with};
 pub use paged_table::{PagedTableOptions, paged_table};
 pub use pager::{PagerOptions, pager};
+pub use palette::{Command, PaletteOptions, command_palette};
 pub use popover::{MenuItem, Placement, PopoverOptions, popover_menu};
 pub use range::{RangeOptions, range};
 pub use select::select;
+pub use skeleton::{SkeletonOptions, skeleton};
+pub use stat::{StatOptions, Trend, stat};
 #[cfg(feature = "http")]
 pub use state::prg;
 pub use state::UiState;
@@ -100,6 +113,7 @@ pub use stream::{Streamed, slot};
 pub use table::{Column, Row, TableOptions, cols_from_query, sort_from_query, table};
 pub use tabs::{Tab, TabsOptions, tabs};
 pub use theme::{Theme, theme_toggle};
+pub use toast::{ToastOptions, toasts};
 pub use wizard::{WizardOptions, wizard};
 
 /// All component stylesheets, concatenated. `layout` inlines this once per page.
@@ -134,6 +148,13 @@ pub const COMPONENT_CSS: &[&str] = &[
     table::CSS,
     paged_table::CSS,
     wizard::CSS,
+    toast::CSS,
+    breadcrumbs::CSS,
+    skeleton::CSS,
+    empty_state::CSS,
+    stat::CSS,
+    drawer::CSS,
+    palette::CSS,
 ];
 
 #[cfg(test)]
