@@ -171,7 +171,7 @@ Every page is one server round trip, so latency is the whole experience. Measure
 take the cheap wins, then the ones that cost structure. Each box records before/after numbers
 in FINDINGS.md (`hyperfine` against the demo, Firefox navigation timing from
 `scripts/browser-check.mjs`) so a change that does not move a number is reverted.
-- [ ] Measure: a `scripts/bench.sh` that starts the release demo and reports p50/p95 time to
+- [x] Measure: a `scripts/bench.sh` that starts the release demo and reports p50/p95 time to
   first byte and full response for `/`, `/table`, `/stream` cold and warm; Firefox
   `performance.getEntriesByType("navigation")` for the same routes; numbers in FINDINGS.md.
 - [ ] Cheap wins, server: `stylesheet()` built once (`OnceLock`) instead of per page; the

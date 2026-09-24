@@ -26,6 +26,7 @@ node scripts/browser-check.mjs     # headless Firefox via geckodriver: the scrip
 cargo test -p webonsive --doc      # component doc examples
 cargo clippy --all-targets         # must be clean before a roadmap milestone counts as done
 cargo test -p webonsive-test       # Blitz layout assertions + screenshots into tests/shots/
+scripts/bench.sh                   # latency baseline: curl p50/p95 TTFB and Firefox navigation timing on 3001
 scripts/verify.sh                  # everything above plus a <script> grep and the browser check; run before committing
 ```
 

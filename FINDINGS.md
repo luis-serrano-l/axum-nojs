@@ -372,3 +372,21 @@ asserted there; the modal and the slide are checked in Firefox.
 **Toasts are flashes in another place.** Same cookie, same `level:` lines, rendered as a
 `position: fixed` list. Danger never fades; the others pause on `:hover`/`:focus-within`.
 Blitz paints them at the right edge of its viewport as Firefox does.
+
+### M16 · Latency baseline
+
+`scripts/bench.sh` (release demo on 3001, 30 samples, x86_64 with 12 cores, loopback) before any
+M16 change. Cold is a new connection per request; warm is one kept-alive connection.
+
+| Route | Cold TTFB p50 / p95 | Warm TTFB p50 / p95 | Full response p50 | Firefox responseStart / DOMContentLoaded / load |
+|---|---|---|---|---|
+| `/` | 0.73 / 1.73 ms | 0.33 / 0.45 ms | 0.81 ms | 1 / 66 / 66 ms |
+| `/table` | 0.93 / 2.64 ms | 0.42 / 0.61 ms | 1.01 ms | 1 / 41 / 54 ms |
+| `/stream` | 0.93 / 1.27 ms | 0.68 / 0.87 ms | 2905 ms | 2 / 2010 / 2010 ms |
+
+On loopback the server is under a millisecond; almost all of what a person waits for is the
+browser parsing and painting (tens of ms), and on `/stream` the deliberate slot delays. So the
+cheap wins that count are the ones that shrink the page (inline stylesheet, compression) and
+the swap payload, not the handler. `/stream` finishes at about 2.9 s in curl but DOMContentLoaded
+fires at 2.0 s in Firefox: the slots Firefox gets depend on its caps cookie, and the last slot
+arrives after the document it cares about has been parsed.
