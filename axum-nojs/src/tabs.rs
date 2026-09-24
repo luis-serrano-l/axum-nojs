@@ -25,7 +25,8 @@
 //! `state.tab(name)` and each title is a link to `?tab.<name>=i`, so the choice survives
 //! navigation (query first, cookie after). The link fills the summary, so every click is a
 //! round trip: a native toggle would be undone by the next render. With a state the strip is a
-//! swap root, so the [`crate::enhance`] script replaces just the strip instead of the page.
+//! swap root, so the [`crate::enhance`] script replaces just the strip instead of the page;
+//! it also opens the clicked tab before the request, so the switch shows on the click.
 //! Because every switch is a request, a lazy tab ([`Tab::lazy_with`]) costs nothing until
 //! opened: the component calls its closure only when it is the open tab.
 //!

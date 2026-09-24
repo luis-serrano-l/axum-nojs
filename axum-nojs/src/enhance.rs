@@ -45,6 +45,8 @@
 //! `FormData` so files survive, opens
 //! the `:target` dialog fallback as a real modal, moves through an open popover menu with the
 //! arrow keys, searches a combobox as you type and walks its results with the arrow keys.
+//! A tab title opens its panel and slides the underline on the click itself; the server's
+//! answer replaces the strip quietly once the slide ends (a lazy panel fills in then).
 //!
 //! [`script_tag`] goes at the end of `<body>`; [`router`] serves the file with a content
 //! hash in the URL so it caches forever. It is compatible with `script-src 'self'`.
@@ -106,7 +108,7 @@ function swapped(el, url, mode) {
 }
 
 // hist: "push" adds a history entry, "replace" rewrites the current one, "none" keeps the URL.
-function apply(doc, id, url, hist, mode) {
+function apply(doc, id, url, hist, mode, quiet) {
   var root = document.getElementById(id), fresh = doc.getElementById(id);
   if (!root || !fresh) { if (url !== location.href) location.href = url; else location.reload(); return; }
   var f = focusState();
@@ -131,7 +133,7 @@ function apply(doc, id, url, hist, mode) {
     if (hist === "push") { history.replaceState(snapshot(), "", location.href); history.pushState(null, "", url); }
     else history.replaceState(null, "", url);
   }
-  if (document.startViewTransition && !reduced) document.startViewTransition(swap); else swap();
+  if (!quiet && document.startViewTransition && !reduced) document.startViewTransition(swap); else swap();
 }
 
 // The root an element acts on: the one named by data-nojs-target on it or an ancestor, else
@@ -172,12 +174,25 @@ function request(t, src, url, req, fallback) {
     var hit = !req.method && cache[url];
     delete cache[url];
     return (hit && Date.now() - hit.at < 5000 ? hit.got : load(url, req)).then(function (r) {
-      apply(parse(r.html), id, r.url, t.hist, t.mode);
+      return Promise.resolve(t.quiet).then(function () { apply(parse(r.html), id, r.url, t.hist, t.mode, t.quiet); });
     }).then(function () { done(); }, function () { done(); fallback(); });
   };
   var done = function () { pending[id]--; busy(t, src, false); if (pending[id]) busy(t, src, true); };
   queue[id] = (queue[id] || Promise.resolve()).then(run, run);
   return queue[id];
+}
+
+// A tab title opens its panel and moves the underline before the request; the server's answer
+// then replaces the strip, once the underline has slid, without a second transition (a lazy
+// panel fills in at that point). Returns false, or a promise for the end of the slide.
+function openTab(a) {
+  var s = a.closest(".nojs-tabs summary"), d = s && s.parentElement, strip = d && d.parentElement;
+  if (!d || d.open) return false;
+  var mark = strip.querySelector(":scope > details > summary > .nojs-tabs-mark");
+  var show = function () { d.open = true; if (mark) s.append(mark); };
+  if (document.startViewTransition && !reduced) return document.startViewTransition(show).finished;
+  show();
+  return true;
 }
 
 function submit(form, submitter) {
@@ -215,16 +230,17 @@ document.addEventListener("click", function (e) {
   var t = target(a, "push");
   if (!t || a.origin !== location.origin) return;
   e.preventDefault();
+  t.quiet = openTab(a);
   request(t, a, a.href, init(), function () { location.href = a.href; });
 });
 
 // data-nojs-prefetch on a link or an ancestor: a hover or focus fetches the link's answer at
-// low priority (not the page already shown), and a click within five
-// seconds uses it instead of asking again.
+// low priority (not the page already shown, nor the tab already open), and a click within
+// five seconds uses it instead of asking again.
 ["mouseover", "focusin"].forEach(function (type) {
   document.addEventListener(type, function (e) {
     var a = e.target.closest && e.target.closest("a[href]");
-    if (!a || a.href === location.href || a.origin !== location.origin || !a.closest("[data-nojs-prefetch]") || !target(a, "push")) return;
+    if (!a || a.href === location.href || a.origin !== location.origin || !a.closest("[data-nojs-prefetch]") || a.closest(".nojs-tabs details[open] > summary") || !target(a, "push")) return;
     var hit = cache[a.href];
     if (hit && Date.now() - hit.at < 5000) return;
     var got = load(a.href, init("low"));

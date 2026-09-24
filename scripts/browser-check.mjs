@@ -57,9 +57,11 @@ try {
 
   // Tabs: click a title, panel switches, URL updated, no reload.
   await go("/tabs");
-  await click(".nojs-tabs summary a[href*='tab.demo=1']");
+  // The toggle comes from the script, before the answer: the strip it fires in is still the original.
+  assert(await wd("POST", S + "/execute/async", { args: [], script: "var cb = arguments[0], a = document.querySelector(\".nojs-tabs summary a[href*='tab.demo=1']\"), d = a.closest('details'); d.addEventListener('toggle', function () { cb(d.open && a.isConnected && !!a.closest('summary').querySelector('.nojs-tabs-mark')); }, { once: true }); a.click();" }), "tabs: the clicked tab opens and takes the underline before the answer");
   await until(async () => (await text(".nojs-tabs details[open] summary")).startsWith("Use"), "tab switch");
-  assert(await js("return location.search") === "?tab.demo=1", "tabs: URL follows the swap");
+  await until(async () => (await js("return location.search")) === "?tab.demo=1", "tabs: URL follows the swap");
+  assert(true, "tabs: URL follows the swap");
   assert(await navigations() === 1, "tabs: switched without a reload");
   assert(await js("return getComputedStyle(document.querySelector('.nojs-tabs details[open] .nojs-tabs-mark')).viewTransitionName") === "nojs-tabs-demo", "tabs: the underline, not the title, carries the view-transition-name");
   const fetched = (q) => js("return performance.getEntriesByType('resource').filter((r) => r.name.endsWith(arguments[0])).length", q);
