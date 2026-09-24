@@ -61,44 +61,8 @@
 
 use maud::{Markup, Render, html};
 
+use crate::input::{Field, FieldKind};
 use crate::{Ui, enhance};
-
-/// Input type of a field.
-#[derive(Clone, Debug)]
-enum FieldKind<'a> {
-    Text,
-    Email,
-    Number { min: i64, max: i64 },
-    Pattern { pattern: &'a str, hint: &'a str },
-    Textarea { rows: u8 },
-    File { accept: &'a str, multiple: bool },
-    Date { min: &'a str, max: &'a str },
-    Time { min: &'a str, max: &'a str },
-    Select(Vec<&'a str>),
-    Checkbox,
-    Hidden,
-}
-
-/// One form field with its current value and server-side error.
-#[derive(Clone, Debug)]
-pub(crate) struct Field<'a> {
-    pub(crate) name: &'a str,
-    pub(crate) label: &'a str,
-    kind: FieldKind<'a>,
-    pub(crate) value: &'a str,
-    error: Option<&'a str>,
-    required: bool,
-    help: Option<&'a str>,
-    maxlength: Option<usize>,
-    placeholder: Option<&'a str>,
-}
-
-impl Field<'_> {
-    /// Whether a person sees it (a review lists only these).
-    pub(crate) fn shown(&self) -> bool {
-        !matches!(self.kind, FieldKind::Hidden)
-    }
-}
 
 /// A POST form of fields, made by [`Ui::form`], or the fields alone, made by [`Ui::fields`].
 /// Fields are added in order; `required`, `help`, `maxlength`, `value`, `error`,
@@ -141,17 +105,7 @@ impl Ui {
 
 impl<'a> Form<'a> {
     fn add(mut self, name: &'a str, label: &'a str, kind: FieldKind<'a>) -> Self {
-        let field = Field {
-            name,
-            label,
-            kind,
-            value: "",
-            error: None,
-            required: false,
-            help: None,
-            maxlength: None,
-            placeholder: None,
-        };
+        let field = Field::new(name, label, kind);
         self.groups
             .last_mut()
             .expect("a form always has a group")
@@ -366,9 +320,9 @@ impl<'a> Form<'a> {
         html! {
             @for (legend, fs) in self.filled() {
                 @if let Some(legend) = legend {
-                    fieldset class="nojs-form-group" { legend { (legend) } @for f in &fs { (field(f)) } }
+                    fieldset class="nojs-form-group" { legend { (legend) } @for f in &fs { (f) } }
                 } @else {
-                    @for f in &fs { (field(f)) }
+                    @for f in &fs { (f) }
                 }
             }
         }
@@ -400,106 +354,12 @@ impl Render for Form<'_> {
     }
 }
 
-fn field(f: &Field) -> Markup {
-    let id = format!("f-{}", f.name);
-    let help = f.help.or(match f.kind {
-        FieldKind::Pattern { hint, .. } => Some(hint),
-        _ => None,
-    });
-    let ids = [
-        help.map(|_| format!("{id}-help")),
-        f.maxlength.map(|_| format!("{id}-count")),
-        f.error.map(|_| format!("{id}-error")),
-    ];
-    let described: Vec<&str> = ids.iter().flatten().map(String::as_str).collect();
-    let described = (!described.is_empty()).then(|| described.join(" "));
-    let bound = |s: &str| (!s.is_empty()).then(|| s.to_string());
-    let (kind, min, max, pattern, accept, multiple) = match f.kind {
-        FieldKind::Text | FieldKind::Textarea { .. } | FieldKind::Select(_) => {
-            ("text", None, None, None, None, false)
-        }
-        FieldKind::Email => ("email", None, None, None, None, false),
-        FieldKind::Number { min, max } => (
-            "number",
-            Some(min.to_string()),
-            Some(max.to_string()),
-            None,
-            None,
-            false,
-        ),
-        FieldKind::Pattern { pattern, .. } => ("text", None, None, Some(pattern), None, false),
-        FieldKind::File { accept, multiple } => (
-            "file",
-            None,
-            None,
-            None,
-            (!accept.is_empty()).then_some(accept),
-            multiple,
-        ),
-        FieldKind::Date { min, max } => ("date", bound(min), bound(max), None, None, false),
-        FieldKind::Time { min, max } => ("time", bound(min), bound(max), None, None, false),
-        FieldKind::Checkbox | FieldKind::Hidden => ("", None, None, None, None, false),
-    };
-    let invalid = f.error.map(|_| "true");
-    if let FieldKind::Hidden = f.kind {
-        return html! { input type="hidden" name=(f.name) value=(f.value); };
-    }
-    if let FieldKind::Checkbox = f.kind {
-        let checked = matches!(f.value, "true" | "on" | "1");
-        return html! {
-            div class="nojs-field nojs-field-check" {
-                label for=(id) {
-                    input id=(id) name=(f.name) type="checkbox" value="true" checked[checked] required[f.required]
-                        aria-invalid=[invalid] aria-describedby=[described.as_deref()];
-                    " " (f.label)
-                }
-                @if let Some(h) = help { small id={ (id) "-help" } class="nojs-field-help" { (h) } }
-                @if let Some(e) = f.error { p id={ (id) "-error" } class="nojs-error" role="alert" { (e) } }
-            }
-        };
-    }
-    html! {
-        div class="nojs-field" {
-            label for=(id) { (f.label) @if f.required { " *" } }
-            @if let FieldKind::Textarea { rows } = f.kind {
-                textarea id=(id) name=(f.name) rows=(rows) required[f.required] maxlength=[f.maxlength] placeholder=[f.placeholder]
-                    aria-invalid=[invalid] aria-describedby=[described.as_deref()] { (f.value) }
-            } @else if let FieldKind::Select(options) = &f.kind {
-                select id=(id) name=(f.name) required[f.required] aria-invalid=[invalid] aria-describedby=[described.as_deref()] {
-                    @for o in options { option value=(o) selected[*o == f.value] { (o) } }
-                }
-            } @else {
-                input id=(id) name=(f.name) type=(kind) value=[(kind != "file").then_some(f.value)]
-                    required[f.required] min=[min] max=[max] pattern=[pattern] title=[pattern.and(help)]
-                    accept=[accept] multiple[multiple] maxlength=[f.maxlength] placeholder=[f.placeholder]
-                    aria-invalid=[invalid] aria-describedby=[described.as_deref()];
-            }
-            @if let Some(h) = help { small id={ (id) "-help" } class="nojs-field-help" { (h) } }
-            @if let Some(max) = f.maxlength {
-                output id={ (id) "-count" } for=(id) class="nojs-field-count" { (f.value.chars().count()) " / " (max) }
-            }
-            @if let Some(e) = f.error { p id={ (id) "-error" } class="nojs-error" role="alert" { (e) } }
-        }
-    }
-}
-
 /// Styles for this component; included in [`crate::stylesheet`].
 pub const CSS: &str = r#"
 .nojs-form { display: grid; gap: calc(var(--nojs-space) * 3); max-width: 28rem; }
 .nojs-form-inline { max-width: 40rem; }
 .nojs-form-group { display: grid; gap: calc(var(--nojs-space) * 2); margin: 0; padding: calc(var(--nojs-space) * 3); border: 1px solid var(--nojs-line); border-radius: var(--nojs-radius-lg); }
 .nojs-form-group legend { padding: 0 0.5rem; font-weight: 600; }
-.nojs-field { display: grid; gap: 0.5rem; }
-.nojs-field label { font-size: 0.875rem; line-height: 1; font-weight: 500; }
-.nojs-field-check label { display: flex; align-items: center; gap: 0.5rem; }
-/* :where keeps this at one class, so a component inside a field (colour, range) sizes itself. */
-.nojs-field :where(input:not([type=file], [type=color], [type=range], [type=checkbox], [type=radio]), textarea) { width: 100%; box-sizing: border-box; }
-.nojs-field textarea { resize: vertical; field-sizing: content; min-height: 3lh; max-height: 20lh; font: inherit; }
-.nojs-field-help { color: var(--nojs-muted); font-size: 0.875rem; }
-.nojs-field-count { justify-self: end; color: var(--nojs-muted); font-size: 0.75rem; font-variant-numeric: tabular-nums; }
-.nojs-field :is(input, textarea):user-invalid, .nojs-field [aria-invalid=true] { border-color: var(--nojs-danger); }
-.nojs-field [aria-invalid=true] ~ label, .nojs-field:has([aria-invalid=true]) > label { color: var(--nojs-danger); }
-.nojs-error { color: var(--nojs-danger); margin: 0; font-size: 0.875rem; }
 @media (min-width: 40rem) {
   .nojs-form-inline .nojs-field { grid-template-columns: 10rem 1fr; column-gap: calc(var(--nojs-space) * 2); }
   .nojs-form-inline .nojs-field > :not(label) { grid-column: 2; }

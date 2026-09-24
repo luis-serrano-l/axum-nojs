@@ -62,6 +62,7 @@ pub mod empty_state;
 pub mod enhance;
 pub mod flash;
 pub mod form;
+pub mod input;
 pub mod layout;
 pub mod paged_table;
 pub mod pager;
@@ -208,6 +209,7 @@ pub fn minify_css(css: &str) -> String {
 pub const COMPONENT_CSS: &[&str] = &[
     layout::CSS,
     button::CSS,
+    input::CSS,
     dialog::CSS,
     popover::CSS,
     tabs::CSS,

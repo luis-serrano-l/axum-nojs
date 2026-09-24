@@ -397,9 +397,16 @@ layered design system: primitives → existing components rebuilt on them → fl
   `.label()` (aria-label, for icon buttons) and `.class()` (a component's part name, for M22).
   A loading button is `disabled` + `aria-busy` with a CSS spinner; a disabled link loses its
   `href`.
-- [ ] `input.rs`: `ui.input(name, label)`, one labelled field (label, hint, error,
+- [x] `input.rs`: `ui.input(name, label)`, one labelled field (label, hint, error,
   `aria-describedby`), same setters as form fields; `ui.checkbox`, `ui.radio_group`,
   `ui.switch` (checkbox with `role=switch`).
+  Done: the field renderer, `Field` and `FieldKind` moved out of `form.rs` into `input.rs`,
+  and `ui.form` now renders its fields through it (one renderer, which is M22's second box
+  done early), with the `.nojs-field*` CSS. `ui.input` takes the type as a setter
+  (`.email()`, `.password()` (never echoed back), `.number()`, `.pattern()`, `.textarea()`,
+  `.file()`, `.date()`, `.time()`) plus `.id()`; `ui.checkbox`/`ui.switch` share the builder
+  (`.checked(bool)`); `ui.radio_group(name, legend).option(value, label)` is a fieldset with
+  one `required` radio. The switch is `appearance: none` with a `::before` thumb.
 - [ ] `badge.rs`, `card.rs` (`.header/.body/.footer`), `icon.rs` (small inline-SVG set, no
   font), `avatar.rs`.
 - [ ] Layout primitives: `ui.stack()`, `ui.cluster()`, `ui.grid(min)`, `ui.split()`, CSS-only,
