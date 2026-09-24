@@ -224,7 +224,7 @@ form, and the old form kept only where removing it would break a published signa
   builder form for the rare setting.
 - [x] Less plumbing in handlers: extractors that hand a route the flash, the theme and the
   `UiState` together, so a route reads as "parse input, render components" in a few lines.
-- [ ] Fewer calls in the demo, more in the component: where a demo route stitches several
+- [x] Fewer calls in the demo, more in the component: where a demo route stitches several
   helper calls around a component (building items, reading state, wrapping markup, formatting
   values), move that work into the component as an option so the route makes one call; the
   refactor should show how much a single component call can do, with the demo shrinking as

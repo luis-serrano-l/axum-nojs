@@ -111,7 +111,7 @@ pub use state::prg;
 pub use state::UiState;
 #[cfg(feature = "http")]
 pub use stream::{Streamed, slot};
-pub use table::{Column, Row, TableOptions, cols_from_query, sort_from_query, table, table_with};
+pub use table::{Column, Row, TableOptions, TableQuery, cols_from_query, sort_from_query, table, table_with};
 pub use tabs::{Tab, TabsOptions, tabs, tabs_with};
 pub use theme::{Theme, theme_toggle};
 pub use ui::Ui;

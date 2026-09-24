@@ -3,7 +3,7 @@
 
 use axum::{
     Form, Router,
-    extract::Query,
+    extract::{Query, RawQuery},
     http::HeaderMap,
     response::{IntoResponse, Redirect},
     routing::{get, post},
@@ -13,9 +13,9 @@ use maud::{Markup, html};
 use serde::Deserialize;
 use webonsive::{
     Ui, theme::THEME_COOKIE,
-    Cap, Caps, Field, FieldGroup, FieldKind, FormLayout, FormOptions, Streamed, Theme, UiState, accordion_with, accordion::{AccordionItem, AccordionOptions}, caps, color_with, combobox_with, combobox::{ComboboxOptions, OptionGroup}, counter_with, counter::CounterOptions, color::ColorOptions, select::{Group as SelectGroup, SelectOption, SelectOptions}, dialog_with, dialog::{DialogOptions, DialogSize}, flash_with, flash::{FlashOptions, Level, stack}, form_with, layout, layout::{Palette, Tokens, layout_with}, paged_table, paged_table_with, paged_table::PagedTableOptions, pager_with, pager::PagerOptions, popover::{MenuItem, Placement, PopoverOptions}, popover_menu, popover_menu_with, prg, range, range_with, range::RangeOptions, select, select_with, slot, tabs::{Tab, TabsOptions},
-    table::{Column, Row, TableOptions, cols_from_query, sort_from_query}, tabs_with, theme_toggle, wizard, wizard_with, wizard::{Step, WizardOptions},
-    breadcrumbs, command_palette_with, drawer_with, empty_state_with, palette::{self, Command, PaletteOptions}, skeleton_with, skeleton::SkeletonOptions, stat_with, stat::{StatOptions, Trend}, toasts_with, toast::ToastOptions, drawer::DrawerOptions, empty_state::EmptyOptions,
+    Cap, Caps, Field, FieldGroup, FieldKind, FormLayout, FormOptions, Streamed, Theme, UiState, accordion_with, accordion::{AccordionItem, AccordionOptions}, caps, color_with, combobox_with, combobox::{ComboboxOptions, OptionGroup}, counter_with, counter::CounterOptions, color::ColorOptions, select::{Group as SelectGroup, SelectOption, SelectOptions}, dialog_with, dialog::{DialogOptions, DialogSize}, flash_with, flash::{FlashOptions, Level, stack}, form_with, form::fields, layout, layout::{Palette, Tokens, layout_with}, paged_table, paged_table_with, paged_table::PagedTableOptions, pager_with, pager::PagerOptions, popover::{MenuItem, Placement, PopoverOptions}, popover_menu, popover_menu_with, prg, range, range_with, range::RangeOptions, select, select_with, slot, tabs::{Tab, TabsOptions},
+    table::{Column, Row, TableOptions, TableQuery}, tabs_with, theme_toggle, wizard, wizard_with, wizard::{Step, WizardOptions},
+    breadcrumbs, command_palette_with, drawer_with, empty_state_with, palette::{self, Command, PaletteOptions}, skeleton_with, skeleton::SkeletonOptions, stat_with, stat::StatOptions, toasts_with, toast::ToastOptions, drawer::DrawerOptions, empty_state::EmptyOptions,
 };
 use std::time::Duration;
 use tower_http::compression::{CompressionLayer, predicate::{DefaultPredicate, Predicate}};
@@ -173,8 +173,7 @@ async fn dialog_page(ui: Ui) -> Markup {
             p { "This cannot be undone. Everything you wrote goes with it." }
             label { "Tell us why (optional)" input name="reason" placeholder="Moving on"; }
         }, DialogOptions::default().title("Delete account?").size(DialogSize::Sm).danger(true)
-            .confirm("Delete account", "/dialog/delete").returns_to("/dialog").cancel_label("Keep it")
-            .open(ui.state.dialog() == Some("confirm"))))
+            .confirm("Delete account", "/dialog/delete").cancel_label("Keep it").state(&ui.state)))
         p class="wo-note" { "Opened by an invoker button; the footer is a real form posting to " code { "/dialog/delete" } " with a hidden " code { "returns_to" } " so the server comes back here. Server-opened: " a href="/dialog?dialog=confirm" { "?dialog=confirm" } }
     })
 }
@@ -219,14 +218,13 @@ async fn popover_signout() -> axum::response::Response {
 }
 
 async fn tabs_page(ui: Ui) -> (Ui, Markup) {
-    let open = ui.state.tab("demo");
     let body = page(&ui, "Tabs", html! {
         // Hovering or focusing a tab title fetches it early; the click reuses the answer.
         div data-wo-prefetch { (tabs_with(&ui, "demo", &[
             Tab::new("Install", html! { p { code { "cargo add webonsive maud axum" } } }),
             Tab::new("Use", html! { p { "Call a function, get " code { "Markup" } ", send it." } }).badge(3),
             // Lazy: the body is rendered only by the request that opens the tab.
-            if open == 2 { Tab::new("Why", html! { p { "Because the platform can do this without script now. (Rendered on demand.)" } }) } else { Tab::lazy("Why") },
+            Tab::lazy_with("Why", &|| html! { p { "Because the platform can do this without script now. (Rendered on demand.)" } }),
         ], TabsOptions::default().state(&ui.state).select_below(true))) }
         p class="wo-note" { "Deep link: " a href="/tabs?tab.demo=2" { "?tab.demo=2" } ". Leave and come back: the tab is remembered. The third tab is lazy; under 40rem the strip becomes a select." }
         h2 { "Vertical" }
@@ -314,7 +312,7 @@ async fn list_page(ui: Ui, Query(p): Query<PageQuery>) -> Markup {
 }
 
 #[derive(Deserialize, Default)]
-struct TableQuery { sort: Option<String>, dir: Option<String>, q: Option<String>, page: Option<usize>, cols: Option<String>, loading: Option<u8> }
+struct Loading { loading: Option<u8> }
 
 const FILES: [(&str, u32, &str); 12] = [
     ("archive.tar", 40960, "backup"), ("build.rs", 1200, "script"), ("cargo.lock", 8800, "generated"),
@@ -337,33 +335,29 @@ fn files(sort: Option<(&str, bool)>, q: &str) -> Vec<(String, u32, &'static str)
 }
 
 /// The table only renders and links; a row can expand, has its own menu and can be selected.
-async fn table_page(ui: Ui, Query(t): Query<TableQuery>) -> (Ui, Markup) {
-    let sort = sort_from_query(&FILE_COLS, t.sort.as_deref(), t.dir.as_deref());
-    let cols = cols_from_query(&FILE_COLS, t.cols.as_deref());
-    let q = t.q.unwrap_or_default().to_lowercase();
-    let (per, pg) = (ui.state.per_page("files").unwrap_or(10).clamp(1, 50), t.page.unwrap_or(1).max(1));
-    let files = files(sort, &q);
+async fn table_page(ui: Ui, RawQuery(raw): RawQuery, Query(l): Query<Loading>) -> (Ui, Markup) {
+    let t = TableQuery::parse(raw.as_deref().unwrap_or(""));
+    let files = files(t.sort(&FILE_COLS), &t.filter.to_lowercase());
     const MENU: [MenuItem; 2] = [MenuItem::link("Open", "/table"), MenuItem::action("Delete", "/table/bulk").danger(true)];
-    let rows: Vec<Row> = files.iter().skip((pg - 1) * per).take(per)
+    let rows: Vec<Row> = files.iter()
         .map(|f| Row::new(vec![html! { code { (f.0) } }, html! { (paged_table::thousands(f.1 as usize / 1024)) " KB" }, html! { (f.2) }])
             .key(&f.0).detail(html! { p { "A " (f.2) " of " (f.1) " bytes, in " code { (f.0.split('/').next().unwrap_or("")) } "." } }).menu(&MENU)).collect();
-    let options = TableOptions::default().cols(cols.as_deref()).choose_columns(true).bulk("/table/bulk", &[("archive", "Archive"), ("delete", "Delete")])
-        .csv("/table.csv").empty("No files match this filter.").loading(t.loading == Some(1));
+    let options = TableOptions::default().choose_columns(true).bulk("/table/bulk", &[("archive", "Archive"), ("delete", "Delete")])
+        .csv("/table.csv").empty("No files match this filter.").loading(l.loading == Some(1));
     let body = page(&ui, "Table", html! {
         (ui.flash())
         p { "Click a header to sort, again to flip. Type to filter. Hide columns, tick rows for the bulk form, open a row's menu or its detail. The page size you pick is remembered for your next visit. Every state is a URL, including " a href="/table?loading=1" { "the loading one" } "." }
-        (paged_table_with(&ui, "files", "/table", &FILE_COLS, &rows, files.len(), PagedTableOptions::default().sort(sort).filter(&q).page(pg).per_page(per).state(&ui.state).table(options)))
+        (paged_table_with(&ui, "files", "/table", &FILE_COLS, &rows, files.len(), PagedTableOptions::default().query(&t).state(&ui.state).table(options)))
     });
     (ui, body)
 }
 
 /// The same rows as text/csv, for the sort and filter in the URL.
-async fn table_csv(Query(t): Query<TableQuery>) -> impl IntoResponse {
-    let sort = sort_from_query(&FILE_COLS, t.sort.as_deref(), t.dir.as_deref());
-    let cols = cols_from_query(&FILE_COLS, t.cols.as_deref()).unwrap_or_else(|| FILE_COLS.iter().map(|c| c.key).collect());
-    let q = t.q.unwrap_or_default().to_lowercase();
+async fn table_csv(RawQuery(raw): RawQuery) -> impl IntoResponse {
+    let t = TableQuery::parse(raw.as_deref().unwrap_or(""));
+    let cols = t.cols(&FILE_COLS).unwrap_or_else(|| FILE_COLS.iter().map(|c| c.key).collect());
     let mut csv = cols.join(",") + "\n";
-    for f in files(sort, &q) {
+    for f in files(t.sort(&FILE_COLS), &t.filter.to_lowercase()) {
         let cells = [("name", f.0.clone()), ("size", f.1.to_string()), ("kind", f.2.to_string())];
         csv += &cells.iter().filter(|(k, _)| cols.contains(k)).map(|(_, v)| v.as_str()).collect::<Vec<_>>().join(",");
         csv.push('\n');
@@ -398,16 +392,10 @@ fn wizard_check(step: usize, data: &[(String, String)]) -> Vec<(&'static str, &'
 }
 
 fn wizard_steps(state: &UiState, data: &[(String, String)], errors: &[(&str, &str)]) -> [Step; 3] {
+    const ACCOUNT: [Field; 2] = [Field::new("name", "Name", FieldKind::Text).required(true), Field::new("email", "Email", FieldKind::Email).required(true)];
     let get = |k: &str| data.iter().find(|(n, _)| n == k).map(|(_, v)| v.as_str()).unwrap_or("");
-    let err = |k: &str| errors.iter().find(|(n, _)| *n == k).map(|(_, m)| *m);
-    let field = |name: &'static str, label: &str, kind: &str| html! {
-        label for={ "w-" (name) } { (label) }
-        input id={ "w-" (name) } type=(kind) name=(name) value=(get(name)) required
-            aria-invalid=[err(name).map(|_| "true")] aria-describedby=[err(name).map(|_| format!("w-{name}-error"))];
-        @if let Some(m) = err(name) { p id={ "w-" (name) "-error" } class="wo-error" { (m) } }
-    };
     [
-        Step::new("Account", html! { (field("name", "Name", "text")) (field("email", "Email", "email")) }).error(!errors.is_empty()),
+        Step::new("Account", fields(&[FieldGroup::plain(&ACCOUNT)], FormOptions::default().values(data).errors(errors))).error(!errors.is_empty()),
         Step::new("Newsletter", html! {
             label { "Digest" select name="digest" { @for d in ["daily", "weekly", "never"] { option value=(d) selected[get("digest") == d] { (d) } } } }
             label { "Topics" input type="text" name="topics" value=(get("topics")) placeholder="rust, html"; }
@@ -468,26 +456,25 @@ impl SignUp {
 }
 
 fn form_view(ui: &Ui, inline: bool, v: &SignUp, errors: &[(&str, &str)]) -> Markup {
-    let err = |n: &str| errors.iter().find(|(f, _)| *f == n).map(|(_, m)| *m);
     let account = [
-        Field::new("name", "Name", FieldKind::Text).value(v.get("name")).required(true).error(err("name")),
-        Field::new("email", "Email", FieldKind::Email).value(v.get("email")).required(true).error(err("email")),
-        Field::new("age", "Age", FieldKind::Number { min: 13, max: 120 }).value(v.get("age")).required(true),
-        Field::new("handle", "Handle", FieldKind::Pattern { pattern: "[a-z0-9_]{3,16}", hint: "3–16 lowercase letters, digits or _" })
-            .value(v.get("handle")).required(true).error(err("handle")),
+        Field::new("name", "Name", FieldKind::Text).required(true),
+        Field::new("email", "Email", FieldKind::Email).required(true),
+        Field::new("age", "Age", FieldKind::Number { min: 13, max: 120 }).required(true),
+        Field::new("handle", "Handle", FieldKind::Pattern { pattern: "[a-z0-9_]{3,16}", hint: "3–16 lowercase letters, digits or _" }).required(true),
     ];
     let profile = [
-        Field::new("bio", "Bio", FieldKind::Textarea { rows: 3 }).value(v.get("bio")).max_len(160).help("Grows as you type where the browser supports it."),
+        Field::new("bio", "Bio", FieldKind::Textarea { rows: 3 }).max_len(160).help("Grows as you type where the browser supports it."),
         Field::new("avatar", "Avatar", FieldKind::File { accept: "image/png,image/jpeg", multiple: false }).help("PNG or JPEG."),
-        Field::new("start", "Start date", FieldKind::Date { min: "2026-01-01", max: "2027-12-31" }).value(v.get("start")),
-        Field::new("call", "Best time to call", FieldKind::Time { min: "09:00", max: "17:00" }).value(v.get("call")).help("Office hours, 09:00 to 17:00."),
+        Field::new("start", "Start date", FieldKind::Date { min: "2026-01-01", max: "2027-12-31" }),
+        Field::new("call", "Best time to call", FieldKind::Time { min: "09:00", max: "17:00" }).help("Office hours, 09:00 to 17:00."),
     ];
     let layout = if inline { FormLayout::Inline } else { FormLayout::Stacked };
     page(ui, "Validated form", html! {
         (ui.flash())
         p { "Labels " @if inline { "beside the fields. " a href="/form" { "Put them above" } } @else { "above the fields. " a href="/form?layout=inline" { "Put them beside" } } "." }
         @if !errors.is_empty() { p class="wo-error" { "Server-side checks failed. Browser validation passed, these rules only live on the server." } }
-        (form_with(ui, "/form", &[FieldGroup::new("Account", &account), FieldGroup::new("Profile", &profile)], FormOptions::default().submit("Sign up").layout(layout)))
+        (form_with(ui, "/form", &[FieldGroup::new("Account", &account), FieldGroup::new("Profile", &profile)],
+            FormOptions::default().submit("Sign up").layout(layout).values(&v.values).errors(errors)))
     })
 }
 
@@ -593,20 +580,15 @@ fn settings_of(jar: &CookieJar) -> Settings {
 /// Tabs + form + flash. Everything survives a full navigation: tab in the `wo-ui` cookie,
 /// values in a `settings` cookie, flash in a one-shot cookie set by `prg`.
 async fn settings_page(ui: Ui, jar: CookieJar) -> (Ui, Markup) {
-    let current = settings_of(&jar);
-    let hidden = html! { input type="hidden" name="tab" value=(ui.state.tab("settings")); };
-    let here = format!("/settings?tab.settings={}", ui.state.tab("settings"));
+    let Settings { name, notify } = settings_of(&jar);
+    let (tab, here) = (ui.state.tab("settings").to_string(), format!("/settings?tab.settings={}", ui.state.tab("settings")));
+    let values = [("tab".to_string(), tab), ("name".to_string(), name), ("notify".to_string(), notify.to_string())];
+    const PROFILE: [Field; 2] = [Field::new("tab", "", FieldKind::Hidden), Field::new("name", "Display name", FieldKind::Text).required(true)];
+    const NOTIFY: [Field; 3] = [Field::new("tab", "", FieldKind::Hidden), Field::new("name", "", FieldKind::Hidden), Field::new("notify", "Email me about releases", FieldKind::Checkbox)];
+    let save = |id, fields| form_with(&ui, "/settings", &[FieldGroup::plain(fields)], FormOptions::default().submit("Save").values(&values).id(id));
     let body = page(&ui, "Settings", html! {
         (flash_with(&ui, ui.state.flash(), FlashOptions::default().dismiss(&here).auto_hide(true)))
-        (tabs_with(&ui, "settings", &[
-            Tab::new("Profile", html! { form class="wo-form" method="post" action="/settings" { (hidden)
-                div class="wo-field" { label for="name" { "Display name" } input id="name" name="name" value=(current.name) required; }
-                button type="submit" class="wo-primary" { "Save" } } }),
-            Tab::new("Notifications", html! { form class="wo-form" method="post" action="/settings" { (hidden)
-                input type="hidden" name="name" value=(current.name);
-                label { input type="checkbox" name="notify" value="true" checked[current.notify]; " Email me about releases" }
-                button type="submit" class="wo-primary" { "Save" } } }),
-        ], TabsOptions::default().state(&ui.state)))
+        (tabs_with(&ui, "settings", &[Tab::new("Profile", save("profile", &PROFILE)), Tab::new("Notifications", save("notify", &NOTIFY))], TabsOptions::default().state(&ui.state)))
         p class="wo-note" { "Go to " a href="/" { "the index" } " and come back: the open tab and the values are remembered. Saving with notifications off stacks a warning under the confirmation; the name " code { "admin" } " is refused with an alert. The confirmation fades after six seconds unless reduced motion is on." }
     });
     (ui, body)
@@ -741,10 +723,10 @@ async fn dashboard_page(ui: Ui, Query(q): Query<DashboardQuery>) -> Markup {
     let none = q.orders.as_deref() == Some("none");
     page(&ui, "Stats and empty states", html! {
         div class="wo-stat-grid" {
-            (stat_with(&ui, "Visitors", "12,480", StatOptions::default().delta("+8.2%", Trend::Up).note("last 7 days")))
-            (stat_with(&ui, "Orders", if none { "0" } else { "3" }, StatOptions::default().delta(if none { "-3" } else { "0" }, if none { Trend::Down } else { Trend::Flat })))
-            (stat_with(&ui, "Error rate", "0.4%", StatOptions::default().delta("-0.2 pt", Trend::Down).down_is_good(true).href("/table")))
-            (stat_with(&ui, "p95 latency", "38 ms", StatOptions::default().delta("+6 ms", Trend::Up).down_is_good(true)))
+            (stat_with(&ui, "Visitors", "12,480", StatOptions::default().delta("+8.2%").note("last 7 days")))
+            (stat_with(&ui, "Orders", if none { "0" } else { "3" }, StatOptions::default().delta(if none { "-3" } else { "0" })))
+            (stat_with(&ui, "Error rate", "0.4%", StatOptions::default().delta("-0.2 pt").down_is_good(true).href("/table")))
+            (stat_with(&ui, "p95 latency", "38 ms", StatOptions::default().delta("+6 ms").down_is_good(true)))
         }
         h2 { "Recent orders" }
         @if none {

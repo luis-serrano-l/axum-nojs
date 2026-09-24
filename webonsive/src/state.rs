@@ -76,7 +76,7 @@ fn parse_pairs(input: &str) -> BTreeMap<String, String> {
 }
 
 /// `%XX` and `+` decoded; borrowed when there is nothing to decode.
-fn decode(s: &str) -> Cow<'_, str> {
+pub(crate) fn decode(s: &str) -> Cow<'_, str> {
     if !s.contains(['%', '+']) {
         return Cow::Borrowed(s);
     }

@@ -13,7 +13,7 @@ async fn index(caps: Caps, state: UiState) -> (UiState, Markup) {
         p { "This browser supports: " @for n in caps.names() { code { (n) } " " } }
         (tabs_with(&caps, "demo", &[Tab::new("First", html! { p { "Tab state lives in the URL and a cookie." } }),
                               Tab::new("Second", html! { p { "Reload, leave, come back: still here." } })], TabsOptions::default().state(&state)))
-        (dialog_with(&caps, "d", "Open dialog", html! { p { "Hello." } }, DialogOptions::default().open(state.dialog() == Some("d"))))
+        (dialog_with(&caps, "d", "Open dialog", html! { p { "Hello." } }, DialogOptions::default().state(&state)))
     });
     (state, page)
 }

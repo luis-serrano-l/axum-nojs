@@ -105,6 +105,11 @@ pub enum FieldKind {
         /// Latest time.
         max: &'static str,
     },
+    /// A checkbox posting `true` when ticked and nothing when not (so a `bool` with
+    /// `#[serde(default)]` reads it); ticked when the value is `true`, `on` or `1`.
+    Checkbox,
+    /// `type="hidden"`: carried with the post, not shown; the label is unused.
+    Hidden,
 }
 
 /// One form field with its current value and server-side error.
@@ -130,31 +135,31 @@ pub struct Field<'a> {
 
 impl<'a> Field<'a> {
     /// An empty, optional field.
-    pub fn new(name: &'a str, label: &'a str, kind: FieldKind) -> Self {
+    pub const fn new(name: &'a str, label: &'a str, kind: FieldKind) -> Self {
         Field { name, label, kind, value: "", error: None, required: false, help: None, max_len: None }
     }
     /// Current value.
-    pub fn value(mut self, value: &'a str) -> Self {
+    pub const fn value(mut self, value: &'a str) -> Self {
         self.value = value;
         self
     }
     /// Server-side error message.
-    pub fn error(mut self, error: Option<&'a str>) -> Self {
+    pub const fn error(mut self, error: Option<&'a str>) -> Self {
         self.error = error;
         self
     }
     /// Required field.
-    pub fn required(mut self, required: bool) -> Self {
+    pub const fn required(mut self, required: bool) -> Self {
         self.required = required;
         self
     }
     /// Help text under the field.
-    pub fn help(mut self, help: &'a str) -> Self {
+    pub const fn help(mut self, help: &'a str) -> Self {
         self.help = Some(help);
         self
     }
     /// `maxlength` with a character counter.
-    pub fn max_len(mut self, max: usize) -> Self {
+    pub const fn max_len(mut self, max: usize) -> Self {
         self.max_len = Some(max);
         self
     }
@@ -211,11 +216,20 @@ pub struct FormOptions<'a> {
     pub submit: &'a str,
     /// Where labels sit.
     pub layout: FormLayout,
+    /// Submitted values by field name, as a form post parses them: each field without its
+    /// own `value` shows the one named after it.
+    pub values: &'a [(String, String)],
+    /// Server messages `(field name, message)`: each field without its own `error` shows the
+    /// one named after it.
+    pub errors: &'a [(&'a str, &'a str)],
+    /// What the swap root's id is built from, when two forms on a page post to the same
+    /// `action` (one per tab, say); `None` uses the action.
+    pub id: Option<&'a str>,
 }
 
 impl Default for FormOptions<'_> {
     fn default() -> Self {
-        FormOptions { submit: "Submit", layout: FormLayout::Stacked }
+        FormOptions { submit: "Submit", layout: FormLayout::Stacked, values: &[], errors: &[], id: None }
     }
 }
 
@@ -230,6 +244,21 @@ impl<'a> FormOptions<'a> {
         self.layout = layout;
         self
     }
+    /// Fill each field's value from the submitted pairs, by name.
+    pub fn values(mut self, values: &'a [(String, String)]) -> Self {
+        self.values = values;
+        self
+    }
+    /// Attach each server message to the field it names.
+    pub fn errors(mut self, errors: &'a [(&'a str, &'a str)]) -> Self {
+        self.errors = errors;
+        self
+    }
+    /// Tell this form apart from another posting to the same action.
+    pub fn id(mut self, id: &'a str) -> Self {
+        self.id = Some(id);
+        self
+    }
 }
 
 /// A stacked form with the default submit button.
@@ -240,20 +269,38 @@ pub fn form(caps: &Caps, action: &str, groups: &[FieldGroup<'_>]) -> Markup {
 
 /// Render `groups` as a POST form to `action`.
 pub fn form_with(_caps: &Caps, action: &str, groups: &[FieldGroup<'_>], options: FormOptions) -> Markup {
-    let FormOptions { submit, layout } = options;
+    let FormOptions { submit, layout, id, .. } = options;
     let multipart = groups.iter().flat_map(|g| g.fields).any(|f| matches!(f.kind, FieldKind::File { .. }));
     let class = match layout { FormLayout::Stacked => "wo-form", FormLayout::Inline => "wo-form wo-form-inline" };
     html! {
-        form id=(enhance::swap_id("wo-form", action)) data-wo="swap" class=(class) method="post" action=(action)
+        form id=(enhance::swap_id("wo-form", id.unwrap_or(action))) data-wo="swap" class=(class) method="post" action=(action)
             enctype=[multipart.then_some("multipart/form-data")] {
-            @for g in groups {
-                @if let Some(legend) = g.legend {
-                    fieldset class="wo-form-group" { legend { (legend) } @for f in g.fields { (field(f)) } }
-                } @else {
-                    @for f in g.fields { (field(f)) }
-                }
-            }
+            (fields(groups, options))
             div class="wo-form-actions" { button type="submit" class="wo-primary" { (submit) } }
+        }
+    }
+}
+
+/// The groups and their fields without the `<form>` around them, for a form that is built
+/// elsewhere (a wizard step, a dialog's confirm form). `values` and `errors` fill by name as
+/// in [`form_with`]; `submit` and `layout` belong to the form and are not used.
+pub fn fields(groups: &[FieldGroup<'_>], options: FormOptions) -> Markup {
+    let filled = |f: &Field| {
+        let value = if f.value.is_empty() {
+            options.values.iter().find(|(n, _)| n == f.name).map_or("", |(_, v)| v.as_str())
+        } else {
+            f.value
+        };
+        let error = f.error.or_else(|| options.errors.iter().find(|(n, _)| *n == f.name).map(|(_, m)| *m));
+        field(&Field { value, error, ..*f })
+    };
+    html! {
+        @for g in groups {
+            @if let Some(legend) = g.legend {
+                fieldset class="wo-form-group" { legend { (legend) } @for f in g.fields { (filled(f)) } }
+            } @else {
+                @for f in g.fields { (filled(f)) }
+            }
         }
     }
 }
@@ -277,8 +324,26 @@ fn field(f: &Field) -> Markup {
         FieldKind::File { accept, multiple } => ("file", None, None, None, (!accept.is_empty()).then_some(accept), multiple),
         FieldKind::Date { min, max } => ("date", bound(min), bound(max), None, None, false),
         FieldKind::Time { min, max } => ("time", bound(min), bound(max), None, None, false),
+        FieldKind::Checkbox | FieldKind::Hidden => ("", None, None, None, None, false),
     };
     let invalid = f.error.map(|_| "true");
+    if let FieldKind::Hidden = f.kind {
+        return html! { input type="hidden" name=(f.name) value=(f.value); };
+    }
+    if let FieldKind::Checkbox = f.kind {
+        let checked = matches!(f.value, "true" | "on" | "1");
+        return html! {
+            div class="wo-field wo-field-check" {
+                label for=(id) {
+                    input id=(id) name=(f.name) type="checkbox" value="true" checked[checked] required[f.required]
+                        aria-invalid=[invalid] aria-describedby=[described.as_deref()];
+                    " " (f.label)
+                }
+                @if let Some(h) = help { small id={ (id) "-help" } class="wo-field-help" { (h) } }
+                @if let Some(e) = f.error { p id={ (id) "-error" } class="wo-error" role="alert" { (e) } }
+            }
+        };
+    }
     html! {
         div class="wo-field" {
             label for=(id) { (f.label) @if f.required { " *" } }
@@ -308,6 +373,7 @@ pub const CSS: &str = r#"
 .wo-form-group legend { padding: 0 0.5rem; font-weight: 600; }
 .wo-field { display: grid; gap: 4px; }
 .wo-field label { font-weight: 600; }
+.wo-field-check label { font-weight: 400; }
 /* :where keeps this at one class, so a component inside a field (colour, range) sizes itself. */
 .wo-field :where(input:not([type=file], [type=color], [type=range], [type=checkbox], [type=radio]), textarea) { width: 100%; box-sizing: border-box; }
 .wo-field textarea { resize: vertical; field-sizing: content; min-height: 3lh; max-height: 20lh; font: inherit; }
@@ -321,6 +387,7 @@ pub const CSS: &str = r#"
   .wo-form-inline .wo-field > :not(label) { grid-column: 2; }
   /* The label sits on the input's row, centred on it; help, counter and error stack below. */
   .wo-form-inline .wo-field > label { grid-column: 1; grid-row: 1; align-self: center; }
+  .wo-form-inline .wo-field-check > label { grid-column: 2; }
   .wo-form-inline .wo-form-actions { padding-left: calc(10rem + var(--wo-space) * 2); }
 }
 "#;
@@ -328,6 +395,36 @@ pub const CSS: &str = r#"
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn checkbox_and_hidden_fields() {
+        let fs = [Field::new("tab", "", FieldKind::Hidden).value("1"), Field::new("notify", "Email me", FieldKind::Checkbox)];
+        let values = [("notify".to_string(), "true".to_string())];
+        let m = fields(&[FieldGroup::plain(&fs)], FormOptions::default().values(&values)).into_string();
+        assert!(m.starts_with(r#"<input type="hidden" name="tab" value="1">"#), "{m}");
+        assert!(m.contains(r#"type="checkbox" value="true" checked"#) && m.contains(" Email me</label>"), "{m}");
+        let off = fields(&[FieldGroup::plain(&fs)], FormOptions::default()).into_string();
+        assert!(!off.contains("checked"));
+    }
+
+    #[test]
+    fn values_and_errors_fill_fields_by_name() {
+        let fs = [
+            Field::new("name", "Name", FieldKind::Text),
+            Field::new("email", "Email", FieldKind::Email).value("own@x.org"),
+            Field::new("bio", "Bio", FieldKind::Textarea { rows: 2 }).error(Some("Own message.")),
+        ];
+        let values = [("name".to_string(), "Ada".to_string()), ("email".to_string(), "posted@x.org".to_string()), ("bio".to_string(), "Hi".to_string())];
+        let errors = [("name", "Too short."), ("bio", "Posted message.")];
+        let m = form_with(&Caps::NONE, "/p", &[FieldGroup::plain(&fs)], FormOptions::default().values(&values).errors(&errors)).into_string();
+        assert!(m.contains(r#"name="name" type="text" value="Ada""#), "{m}");
+        assert!(m.contains(r#"value="own@x.org""#) && !m.contains("posted@x.org"), "a field's own value wins");
+        assert!(m.contains(">Too short.</p>") && m.contains(r#"aria-invalid="true""#));
+        assert!(m.contains("Own message.") && !m.contains("Posted message."), "a field's own error wins");
+        assert!(m.contains(">Hi</textarea>"));
+        let bare = fields(&[FieldGroup::plain(&fs)], FormOptions::default().values(&values)).into_string();
+        assert!(!bare.contains("<form") && bare.contains(r#"value="Ada""#));
+    }
 
     #[test]
     fn help_counter_and_error_describe_the_field() {

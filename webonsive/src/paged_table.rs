@@ -30,15 +30,16 @@
 //!
 //! ```rust
 //! use maud::html;
-//! use webonsive::{Caps, UiState, paged_table, paged_table_with, paged_table::PagedTableOptions, table::{Column, Row}};
+//! use webonsive::{Caps, UiState, paged_table, paged_table_with, paged_table::PagedTableOptions, table::{Column, Row, TableQuery}};
 //! let cols = [Column::sortable("name", "Name"), Column::plain("note", "Note")];
 //! let rows = vec![Row::new(vec![html!{"a"}, html!{"b"}])];
 //! let m = paged_table(&Caps::all(), "files", "/table", &cols, &rows, 36);
 //!
+//! // The URL's sort, filter and page parsed once; the remembered page size read from the state.
 //! let state = UiState::parse("/table", "per.files=25", "");
-//! let per = state.per_page("files").unwrap_or(10);
+//! let query = TableQuery::parse("sort=name&dir=desc&q=a&page=20");
 //! let m = paged_table_with(&Caps::all(), "files", "/table", &cols, &rows, 1234,
-//!                     PagedTableOptions::default().sort(Some(("name", true))).filter("a").page(20).per_page(per).state(&state));
+//!                     PagedTableOptions::default().query(&query).state(&state));
 //! let html = m.into_string();
 //! assert!(html.contains("476–500 of 1,234"));
 //! assert!(html.contains("per.files=25&amp;page=50\">Last"));
@@ -49,7 +50,7 @@ use maud::{Markup, html};
 
 use std::fmt::{self, Write};
 
-use crate::table::{Column, Encoded, Row, TableOptions, table_in};
+use crate::table::{Column, Encoded, Row, TableOptions, TableQuery, table_in};
 use crate::enhance;
 use crate::{Caps, UiState};
 
@@ -63,20 +64,24 @@ pub struct PagedTableOptions<'a> {
     pub sort: Option<(&'a str, bool)>,
     /// The current search text.
     pub filter: &'a str,
-    /// The page being shown, 1-based; `rows` holds that page only.
+    /// The page being shown, 1-based.
     pub page: usize,
-    /// Rows per page; one of [`PAGE_SIZES`] is selected in the size control.
+    /// Rows per page; one of [`PAGE_SIZES`] is selected in the size control. With a `state`
+    /// the size the visitor picked (`per.<id>`) wins, capped at the largest of [`PAGE_SIZES`].
     pub per_page: usize,
     /// Everything else the inner [`crate::table()`] takes (columns, bulk form, CSV link, empty and
     /// loading states); its `sort`, `filter` and `keep` are overwritten by the pager's.
     pub table: TableOptions<'a>,
     /// Remember the page size per table as the state key `per.<id>`.
     pub state: Option<&'a UiState>,
+    /// The URL's sort, filter, page and columns, used wherever the setters above left the
+    /// default.
+    pub query: Option<&'a TableQuery>,
 }
 
 impl Default for PagedTableOptions<'_> {
     fn default() -> Self {
-        PagedTableOptions { sort: None, filter: "", page: 1, per_page: PAGE_SIZES[1], table: TableOptions::default(), state: None }
+        PagedTableOptions { sort: None, filter: "", page: 1, per_page: PAGE_SIZES[1], table: TableOptions::default(), state: None, query: None }
     }
 }
 
@@ -111,9 +116,16 @@ impl<'a> PagedTableOptions<'a> {
         self
     }
 
-    /// Name the page-size parameter `per.<id>` so the `wo-ui` cookie remembers it.
+    /// Name the page-size parameter `per.<id>` so the `wo-ui` cookie remembers it, and read
+    /// the remembered size back.
     pub fn state(mut self, state: &'a UiState) -> Self {
         self.state = Some(state);
+        self
+    }
+
+    /// Take the sort, filter, page and columns from the parsed URL.
+    pub fn query(mut self, query: &'a TableQuery) -> Self {
+        self.query = Some(query);
         self
     }
 }
@@ -124,14 +136,26 @@ pub fn paged_table(caps: &Caps, id: &str, href: &str, columns: &[Column], rows: 
     paged_table_with(caps, id, href, columns, rows, total, Default::default())
 }
 
-/// `rows` are the rows of the current page only; `total` is the full row count after
-/// filtering, which sizes the page links.
+/// `rows` are either every row (`rows.len() == total`), and the component shows the current
+/// page of them, or the rows of the current page only, for data too large to build in full;
+/// `total` is the full row count after filtering, which sizes the page links.
 pub fn paged_table_with(caps: &Caps, id: &str, href: &str, columns: &[Column], rows: &[Row], total: usize, options: PagedTableOptions) -> Markup {
-    let PagedTableOptions { sort, filter, page, per_page, table: inner, state } = options;
+    let PagedTableOptions { sort, filter, page, per_page, table: inner, state, query } = options;
+    let sort = sort.or_else(|| query.and_then(|q| q.sort(columns)));
+    let filter = if filter.is_empty() { query.map_or("", |q| q.filter.as_str()) } else { filter };
+    let page = query.and_then(|q| q.page).filter(|_| page == 1).unwrap_or(page);
+    let cols = inner.cols.is_none().then(|| query.and_then(|q| q.cols(columns))).flatten();
+    let inner = TableOptions { cols: inner.cols.or(cols.as_deref()), ..inner };
     let per_key = if state.is_some() { format!("per.{id}") } else { "per".to_string() };
-    let per_page = per_page.max(1);
+    let remembered = state.and_then(|s| s.per_page(id)).map(|n| n.min(PAGE_SIZES[PAGE_SIZES.len() - 1]));
+    let per_page = remembered.unwrap_or(per_page).max(1);
     let pages = total.div_ceil(per_page).max(1);
     let page = page.clamp(1, pages);
+    let rows = if rows.len() == total && total > per_page {
+        &rows[(page - 1) * per_page..(page * per_page).min(total)]
+    } else {
+        rows
+    };
     let per = per_page.to_string();
     let first = if total == 0 { 0 } else { (page - 1) * per_page + 1 };
     let last = (page * per_page).min(total);
@@ -313,5 +337,21 @@ mod tests {
         assert!(m.contains("href=\"/t?per.t=5&amp;page=1\">First"));
         assert!(m.contains("<input type=\"number\" name=\"page\" min=\"1\" max=\"8\" value=\"2\""));
         assert!(m.contains("<select name=\"per.t\">"));
+    }
+
+    #[test]
+    fn the_query_state_and_all_rows_are_enough() {
+        let cols = [Column::sortable("n", "N"), Column::plain("x", "X")];
+        let rows: Vec<Row> = (1..=12).map(|n| Row::new(vec![html! { "row " (n) }, html! {}])).collect();
+        let query = TableQuery::parse("sort=n&dir=desc&q=r%C3%A9&page=3&cols=n&other=1");
+        assert_eq!(query.filter, "r\u{e9}");
+        let state = UiState::parse("/t", "per.t=5", "");
+        let m = paged_table_with(&Caps::NONE, "t", "/t", &cols, &rows, 12, PagedTableOptions::default().query(&query).state(&state)).into_string();
+        assert!(m.contains("11–12 of 12"), "{m}");
+        assert!(m.contains("row 11") && m.contains("row 12") && !m.contains("row 10<"), "sliced to page 3");
+        assert!(m.contains("sort=n&amp;dir=desc&amp;q=r%C3%A9&amp;cols=n&amp;per.t=5&amp;page=2"), "{m}");
+        let huge = UiState::parse("/t", "per.t=100000", "");
+        let m = paged_table_with(&Caps::NONE, "t", "/t", &cols, &rows, 12, PagedTableOptions::default().state(&huge)).into_string();
+        assert!(m.contains("<option value=\"50\" selected"), "a remembered size is capped");
     }
 }

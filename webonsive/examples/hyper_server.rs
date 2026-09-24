@@ -63,7 +63,7 @@ async fn handle(req: Request<Incoming>) -> Result<Reply, Infallible> {
             let page = layout(&caps, "webonsive on hyper", Theme::Auto, html! {
                 h1 { "webonsive on hyper" }
                 p { "This browser supports: " @for n in caps.names() { code { (n) } " " } }
-                (dialog_with(&caps, "d", "Open dialog", html! { p { "Closed by the platform, not by script." } }, DialogOptions::default().open(state.dialog() == Some("d"))))
+                (dialog_with(&caps, "d", "Open dialog", html! { p { "Closed by the platform, not by script." } }, DialogOptions::default().state(&state)))
                 h2 { "Tabs" }
                 (tabs_with(&caps, "demo", &[Tab::new("First", html! { p { "Tab state lives in the URL and a cookie." } }),
                                       Tab::new("Second", html! { p { "Reload, leave, come back: still here." } })], TabsOptions::default().state(&state)))

@@ -136,7 +136,7 @@ try {
   await type("input[name=name]", "Ada");
   await type("input[name=email]", "ada@example.com");
   await click(".wo-wizard button.wo-primary");
-  await until(async () => (await js("return document.querySelector('#w-email-error')?.textContent || ''")).includes("example.com"), "server message beside the field");
+  await until(async () => (await js("return document.querySelector('#f-email-error')?.textContent || ''")).includes("example.com"), "server message beside the field");
   assert(await js("return document.querySelector('.wo-wizard-steps li[aria-current=step]').classList.contains('wo-wizard-error')"), "wizard: the step is marked in error");
   await js("const e = document.querySelector('input[name=email]'); e.value = ''");
   await type("input[name=email]", "ada@example.org");

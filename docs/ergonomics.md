@@ -222,3 +222,45 @@ async fn dialog_page(ui: Ui) -> Markup {
     })
 }
 ```
+
+## Done: work moved into the components
+
+Where a route used to prepare data for a component, the component now does that work
+itself. Each move has a test in the component's own file.
+
+| Route | Before | After | Test |
+|---|---|---|---|
+| `/table` | parse five query keys by hand, clamp the remembered page size, slice the page out of the rows | `TableQuery::parse(raw)` once; `PagedTableOptions::query(&t).state(&ui.state)`; pass every row and the component slices | `paged_table::tests::the_query_state_and_all_rows_are_enough` |
+| `/table.csv` | the same parsing again | `t.sort(&FILE_COLS)`, `t.cols(&FILE_COLS)` | |
+| `/form` | each field repeats its name for `.value(v.get(..))` and `.error(err(..))` | fields list only what the form asks for; `FormOptions::values(&v).errors(&errors)` fills them by name | `form::tests::values_and_errors_fill_fields_by_name` |
+| `/wizard` | a hand-written 9-line label + input + `aria-*` + error closure | `form::fields(&[FieldGroup::plain(&ACCOUNT)], FormOptions::default().values(data).errors(errors))` | the same test |
+| `/settings` | two raw `<form>`s with hidden inputs and a hand-made checkbox | two `form_with` calls, using `FieldKind::Hidden`, `FieldKind::Checkbox` and `FormOptions::id` (two forms, one action) | `form::tests::checkbox_and_hidden_fields` |
+| `/dialog` | `.returns_to("/dialog").open(ui.state.dialog() == Some("confirm"))` | `.state(&ui.state)` | `dialog::tests::state_opens_the_named_dialog_and_returns_to_its_page` |
+| `/dashboard` | `.delta(if none { "-3" } else { "0" }, if none { Trend::Down } else { Trend::Flat })` | `.delta(if none { "-3" } else { "0" })`: the sign is the trend, `.trend()` overrides it | `stat::tests::the_sign_of_the_delta_is_the_trend` |
+| `/tabs` | `if open == 2 { Tab::new(..) } else { Tab::lazy(..) }` | `Tab::lazy_with("Why", &\|\| html! { … })`, called only for the open tab | `tabs::tests::a_lazy_tab_renders_only_when_open` |
+
+```rust
+// before: /table
+let sort = sort_from_query(&FILE_COLS, t.sort.as_deref(), t.dir.as_deref());
+let cols = cols_from_query(&FILE_COLS, t.cols.as_deref());
+let q = t.q.unwrap_or_default().to_lowercase();
+let (per, pg) = (ui.state.per_page("files").unwrap_or(10).clamp(1, 50), t.page.unwrap_or(1).max(1));
+let rows: Vec<Row> = files.iter().skip((pg - 1) * per).take(per).map(/* … */).collect();
+let options = TableOptions::default().cols(cols.as_deref())/* … */;
+(paged_table_with(&ui, "files", "/table", &FILE_COLS, &rows, files.len(),
+    PagedTableOptions::default().sort(sort).filter(&q).page(pg).per_page(per).state(&ui.state).table(options)))
+// after
+let t = TableQuery::parse(raw.as_deref().unwrap_or(""));
+let files = files(t.sort(&FILE_COLS), &t.filter.to_lowercase());
+let rows: Vec<Row> = files.iter().map(/* … */).collect();
+(paged_table_with(&ui, "files", "/table", &FILE_COLS, &rows, files.len(),
+    PagedTableOptions::default().query(&t).state(&ui.state).table(options)))
+```
+
+Things that were changed or left alone:
+- `Tab::lazy` is gone. `lazy_with` does the same job without the branch in the route.
+- `StatOptions::delta` takes one argument now.
+- The wizard's fields now have ids starting with `f-`, the same as the form component's
+  (`scripts/browser-check.mjs` follows).
+- `pager` is unchanged: its route builds rows up to the current page in three lines, so a
+  closure-based source would not make the call shorter.

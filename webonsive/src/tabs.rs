@@ -26,8 +26,8 @@
 //! navigation (query first, cookie after). The link fills the summary, so every click is a
 //! round trip: a native toggle would be undone by the next render. With a state the strip is a
 //! swap root, so the [`crate::enhance`] script replaces just the strip instead of the page.
-//! Because every switch is a request, a lazy tab ([`Tab::lazy`]) costs nothing until opened:
-//! render its body only when `state.tab(name)` is its index.
+//! Because every switch is a request, a lazy tab ([`Tab::lazy_with`]) costs nothing until
+//! opened: the component calls its closure only when it is the open tab.
 //!
 //! **Without script:** the narrow-screen `<select>` needs its "Go" button; the script submits
 //! it on change. Without a state the tabs toggle natively and remember nothing.
@@ -38,11 +38,10 @@
 //! let m = tabs(&Caps::all(), "t", &[Tab::new("One", html! { p { "First." } }), Tab::new("Two", html! { p { "Second." } })]);
 //!
 //! let state = UiState::parse("/docs", "tab.docs=1", "");
-//! let open = state.tab("docs");
 //! let m = tabs_with(&Caps::all(), "docs", &[
 //!     Tab::new("Install", html! { p { "cargo add" } }),
 //!     Tab::new("Use", html! { p { "html!" } }).badge(3),
-//!     if open == 2 { Tab::new("Changelog", html! { p { "(long)" } }) } else { Tab::lazy("Changelog") },
+//!     Tab::lazy_with("Changelog", &|| html! { p { "(long)" } }),
 //! ], TabsOptions::default().state(&state).vertical(true).select_below(true));
 //! let html = m.into_string();
 //! assert!(html.contains("href=\"/docs?tab.docs=0\""));
@@ -55,22 +54,37 @@ use maud::{Markup, html};
 use crate::{Cap, Caps, UiState};
 
 /// One tab: a title, a body (or none for a lazy tab), an optional badge count.
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct Tab<'a> {
     title: &'a str,
-    body: Option<Markup>,
+    body: Body<'a>,
     badge: Option<usize>,
+}
+
+/// A panel: rendered already, or rendered on demand.
+#[derive(Clone)]
+enum Body<'a> {
+    Ready(Markup),
+    Lazy(&'a dyn Fn() -> Markup),
+}
+
+impl std::fmt::Debug for Tab<'_> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let body = match &self.body { Body::Ready(_) => "ready", Body::Lazy(_) => "lazy" };
+        f.debug_struct("Tab").field("title", &self.title).field("body", &body).field("badge", &self.badge).finish()
+    }
 }
 
 impl<'a> Tab<'a> {
     /// A tab with its panel.
     pub const fn new(title: &'a str, body: Markup) -> Self {
-        Tab { title, body: Some(body), badge: None }
+        Tab { title, body: Body::Ready(body), badge: None }
     }
-    /// A tab whose panel is not rendered: use it for the tabs that are not open, and render
-    /// the open one with [`Tab::new`]. The panel is filled by the round trip that opens it.
-    pub const fn lazy(title: &'a str) -> Self {
-        Tab { title, body: None, badge: None }
+    /// A tab whose panel is rendered only when it is the open one: the component calls
+    /// `render` for the open tab and never for the others, so an expensive panel costs
+    /// nothing until the round trip that opens it.
+    pub const fn lazy_with(title: &'a str, render: &'a dyn Fn() -> Markup) -> Self {
+        Tab { title, body: Body::Lazy(render), badge: None }
     }
     /// A count shown after the title.
     pub const fn badge(mut self, count: usize) -> Self {
@@ -158,7 +172,11 @@ pub fn tabs_with(caps: &Caps, name: &str, tabs: &[Tab], options: TabsOptions) ->
                         }
                     }
                     div class=(if strip { "wo-tabs-panel" } else { "wo-accordion-body" }) {
-                        @if let Some(body) = &t.body { (body) } @else { span class="wo-tabs-lazy" {} }
+                        @match (&t.body, i == active) {
+                            (Body::Ready(body), _) => (body),
+                            (Body::Lazy(render), true) => (render()),
+                            (Body::Lazy(_), false) => span class="wo-tabs-lazy" {},
+                        }
                     }
                 }
             }
@@ -220,3 +238,26 @@ pub const CSS: &str = r#"
   .wo-tabs:not(.wo-accordion) .wo-tabs-select { display: flex; }
 }
 "#;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::cell::Cell;
+
+    #[test]
+    fn a_lazy_tab_renders_only_when_open() {
+        let calls = Cell::new(0);
+        let render = || { calls.set(calls.get() + 1); html! { p { "Changelog body" } } };
+        let strip = |query: &str| {
+            let state = UiState::parse("/docs", query, "");
+            tabs_with(&Caps::all(), "docs", &[Tab::new("Install", html! { "cargo add" }), Tab::lazy_with("Changelog", &render)],
+                TabsOptions::default().state(&state)).into_string()
+        };
+        let closed = strip("");
+        assert!(!closed.contains("Changelog body") && closed.contains("wo-tabs-lazy"));
+        assert_eq!(calls.get(), 0);
+        let open = strip("tab.docs=1");
+        assert!(open.contains("Changelog body") && !open.contains("wo-tabs-lazy"));
+        assert_eq!(calls.get(), 1);
+    }
+}

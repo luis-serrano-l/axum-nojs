@@ -21,8 +21,9 @@
 //! rule shows the dialog as a fixed overlay; links to `#` close and cancel it. Only one variant
 //! is ever in the markup.
 //!
-//! **Server state:** `open` renders the dialog already open (non-modal, no backdrop), for
-//! example from `UiState::dialog()` after a redirect to `?dialog=<id>`. `returns_to` is posted
+//! **Server state:** `open` renders the dialog already open (non-modal, no backdrop).
+//! `state(&ui_state)` does that from `?dialog=<id>` itself, and sends the confirm form back
+//! to the page it came from unless `returns_to` says otherwise. `returns_to` is posted
 //! with the confirm form as a hidden `returns_to` field, so the handler knows where to send
 //! the browser back; check it is a local path before redirecting to it.
 //!
@@ -31,7 +32,7 @@
 //!
 //! ```rust
 //! use maud::html;
-//! use webonsive::{Caps, dialog, dialog_with, dialog::{DialogOptions, DialogSize}};
+//! use webonsive::{Caps, UiState, dialog, dialog_with, dialog::{DialogOptions, DialogSize}};
 //! let m = dialog(&Caps::all(), "hi", "Say hi", html! { p { "Hello." } });
 //! let m = dialog_with(&Caps::all(), "confirm", "Delete account", html! {
 //!         p { "This cannot be undone." }
@@ -50,11 +51,18 @@
 //! assert!(html.contains("<dialog id=\"confirm\" class=\"wo-dialog-sm\" closedby=\"closerequest\" aria-labelledby=\"confirm-title\" open>"));
 //! assert!(html.contains("<form method=\"post\" action=\"/account/delete\""));
 //! assert!(html.contains("name=\"returns_to\" value=\"/settings\""));
+//!
+//! // With the request's state: open when the URL says `?dialog=confirm`, and the
+//! // confirm form returns to this page.
+//! let state = UiState::parse("/account", "dialog=confirm", "");
+//! let html = dialog_with(&Caps::all(), "confirm", "Delete account", html! {},
+//!     DialogOptions::default().confirm("Delete", "/account/delete").state(&state)).into_string();
+//! assert!(html.contains(" open>") && html.contains("value=\"/account\""));
 //! ```
 
 use maud::{Markup, html};
 
-use crate::{Cap, Caps};
+use crate::{Cap, Caps, UiState};
 
 /// Width of a [`dialog`]: `max-width` of 20, 28 or 40 rem.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -103,6 +111,9 @@ pub struct DialogOptions<'a> {
     /// The `closedby` attribute: `any` (Escape and outside click), `closerequest` (Escape
     /// only) or `none`.
     pub closedby: &'a str,
+    /// The request's state: opens the dialog when `?dialog=<id>` names it, and is where the
+    /// confirm form returns when `returns_to` is not set.
+    pub state: Option<&'a UiState>,
 }
 
 impl Default for DialogOptions<'_> {
@@ -117,6 +128,7 @@ impl Default for DialogOptions<'_> {
             close_label: "Close",
             cancel_label: "Cancel",
             closedby: "any",
+            state: None,
         }
     }
 }
@@ -175,6 +187,12 @@ impl<'a> DialogOptions<'a> {
         self.closedby = closedby;
         self
     }
+
+    /// Read `?dialog=<id>` to open it, and return the confirm form to this page.
+    pub fn state(mut self, state: &'a UiState) -> Self {
+        self.state = Some(state);
+        self
+    }
 }
 
 /// A dialog opened by a button labelled `trigger`, with the default options.
@@ -185,7 +203,9 @@ pub fn dialog(caps: &Caps, id: &str, trigger: &str, body: Markup) -> Markup {
 
 /// A modal dialog. `id` must be unique on the page; `trigger` is the opening button's label.
 pub fn dialog_with(caps: &Caps, id: &str, trigger: &str, body: Markup, options: DialogOptions) -> Markup {
-    let DialogOptions { open, title, size, danger, confirm, returns_to, close_label, cancel_label, closedby } = options;
+    let DialogOptions { open, title, size, danger, confirm, returns_to, close_label, cancel_label, closedby, state } = options;
+    let open = open || state.is_some_and(|s| s.dialog() == Some(id));
+    let returns_to = returns_to.or(state.map(UiState::path));
     let invokers = caps.has(Cap::Invokers);
     let title_id = format!("{id}-title");
     html! {
@@ -276,3 +296,20 @@ pub const CSS: &str = r#"
   box-shadow: 0 0 0 100vmax color-mix(in srgb, var(--wo-fg) 45%, transparent);
 }
 "#;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn state_opens_the_named_dialog_and_returns_to_its_page() {
+        let state = UiState::parse("/dialog", "dialog=confirm", "");
+        let with = |id: &str, options: DialogOptions| dialog_with(&Caps::all(), id, "Open", html! {}, options.confirm("Go", "/go").state(&state)).into_string();
+        let named = with("confirm", DialogOptions::default());
+        assert!(named.contains(" open>") && named.contains(r#"name="returns_to" value="/dialog""#));
+        let other = with("other", DialogOptions::default());
+        assert!(!other.contains(" open>"));
+        let explicit = with("confirm", DialogOptions::default().returns_to("/home"));
+        assert!(explicit.contains(r#"value="/home""#) && !explicit.contains(r#"value="/dialog""#));
+    }
+}

@@ -151,6 +151,51 @@ impl From<Vec<Markup>> for Row<'_> {
     }
 }
 
+/// A table's URL parameters, parsed once from the raw query string: `sort`, `dir`, `q`,
+/// `page` and `cols`. The route sorts and filters its data with them; the paged table reads
+/// the same value back through [`crate::PagedTableOptions::query`], so neither repeats the
+/// other's parsing.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct TableQuery {
+    /// `?sort=<key>`, checked against the columns by [`TableQuery::sort`].
+    pub sort: Option<String>,
+    /// `?dir=desc`.
+    pub desc: bool,
+    /// `?q=`, the search text as typed.
+    pub filter: String,
+    /// `?page=`, 1-based.
+    pub page: Option<usize>,
+    /// `?cols=a,b`, checked against the columns by [`TableQuery::cols`].
+    pub cols: Option<String>,
+}
+
+impl TableQuery {
+    /// Read the table's parameters from `a=1&b=2`; anything else in the string is ignored.
+    pub fn parse(query: &str) -> TableQuery {
+        let mut t = TableQuery::default();
+        for (k, v) in query.split('&').filter_map(|pair| pair.split_once('=')) {
+            let v = crate::state::decode(v);
+            match k {
+                "sort" => t.sort = Some(v.into_owned()),
+                "dir" => t.desc = v == "desc",
+                "q" => t.filter = v.trim().to_string(),
+                "page" => t.page = v.parse().ok().filter(|&n| n > 0),
+                "cols" => t.cols = Some(v.into_owned()),
+                _ => {}
+            }
+        }
+        t
+    }
+    /// The sort as `(key, descending)`, only for a sortable column of `columns`.
+    pub fn sort<'c>(&self, columns: &[Column<'c>]) -> Option<(&'c str, bool)> {
+        sort_from_query(columns, self.sort.as_deref(), Some(if self.desc { "desc" } else { "asc" }))
+    }
+    /// The visible column keys, only those `columns` has; `None` means every column.
+    pub fn cols<'c>(&self, columns: &[Column<'c>]) -> Option<Vec<&'c str>> {
+        cols_from_query(columns, self.cols.as_deref())
+    }
+}
+
 /// Parse `?sort=<key>&dir=<asc|desc>` into what [`table`] takes: `(key, descending)`.
 /// Unknown keys give `None`, so a hand-edited URL cannot ask for a column that is not there.
 pub fn sort_from_query<'a>(columns: &[Column<'a>], sort: Option<&str>, dir: Option<&str>) -> Option<(&'a str, bool)> {
