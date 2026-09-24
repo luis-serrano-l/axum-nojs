@@ -27,7 +27,7 @@ use tower_http::compression::{
 };
 
 /// Every demo path the no-script test and the screenshot test visit.
-pub const PATHS: [&str; 28] = [
+pub const PATHS: [&str; 29] = [
     "/",
     "/caps",
     "/button?loading=1",
@@ -36,6 +36,7 @@ pub const PATHS: [&str; 28] = [
     "/layout",
     "/calendar?month.day=2026-09&day=2026-09-17",
     "/upload",
+    "/kanban",
     "/stream",
     "/settings",
     "/dialog?dialog=confirm",
@@ -73,6 +74,7 @@ pub fn router() -> Router {
         .route("/upload", get(upload_page).post(upload_submit))
         .route("/upload/remove", post(upload_remove))
         .route("/upload/file/{n}", get(upload_file))
+        .route("/kanban", get(kanban_page).post(kanban_move))
         .route("/dialog", get(dialog_page))
         .route("/dialog/delete", post(dialog_delete))
         .route("/popover", get(popover_page))
@@ -119,7 +121,14 @@ impl Predicate for WholeBody {
 
 /// Every component in the index: path, title (what each route passes to `page`), group, the
 /// platform features it is built on, and what it is for in plain words.
-const COMPONENTS: [(&str, &str, &str, &str, &str); 25] = [
+const COMPONENTS: [(&str, &str, &str, &str, &str); 26] = [
+    (
+        "/kanban",
+        "Kanban",
+        "Server state",
+        "form POST per move, PRG, view-transition-name, scroll-snap",
+        "Cards in columns; each move is a form post the server keeps.",
+    ),
     (
         "/upload",
         "Upload",
@@ -1553,6 +1562,71 @@ async fn upload_file(
         )
             .into_response(),
     }
+}
+
+/// Where each card of the demo board is, remembered per visitor: `(card, column)`.
+#[derive(Deserialize, Serialize)]
+struct Board(Vec<(String, String)>);
+
+const CARDS: [(&str, &str, &str); 6] = [
+    ("docs", "Write the component guide", "M24"),
+    ("calendar", "Calendar and date picker", "M23"),
+    ("upload", "Upload with progress", "M23"),
+    ("kanban", "This board", "M23"),
+    ("buttons", "Button primitive", "M21"),
+    ("tokens", "shadcn tokens", "M20"),
+];
+const LANES: [(&str, &str); 3] = [("todo", "To do"), ("doing", "Doing"), ("done", "Done")];
+
+impl Default for Board {
+    fn default() -> Self {
+        let start = ["todo", "doing", "doing", "doing", "done", "done"];
+        Board(
+            CARDS
+                .iter()
+                .zip(start)
+                .map(|(c, l)| (c.0.to_string(), l.to_string()))
+                .collect(),
+        )
+    }
+}
+
+async fn kanban_page(ui: Ui, Saved(board): Saved<Board>) -> Page {
+    // code: /kanban
+    let mut k = ui.kanban("/kanban");
+    for (lane, title) in LANES {
+        k = k.column(lane, title);
+        if lane == "doing" {
+            k = k.limit(2);
+        }
+        for (key, _) in board.0.iter().filter(|(_, l)| l == lane) {
+            if let Some((key, text, note)) = CARDS.iter().find(|c| c.0 == key) {
+                k = k.card(key, text).note(note);
+            }
+        }
+    }
+    // end code
+    page(
+        &ui,
+        "Kanban",
+        html! { (ui.flash()) (k) p class="nojs-note" { "Each arrow posts the card and its new column; the server moves it and redirects back. Doing has a limit of two: past it, its count turns red." } },
+    )
+}
+
+#[derive(Deserialize)]
+struct Move {
+    card: String,
+    to: String,
+}
+
+/// A move: the card goes last in its new column (known cards and columns only), then PRG.
+async fn kanban_move(ui: Ui, Saved(mut board): Saved<Board>, Form(m): Form<Move>) -> Redirect {
+    let known = LANES.iter().any(|l| l.0 == m.to) && board.0.iter().any(|(c, _)| *c == m.card);
+    if known {
+        board.0.retain(|(c, _)| *c != m.card);
+        board.0.push((m.card, m.to));
+    }
+    ui.redirect("/kanban").save(&board)
 }
 
 async fn button_page(ui: Ui) -> Page {

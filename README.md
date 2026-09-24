@@ -192,6 +192,7 @@ browser-compat-data; `no` means unshipped, so that browser gets the fallback.
 | Color | `<input type="color">`, `color-mix()` | 20 / 29 / 12.1; 111 / 113 / 16.2 | text field accepting #rrggbb | No |
 | Streaming | `<template shadowrootmode="open">`, `<slot name`, `Chunked transfer` | 111 / 123 / 16.4; 53 / 63 / 10; 1 / 1 / 1 | in-order streaming with in-place splicing | No |
 | Upload | `<input type="file" accept multiple>`, `<progress>`, `loading="lazy"` | 1 / 1 / 1; 6 / 6 / 6; 77 / 75 / 15.4 | none needed: a plain multipart post; the progress bar needs the enhancement script | Partly: upload progress and a preview before sending need script |
+| Kanban | `<form method="post">`, `scroll-snap-type`, `view-transition-name` | 1 / 1 / 1; 69 / 68 / 11; 111 / 144 / 18 | without view transitions a moved card is simply in its new column | Partly: drag and drop and reordering within a column need script |
 | Toast | `position: fixed`, `role="status"`, `role="alert"`, `@keyframes`, `prefers-reduced-motion` | 1 / 1 / 1; 1 / 1 / 1; 1 / 1 / 1; 43 / 16 / 9; 74 / 63 / 10.1 | without CSS animations toasts stay until the next page | No |
 | Breadcrumbs | `aria-current="page"`, `::before`, `<details>` | 1 / 1 / 1; 1 / 1 / 1; 12 / 49 / 6 | none needed | No |
 | Skeleton | `aria-busy`, `role="status"`, `@keyframes`, `prefers-reduced-motion` | 1 / 1 / 1; 1 / 1 / 1; 43 / 16 / 9; 74 / 63 / 10.1 | without CSS animations the bars are still | No |

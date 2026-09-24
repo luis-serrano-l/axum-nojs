@@ -71,6 +71,7 @@ pub mod form;
 pub mod grid;
 pub mod icon;
 pub mod input;
+pub mod kanban;
 pub mod layout;
 pub mod paged_table;
 pub mod pager;
@@ -247,6 +248,7 @@ pub const COMPONENT_CSS: &[&str] = &[
     calendar::CSS,
     date_picker::CSS,
     upload::CSS,
+    kanban::CSS,
     dialog::CSS,
     popover::CSS,
     tabs::CSS,

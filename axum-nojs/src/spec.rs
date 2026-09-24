@@ -473,6 +473,17 @@ pub const SPECS: &[ComponentSpec] = &[
         needs_js: NeedsJs::Partial("upload progress and a preview before sending need script"),
     },
     ComponentSpec {
+        name: "Kanban",
+        module: "kanban",
+        features: &[
+            f("<form method=\"post\">", ALWAYS),
+            f("scroll-snap-type", b("69", "68", "11")),
+            f("view-transition-name", b("111", "144", "18")),
+        ],
+        fallback: "without view transitions a moved card is simply in its new column",
+        needs_js: NeedsJs::Partial("drag and drop and reordering within a column need script"),
+    },
+    ComponentSpec {
         name: "Toast",
         module: "toast",
         features: &[
@@ -669,6 +680,7 @@ mod tests {
         ("color", include_str!("color.rs")),
         ("stream", include_str!("stream.rs")),
         ("upload", include_str!("upload.rs")),
+        ("kanban", include_str!("kanban.rs")),
         ("toast", include_str!("toast.rs")),
         ("breadcrumbs", include_str!("breadcrumbs.rs")),
         ("skeleton", include_str!("skeleton.rs")),

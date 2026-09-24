@@ -303,6 +303,16 @@ try {
   assert(await js("return [...document.querySelectorAll('.nojs-upload-name')].some(n => n.textContent.trim() === 'upload.rs')"), "upload: the list shows what the server kept");
   assert(await navigations() === 1, "upload: sent in place, no reload");
 
+  // Kanban: an arrow posts the move; the card lands in the next column in place.
+  await go("/kanban");
+  await click(".nojs-kanban-card:has(input[value=docs]) button[value=doing]");
+  await until(async () => await js("return !!document.querySelector('.nojs-kanban-column:nth-child(2) input[value=docs]')"), "kanban: card moved");
+  assert(await navigations() === 1, "kanban: moved in place, no reload");
+  await sleep(600); // let the card's view transition finish before the next click
+  await click(".nojs-kanban-card:has(input[value=docs]) button[value=todo]");
+  await until(async () => await js("return !!document.querySelector('.nojs-kanban-column:nth-child(1) input[value=docs]')"), "kanban: card moved back");
+  assert(true, "kanban: and back again");
+
   // Date picker: the button opens the calendar popover; a day is a radio the form posts.
   await go("/calendar?due=2026-09-24");
   await click("#f-due");

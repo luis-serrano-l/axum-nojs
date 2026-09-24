@@ -549,7 +549,14 @@ The showcase for "wait, this needs no JS?".
   goes from 10 to 11 KB, now 10,564 bytes). `Icon::File` added (29 icons). Demo `/upload`:
   per-visitor, capped, in memory; raster images inline, anything else as an attachment. The
   browser check uploads a real file in place.
-- [ ] `kanban.rs`: moving a card is a form post per column.
+- [x] `kanban.rs`: moving a card is a form post per column.
+  Done: `ui.kanban(action)` with `.column(key, title)`, `.limit(n)` (shows `n / limit`, red past
+  it; the server decides whether to refuse), `.card(key, title)` and `.note(text)` for the card
+  added last. Each card has ghost arrow buttons to the neighbouring columns posting
+  `card=<key>&to=<column>`; the route moves it (last in the new column) and redirects. A swap
+  root, and `view-transition-name` per card where supported, so the card slides across with the
+  script. The board scrolls sideways with snap on narrow screens. Demo `/kanban` (per visitor,
+  in a cookie); the browser check moves a card and back.
 - [ ] Demo pages, Blitz screenshots, browser-check steps for the calendar swap.
 
 ## M24 · Write your own component
