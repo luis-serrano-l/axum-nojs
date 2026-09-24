@@ -951,10 +951,11 @@ mod tests {
     #[tokio::test]
     async fn stream_is_chunked_in_completion_order() {
         let chunks = frames("/stream", "wo-cap-probed=1; wo-cap-streaming_dsd=1").await;
-        assert!(chunks.len() >= 5, "expected prefix + 3 fills + suffix, got {}", chunks.len());
-        assert!(chunks[0].contains("<template shadowrootmode=\"open\">"));
-        assert!(chunks[0].contains("<slot name=\"slow\">"));
-        let order: Vec<&str> = chunks[1..4].iter().map(|c| c.split("slot=\"").nth(1).unwrap().split('"').next().unwrap()).collect();
+        assert!(chunks.len() >= 6, "expected head + shell + 3 fills + suffix, got {}", chunks.len());
+        assert!(chunks[0].ends_with("</head>") && chunks[0].contains("<style>"), "the head, stylesheet included, goes first");
+        assert!(chunks[1].contains("<template shadowrootmode=\"open\">"));
+        assert!(chunks[1].contains("<slot name=\"slow\">"));
+        let order: Vec<&str> = chunks[2..5].iter().map(|c| c.split("slot=\"").nth(1).unwrap().split('"').next().unwrap()).collect();
         assert_eq!(order, ["fast", "medium", "slow"]);
         assert!(chunks.last().unwrap().ends_with("</script></body></html>"), "suffix carries the enhancement tag");
     }
@@ -966,7 +967,8 @@ mod tests {
         assert!(!html.contains("<template") && !html.contains("<slot"));
         let pos = |s: &str| html.find(s).unwrap();
         assert!(pos("slow</strong>") < pos("medium</strong>") && pos("medium</strong>") < pos("fast</strong>"));
-        assert!(chunks.len() >= 4, "streamed in pieces, got {}", chunks.len());
+        assert!(chunks.len() >= 5, "streamed in pieces, got {}", chunks.len());
+        assert!(chunks[0].ends_with("</head>"), "the head goes first");
     }
 
     #[tokio::test]

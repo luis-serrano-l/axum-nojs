@@ -470,3 +470,17 @@ is gone from every engine; only speculation rules prerender, in Chromium), eager
 (`moderate` = on hover, `conservative` = on pointer down) and document rules that match links
 by selector. The hover-time version lives in `enhance.js` as `data-wo-prefetch`; `rel=prefetch`
 is all-or-nothing at page load.
+
+**Streaming where it pays.** `Streamed::into_stream` now yields the document up to `</head>`
+as its own first chunk, so the stylesheet parses while the shell is written and the slow
+fills wait; the Axum response adds `X-Accel-Buffering: no` so an nginx in front passes chunks
+on instead of buffering them. `/stream` in Firefox: first contentful paint at 50 ms while
+DOMContentLoaded waits 2 009 ms for the slowest slot, TTFB 0.9 ms cold (`scripts/bench.sh`
+now reports first paint).
+
+`/table` stays a whole response on purpose. Its body waits on nothing (rows are built in
+memory in well under a millisecond: 0.44 ms cold TTFB, 37 ms first paint), and streaming it
+would drop `Content-Length` and, through the compression predicate, gzip: 51 KB on the wire
+instead of 9 KB. The rule for a real server: stream a route only when its body awaits I/O
+(a database, another service); give it a `slot` per slow part, or one `slot` around the whole
+body if nothing can be shown early, and the head still goes out first.

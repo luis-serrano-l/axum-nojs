@@ -116,7 +116,14 @@ impl Streamed {
 
     /// The response body as HTML chunks, each ready to send as soon as it is yielded. Send them
     /// with `Content-Type: text/html; charset=utf-8` and chunked transfer.
-    pub fn into_stream(self) -> Pin<Box<dyn Stream<Item = String> + Send + 'static>> {
+    ///
+    /// The first chunk is always the document up to `</head>`, so the browser parses the
+    /// stylesheet while the rest is still being written and while slow fills wait.
+    pub fn into_stream(mut self) -> Pin<Box<dyn Stream<Item = String> + Send + 'static>> {
+        let head_end = self.prefix.find("</head>").map_or(0, |i| i + "</head>".len());
+        let head = self.prefix[..head_end].to_string();
+        self.prefix.drain(..head_end);
+        let head = stream::once(async { head });
         if self.dsd {
             let fills: FuturesUnordered<_> = self
                 .fills
@@ -126,7 +133,7 @@ impl Streamed {
             let chunks = stream::once(async { self.prefix })
                 .chain(fills)
                 .chain(stream::once(async { self.suffix }));
-            return Box::pin(chunks);
+            return Box::pin(head.chain(chunks));
         }
         // Fallback: walk the page in order, splicing each fill at its marker.
         let mut fills: HashMap<String, Fill> = self.fills.into_iter().collect();
@@ -148,7 +155,7 @@ impl Streamed {
                 Piece::Fill(fut) => fut.await.into_string(),
             }
         });
-        Box::pin(chunks)
+        Box::pin(head.chain(chunks))
     }
 }
 
@@ -162,7 +169,8 @@ impl axum::response::IntoResponse for Streamed {
     fn into_response(self) -> axum::response::Response {
         let chunks = self.into_stream().map(|s| Ok::<bytes::Bytes, std::convert::Infallible>(s.into()));
         (
-            [(http::header::CONTENT_TYPE, "text/html; charset=utf-8")],
+            // `X-Accel-Buffering: no` asks a proxy in front (nginx) to pass chunks on as they come.
+            [(http::header::CONTENT_TYPE, "text/html; charset=utf-8"), (http::header::HeaderName::from_static("x-accel-buffering"), "no")],
             axum::body::Body::from_stream(chunks),
         )
             .into_response()

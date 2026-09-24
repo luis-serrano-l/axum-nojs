@@ -19,14 +19,14 @@ const S = "/session/" + sessionId;
 const median = (xs) => xs.sort((a, b) => a - b)[Math.floor(xs.length / 2)];
 try {
   for (const route of process.argv.slice(2)) {
-    const runs = { ttfb: [], dcl: [], load: [] };
+    const runs = { ttfb: [], fcp: [], dcl: [], load: [] };
     for (let i = 0; i < 5; i++) {
       await wd("POST", S + "/url", { url: DEMO + route });
-      const n = await wd("POST", S + "/execute/sync", { script: "const n = performance.getEntriesByType('navigation')[0]; return [n.responseStart, n.domContentLoadedEventEnd, n.loadEventEnd]", args: [] });
-      runs.ttfb.push(n[0]); runs.dcl.push(n[1]); runs.load.push(n[2]);
+      const n = await wd("POST", S + "/execute/sync", { script: "const n = performance.getEntriesByType('navigation')[0]; const p = performance.getEntriesByName('first-contentful-paint')[0]; return [n.responseStart, n.domContentLoadedEventEnd, n.loadEventEnd, p ? p.startTime : -1]", args: [] });
+      runs.ttfb.push(n[0]); runs.dcl.push(n[1]); runs.load.push(n[2]); runs.fcp.push(n[3]);
     }
     const f = (x) => median(x).toFixed(0).padStart(5);
-    console.log(`${route.padEnd(8)} responseStart ${f(runs.ttfb)}  DOMContentLoaded ${f(runs.dcl)}  load ${f(runs.load)} ms`);
+    console.log(`${route.padEnd(8)} responseStart ${f(runs.ttfb)}  first paint ${f(runs.fcp)}  DOMContentLoaded ${f(runs.dcl)}  load ${f(runs.load)} ms`);
   }
 } finally {
   await wd("DELETE", S).catch(() => {});

@@ -193,7 +193,7 @@ in FINDINGS.md (`hyperfine` against the demo, Firefox navigation timing from
   of bounds by CLAUDE.md; instead `<link rel="prefetch">` for the index's component links and
   `<link rel="prerender">`-free; record in FINDINGS what the platform cannot prefetch without
   the rules script.
-- [ ] Streaming everywhere it pays: `layout` sends `<head>` and the shell before the body is
+- [x] Streaming everywhere it pays: `layout` sends `<head>` and the shell before the body is
   built (an `http`-feature `Streamed` page for every demo route whose body waits on anything),
   `Transfer-Encoding: chunked` with an early flush after `</head>` so the stylesheet parses
   while the server works; measured on `/stream` and `/table`.
