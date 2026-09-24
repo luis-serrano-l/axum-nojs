@@ -71,7 +71,7 @@ action need no script. Editors, real-time collaboration and per-keystroke reacti
 
 ## 4. What the optional script adds
 
-One 10 KB file, no framework, no build step, `script-src 'self'` compatible. It never changes
+One 11 KB file, no framework, no build step, `script-src 'self'` compatible. It never changes
 what the server sends; it changes what the browser does with it.
 
 - **Swap roots.** A root with `id` and `data-nojs="swap"` has its forms and links fetched in the
@@ -596,3 +596,21 @@ Hinnant's `days_from_civil`), so the crate still depends only on `maud`.
   day's fill. The two now have separate rules.
 - **What it cannot do without script:** move between days with the arrow keys (Tab walks them
   in order), or keep a form's other unsaved fields when a month link is followed in radio mode.
+
+### M23 · Upload
+
+A file upload needs no script: a multipart `<form>`, `<input type="file" accept multiple>`
+(a file dropped on the input is picked like a chosen one), Post/Redirect/Get, and a list of
+what the server kept. The script adds only a progress bar. `fetch` cannot report upload
+progress, so a form holding `<progress data-nojs-progress>` is sent through `XMLHttpRequest`
+and the bar fills as the body goes out. That took the script from about 10.2 KB to
+10,564 bytes served, and its budget from 10 KB to 11 KB (README updated).
+
+- **A demo that stores uploads has to be careful about serving them.** `/upload` keeps at most
+  3 files of 200 KB per visitor, for 100 visitors, in memory. It serves PNG, JPEG, GIF and
+  WebP inline and everything else as `Content-Disposition: attachment`, so an uploaded HTML
+  or SVG file never runs in the demo's origin.
+- **`Saved<T>` needs a struct with named fields.** The cookie is URL-encoded, so a newtype such
+  as `Uploader(String)` does not serialise and is silently not saved (a sequence of pairs,
+  `Kinds(Vec<(String, String)>)`, does work). The fix is `struct Uploader { id: String }`;
+  whether `Saved` should fail loudly instead is a question for M24's docs.

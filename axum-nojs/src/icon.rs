@@ -45,6 +45,7 @@ pub enum Icon {
     Download,
     Ellipsis,
     ExternalLink,
+    File,
     House,
     Info,
     Mail,
@@ -64,7 +65,7 @@ pub enum Icon {
 
 impl Icon {
     /// Every icon, in the order the enum lists them.
-    pub const ALL: [Icon; 28] = [
+    pub const ALL: [Icon; 29] = [
         Icon::ArrowLeft,
         Icon::ArrowRight,
         Icon::Calendar,
@@ -78,6 +79,7 @@ impl Icon {
         Icon::Download,
         Icon::Ellipsis,
         Icon::ExternalLink,
+        Icon::File,
         Icon::House,
         Icon::Info,
         Icon::Mail,
@@ -139,6 +141,10 @@ impl Icon {
             Icon::ExternalLink => (
                 "external-link",
                 r#"<path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>"#,
+            ),
+            Icon::File => (
+                "file",
+                r#"<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/>"#,
             ),
             Icon::House => (
                 "house",

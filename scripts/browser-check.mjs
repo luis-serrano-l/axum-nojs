@@ -295,6 +295,14 @@ try {
   await until(async () => /Saved src\/build.rs/.test(await js("return document.querySelector('.nojs-flash')?.textContent || ''")), "table: row saved");
   assert(await js("return !document.querySelector('.nojs-table-edit-input') && [...document.querySelectorAll('td')].some(td => td.textContent.trim() === 'rust')"), "table: an edited row is saved and shown");
 
+  // Upload: a real file through the enhancement script (XMLHttpRequest, progress bar), in place.
+  await go("/upload");
+  await type(".nojs-upload-input", process.cwd() + "/axum-nojs/src/upload.rs");
+  await click(".nojs-upload-form .nojs-button-primary");
+  await until(async () => /Uploaded 1/.test(await js("return document.querySelector('.nojs-flash')?.textContent || ''")), "upload: the file arrived");
+  assert(await js("return [...document.querySelectorAll('.nojs-upload-name')].some(n => n.textContent.trim() === 'upload.rs')"), "upload: the list shows what the server kept");
+  assert(await navigations() === 1, "upload: sent in place, no reload");
+
   // Date picker: the button opens the calendar popover; a day is a radio the form posts.
   await go("/calendar?due=2026-09-24");
   await click("#f-due");

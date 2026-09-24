@@ -42,7 +42,8 @@
 //! Rapid actions on one root are queued, so a counter clicked five times counts five. The
 //! script also mirrors `<input type=range>` and `type=color` values while they move, counts
 //! characters into the `<output for>` of a field with `maxlength`, sends multipart forms as
-//! `FormData` so files survive, opens
+//! `FormData` so files survive (through `XMLHttpRequest`, filling a `<progress data-nojs-progress>`
+//! inside the form as the upload goes out, when the form has one), opens
 //! the `:target` dialog fallback as a real modal, moves through an open popover menu with the
 //! arrow keys, searches a combobox as you type and walks its results with the arrow keys.
 //! A tab title opens its panel and slides the underline on the click itself; the server's
@@ -62,13 +63,25 @@ use maud::{Markup, html};
 /// Path the script is served from. [`script_url`] appends a content hash.
 pub const SCRIPT_PATH: &str = "/nojs/enhance.js";
 
-/// The whole enhancement script. Plain ES2020, no build step, under 10 KB as [`served`].
+/// The whole enhancement script. Plain ES2020, no build step, under 11 KB as [`served`].
 pub const JS: &str = r##"(function () {
 "use strict";
 var roots = "[data-nojs=swap]", queue = {}, cache = {};
 // Every request says it is the script's (the server may answer with less) and wants HTML.
 var init = function (priority) { return { credentials: "same-origin", priority: priority || "high", headers: { "Nojs-Enhance": "1", Accept: "text/html" } }; };
 var load = function (url, req) {
+  // fetch cannot report upload progress: a form with a <progress data-nojs-progress> posts
+  // through XMLHttpRequest and fills the bar as the body goes out.
+  if (req.progress) return new Promise(function (ok, fail) {
+    var x = new XMLHttpRequest(), bar = req.progress;
+    x.open(req.method, url);
+    for (var h in req.headers) x.setRequestHeader(h, req.headers[h]);
+    x.upload.onprogress = function (e) { bar.max = e.total; bar.value = e.loaded; };
+    x.onload = function () { ok({ url: x.responseURL, html: x.responseText }); };
+    x.onerror = fail;
+    bar.hidden = false;
+    x.send(req.body);
+  });
   return fetch(url, req).then(function (res) { return res.text().then(function (html) { return { url: res.url, html: html }; }); });
 };
 var parse = function (html) { return new DOMParser().parseFromString(html, "text/html"); };
@@ -205,6 +218,7 @@ function submit(form, submitter) {
   var req = init();
   var params = new URLSearchParams(data);
   if ((at("method") || "get").toLowerCase() === "post") { req.method = "POST"; req.body = form.enctype === "multipart/form-data" ? data : params; }
+  if (req.body === data) req.progress = form.querySelector("progress[data-nojs-progress]");
   else url.search = params.toString();
   request(t, form, url.href, req, function () { HTMLFormElement.prototype.submit.call(form); });
   return true;
@@ -318,7 +332,7 @@ addEventListener("popstate", function (e) {
 "##;
 
 /// [`JS`] as served: comment lines and indentation dropped, nothing else touched. The budget
-/// (10 KB) applies to this; the source keeps its comments for the reader.
+/// (11 KB) applies to this; the source keeps its comments for the reader.
 pub fn served() -> &'static str {
     static SERVED: std::sync::OnceLock<String> = std::sync::OnceLock::new();
     SERVED.get_or_init(|| {
@@ -451,12 +465,12 @@ mod tests {
     #[test]
     fn script_is_small_and_plain() {
         assert!(
-            served().len() < 10240,
+            served().len() < 11264,
             "enhance.js is {} bytes served",
             served().len()
         );
         assert!(
-            JS.len() < 12288,
+            JS.len() < 13312,
             "enhance.js source is {} bytes; trim before adding comments",
             JS.len()
         );

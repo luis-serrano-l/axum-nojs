@@ -93,6 +93,7 @@ pub mod tabs;
 pub mod theme;
 pub mod toast;
 pub mod ui;
+pub mod upload;
 pub mod wizard;
 
 /// Server-side feature detection: the [`axum_nojs_caps`] crate, re-exported so `axum_nojs::caps`
@@ -245,6 +246,7 @@ pub const COMPONENT_CSS: &[&str] = &[
     split::CSS,
     calendar::CSS,
     date_picker::CSS,
+    upload::CSS,
     dialog::CSS,
     popover::CSS,
     tabs::CSS,

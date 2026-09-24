@@ -5,7 +5,7 @@ functions over strings, so it also works with any other Rust server.
 
 Every component starts from `ui`, the one value a handler extracts, and renders where `html!`
 splices it. Interactivity comes from the HTML/CSS platform and ordinary form round trips. One
-optional 10 KB script (`/nojs/enhance.js`) makes the same markup update in place; see "How the
+optional 11 KB script (`/nojs/enhance.js`) makes the same markup update in place; see "How the
 script works" below. Every page works identically with the script blocked; that is the only
 `<script>` tag allowed, and a test enforces it.
 
@@ -99,7 +99,7 @@ component gives the HTML to another template engine.
   tab). Ids come from the label; state (`?tab.x=`, `?dialog=`, `?page=`, `?sort=`) is read
   from `ui`, so a route passes only what the page says differently. No macros beyond `html!`.
 - Primitives come first: `ui.button`/`ui.link_button`, `ui.input`/`ui.checkbox`/`ui.switch`/
-  `ui.radio_group`, `ui.badge`, `ui.card`, `Icon` (28 Lucide shapes as inline SVG),
+  `ui.radio_group`, `ui.badge`, `ui.card`, `Icon` (29 Lucide shapes as inline SVG),
   `ui.avatar`, and the layouts `ui.stack`, `ui.cluster`, `ui.grid(min, ..)`, `ui.split(side,
   main)` with `.gap(n)` on a `--nojs-space-*` scale. Components are built from them (`ui.form`
   renders its fields through `input.rs`), and so can yours.
@@ -191,6 +191,7 @@ browser-compat-data; `no` means unshipped, so that browser gets the fallback.
 | Range | `<input type="range">`, `<datalist>`, `pointer-events` | 4 / 23 / 3.1; 20 / 110 / 12.1; 1 / 1 / 1 | ticks not drawn | Partly: value shown after submit; live mirroring needs script |
 | Color | `<input type="color">`, `color-mix()` | 20 / 29 / 12.1; 111 / 113 / 16.2 | text field accepting #rrggbb | No |
 | Streaming | `<template shadowrootmode="open">`, `<slot name`, `Chunked transfer` | 111 / 123 / 16.4; 53 / 63 / 10; 1 / 1 / 1 | in-order streaming with in-place splicing | No |
+| Upload | `<input type="file" accept multiple>`, `<progress>`, `loading="lazy"` | 1 / 1 / 1; 6 / 6 / 6; 77 / 75 / 15.4 | none needed: a plain multipart post; the progress bar needs the enhancement script | Partly: upload progress and a preview before sending need script |
 | Toast | `position: fixed`, `role="status"`, `role="alert"`, `@keyframes`, `prefers-reduced-motion` | 1 / 1 / 1; 1 / 1 / 1; 1 / 1 / 1; 43 / 16 / 9; 74 / 63 / 10.1 | without CSS animations toasts stay until the next page | No |
 | Breadcrumbs | `aria-current="page"`, `::before`, `<details>` | 1 / 1 / 1; 1 / 1 / 1; 12 / 49 / 6 | none needed | No |
 | Skeleton | `aria-busy`, `role="status"`, `@keyframes`, `prefers-reduced-motion` | 1 / 1 / 1; 1 / 1 / 1; 43 / 16 / 9; 74 / 63 / 10.1 | without CSS animations the bars are still | No |

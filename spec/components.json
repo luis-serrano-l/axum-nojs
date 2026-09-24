@@ -386,6 +386,18 @@
       "needs_js": "no"
     },
     {
+      "name": "Upload",
+      "module": "upload",
+      "features": [
+        { "name": "<input type=\"file\" accept multiple>", "baseline": { "chrome": "1", "firefox": "1", "safari": "1" } },
+        { "name": "<progress>", "baseline": { "chrome": "6", "firefox": "6", "safari": "6" } },
+        { "name": "loading=\"lazy\"", "baseline": { "chrome": "77", "firefox": "75", "safari": "15.4" } }
+      ],
+      "fallback": "none needed: a plain multipart post; the progress bar needs the enhancement script",
+      "needs_js": "partial",
+      "needs_js_note": "upload progress and a preview before sending need script"
+    },
+    {
       "name": "Toast",
       "module": "toast",
       "features": [

@@ -539,8 +539,16 @@ The showcase for "wait, this needs no JS?".
   `returns_to`. Demo: `/table`'s Kind column, saved per visitor in a cookie (`/table/edit`
   only redirects back to `/table…`). Blitz test `table_row_edits_in_place`; the browser check
   edits, saves and reads the new value. `Ui::link_without` and `Input::form` added.
-- [ ] `upload.rs`: file input with a preview list after the round trip; progress only through
+- [x] `upload.rs`: file input with a preview list after the round trip; progress only through
   the enhance script, no-script path intact.
+  Done: `ui.upload(action, name)` with `.accept/.multiple/.hint`, `.file(name, bytes)` plus
+  `.preview(src)` and `.href(url)` for the file added last, and `.remove(action)` (a Remove
+  button per file posting `<name>=<file>`). A dashed drop zone around the file input, then the
+  Upload button, then the list. `enhance.js` sends a multipart form holding
+  `<progress data-nojs-progress>` through `XMLHttpRequest` to fill the bar (the served budget
+  goes from 10 to 11 KB, now 10,564 bytes). `Icon::File` added (29 icons). Demo `/upload`:
+  per-visitor, capped, in memory; raster images inline, anything else as an attachment. The
+  browser check uploads a real file in place.
 - [ ] `kanban.rs`: moving a card is a form post per column.
 - [ ] Demo pages, Blitz screenshots, browser-check steps for the calendar swap.
 

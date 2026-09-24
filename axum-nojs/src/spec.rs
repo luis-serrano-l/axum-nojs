@@ -462,6 +462,17 @@ pub const SPECS: &[ComponentSpec] = &[
         needs_js: NeedsJs::No,
     },
     ComponentSpec {
+        name: "Upload",
+        module: "upload",
+        features: &[
+            f("<input type=\"file\" accept multiple>", ALWAYS),
+            f("<progress>", b("6", "6", "6")),
+            f("loading=\"lazy\"", b("77", "75", "15.4")),
+        ],
+        fallback: "none needed: a plain multipart post; the progress bar needs the enhancement script",
+        needs_js: NeedsJs::Partial("upload progress and a preview before sending need script"),
+    },
+    ComponentSpec {
         name: "Toast",
         module: "toast",
         features: &[
@@ -657,6 +668,7 @@ mod tests {
         ("range", include_str!("range.rs")),
         ("color", include_str!("color.rs")),
         ("stream", include_str!("stream.rs")),
+        ("upload", include_str!("upload.rs")),
         ("toast", include_str!("toast.rs")),
         ("breadcrumbs", include_str!("breadcrumbs.rs")),
         ("skeleton", include_str!("skeleton.rs")),

@@ -998,7 +998,7 @@ async fn buttons_badges_and_icons() {
         (svg.width - 16.0).abs() < 1.0 && (svg.height - 16.0).abs() < 1.0,
         "icons are 1rem: {svg:?}"
     );
-    assert_eq!(page.count("svg.nojs-icon"), 28);
+    assert_eq!(page.count("svg.nojs-icon"), 29);
 }
 
 #[tokio::test]
