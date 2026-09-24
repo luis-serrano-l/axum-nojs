@@ -577,8 +577,12 @@ The React idea worth keeping: a component model users extend, not a closed catal
   only, tokens only, an own class prefix, `Page::css`, one variant per request, swap roots,
   `Saved<T>` needs named fields, Blitz for tests, and `maud` as a direct dependency. Needed
   two helpers from the next box, added here: `axum_nojs::slug` is public and `Page::css` exists.
-- [ ] Public helpers users need: `slug`, `enhance::swap_id`, `caps`, and a way to add CSS to
+- [x] Public helpers users need: `slug`, `enhance::swap_id`, `caps`, and a way to add CSS to
   `ui.page()` (`Ui::with_css` or `Page::css`).
+  Done: `axum_nojs::slug` and `Page::css` (with the guide, previous box); `enhance::swap_id`
+  and `axum_nojs::caps` were already public. Added `Ui::link_with(key, value)` and
+  `Ui::link_without(key)` (made public, with a doctest): the "same page, one parameter
+  changed" links the calendar and table use, which a user component needs just as much.
 - [ ] A user-land `ui.pricing_card()` in the demo crate, built only from primitives.
 
 ## M25 · Positioning for release

@@ -108,13 +108,22 @@ impl Ui {
     }
 
     /// This page's URL with the query parameter `key` set to `value` (added last when absent)
-    /// and every other parameter kept in order: a link that changes one thing.
-    pub(crate) fn link_with(&self, key: &str, value: &str) -> String {
+    /// and every other parameter kept in order: a link that changes one thing, the way the
+    /// calendar's month links and the table's "Edit" links are built.
+    ///
+    /// ```rust
+    /// use axum_nojs::prelude::*;
+    /// let ui = Ui::from_request("/orders", "sort=date&page=2", "");
+    /// assert_eq!(ui.link_with("page", "3"), "/orders?sort=date&page=3");
+    /// assert_eq!(ui.link_with("q", "late fee"), "/orders?sort=date&page=2&q=late%20fee");
+    /// assert_eq!(ui.link_without("page"), "/orders?sort=date");
+    /// ```
+    pub fn link_with(&self, key: &str, value: &str) -> String {
         self.link_changing(key, Some(value))
     }
 
-    /// This page's URL without the query parameter `key`.
-    pub(crate) fn link_without(&self, key: &str) -> String {
+    /// This page's URL without the query parameter `key` (the path alone when nothing is left).
+    pub fn link_without(&self, key: &str) -> String {
         self.link_changing(key, None)
     }
 
