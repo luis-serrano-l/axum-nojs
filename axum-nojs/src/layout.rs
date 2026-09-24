@@ -106,8 +106,10 @@ pub struct Tokens {
     pub light: Palette,
     /// Colours for `prefers-color-scheme: dark` and for `data-theme="dark"`.
     pub dark: Palette,
-    /// Corner radius of cards and dialogs (`--nojs-radius`); controls use
-    /// `--nojs-radius-sm` (4px less) and sheets `--nojs-radius-lg` (4px more).
+    /// Corner radius of dialogs and popovers (`--nojs-radius`); controls use
+    /// `--nojs-radius-sm` (2px less) and cards `--nojs-radius-lg` (4px more). The two
+    /// shadows, `--nojs-shadow-xs` (controls) and `--nojs-shadow-lg` (floating layers), are
+    /// emitted beside them and are the same in both schemes, as in shadcn/ui.
     pub radius: &'static str,
     /// The spacing unit every gap and padding is a multiple of (`--nojs-space`).
     pub space: &'static str,
@@ -167,7 +169,7 @@ impl Tokens {
     pub fn css(&self) -> String {
         let (light, dark) = (self.light.declarations(), self.dark.declarations());
         format!(
-            ":root {{\n  color-scheme: light dark;\n{light}  --nojs-radius: {}; --nojs-space: {};\n  --nojs-radius-sm: max(0px, var(--nojs-radius) - 4px); --nojs-radius-lg: calc(var(--nojs-radius) + 4px);\n}}\n\
+            ":root {{\n  color-scheme: light dark;\n{light}  --nojs-radius: {}; --nojs-space: {};\n  --nojs-radius-sm: max(0px, var(--nojs-radius) - 2px); --nojs-radius-lg: calc(var(--nojs-radius) + 4px);\n  --nojs-shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.05);\n  --nojs-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);\n}}\n\
              @media (prefers-color-scheme: dark) {{\n  :root:not([data-theme=\"light\"]) {{\n{dark}  }}\n}}\n\
              :root[data-theme=\"dark\"] {{\n  color-scheme: dark;\n{dark}}}\n\
              :root[data-theme=\"light\"] {{ color-scheme: light; }}\n",
@@ -302,16 +304,50 @@ p { margin: 0 0 1rem; }
 a { color: var(--nojs-primary); text-underline-offset: 0.15em; text-decoration-thickness: 1px; }
 code {
   font-family: var(--nojs-font-mono); font-size: 0.875em;
-  background: var(--nojs-surface); border: 1px solid var(--nojs-line); border-radius: var(--nojs-radius); padding: 0.05em 0.35em;
+  background: var(--nojs-surface); border: 1px solid var(--nojs-line); border-radius: var(--nojs-radius-sm); padding: 0.05em 0.35em;
 }
+/* Controls, shadcn sizes: 2.25rem tall, px-3 inputs and px-4 buttons, 1px --nojs-input
+   border, shadow-xs. The plain button is shadcn's "outline" variant; hover is the accent
+   surface. Focus is a 3px ring at 50% plus a ring-coloured border; aria-invalid turns both
+   to --nojs-danger. */
 button, input, select, textarea { font: inherit; font-size: 0.875rem; line-height: 1.25rem; color: inherit; }
 button, label { font-weight: 500; }
-button { cursor: pointer; background: var(--nojs-surface); border: 1px solid var(--nojs-line); border-radius: var(--nojs-radius); padding: 0.5rem 1rem; }
-button:hover { border-color: var(--nojs-primary); }
+button {
+  display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+  min-height: 2.25rem; padding: 0.375rem 1rem; white-space: nowrap; cursor: pointer;
+  background: var(--nojs-bg); border: 1px solid var(--nojs-input); border-radius: var(--nojs-radius-sm);
+  box-shadow: var(--nojs-shadow-xs); transition: background-color 0.15s, color 0.15s, box-shadow 0.15s;
+}
+button:hover { background: var(--nojs-accent); color: var(--nojs-on-accent); }
 button.nojs-primary { background: var(--nojs-primary); color: var(--nojs-on-primary); border-color: transparent; }
+button.nojs-primary:hover { background: color-mix(in srgb, var(--nojs-primary) 90%, transparent); }
 button.nojs-danger { background: var(--nojs-danger); color: var(--nojs-on-primary); border-color: transparent; }
-input, select, textarea { background: var(--nojs-surface); border: 1px solid var(--nojs-line); border-radius: var(--nojs-radius); padding: 0.5rem 0.75rem; }
-:focus-visible { outline: 2px solid var(--nojs-primary); outline-offset: 2px; }
+button.nojs-danger:hover { background: color-mix(in srgb, var(--nojs-danger) 90%, transparent); }
+input, select, textarea {
+  min-height: 2.25rem; padding: 0.375rem 0.75rem; min-width: 0;
+  background: transparent; border: 1px solid var(--nojs-input); border-radius: var(--nojs-radius-sm);
+  box-shadow: var(--nojs-shadow-xs); transition: border-color 0.15s, box-shadow 0.15s;
+}
+textarea { min-height: 4rem; }
+input::placeholder, textarea::placeholder { color: var(--nojs-muted); }
+/* Native select: no OS chrome, a chevron drawn from two gradients in the muted colour. */
+select {
+  appearance: none; padding-right: 2rem;
+  background-image: linear-gradient(45deg, transparent 50%, var(--nojs-muted) 50%), linear-gradient(135deg, var(--nojs-muted) 50%, transparent 50%);
+  background-position: right 1rem center, right 0.75rem center; background-size: 0.25rem 0.25rem; background-repeat: no-repeat;
+}
+select[multiple], select[size] { padding-right: 0.75rem; background-image: none; }
+input:is([type=checkbox], [type=radio]) { width: 1rem; height: 1rem; min-height: 0; padding: 0; margin: 0; accent-color: var(--nojs-primary); vertical-align: -0.15em; }
+input[type=range] { min-height: 0; padding: 0; border: 0; box-shadow: none; accent-color: var(--nojs-primary); }
+input[type=color] { padding: 0.25rem; }
+input[type=file] { padding-block: 0.25rem; }
+input::file-selector-button { font: inherit; font-weight: 500; color: var(--nojs-fg); background: transparent; border: 0; padding: 0 0.5rem 0 0; }
+details > summary { cursor: pointer; font-weight: 500; }
+:focus-visible { outline: 3px solid color-mix(in srgb, var(--nojs-ring) 50%, transparent); outline-offset: 0; }
+:is(input, select, textarea, button):focus-visible { border-color: var(--nojs-ring); }
+[aria-invalid=true] { border-color: var(--nojs-danger); }
+[aria-invalid=true]:focus-visible { outline-color: color-mix(in srgb, var(--nojs-danger) 20%, transparent); }
+:is(button, input, select, textarea):disabled { opacity: 0.5; cursor: not-allowed; }
 /* A swap root or form with a request in flight (set by the enhancement script only). The
    fade waits so a fast answer never flickers; --nojs-busy: 1 turns it off. */
 .nojs-sr { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50%); text-wrap: nowrap; border: 0; }

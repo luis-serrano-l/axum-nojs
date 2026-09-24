@@ -30,8 +30,9 @@ theme; the status colours are Radix Colors step 11, the step made for text.
 | `--nojs-ok` | `#218358` / `#3dd68c` | The "yes" cells on `/caps`, ok flashes; free for your own success states. |
 | `--nojs-warn` | `#ab6400` / `#ffca16` | Warning flashes. |
 | `--nojs-radius` | `0.5rem` | Corners of cards, dialogs and popovers. |
-| `--nojs-radius-sm` | radius − 4px | Not a `Tokens` field, derived: corners of buttons, inputs, chips, `<code>`. |
-| `--nojs-radius-lg` | radius + 4px | Not a `Tokens` field, derived: corners of sheets and large panels. |
+| `--nojs-radius-sm` | radius − 2px | Not a `Tokens` field, derived: corners of buttons, inputs, chips, `<code>`. |
+| `--nojs-radius-lg` | radius + 4px | Not a `Tokens` field, derived: corners of cards, sheets and large panels. |
+| `--nojs-shadow-xs`, `--nojs-shadow-lg` | shadcn's | Not `Tokens` fields: the shadow under controls and under floating layers (dialogs, popovers, menus, toasts). Same in both schemes. |
 | `--nojs-space` | `8px` | The unit every gap, margin and padding is a multiple of (`calc(var(--nojs-space) * 3)`). |
 | `--nojs-busy` | `0.6` | Not a `Tokens` field: the opacity of a swap root or form while the enhancement script has a request in flight (`[data-nojs-busy]`). Set it to `1` on `:root` or on one root to turn the fade off. |
 
@@ -104,7 +105,7 @@ let page = Ui::default().page("Hello", html! { p { "Warm." } }).tokens(&LINEN);
 Its ratios: `fg`/`bg` 15.1 and 14.9, `muted`/`bg` 6.2 and 6.8, `primary`/`bg` 6.8 and 7.9,
 `on-primary`/`primary` 7.7 and 8.0, `ok`/`bg` 5.6 and 10.5. Every text pair clears 4.5.
 
-To change one value, spread the default: `Tokens { radius: "0px", ..Default::default() }` (keep the unit: `--nojs-radius-sm` subtracts 4px from it) or
+To change one value, spread the default: `Tokens { radius: "0px", ..Default::default() }` (keep the unit: `--nojs-radius-sm` subtracts 2px from it) or
 `Palette { primary: "#7a3b1e", ..Tokens::default().light }`.
 
 `.tokens(..)` puts a second `<style class="nojs-tokens">` right after the stylesheet with the

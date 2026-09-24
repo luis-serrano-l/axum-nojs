@@ -339,11 +339,16 @@ Done before M21 so the primitives are born in this look.
   Done: the stacks are `--nojs-font-sans`/`--nojs-font-mono` on `:root` (base rules, not
   `Tokens` fields); every component's sizes snapped to the scale (0.75/0.875/1/1.125/1.25/1.5/
   2.25rem) and 700 weights to 600.
-- [ ] Base styles in `layout.rs`: shadcn heights and paddings (controls h-9 = 2.25rem, px-3/px-4),
+- [x] Base styles in `layout.rs`: shadcn heights and paddings (controls h-9 = 2.25rem, px-3/px-4),
   1px `--nojs-input` borders, `shadow-xs` on controls, `shadow-lg` on dialog/popover,
   focus-visible as a 3px `--nojs-ring` at 50% opacity, `aria-invalid` red ring, disabled at
   50% opacity, hover as `--nojs-accent` surface. Native `<select>`, checkbox, radio, range,
   date and `<details>` restyled to match (`appearance`, `accent-color`).
+  Done: `--nojs-shadow-xs/-lg` are emitted by `Tokens::css()` beside the radii (rgb literals
+  live there, not in component CSS); `--nojs-radius-sm` became radius − 2px so controls land
+  on shadcn's 6px `rounded-md`. The plain button is shadcn's outline variant. The select
+  chevron is two gradients in `--nojs-muted` (no data-URI SVG, which would need a literal);
+  `select.rs` drops it where `appearance: base-select` draws its own picker icon.
 - [ ] Every existing component's CSS re-tuned to these values (dialog, drawer as shadcn sheet,
   popover/menu as dropdown-menu, tabs as the muted pill list, accordion, toast as sonner-style
   cards, table, pager as pagination, badge-like chips, skeleton, palette as command).

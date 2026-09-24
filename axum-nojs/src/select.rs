@@ -255,6 +255,8 @@ pub const CSS: &str = r#"
 .nojs-select-search input { flex: 1; min-width: 0; }
 .nojs-select select, .nojs-select select::picker(select) { appearance: base-select; }
 .nojs-select select { min-width: 12rem; }
+/* base-select draws its own ::picker-icon; drop the gradient chevron from layout.rs. */
+@supports (appearance: base-select) { .nojs-select select { background-image: none; padding-right: 0.75rem; } }
 .nojs-select select::picker(select) {
   border: 1px solid var(--nojs-line); border-radius: var(--nojs-radius); padding: var(--nojs-space) 0;
   background: var(--nojs-surface); color: var(--nojs-fg); box-shadow: 0 8px 24px color-mix(in srgb, var(--nojs-fg) 14%, transparent);
