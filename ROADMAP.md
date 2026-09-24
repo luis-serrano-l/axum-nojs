@@ -484,8 +484,13 @@ One change to the button restyles every dialog, pager and table.
   of the ~11 shown, and each row's menu carried an inline SVG ellipsis (≈330 B a row), now the
   `⋯` glyph. The remaining paged-table cost is the richer markup (ghost/outline page buttons
   with icons and attributes).
-- [ ] A test fails if a component's CSS styles bare `button`/`input` selectors outside
+- [x] A test fails if a component's CSS styles bare `button`/`input` selectors outside
   `button.rs`/`input.rs`.
+  Done: `lib.rs::tests::only_the_primitives_select_bare_buttons_and_inputs` reads every
+  selector prelude of the minified component CSS (skipping at-rules), anywhere in it,
+  `:is()`/`:where()` arguments included, and names the offending selector. `select`,
+  `textarea` and `summary` are not covered: the box asks for buttons and inputs, and
+  components still style their own `<select>` (select.rs) and `<summary>` (tabs, accordion).
 - [ ] CLAUDE.md component convention 8: a component builds its parts from primitives
   (`ui.button`, `ui.input`, `ui.card`…), never raw `button`/`input` with its own CSS.
   Update `docs/` and FINDINGS.

@@ -369,6 +369,56 @@ mod tests {
         }
     }
 
+    /// Buttons and inputs are styled in one place each: no other component's CSS selects a
+    /// bare `button` or `input` (anywhere in a selector, `:is()` and `:where()` included), so
+    /// a change to the primitive reaches every component. A component styles its own parts
+    /// by class (`.nojs-counter-input`, `.nojs-dialog-close`).
+    #[test]
+    fn only_the_primitives_select_bare_buttons_and_inputs() {
+        fn preludes(css: &str) -> Vec<String> {
+            let (mut out, mut buf) = (Vec::new(), String::new());
+            for c in minify_css(css).chars() {
+                match c {
+                    '{' => out.push(std::mem::take(&mut buf)),
+                    '}' | ';' => buf.clear(),
+                    c => buf.push(c),
+                }
+            }
+            out.retain(|p| !p.starts_with('@'));
+            out
+        }
+        fn selects_bare(selector: &str, element: &str) -> bool {
+            selector.match_indices(element).any(|(i, _)| {
+                let before = selector[..i].chars().next_back();
+                let after = selector[i + element.len()..].chars().next();
+                let starts = before.is_none_or(|c| " ,>+~(".contains(c));
+                let ends =
+                    after.is_none_or(|c| !(c.is_ascii_alphanumeric() || c == '-' || c == '_'));
+                starts && ends
+            })
+        }
+        assert!(
+            selects_bare(".x :is(button, a)", "button")
+                && selects_bare("input[type=range]", "input")
+        );
+        assert!(
+            !selects_bare(".nojs-button", "button") && !selects_bare("[type=button]", "button")
+        );
+        for css in COMPONENT_CSS {
+            if *css == button::CSS || *css == input::CSS {
+                continue;
+            }
+            for p in preludes(css) {
+                for element in ["button", "input"] {
+                    assert!(
+                        !selects_bare(&p, element),
+                        "`{p}` styles a bare {element}: style the part by class, or change {element}.rs"
+                    );
+                }
+            }
+        }
+    }
+
     /// Every component nests in `html!` and converts to a plain `String`.
     #[test]
     fn components_render_and_stringify() {
