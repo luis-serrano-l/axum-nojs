@@ -179,6 +179,7 @@ spec/components.json        generated from SPECS (cargo run -p demo -- spec writ
 docs/state.md               how state works with no script
 docs/caps.md                how the beacons work, cookie format, the first view, adding a flag
 docs/theming.md             every --wo-* token, contrast pairs, a second palette as a Tokens value
+docs/latency.md             what made pages faster, what did not, and the order to apply it to your server
 webonsive/src/<name>.rs     one component each: dialog, popover, tabs, accordion, table, paged_table, wizard,
                             combobox, pager, form, counter, theme, toast, breadcrumbs, skeleton,
                             empty_state, stat, drawer, palette (command palette)

@@ -204,7 +204,7 @@ in FINDINGS.md (`hyperfine` against the demo, Firefox navigation timing from
 - [x] HTTP/2 and HTTP/3 in the hyper example so many beacon images share one connection; a
   note in `docs/caps.md` on why the beacons cost nothing after the first visit (cookie) and
   how to serve them from the same origin as the page.
-- [ ] Docs: `docs/latency.md` with the numbers, what moved them, what did not, and the order a
+- [x] Docs: `docs/latency.md` with the numbers, what moved them, what did not, and the order a
   user should apply them to their own server; README gets one line pointing at it.
 
 ## M17 · Pleasant to use
