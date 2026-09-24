@@ -223,6 +223,7 @@ input, select, textarea { background: var(--wo-surface); border: 1px solid var(-
 :focus-visible { outline: 2px solid var(--wo-accent); outline-offset: 2px; }
 /* A swap root or form with a request in flight (set by the enhancement script only). The
    fade waits so a fast answer never flickers; --wo-busy: 1 turns it off. */
+.wo-sr { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50%); text-wrap: nowrap; border: 0; }
 [data-wo-busy] { opacity: var(--wo-busy, 0.6); transition: opacity 0.15s 0.2s; cursor: progress; }
 table { border-collapse: collapse; width: 100%; }
 th, td { text-align: left; padding: 0.5rem; border-bottom: 1px solid var(--wo-line); vertical-align: top; }

@@ -105,6 +105,14 @@ try {
   await until(async () => (await js("return document.querySelector('.wo-table th[aria-sort]')?.textContent.trim()")) === "Size▲", "sort by size");
   assert(await js("return location.search") === "?sort=size&dir=asc&per=5", "table: URL follows the sort");
   assert(await navigations() === 1, "table: sorted without a reload");
+  await click(".wo-table-cols summary");
+  await click(".wo-table-cols a[href*='cols=name%2Csize']");
+  await until(async () => (await js("return document.querySelectorAll('.wo-table thead th a').length")) === 2, "column hidden");
+  assert(await js("return location.search").then(q => q.includes("cols=name%2Csize")), "table: hidden column swapped in place with ?cols= in the URL");
+  await js("document.querySelector('tbody tr:nth-child(2) input[type=checkbox]').click(); document.querySelector('#wo-table-files-bulk button[value=archive]').click()");
+  await until(async () => (await js("return document.querySelector('.wo-flash')?.textContent || ''")).includes("archive: 1 file"), "bulk form posted and redirected with a flash");
+  await js("document.querySelector('tbody tr:first-child .wo-table-detail summary').click()");
+  assert(await js("return document.querySelector('tbody tr:first-child .wo-table-detail').open"), "table: a row's detail opens natively");
 
   // Wizard: Next posts, PRG lands on step 2 in place, Back keeps the value.
   await go("/wizard");

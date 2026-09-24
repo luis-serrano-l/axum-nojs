@@ -36,6 +36,11 @@ follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); the project us
   the enhancement script walks input and results with the arrow keys. **Breaking:** the
   `(action, name, options, value)` positional form is gone; `name` now comes before `action`.
 - `UiState::link(key, "")` keeps `key=` in the URL so an explicit empty beats the cookie.
+- `table` takes `&[Row]` (`key`, `detail`, `menu`) and more `TableOptions`: `cols` with
+  `cols_from_query` and a "Columns" chooser, `bulk` (checkboxes owned by a post form through
+  the `form` attribute), `csv`, `empty`, `loading` (skeleton rows, `aria-busy`);
+  `Column::numeric` and `Column::width`. `PagedTableOptions::table` carries them through the
+  pager. **Breaking:** rows were `Vec<Markup>`; `Column` has two more fields.
 
 ## [0.1.0] - 2026-09-23
 

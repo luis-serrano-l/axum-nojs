@@ -111,10 +111,15 @@
         { "name": "?sort=<col>&dir=asc|desc", "baseline": { "chrome": "1", "firefox": "1", "safari": "1" } },
         { "name": "<search>", "baseline": { "chrome": "118", "firefox": "118", "safari": "17" } },
         { "name": "aria-sort", "baseline": { "chrome": "1", "firefox": "1", "safari": "1" } },
+        { "name": "form attribute", "baseline": { "chrome": "10", "firefox": "4", "safari": "5.1" } },
+        { "name": "<details>", "baseline": { "chrome": "12", "firefox": "49", "safari": "6" } },
+        { "name": "<colgroup>", "baseline": { "chrome": "1", "firefox": "1", "safari": "1" } },
+        { "name": "tabular-nums", "baseline": { "chrome": "52", "firefox": "34", "safari": "9.1" } },
         { "name": "position: sticky", "baseline": { "chrome": "56", "firefox": "32", "safari": "13" } },
-        { "name": "view-transition-name", "baseline": { "chrome": "111", "firefox": "144", "safari": "18" } }
+        { "name": "view-transition-name", "baseline": { "chrome": "111", "firefox": "144", "safari": "18" } },
+        { "name": "aria-busy", "baseline": { "chrome": "1", "firefox": "1", "safari": "1" } }
       ],
-      "fallback": "none needed: sorting and filtering are plain navigations",
+      "fallback": "none needed: sorting, filtering, column choice and the bulk form are plain navigations and posts; no select-all without script",
       "needs_js": "no"
     },
     {

@@ -18,9 +18,9 @@
 //!
 //! ```rust
 //! use maud::html;
-//! use webonsive::{Caps, paged_table, paged_table::PagedTableOptions, table::Column};
+//! use webonsive::{Caps, paged_table, paged_table::PagedTableOptions, table::{Column, Row}};
 //! let cols = [Column::sortable("name", "Name"), Column::plain("note", "Note")];
-//! let rows = vec![vec![html!{"a"}, html!{"b"}]];
+//! let rows = vec![Row::new(vec![html!{"a"}, html!{"b"}])];
 //! let m = paged_table(&Caps::all(), "files", "/table", &cols, &rows, 36, Default::default());
 //! let m = paged_table(&Caps::all(), "files", "/table", &cols, &rows, 36,
 //!                     PagedTableOptions::default().sort(Some(("name", true))).filter("a").page(2).per_page(10));
@@ -29,7 +29,7 @@
 
 use maud::{Markup, html};
 
-use crate::table::{Column, TableOptions, encode, table};
+use crate::table::{Column, Row, TableOptions, encode, table};
 use crate::Caps;
 
 /// Page sizes offered in the select.
@@ -46,11 +46,14 @@ pub struct PagedTableOptions<'a> {
     pub page: usize,
     /// Rows per page; one of [`PAGE_SIZES`] is selected in the size control.
     pub per_page: usize,
+    /// Everything else the inner [`table`] takes (columns, bulk form, CSV link, empty and
+    /// loading states); its `sort`, `filter` and `keep` are overwritten by the pager's.
+    pub table: TableOptions<'a>,
 }
 
 impl Default for PagedTableOptions<'_> {
     fn default() -> Self {
-        PagedTableOptions { sort: None, filter: "", page: 1, per_page: PAGE_SIZES[1] }
+        PagedTableOptions { sort: None, filter: "", page: 1, per_page: PAGE_SIZES[1], table: TableOptions::default() }
     }
 }
 
@@ -78,12 +81,18 @@ impl<'a> PagedTableOptions<'a> {
         self.per_page = per_page;
         self
     }
+
+    /// Options for the inner table (columns, bulk form, CSV, empty and loading states).
+    pub fn table(mut self, table: TableOptions<'a>) -> Self {
+        self.table = table;
+        self
+    }
 }
 
 /// `rows` are the rows of the current page only; `total` is the full row count after
 /// filtering, which sizes the page links.
-pub fn paged_table(caps: &Caps, id: &str, href: &str, columns: &[Column], rows: &[Vec<Markup>], total: usize, options: PagedTableOptions) -> Markup {
-    let PagedTableOptions { sort, filter, page, per_page } = options;
+pub fn paged_table(caps: &Caps, id: &str, href: &str, columns: &[Column], rows: &[Row], total: usize, options: PagedTableOptions) -> Markup {
+    let PagedTableOptions { sort, filter, page, per_page, table: inner } = options;
     let per_page = per_page.max(1);
     let pages = total.div_ceil(per_page).max(1);
     let page = page.clamp(1, pages);
@@ -97,10 +106,14 @@ pub fn paged_table(caps: &Caps, id: &str, href: &str, columns: &[Column], rows: 
     if !filter.is_empty() {
         base.push_str(&format!("q={}&", encode(filter)));
     }
+    let cols_value = inner.cols.map(|c| c.join(","));
+    if let Some(c) = &cols_value {
+        base.push_str(&format!("cols={}&", encode(c)));
+    }
     let link = |n: usize| format!("{href}?{base}per={per}&page={n}");
     html! {
         div class="wo-paged-table" {
-            (table(caps, id, href, columns, rows, TableOptions { sort, filter, keep: &[("per", &per)] }))
+            (table(caps, id, href, columns, rows, TableOptions { sort, filter, keep: &[("per", &per)], ..inner }))
             nav class="wo-paged-table-nav" aria-label="Pages" {
                 output class="wo-paged-table-range" { (first) "–" (last) " of " (total) }
                 ul class="wo-paged-table-pages" {
@@ -116,6 +129,7 @@ pub fn paged_table(caps: &Caps, id: &str, href: &str, columns: &[Column], rows: 
                         input type="hidden" name="dir" value=(if d { "desc" } else { "asc" });
                     }
                     @if !filter.is_empty() { input type="hidden" name="q" value=(filter); }
+                    @if let Some(c) = &cols_value { input type="hidden" name="cols" value=(c); }
                     label { "Rows per page "
                         select name="per" {
                             @for size in PAGE_SIZES { option value=(size) selected[size == per_page] { (size) } }

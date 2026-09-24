@@ -15,7 +15,7 @@ use webonsive::{
     Cap, Caps, Field, FieldKind, Streamed, Theme, UiState, accordion, accordion::{AccordionItem, AccordionOptions}, caps, color, combobox, combobox::{ComboboxOptions, OptionGroup},
     counter, dialog, dialog::{DialogOptions, DialogSize}, flash, form, layout, layout::{Palette, Tokens, layout_with}, paged_table, paged_table::PagedTableOptions,
     pager, pager::PagerOptions, popover::{MenuItem, Placement, PopoverOptions}, popover_menu, prg, range, range::RangeOptions, select, slot, tabs::{Tab, TabsOptions},
-    table::{Column, sort_from_query}, tabs, theme_toggle, wizard, wizard::{Step, WizardOptions},
+    table::{Column, Row, TableOptions, cols_from_query, sort_from_query}, tabs, theme_toggle, wizard, wizard::{Step, WizardOptions},
 };
 use std::time::Duration;
 
@@ -23,7 +23,7 @@ use std::time::Duration;
 pub const PATHS: [&str; 16] = [
     "/", "/caps", "/stream", "/settings", "/dialog?dialog=confirm", "/popover", "/tabs?tab.demo=1",
     "/accordion?open.faq=0,2&open.faq-more=0", "/combobox?q=r&sel=Zig", "/list?page=2", "/form", "/counter", "/inputs",
-    "/table?sort=size&dir=desc&q=a&per=5&page=2", "/wizard?step.signup=1", "/swap?n=3",
+    "/table?sort=size&dir=desc&q=a&per=5&page=2&cols=name,size", "/wizard?step.signup=1", "/swap?n=3",
 ];
 
 /// The whole demo app.
@@ -41,6 +41,8 @@ pub fn router() -> Router {
         .route("/combobox/new", post(combobox_new))
         .route("/list", get(list_page))
         .route("/table", get(table_page))
+        .route("/table.csv", get(table_csv))
+        .route("/table/bulk", post(table_bulk))
         .route("/wizard", get(wizard_page).post(wizard_submit))
         .route("/form", get(form_page).post(form_submit))
         .route("/counter", get(counter_page).post(counter_submit))
@@ -73,7 +75,7 @@ const COMPONENTS: [(&str, &str, &str, &str); 15] = [
     ("/counter", "Counter", "Server state", "form POST + cookie"),
     ("/settings", "Settings", "Server state", "UiState, PRG + flash"),
     ("/list", "Load-more list", "Server state", "links + view transitions"),
-    ("/table", "Table", "Server state", "sort links, <search> filter, sticky header, ?page=n"),
+    ("/table", "Table", "Server state", "sort links, <search> filter, form= checkboxes, ?cols=, <details> rows, sticky header, ?page=n"),
     ("/caps", "Capabilities", "Server state", "@supports beacons + cookie"),
     ("/stream", "Streaming", "Server state", "declarative shadow DOM slots"),
     ("/swap", "Swap targets", "Server state", "data-wo-target, data-wo-swap, data-wo-oob, data-wo-indicator, data-wo-push, Wo-Enhance header"),
@@ -290,34 +292,69 @@ async fn list_page(caps: Caps, jar: CookieJar, Query(p): Query<PageQuery>) -> Ma
 }
 
 #[derive(Deserialize, Default)]
-struct TableQuery { sort: Option<String>, dir: Option<String>, q: Option<String>, page: Option<usize>, per: Option<usize> }
+struct TableQuery { sort: Option<String>, dir: Option<String>, q: Option<String>, page: Option<usize>, per: Option<usize>, cols: Option<String>, loading: Option<u8> }
 
-/// Thirty-six files sorted, filtered and paged on the server; the table only renders and links.
-async fn table_page(caps: Caps, jar: CookieJar, Query(t): Query<TableQuery>) -> Markup {
-    const FILES: [(&str, u32, &str); 12] = [
-        ("archive.tar", 40960, "backup"), ("build.rs", 1200, "script"), ("cargo.lock", 8800, "generated"),
-        ("index.html", 2100, "page"), ("logo.svg", 3400, "image"), ("main.rs", 5600, "source"),
-        ("notes.md", 900, "text"), ("photo.jpg", 250000, "image"), ("readme.md", 4100, "text"),
-        ("style.css", 1500, "stylesheet"), ("tests.rs", 7700, "source"), ("video.mp4", 9800000, "video"),
-    ];
-    let cols = [Column::sortable("name", "Name"), Column::sortable("size", "Size"), Column::sortable("kind", "Kind")];
-    let sort = sort_from_query(&cols, t.sort.as_deref(), t.dir.as_deref());
-    let q = t.q.unwrap_or_default().to_lowercase();
-    let (per, pg) = (t.per.unwrap_or(10).clamp(1, 50), t.page.unwrap_or(1).max(1));
+const FILES: [(&str, u32, &str); 12] = [
+    ("archive.tar", 40960, "backup"), ("build.rs", 1200, "script"), ("cargo.lock", 8800, "generated"),
+    ("index.html", 2100, "page"), ("logo.svg", 3400, "image"), ("main.rs", 5600, "source"),
+    ("notes.md", 900, "text"), ("photo.jpg", 250000, "image"), ("readme.md", 4100, "text"),
+    ("style.css", 1500, "stylesheet"), ("tests.rs", 7700, "source"), ("video.mp4", 9800000, "video"),
+];
+const FILE_COLS: [Column; 3] = [Column::sortable("name", "Name"), Column::numeric("size", "Size").width("7rem"), Column::sortable("kind", "Kind").width("9rem")];
+
+/// Thirty-six files sorted and filtered on the server, in one place for the page and the CSV.
+fn files(sort: Option<(&str, bool)>, q: &str) -> Vec<(String, u32, &'static str)> {
     let mut files: Vec<(String, u32, &str)> = ["src", "docs", "old"].iter()
         .flat_map(|dir| FILES.iter().map(move |f| (format!("{dir}/{}", f.0), f.1 * (dir.len() as u32), f.2)))
-        .filter(|f| q.is_empty() || f.0.contains(&q) || f.2.contains(&q)).collect();
+        .filter(|f| q.is_empty() || f.0.contains(q) || f.2.contains(q)).collect();
     if let Some((key, desc)) = sort {
         files.sort_by(|a, b| match key { "size" => a.1.cmp(&b.1), "kind" => a.2.cmp(b.2), _ => a.0.cmp(&b.0) });
         if desc { files.reverse(); }
     }
-    let total = files.len();
-    let rows: Vec<Vec<Markup>> = files.iter().skip((pg - 1) * per).take(per)
-        .map(|f| vec![html! { code { (f.0) } }, html! { (f.1 / 1024) " KB" }, html! { (f.2) }]).collect();
-    page(&caps, &jar, "Table", html! {
-        p { "Click a header to sort, again to flip. Type to filter. Page through. Every state is a URL." }
-        (paged_table(&caps, "files", "/table", &cols, &rows, total, PagedTableOptions::default().sort(sort).filter(&q).page(pg).per_page(per)))
-    })
+    files
+}
+
+/// The table only renders and links; a row can expand, has its own menu and can be selected.
+async fn table_page(caps: Caps, jar: CookieJar, state: UiState, Query(t): Query<TableQuery>) -> (UiState, Markup) {
+    let sort = sort_from_query(&FILE_COLS, t.sort.as_deref(), t.dir.as_deref());
+    let cols = cols_from_query(&FILE_COLS, t.cols.as_deref());
+    let q = t.q.unwrap_or_default().to_lowercase();
+    let (per, pg) = (t.per.unwrap_or(10).clamp(1, 50), t.page.unwrap_or(1).max(1));
+    let files = files(sort, &q);
+    const MENU: [MenuItem; 2] = [MenuItem::link("Open", "/table"), MenuItem::action("Delete", "/table/bulk").danger(true)];
+    let rows: Vec<Row> = files.iter().skip((pg - 1) * per).take(per)
+        .map(|f| Row::new(vec![html! { code { (f.0) } }, html! { (f.1 / 1024) " KB" }, html! { (f.2) }])
+            .key(&f.0).detail(html! { p { "A " (f.2) " of " (f.1) " bytes, in " code { (f.0.split('/').next().unwrap_or("")) } "." } }).menu(&MENU)).collect();
+    let options = TableOptions::default().cols(cols.as_deref()).choose_columns(true).bulk("/table/bulk", &[("archive", "Archive"), ("delete", "Delete")])
+        .csv("/table.csv").empty("No files match this filter.").loading(t.loading == Some(1));
+    let body = page(&caps, &jar, "Table", html! {
+        (flash(&caps, state.flash()))
+        p { "Click a header to sort, again to flip. Type to filter. Hide columns, tick rows for the bulk form, open a row's menu or its detail. Every state is a URL, including " a href="/table?loading=1" { "the loading one" } "." }
+        (paged_table(&caps, "files", "/table", &FILE_COLS, &rows, files.len(), PagedTableOptions::default().sort(sort).filter(&q).page(pg).per_page(per).table(options)))
+    });
+    (state, body)
+}
+
+/// The same rows as text/csv, for the sort and filter in the URL.
+async fn table_csv(Query(t): Query<TableQuery>) -> impl IntoResponse {
+    let sort = sort_from_query(&FILE_COLS, t.sort.as_deref(), t.dir.as_deref());
+    let cols = cols_from_query(&FILE_COLS, t.cols.as_deref()).unwrap_or_else(|| FILE_COLS.iter().map(|c| c.key).collect());
+    let q = t.q.unwrap_or_default().to_lowercase();
+    let mut csv = cols.join(",") + "\n";
+    for f in files(sort, &q) {
+        let cells = [("name", f.0.clone()), ("size", f.1.to_string()), ("kind", f.2.to_string())];
+        csv += &cells.iter().filter(|(k, _)| cols.contains(k)).map(|(_, v)| v.as_str()).collect::<Vec<_>>().join(",");
+        csv.push('\n');
+    }
+    ([("content-type", "text/csv; charset=utf-8"), ("content-disposition", "attachment; filename=\"files.csv\"")], csv)
+}
+
+/// `row=<key>` per ticked box and `action=<value>` from the button: acknowledged with a flash.
+async fn table_bulk(Form(pairs): Form<Vec<(String, String)>>) -> axum::response::Response {
+    let rows = pairs.iter().filter(|(k, _)| k == "row").count();
+    let action = pairs.iter().find(|(k, _)| k == "action").map(|(_, v)| v.as_str()).unwrap_or("delete");
+    let msg = if rows == 0 { "Nothing selected: tick a row first.".to_string() } else { format!("{action}: {rows} file(s) (not really).") };
+    prg::<axum::body::Body>("/table", Some(&msg))
 }
 
 /// What the wizard has collected so far, kept in one `wizard` cookie as `k=v&k=v`.

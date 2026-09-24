@@ -200,21 +200,40 @@ async fn blitz_has_no_declarative_shadow_dom() {
 
 #[tokio::test]
 async fn table_sort_links_and_pages() {
-    let page = Page::render(demo::router(), "/table?sort=size&dir=desc&q=a&per=5&page=2", MODERN).await;
-    assert_eq!(page.count(".wo-table thead th a"), 3, "every column header is a sort link");
+    let page = Page::render(demo::router(), "/table?sort=size&dir=desc&q=a&per=5&page=2&cols=name,size", MODERN).await;
+    assert_eq!(page.count(".wo-table thead th a"), 2, "every visible column header is a sort link");
     assert!(page.exists("th[aria-sort=descending] a[href*='sort=size'][href*='dir=asc']"), "sorted column flips direction");
-    assert!(page.exists("th a[href*='sort=name'][href*='q=a'][href*='per=5']"), "other links keep filter and page size");
+    assert!(page.exists("th a[href*='sort=name'][href*='q=a'][href*='per=5'][href*='cols=name%2Csize']"), "other links keep filter, page size and columns");
     assert_eq!(page.count(".wo-table tbody tr"), 5, "one page of rows");
+    assert!(!page.exists("th a[href*='sort=kind']"), "the hidden column has no header");
+    assert!(page.exists(".wo-table-cols a[aria-pressed=false][href*='cols=name%2Csize%2Ckind']"), "the chooser links to showing Kind again");
+    assert!(page.exists(".wo-table-cols a[aria-pressed=true][href*='cols=size']"), "and to hiding Name");
+    assert!(page.exists("a.wo-table-csv[download][href='/table.csv?sort=size&dir=desc&q=a&per=5&cols=name%2Csize']"), "CSV link carries the whole state");
+    assert_eq!(page.count("tbody input[type=checkbox][name=row][form='wo-table-files-bulk']"), 5, "a checkbox per row, owned by the bulk form");
+    assert!(page.exists("form#wo-table-files-bulk[method=post][action='/table/bulk'] button[name=action][value=archive]"));
+    assert_eq!(page.count("tbody .wo-table-menu .wo-popover"), 5, "a menu per row");
+    assert_eq!(page.count("tbody details.wo-table-detail"), 5, "a detail block per row");
+    assert!(!page.is_visible("tbody details.wo-table-detail .wo-table-detail-body"), "detail closed by default");
+    let size_head = page.bbox("th.wo-table-num").unwrap();
+    let size_cell = page.bbox("tbody tr td.wo-table-num").unwrap();
+    assert!((size_head.x + size_head.width - (size_cell.x + size_cell.width)).abs() < 2.0, "numeric cells end where their header ends: {size_head:?} {size_cell:?}");
+    assert!(page.exists("colgroup col[style*='width: 7rem']"), "column width in the colgroup");
     assert!(page.is_visible("a[aria-current=page]"));
     assert_eq!(page.text("a[aria-current=page]").as_deref(), Some("2"));
-    assert!(page.exists("a[rel=prev][href*='page=1']") && page.exists("a[rel=next][href*='page=3']"));
+    assert!(page.exists("a[rel=prev][href*='page=1'][href*='cols=name%2Csize']") && page.exists("a[rel=next][href*='page=3']"));
     assert_eq!(page.text(".wo-paged-table-range").as_deref(), Some("6–10 of 21"));
     assert!(page.exists("select[name=per] option[value='5'][selected]"));
+    assert!(page.exists(".wo-paged-table-per input[name=cols][value='name,size']"), "the page-size form keeps the columns");
     let rows = page.bbox(".wo-table tbody").unwrap();
     let nav = page.bbox(".wo-paged-table-nav").unwrap();
     assert!(nav.y >= rows.y + rows.height - 1.0, "pager sits under the rows: {nav:?} vs {rows:?}");
     // Blitz paints sticky header cells at the viewport top (FINDINGS.md); the row still exists.
     assert!(page.exists(".wo-table thead th"));
+
+    let empty = Page::render(demo::router(), "/table?q=zzz", MODERN).await;
+    assert_eq!(empty.text(".wo-table-empty").as_deref(), Some("No files match this filter."));
+    let loading = Page::render(demo::router(), "/table?loading=1", MODERN).await;
+    assert!(loading.exists("tbody[aria-busy=true]") && loading.count("tr.wo-table-skeleton") == 3, "loading body is marked busy and drawn as skeleton rows");
 }
 
 /// `/swap`: the controls that name a target sit outside every swap root, and the page is

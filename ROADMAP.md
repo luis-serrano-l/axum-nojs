@@ -140,7 +140,7 @@ involved) a Firefox check.
 - [x] Combobox: multi-select with removable chips, grouped options (`<optgroup>` in the
   datalist), a "create new" row when nothing matches, keyboard navigation of server results,
   the current selection kept across a re-filter, async results marked with `aria-live`.
-- [ ] Table: row selection with checkboxes and a bulk-action form, column visibility toggles
+- [x] Table: row selection with checkboxes and a bulk-action form, column visibility toggles
   (`?cols=`), a per-row action menu (the popover), expandable detail rows (`<details>` in a
   cell), numeric alignment and column widths, empty and loading states, CSV link for the
   current filter.
