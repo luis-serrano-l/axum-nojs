@@ -467,12 +467,13 @@ pub struct Invalid {
 
 /// Values tried in place of a missing or unreadable field, so the fields after it are still
 /// read (the form is refused anyway, so none of them reaches the handler).
-const STAND_INS: [&str; 6] = [
+const STAND_INS: [&str; 7] = [
     "",
     "0",
     "false",
     "1970-01-01",
     "1970-01-01T00:00:00",
+    "00:00",
     "00000000-0000-0000-0000-000000000000",
 ];
 
@@ -576,6 +577,85 @@ impl<S: Send + Sync, T: DeserializeOwned + Validate> FromRequest<S> for Valid<T>
 pub fn checkbox<'de, D: Deserializer<'de>>(d: D) -> std::result::Result<bool, D::Error> {
     let value = String::deserialize(d)?;
     Ok(matches!(value.as_str(), "on" | "true" | "1"))
+}
+
+/// A date-time or time as a browser posts it, for `#[serde(default, deserialize_with =
+/// "loco_ui::loco::local")]` on a `DateTime`, `DateTimeWithTimeZone` or `Time` field (or an
+/// `Option` of one). `<input type="datetime-local">` posts `2026-01-31T09:00` and
+/// `type="time"` posts `09:00`, without seconds, which chrono's own parsing refuses. Seconds
+/// are read when present; a date-time with no offset is taken as UTC.
+///
+/// ```rust
+/// use chrono::{DateTime, FixedOffset, NaiveDateTime, NaiveTime};
+/// use loco_ui::loco::Local;
+/// assert_eq!(NaiveDateTime::read("2026-01-31T09:00").unwrap().to_string(), "2026-01-31 09:00:00");
+/// assert_eq!(DateTime::<FixedOffset>::read("2026-01-31T09:00").unwrap().to_rfc3339(), "2026-01-31T09:00:00+00:00");
+/// assert_eq!(NaiveTime::read("09:30").unwrap().to_string(), "09:30:00");
+/// assert!(NaiveTime::read("half past nine").is_none());
+/// ```
+pub fn local<'de, D: Deserializer<'de>, T: Local>(d: D) -> std::result::Result<T, D::Error> {
+    let text = String::deserialize(d)?;
+    T::read(&text).ok_or_else(|| serde::de::Error::custom("not a date or time"))
+}
+
+/// What [`local`] reads: a date-time or time from a form field's text.
+pub trait Local: Sized {
+    /// The value, or `None` when the text is not one.
+    fn read(text: &str) -> Option<Self>;
+}
+
+impl Local for chrono::NaiveDateTime {
+    fn read(text: &str) -> Option<Self> {
+        let text = text.trim();
+        Self::parse_from_str(text, "%Y-%m-%dT%H:%M:%S%.f")
+            .or_else(|_| Self::parse_from_str(text, "%Y-%m-%dT%H:%M"))
+            .ok()
+    }
+}
+
+impl Local for chrono::DateTime<chrono::FixedOffset> {
+    fn read(text: &str) -> Option<Self> {
+        Self::parse_from_rfc3339(text.trim())
+            .ok()
+            .or_else(|| Some(chrono::NaiveDateTime::read(text)?.and_utc().fixed_offset()))
+    }
+}
+
+impl Local for chrono::NaiveTime {
+    fn read(text: &str) -> Option<Self> {
+        let text = text.trim();
+        Self::parse_from_str(text, "%H:%M:%S%.f")
+            .or_else(|_| Self::parse_from_str(text, "%H:%M"))
+            .ok()
+    }
+}
+
+impl<T: Local> Local for Option<T> {
+    fn read(text: &str) -> Option<Self> {
+        T::read(text).map(Some)
+    }
+}
+
+/// What a row is called in a list of choices (a select of parent rows, say): its `name`,
+/// `title`, `label` or `email`, the first that is a non-empty string, else `#<id>`. Loco's
+/// entities derive `Serialize`, so any model works.
+///
+/// ```rust
+/// #[derive(serde::Serialize)]
+/// struct User { id: i32, email: String, name: String }
+/// let ada = User { id: 7, email: "ada@example.com".into(), name: "Ada".into() };
+/// assert_eq!(loco_ui::loco::label(&ada), "Ada");
+/// #[derive(serde::Serialize)]
+/// struct Tag { id: i32 }
+/// assert_eq!(loco_ui::loco::label(&Tag { id: 3 }), "#3");
+/// ```
+pub fn label<T: serde::Serialize>(row: &T) -> String {
+    let value = serde_json::to_value(row).unwrap_or_default();
+    ["name", "title", "label", "email"]
+        .iter()
+        .find_map(|k| value[k].as_str().filter(|s| !s.is_empty()))
+        .map(str::to_string)
+        .unwrap_or_else(|| format!("#{}", value["id"]))
 }
 
 /// What [`Initializer`] does, for a test or an app that builds its router by hand.

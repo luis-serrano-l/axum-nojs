@@ -203,9 +203,26 @@ a flash; the form re-rendered with values and messages on bad input) and `src/vi
 (`list`, `show`, `form`, `values`), and registers the routes in `app.rs`. The handlers take
 `auth::JWT` unless you pass `--no-auth`. Needs: a `src/views/mod.rs`, a
 `tests/models/mod.rs` (the model generator adds a test there), and `sea-orm-cli` 2 for the
-entities step. Field kinds map to inputs: `text` → textarea, `bool` → checkbox, `date` → date
-picker, enums → select, date-times → a text field in `2026-01-31T09:00:00` form, the rest →
-a text field parsed with `FromStr`. Array columns are not supported.
+entities step. Field kinds map to controls:
+
+| Field | Control | Read by |
+|---|---|---|
+| `references` (`user:references`) | select of the parent's rows, labelled by `loco::label` (name, title or email) | `i64` |
+| `bool` | checkbox | `loco::checkbox` |
+| `date` | `type=date` | serde |
+| `date_time`, `tstz` | `type=datetime-local` (a `tstz` without offset is UTC) | `loco::local` |
+| `time` | `type=time` | `loco::local` |
+| `decimal`, `money`, `float`, `double` | text with a number `pattern` | serde |
+| `int`, `small_int`, `big_int` | `type=number` | serde |
+| enums (`status:enum:todo,done`) | select | serde |
+| `text` | textarea | serde |
+| the rest | text | serde |
+
+A reference is recognised by its column: an integer named `<parent>_id`, the parent's table
+being the plural (`user_id` → `users`). A plain integer column with such a name is taken for
+one too; rename it or edit `refs()` in the controller. The select lists every parent row; past
+a few hundred, swap it for `ui.combobox(..)` with a search route. Array columns are not
+supported. `examples/loco-app` scaffolds `task` with one field of each kind.
 
 ## Loco settings that affect pages
 

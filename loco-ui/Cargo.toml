@@ -21,7 +21,7 @@ axum = ["http", "dep:axum", "dep:bytes", "dep:serde", "dep:serde_urlencoded", "d
 # Loco on top of `axum`: an initializer that mounts `/lui/enhance.js` and `/lui/caps`, and
 # `Valid<T>`, a form extractor that reports every bad field (`serde_path_to_error`). Loco's
 # `with-db` (what every app with a database has on) for `Table::paged_from(&PagerMeta)`.
-loco = ["axum", "dep:loco-rs", "loco-rs/with-db", "dep:async-trait", "dep:serde_path_to_error"]
+loco = ["axum", "dep:loco-rs", "loco-rs/with-db", "dep:async-trait", "dep:serde_path_to_error", "dep:chrono", "dep:serde_json"]
 
 [dependencies]
 maud.workspace = true
@@ -37,6 +37,8 @@ form_urlencoded = { version = "1", optional = true }
 loco-rs = { version = "1.2", optional = true, default-features = false }
 async-trait = { version = "0.1", optional = true }
 serde_path_to_error = { version = "0.1", optional = true }
+chrono = { version = "0.4", optional = true, default-features = false, features = ["std"] }
+serde_json = { version = "1", optional = true }
 
 [dev-dependencies]
 serde.workspace = true

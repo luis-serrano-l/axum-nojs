@@ -19,10 +19,11 @@ pub fn values(m: &Model) -> Vec<(String, String)> {
     vec![
 {%- for f in fields %}
 {%- if f.input_kind == "datetime" %}
+{%- if f.rust_type is containing("DateTime") %}{% set shape = "%Y-%m-%dT%H:%M" %}{% else %}{% set shape = "%H:%M" %}{% endif %}
 {%- if f.nullable %}
-        ("{{ f.field_name }}".into(), m.{{ f.field_name }}.map(|v| format!("{v:?}")).unwrap_or_default()),
+        ("{{ f.field_name }}".into(), m.{{ f.field_name }}.map(|v| v.format("{{ shape }}").to_string()).unwrap_or_default()),
 {%- else %}
-        ("{{ f.field_name }}".into(), format!("{:?}", m.{{ f.field_name }})),
+        ("{{ f.field_name }}".into(), m.{{ f.field_name }}.format("{{ shape }}").to_string()),
 {%- endif %}
 {%- elif f.nullable %}
         ("{{ f.field_name }}".into(), m.{{ f.field_name }}.as_ref().map(ToString::to_string).unwrap_or_default()),
@@ -78,19 +79,39 @@ pub fn show(ui: &Ui, m: &Model) -> Markup {
     }
 }
 
+/// The rows each reference field can point at, as `(id, label)`, loaded by the controller.
+#[derive(Debug, Default)]
+pub struct Refs {
+{%- for f in fields %}
+{%- set is_ref = f.input_kind == "number" and f.field_name is ending_with("_id") and f.rust_type is containing("i64") %}
+{%- if is_ref %}
+    pub {{ f.field_name }}: Vec<(String, String)>,
+{%- endif %}
+{%- endfor %}
+}
+
 /// The form for new (`action` = the list) and edit (`action` = the item), with what was
 /// posted and the messages when it comes back.
+#[allow(unused_variables)] // `refs` when the model has no references
 pub fn form(
     ui: &Ui,
     title: &str,
     action: &str,
     values: &[(String, String)],
     errors: &[(&str, &str)],
+    refs: &Refs,
 ) -> Markup {
     let form = ui
         .form(action)
 {%- for f in fields %}
-{%- if f.is_enum %}
+{%- set is_ref = f.input_kind == "number" and f.field_name is ending_with("_id") and f.rust_type is containing("i64") %}
+{%- if is_ref %}
+        .select(
+            "{{ f.field_name }}",
+            "{{ f.label | trim_end_matches(pat=" id") }}",
+            {% if f.nullable %}std::iter::once(("", "None")).chain({% endif %}refs.{{ f.field_name }}.iter().map(|(id, label)| (id.as_str(), label.as_str())){% if f.nullable %}){% endif %},
+        )
+{%- elif f.is_enum %}
         .select("{{ f.field_name }}", "{{ f.label }}", [{% for e in enums %}{% if e.enum_type == f.enum_type %}{% for v in e.variants %}"{{ v.value }}", {% endfor %}{% endif %}{% endfor %}])
 {%- elif f.input_kind == "checkbox" %}
         .checkbox("{{ f.field_name }}", "{{ f.label }}")
@@ -98,9 +119,16 @@ pub fn form(
         .textarea("{{ f.field_name }}", "{{ f.label }}", 4)
 {%- elif f.input_kind == "date" %}
         .date("{{ f.field_name }}", "{{ f.label }}", "1900-01-01", "2100-12-31")
+{%- elif f.input_kind == "datetime" and f.rust_type is containing("DateTime") %}
+        .datetime("{{ f.field_name }}", "{{ f.label }}", "", "")
 {%- elif f.input_kind == "datetime" %}
-        .text("{{ f.field_name }}", "{{ f.label }}")
-        .placeholder("2026-01-31T09:00:00")
+        .time("{{ f.field_name }}", "{{ f.label }}", "", "")
+{%- elif f.input_kind == "text_number" or f.rust_type is containing("f32") or f.rust_type is containing("f64") %}
+        .pattern("{{ f.field_name }}", "{{ f.label }}", "-?[0-9]+([.][0-9]+)?", "A number, like 12.50.")
+{%- elif f.input_kind == "number" and f.rust_type is containing("i16") %}
+        .number("{{ f.field_name }}", "{{ f.label }}", i16::MIN.into(), i16::MAX.into())
+{%- elif f.input_kind == "number" %}
+        .number("{{ f.field_name }}", "{{ f.label }}", i32::MIN.into(), i32::MAX.into())
 {%- else %}
         .text("{{ f.field_name }}", "{{ f.label }}")
 {%- endif %}

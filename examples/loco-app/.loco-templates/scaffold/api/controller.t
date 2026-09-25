@@ -33,6 +33,9 @@ struct Params {
 {%- if f.input_kind == "checkbox" and not f.nullable %}
     #[serde(default, deserialize_with = "loco_ui::loco::checkbox")]
     {{ f.field_name }}: bool,
+{%- elif f.input_kind == "datetime" %}
+    #[serde({% if f.nullable %}default, {% endif %}deserialize_with = "loco_ui::loco::local")]
+    {{ f.field_name }}: {{ f.rust_type }},
 {%- elif f.is_enum %}
     {{ f.field_name }}: {% if f.nullable %}Option<String>{% else %}String{% endif %},
 {%- else %}
@@ -45,6 +48,26 @@ fn set(item: &mut ActiveModel, p: Params) {
 {%- for f in fields %}
     item.{{ f.field_name }} = Set(p.{{ f.field_name }});
 {%- endfor %}
+}
+
+/// What each reference field can point at: every row of the parent table as `(id, label)`,
+/// labelled by its name, title or email (`loco_ui::loco::label`). The form lists them in a
+/// select; past a few hundred rows, swap it for `ui.combobox(..)` with a search route.
+#[allow(unused_variables)] // `ctx` when the model has no references
+async fn refs(ctx: &AppContext) -> Result<views::{{ snake_plural }}::Refs> {
+    Ok(views::{{ snake_plural }}::Refs {
+{%- for f in fields %}
+{%- set is_ref = f.input_kind == "number" and f.field_name is ending_with("_id") and f.rust_type is containing("i64") %}
+{%- if is_ref %}
+        {{ f.field_name }}: crate::models::_entities::{{ f.field_name | trim_end_matches(pat="_id") | plural }}::Entity::find()
+            .all(&ctx.db)
+            .await?
+            .iter()
+            .map(|m| (m.id.to_string(), loco_ui::loco::label(m)))
+            .collect(),
+{%- endif %}
+{%- endfor %}
+    })
 }
 
 async fn load(ctx: &AppContext, id: i64) -> Result<Model> {
@@ -77,14 +100,14 @@ async fn show(
     Ok(ui.page("{{ pascal_singular }}", views::{{ snake_plural }}::show(&ui, &item)))
 }
 
-// No `State` here, so name it for the `auth::JWT` check.
-#[debug_handler(state = AppContext)]
+#[debug_handler]
 async fn new(
 {% if auth %}    _auth: auth::JWT,
 {% endif %}    ui: Ui,
+    State(ctx): State<AppContext>,
 ) -> Result<Page> {
     let title = "New {{ snake_singular | replace(from="_", to=" ") }}";
-    let form = views::{{ snake_plural }}::form(&ui, title, "/{{ snake_plural }}", &[], &[]);
+    let form = views::{{ snake_plural }}::form(&ui, title, "/{{ snake_plural }}", &[], &[], &refs(&ctx).await?);
     Ok(ui.page(title, form))
 }
 
@@ -99,7 +122,7 @@ async fn create(
         Ok(p) => p,
         Err(bad) => {
             let title = "New {{ snake_singular | replace(from="_", to=" ") }}";
-            let body = views::{{ snake_plural }}::form(&ui, title, "/{{ snake_plural }}", &bad.values, &bad.errors.pairs());
+            let body = views::{{ snake_plural }}::form(&ui, title, "/{{ snake_plural }}", &bad.values, &bad.errors.pairs(), &refs(&ctx).await?);
             return Ok(ui.page(title, body).into_response());
         }
     };
@@ -122,7 +145,7 @@ async fn edit(
     let item = load(&ctx, id).await?;
     let action = format!("/{{ snake_plural }}/{id}");
     let title = "Edit {{ snake_singular | replace(from="_", to=" ") }}";
-    let form = views::{{ snake_plural }}::form(&ui, title, &action, &views::{{ snake_plural }}::values(&item), &[]);
+    let form = views::{{ snake_plural }}::form(&ui, title, &action, &views::{{ snake_plural }}::values(&item), &[], &refs(&ctx).await?);
     Ok(ui.page(title, form))
 }
 
@@ -140,7 +163,7 @@ async fn update(
         Ok(p) => p,
         Err(bad) => {
             let title = "Edit {{ snake_singular | replace(from="_", to=" ") }}";
-            let body = views::{{ snake_plural }}::form(&ui, title, &action, &bad.values, &bad.errors.pairs());
+            let body = views::{{ snake_plural }}::form(&ui, title, &action, &bad.values, &bad.errors.pairs(), &refs(&ctx).await?);
             return Ok(ui.page(title, body).into_response());
         }
     };

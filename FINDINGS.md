@@ -716,3 +716,27 @@ things in the starter needed handling:
 
 The JSON API (`controllers::auth`, `/api/auth/*`) stays mounted beside the pages. Sign-in does
 not wait for a verified email, as in the starter.
+
+### M29 · Scaffold field kinds against Loco 1.2's adaptive scaffold
+
+Every field kind (`task title:string! user:references done:bool! due_on:date
+starts_at:date_time remind_at:tstz price:decimal status:enum:todo,doing,done! size:int`)
+compiled with the M27 templates, but four were text boxes: the reference, both date-times and
+the decimal. Now each has its control (docs/loco.md has the table). What was found:
+
+- Loco's field context does not mark a reference: `user:references` arrives as `user_id` with
+  `input_kind: "number"` and `rust_type: "i64"`, the same as `user_id:int`. The templates take
+  an `i64` named `<x>_id` for a reference to `<x>`'s plural (rrgen's `plural` filter), which
+  misreads a plain integer of that name.
+- `<input type=datetime-local>` posts `2026-01-31T09:00` and `type=time` posts `09:00`, without
+  seconds; chrono's `FromStr` (what serde uses) refuses both, so `loco::local` reads them.
+  `tstz` has no offset in the form: taken as UTC.
+- SQLite keeps a `decimal` as a real, so `12.50` comes back as `12.5`.
+- `--no-auth` drops the `auth::JWT` extractors; checked by generating with and without it.
+- Adaptive scaffold: Loco renders `scaffold/frontend` (React pages and a `routes.tsx`
+  injection) when `frontend/src/routes.tsx` exists. Those templates are not overridden, so an
+  app with a clientside frontend gets both the loco-ui pages and React pages calling a JSON API
+  that the loco-ui controller does not serve. Use loco-ui in a server-side app (`loco new
+  --assets serverside` or `none`).
+- Blitz paints the task form's select and the date and date-time values blank (the `<select>`
+  and date entries above); the HTML is asserted instead.

@@ -73,7 +73,7 @@
 use maud::{Markup, Render, html};
 
 use crate::button::Button;
-use crate::input::{Field, FieldKind};
+use crate::input::{Choice, Field, FieldKind};
 use crate::props::{Prop, PropKind};
 use crate::{Caps, Ui, enhance};
 
@@ -84,7 +84,7 @@ use crate::{Caps, Ui, enhance};
 ///
 /// **Setters.** Values and items: `.values(..)`, `.errors(..)`, `.group(..)`, `.text(..)`, `.password(..)`,
 /// `.email(..)`, `.number(..)`, `.pattern(..)`, `.textarea(..)`, `.file(..)`, `.date(..)`,
-/// `.time(..)`, `.select(..)`, `.checkbox(..)`, `.hidden(..)`, `.help(..)`, `.maxlength(..)`,
+/// `.time(..)`, `.datetime(..)`, `.select(..)`, `.checkbox(..)`, `.hidden(..)`, `.help(..)`, `.maxlength(..)`,
 /// `.value(..)`, `.error(..)`, `.placeholder(..)`, `.submit(..)`, `.id(..)`; switches:
 /// `.required()`, `.multiple()`, `.inline()`; from a condition: `.checked(bool)`.
 #[derive(Clone, Debug)]
@@ -122,8 +122,10 @@ impl Form<'_> {
             .doc("`type=\"date\"`, bounds as `YYYY-MM-DD`."),
         Prop::new("time", PropKind::Item, "name: &'a str, label: &'a str, min: &'a str, max: &'a str")
             .doc("`type=\"time\"`, bounds as `HH:MM`."),
-        Prop::new("select", PropKind::Item, "name: &'a str, label: &'a str, options: impl IntoIterator<Item = &'a str>")
-            .doc("A `<select>` of `options`, each its own value and text."),
+        Prop::new("datetime", PropKind::Item, "name: &'a str, label: &'a str, min: &'a str, max: &'a str")
+            .doc("`type=\"datetime-local\"`, bounds as `YYYY-MM-DDTHH:MM`."),
+        Prop::new("select", PropKind::Item, "name: &'a str, label: &'a str, options: impl IntoIterator<Item = O>")
+            .doc("A `<select>` of `options`: `&str`s, or `(value, label)` pairs."),
         Prop::new("checkbox", PropKind::Item, "name: &'a str, label: &'a str")
             .doc("A checkbox posting `true` when ticked and nothing when not (so a `bool` with `#[serde(default)]` reads it)."),
         Prop::new("hidden", PropKind::Item, "name: &'a str, value: &'a str")
@@ -266,17 +268,24 @@ impl<'a> Form<'a> {
         self.add(name, label, FieldKind::Time { min, max })
     }
 
-    /// A `<select>` of `options`, each its own value and text.
-    pub fn select(
+    /// `type="datetime-local"`, bounds as `YYYY-MM-DDTHH:MM`; an empty bound is left out.
+    /// The browser posts `2026-01-31T09:00`, with no seconds and no offset.
+    pub fn datetime(self, name: &'a str, label: &'a str, min: &'a str, max: &'a str) -> Self {
+        self.add(name, label, FieldKind::DateTime { min, max })
+    }
+
+    /// A `<select>` of `options`: each a `&str` that is its own value and text, or a
+    /// `(value, label)` pair (a row's id and its name).
+    pub fn select<O: Into<Choice<'a>>>(
         self,
         name: &'a str,
         label: &'a str,
-        options: impl IntoIterator<Item = &'a str>,
+        options: impl IntoIterator<Item = O>,
     ) -> Self {
         self.add(
             name,
             label,
-            FieldKind::Select(options.into_iter().collect()),
+            FieldKind::Select(options.into_iter().map(Into::into).collect()),
         )
     }
 

@@ -205,6 +205,48 @@ async fn every_page_works_without_script() {
     assert_eq!(res.status(), StatusCode::SEE_OTHER);
     assert_eq!(location(&res), "/notes/1");
 
+    // Every field kind the scaffold knows, on `tasks`: the reference is a select of users by
+    // name, date-times are `datetime-local` (posted without seconds), the decimal a pattern.
+    let html = text(send(&router, "GET", "/tasks/new", &auth, "").await).await;
+    assert!(
+        html.contains(r#"<option value="1">Ada</option>"#),
+        "user select: {html}"
+    );
+    assert!(html.contains(r#"type="datetime-local""#) && html.contains(r#"type="number""#));
+    let res = send(
+        &router,
+        "POST",
+        "/tasks",
+        &auth,
+        "title=&size=many&starts_at=soon",
+    )
+    .await;
+    let html = text(res).await;
+    for message in [
+        "Title: This field is required.",
+        "Size: Check this field.",
+        "Starts at: Check this field.",
+    ] {
+        assert!(html.contains(message), "no {message} in {html}");
+    }
+    let task = "title=Ship&user_id=1&done=true&due_on=2026-10-01&starts_at=2026-10-01T09%3A30\
+                &remind_at=2026-09-30T18%3A00&price=12.50&status=doing&size=3";
+    let res = send(&router, "POST", "/tasks", &auth, task).await;
+    assert_eq!(location(&res), "/tasks/1");
+    let html = text(send(&router, "GET", "/tasks/1/edit", &auth, "").await).await;
+    for filled in [
+        r#"value="2026-10-01T09:30""#,
+        r#"value="2026-09-30T18:00""#,
+        r#"value="12.5""#, // SQLite keeps a decimal as a real
+        r#"<option value="1" selected>Ada</option>"#,
+        r#"<option value="doing" selected>"#,
+    ] {
+        assert!(
+            html.contains(filled),
+            "task edit form: no {filled} in {html}"
+        );
+    }
+
     let pages = [
         ("/", "index"),
         ("/signin", "signin"),
@@ -217,6 +259,8 @@ async fn every_page_works_without_script() {
         ("/notes/new", "notes-new"),
         ("/notes/1", "notes-show"),
         ("/notes/1/edit", "notes-edit"),
+        ("/tasks/new", "tasks-new"),
+        ("/tasks/1/edit", "tasks-edit"),
     ];
     for (path, name) in pages {
         let res = send(&router, "GET", path, &auth, "").await;

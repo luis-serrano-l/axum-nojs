@@ -7,7 +7,7 @@
 //! form a route writes by hand.
 //!
 //! **Platform features:** constraint validation (`required`, `pattern`, `min`, `max`,
-//! `maxlength`, `type=email`, baseline 2015; `type=date`/`time`, Chrome 20, Firefox 57,
+//! `maxlength`, `type=email`, baseline 2015; `type=date`/`time`/`datetime-local`, Chrome 20, Firefox 57 (93 for `datetime-local`),
 //! Safari 14.1); `:user-invalid` (baseline 2023) so a field is not red before it is touched;
 //! `<output for>` counts characters; `role="switch"` on a checkbox (ARIA 1.2) drawn as a
 //! track and thumb with `appearance: none`; `<fieldset>` + `<legend>` for a radio group.
@@ -57,10 +57,36 @@ pub(crate) enum FieldKind<'a> {
     File { accept: &'a str, multiple: bool },
     Date { min: &'a str, max: &'a str },
     Time { min: &'a str, max: &'a str },
-    Select(Vec<&'a str>),
+    DateTime { min: &'a str, max: &'a str },
+    Select(Vec<Choice<'a>>),
     Checkbox,
     Switch,
     Hidden,
+}
+
+/// One option of a form's `<select>`: what it posts and what it shows. A `&str` is both;
+/// a `(value, label)` pair shows the label and posts the value (a row's id, say).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Choice<'a> {
+    /// What the form posts.
+    pub value: &'a str,
+    /// What the visitor sees.
+    pub label: &'a str,
+}
+
+impl<'a> From<&'a str> for Choice<'a> {
+    fn from(text: &'a str) -> Self {
+        Choice {
+            value: text,
+            label: text,
+        }
+    }
+}
+
+impl<'a> From<(&'a str, &'a str)> for Choice<'a> {
+    fn from((value, label): (&'a str, &'a str)) -> Self {
+        Choice { value, label }
+    }
 }
 
 /// One field with its current value and server-side error: what [`Ui::input`] builds and
@@ -120,7 +146,7 @@ impl<'a> Field<'a> {
 /// A labelled field, made by [`Ui::input`], [`Ui::checkbox`] or [`Ui::switch`].
 ///
 /// **Setters.** Values and items: `.number(..)`, `.pattern(..)`, `.textarea(..)`, `.file(..)`,
-/// `.date(..)`, `.time(..)`, `.help(..)`, `.maxlength(..)`, `.value(..)`, `.error(..)`,
+/// `.date(..)`, `.time(..)`, `.datetime(..)`, `.help(..)`, `.maxlength(..)`, `.value(..)`, `.error(..)`,
 /// `.placeholder(..)`, `.list(..)`, `.autocomplete(..)`, `.inputmode(..)`, `.step(..)`,
 /// `.aria_controls(..)`, `.form(..)`, `.class(..)`, `.id(..)`; switches: `.email()`,
 /// `.password()`, `.multiple()`, `.required()`, `.search()`, `.hide_label()`, `.autofocus()`;
@@ -149,6 +175,8 @@ impl Input<'_> {
             .doc("`type=\"date\"`, bounds as `YYYY-MM-DD`."),
         Prop::new("time", PropKind::Value, "min: &'a str, max: &'a str")
             .doc("`type=\"time\"`, bounds as `HH:MM`."),
+        Prop::new("datetime", PropKind::Value, "min: &'a str, max: &'a str")
+            .doc("`type=\"datetime-local\"`, bounds as `YYYY-MM-DDTHH:MM`."),
         Prop::new("multiple", PropKind::Switch, "")
             .attr("multiple")
             .doc("The file picker takes several files."),
@@ -298,6 +326,11 @@ impl<'a> Input<'a> {
     /// `type="time"`, bounds as `HH:MM`; an empty bound is left out.
     pub fn time(self, min: &'a str, max: &'a str) -> Self {
         self.kind(FieldKind::Time { min, max })
+    }
+
+    /// `type="datetime-local"`, bounds as `YYYY-MM-DDTHH:MM`; an empty bound is left out.
+    pub fn datetime(self, min: &'a str, max: &'a str) -> Self {
+        self.kind(FieldKind::DateTime { min, max })
     }
 
     /// The file picker takes several files.
@@ -467,6 +500,9 @@ impl Render for Field<'_> {
             ),
             FieldKind::Date { min, max } => ("date", bound(min), bound(max), None, None, false),
             FieldKind::Time { min, max } => ("time", bound(min), bound(max), None, None, false),
+            FieldKind::DateTime { min, max } => {
+                ("datetime-local", bound(min), bound(max), None, None, false)
+            }
             FieldKind::Checkbox | FieldKind::Switch | FieldKind::Hidden => {
                 ("", None, None, None, None, false)
             }
@@ -512,7 +548,7 @@ impl Render for Field<'_> {
                         aria-invalid=[invalid] aria-describedby=[described.as_deref()] { (f.value) }
                 } @else if let FieldKind::Select(options) = &f.kind {
                     select id=(id) name=(f.name) required[f.required] aria-invalid=[invalid] aria-describedby=[described.as_deref()] {
-                        @for o in options { option value=(o) selected[*o == f.value] { (o) } }
+                        @for o in options { option value=(o.value) selected[o.value == f.value] { (o.label) } }
                     }
                 } @else {
                     (control)

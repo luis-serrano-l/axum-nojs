@@ -68,14 +68,20 @@ pub fn show(ui: &Ui, m: &Model) -> Markup {
     }
 }
 
+/// The rows each reference field can point at, as `(id, label)`, loaded by the controller.
+#[derive(Debug, Default)]
+pub struct Refs {}
+
 /// The form for new (`action` = the list) and edit (`action` = the item), with what was
 /// posted and the messages when it comes back.
+#[allow(unused_variables)] // `refs` when the model has no references
 pub fn form(
     ui: &Ui,
     title: &str,
     action: &str,
     values: &[(String, String)],
     errors: &[(&str, &str)],
+    refs: &Refs,
 ) -> Markup {
     let form = ui
         .form(action)

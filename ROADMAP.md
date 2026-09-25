@@ -1050,10 +1050,22 @@ every Loco API named below against loco-rs 1.2 before relying on it, as M27 did.
   the `loco` feature now turns `with-db` on (any app with a database has it). The scaffold's
   list uses `fetch_page` and `views::<plural>::list(ui, rows, &PagerMeta)`; the example's
   notes were regenerated with the real generator. Loco-only, so no demo route.
-- [ ] Scaffold field kinds: `references` fields become a select (or combobox past N rows) of
+- [x] Scaffold field kinds: `references` fields become a select (or combobox past N rows) of
   the parent model, `bool`, `date`, `datetime`, `decimal` and enum columns get their own
   controls; check the templates against Loco 1.x's adaptive scaffold (`--no-auth`, the
   `frontend/` detection) and note the result in FINDINGS.
+  Done: a reference (`<x>_id: i64`; Loco's context does not mark references, FINDINGS) is a
+  select of `<x>`'s plural table, rows labelled by the new `loco::label` (name, title, label
+  or email via `Serialize`), loaded by a generated `refs()` into `views::<plural>::Refs`;
+  `date_time`/`tstz` are `datetime-local` and `time` is `type=time`, read by the new
+  `loco::local` (browsers post no seconds; a `tstz` without offset is UTC); decimals and floats
+  a number `pattern`; ints `type=number`; `bool`, `date` and enums as before. Library:
+  `Form::datetime`/`Input::datetime` and `Form::select` taking `&str` or `(value, label)`
+  (`input::Choice`), both in the `/form` demo. Default: a select, not a combobox past N rows
+  (a combobox needs a search route per parent; the generated comment says when to swap).
+  `examples/loco-app` scaffolds `task` with one field of each kind; its test posts bad and good
+  values and checks the edit form round-trips them. `--no-auth` and the `frontend/` detection
+  (React pages still emitted beside ours) are in FINDINGS.
 
 ### Library quality
 - [ ] i18n: `lang="en"` is hard-coded in `layout.rs` and built-in strings ("Next", "Close",
