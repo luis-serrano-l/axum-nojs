@@ -697,3 +697,22 @@ The pager stays about 10 ms behind at the median and level at p90. Traced with r
 timing: the request takes 1–4 ms and the swap lands 6–12 ms after the click; the rest is the
 two frames until paint, so the gap is frame alignment, not work the script does (the history
 snapshot costs 0.4 ms, parsing the 4 KB answer under 1 ms). Left as measured.
+
+### M29 · Account pages on the starter
+
+`cargo lui auth` runs on what `loco new` (1.2.0, with a database) already has: the `users`
+model (tokens and expiry for verification, reset and magic link) and `AuthMailer`. Three
+things in the starter needed handling:
+
+- Its mails link to the JSON API (`/api/auth/verify/<token>`, `/api/auth/magic-link/<token>`)
+  and to an SPA route (`/reset#<token>`), none of which a browser without script can use.
+  The command rewrites those six links (`src/mailers/auth/*/{html,text}.t`) to the pages.
+- `auth.jwt` reads a bearer header by default; a `location: {from: Cookie, name: auth}` is
+  added to each `config/*.yaml` (the starter only has it as a comment).
+- `AuthMailer` uses `include_dir!("src/mailers/auth/welcome")`, which include_dir 0.7
+  resolves against the compiler's working directory, not the crate: fine in a standalone app,
+  "is not a directory" once the app is a workspace member (as `examples/loco-app` is). The
+  example writes `$CARGO_MANIFEST_DIR/src/mailers/..`; a lone app needs no change.
+
+The JSON API (`controllers::auth`, `/api/auth/*`) stays mounted beside the pages. Sign-in does
+not wait for a verified email, as in the starter.

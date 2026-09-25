@@ -24,6 +24,10 @@ database:
   dangerously_truncate: true
   dangerously_recreate: true
 
+mailer:
+  # Mails are kept in memory; the tests read the links' tokens from the database.
+  stub: true
+
 auth:
   jwt:
     # Loco's auth::JWT reads the token from the cookie the sign-in form sets.

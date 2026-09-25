@@ -999,10 +999,21 @@ every Loco API named below against loco-rs 1.2 before relying on it, as M27 did.
   sqlite, blocking, no assets; trimmed to `Cargo.toml`, `Cargo.lock`, `src/`, `migration/`,
   excluded from the package), and an `--ignored` test `cargo check`s the result (about a
   minute cold), run by verify.sh and CI.
-- [ ] Auth generator (Phoenix's `phx.gen.auth` as the model): templates for sign-in, sign-up,
+- [x] Auth generator (Phoenix's `phx.gen.auth` as the model): templates for sign-in, sign-up,
   forgot and reset password, email verification and magic link, as no-script forms with
   the JWT in an `HttpOnly` cookie (the `examples/loco-app` pattern); `examples/loco-app` is
   regenerated from them and its Blitz tests cover every page.
+  Done: `cargo lui auth` (after `install`) writes `loco-templates/auth/{controller,views}.rs`
+  as `src/controllers/account.rs` and `src/views/account.rs` on the starter's `users` model
+  and `AuthMailer`, registers them, rewrites the starter's six mail links (JSON API and SPA
+  paths) to `/verify/<token>`, `/reset/<token>`, `/magic-link/<token>`, and adds the cookie
+  `location` under `auth.jwt` in each `config/*.yaml`; idempotent. Plain Rust files, not
+  Tera: nothing in them varies per app. `examples/loco-app` now has the starter's full users
+  model and mailers and runs these files byte for byte (a test fails on drift); its
+  `tests/pages.rs` walks sign-up, verify, sign-in, forgot/reset (old password refused after),
+  magic link (spent after one use), and renders sign-in, sign-up, forgot, reset, magic link
+  and the expired-link page in Blitz. The fresh-app test runs `auth` too and `cargo check`s
+  it. FINDINGS M29: the mail links, and `include_dir!` paths inside a workspace.
 - [ ] Validation that re-renders: an extractor (`loco::Valid<T>`) that gives the handler
   `Ok(T)` or `Err((FieldErrors, values))` instead of Loco's `FormValidate` error response,
   so a create/update handler is one `match`: render the form again or redirect. The scaffold

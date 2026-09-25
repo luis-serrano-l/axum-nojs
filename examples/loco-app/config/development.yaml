@@ -24,6 +24,15 @@ database:
   dangerously_truncate: false
   dangerously_recreate: false
 
+mailer:
+  # The account pages mail links (verify, reset, magic link). Mailpit or MailHog on 1025
+  # shows them: `docker run -p 1025:1025 -p 8025:8025 axllent/mailpit`.
+  smtp:
+    enable: true
+    host: localhost
+    port: 1025
+    secure: false
+
 auth:
   jwt:
     # Loco's auth::JWT reads the token from the cookie the sign-in form sets.

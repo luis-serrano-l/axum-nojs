@@ -1,7 +1,8 @@
 # loco-app
 
-A [Loco](https://loco.rs) app on loco-ui: sign up, sign in, and notes with list, show, new,
-edit and delete, every page working with script off.
+A [Loco](https://loco.rs) app on loco-ui: accounts (sign up, sign in, forgot and reset
+password, email verification, magic link) and notes with list, show, new, edit and delete,
+every page working with script off.
 
 ```sh
 cd examples/loco-app
@@ -17,3 +18,8 @@ cargo loco generate scaffold note title:string! body:text done:bool! due:date
 ```
 
 `db entities` in that step needs `sea-orm-cli` 2 on `PATH`.
+
+`src/controllers/account.rs` and `src/views/account.rs` are `cargo lui auth` output on the
+starter's `users` model and `AuthMailer` (`src/mailers/`); a test in `loco-ui` fails if they
+drift from the templates. Mails go to SMTP on 1025 in development (Mailpit shows them) and
+stay in memory in tests.

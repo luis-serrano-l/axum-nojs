@@ -3384,6 +3384,7 @@ dependencies = [
  "async-trait",
  "axum",
  "chrono",
+ "include_dir",
  "insta",
  "loco-rs",
  "loco-ui",
@@ -3396,6 +3397,7 @@ dependencies = [
  "serial_test",
  "tokio",
  "tower",
+ "tracing",
  "uuid",
  "validator",
 ]

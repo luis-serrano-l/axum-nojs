@@ -129,8 +129,9 @@ async fn initializers(_ctx: &AppContext) -> Result<Vec<Box<dyn Initializer>>> {
 `loco::FieldErrors` puts Loco's validation messages on the form fields, `loco::Submitted`
 parses a posted form field by field, and `loco-ui/loco-templates/` makes
 `cargo loco generate scaffold` write an HTML controller and Maud views (Post/Redirect/Get,
-paging, validation) instead of a JSON API. Sign-in works without script by pointing Loco's
-JWT at a cookie. [`examples/loco-app`](examples/loco-app) is a generated app, tested through
+paging, validation) instead of a JSON API. `cargo lui auth` adds sign-in, sign-up, forgot and
+reset password, email verification and magic-link pages, all forms, with Loco's JWT in an
+`HttpOnly` cookie. [`examples/loco-app`](examples/loco-app) is a generated app, tested through
 Loco's router and Blitz; [`docs/loco.md`](docs/loco.md) covers install, controllers, forms,
 sign-in, the generator and the Loco settings that affect pages.
 

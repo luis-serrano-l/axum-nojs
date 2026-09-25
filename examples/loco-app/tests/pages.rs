@@ -1,5 +1,5 @@
-//! Every page of the app as a browser without script sees it: sign up, then the scaffolded
-//! notes pages, through the router Loco boots (its middleware, `auth::JWT`, the loco-ui
+//! Every page of the app as a browser without script sees it: the account pages (sign up,
+//! verify, sign in, forgot and reset password, magic link), then the scaffolded notes pages, through the router Loco boots (its middleware, `auth::JWT`, the loco-ui
 //! initializer). Each GET page ships only the enhancement script, and Blitz (no script
 //! engine) renders it into `tests/shots/loco-*.png`.
 
@@ -8,7 +8,7 @@ use axum::{
     body::Body,
     http::{Request, Response, StatusCode, header},
 };
-use loco_app::app::App;
+use loco_app::{app::App, models::users};
 use loco_rs::testing::prelude::*;
 use loco_ui_test::Page;
 use serial_test::serial;
@@ -54,10 +54,18 @@ fn auth_cookie(res: &Response<Body>) -> String {
         .to_string()
 }
 
+/// Ada's row, for the tokens her mails would carry.
+async fn ada(db: &sea_orm::DatabaseConnection) -> users::Model {
+    users::Model::find_by_email(db, "ada@example.com")
+        .await
+        .unwrap()
+}
+
 #[tokio::test]
 #[serial]
 async fn every_page_works_without_script() {
     let boot = boot_test::<App>().await.unwrap();
+    let db = boot.app_context.db.clone();
     let router = boot.router.unwrap();
     let tag = loco_ui::enhance::script_tag().into_string();
 
@@ -79,8 +87,19 @@ async fn every_page_works_without_script() {
     )
     .await;
     assert_eq!(res.status(), StatusCode::SEE_OTHER);
-    assert_eq!(location(&res), "/notes");
+    assert_eq!(location(&res), "/");
     let auth = auth_cookie(&res);
+
+    // The welcome mail's link verifies the address once; a made-up one is refused.
+    let token = ada(&db)
+        .await
+        .email_verification_token
+        .expect("sign-up mails a link");
+    let res = send(&router, "GET", &format!("/verify/{token}"), "", "").await;
+    assert_eq!(location(&res), "/");
+    assert!(ada(&db).await.email_verified_at.is_some());
+    let res = send(&router, "GET", "/verify/made-up", "", "").await;
+    assert_eq!(location(&res), "/signin");
 
     // A wrong password is a message on the form; the right one signs in.
     let res = send(
@@ -100,7 +119,72 @@ async fn every_page_works_without_script() {
         "email=ada%40example.com&password=secret",
     )
     .await;
-    assert_eq!(location(&res), "/notes");
+    assert_eq!(location(&res), "/");
+
+    // Forgot password: the same answer for any email; the mailed link sets a new password
+    // once, and the old one stops working.
+    let res = send(&router, "POST", "/forgot", "", "email=nobody%40example.com").await;
+    assert_eq!(location(&res), "/signin");
+    let res = send(&router, "POST", "/forgot", "", "email=ada%40example.com").await;
+    assert_eq!(location(&res), "/signin");
+    let reset = format!(
+        "/reset/{}",
+        ada(&db).await.reset_token.expect("a reset link")
+    );
+    let res = send(&router, "POST", &reset, "", "password=").await;
+    assert!(text(res).await.contains("This field is required."));
+    let res = send(&router, "POST", &reset, "", "password=better").await;
+    assert_eq!(location(&res), "/signin");
+    let res = send(
+        &router,
+        "POST",
+        "/signin",
+        "",
+        "email=ada%40example.com&password=secret",
+    )
+    .await;
+    assert!(text(res).await.contains("Wrong email or password."));
+    let res = send(
+        &router,
+        "POST",
+        "/signin",
+        "",
+        "email=ada%40example.com&password=better",
+    )
+    .await;
+    assert_eq!(location(&res), "/");
+    assert!(
+        text(send(&router, "GET", &reset, "", "").await)
+            .await
+            .contains("Link expired")
+    );
+
+    // Magic link: signs in once, then the link is spent.
+    let res = send(
+        &router,
+        "POST",
+        "/magic-link",
+        "",
+        "email=ada%40example.com",
+    )
+    .await;
+    assert_eq!(location(&res), "/signin");
+    let magic = format!(
+        "/magic-link/{}",
+        ada(&db).await.magic_link_token.expect("a sign-in link")
+    );
+    let res = send(&router, "GET", &magic, "", "").await;
+    assert_eq!(location(&res), "/");
+    auth_cookie(&res);
+    assert!(
+        text(send(&router, "GET", &magic, "", "").await)
+            .await
+            .contains("Link expired")
+    );
+
+    // A reset link for the pages below.
+    send(&router, "POST", "/forgot", "", "email=ada%40example.com").await;
+    let reset = format!("/reset/{}", ada(&db).await.reset_token.unwrap());
 
     // The generated create: a missing title re-renders the form with what was typed.
     let res = send(&router, "POST", "/notes", &auth, "title=&body=kept").await;
@@ -125,6 +209,10 @@ async fn every_page_works_without_script() {
         ("/", "index"),
         ("/signin", "signin"),
         ("/signup", "signup"),
+        ("/forgot", "forgot"),
+        (reset.as_str(), "reset"),
+        ("/reset/made-up", "link-expired"),
+        ("/magic-link", "magic-link"),
         ("/notes", "notes"),
         ("/notes/new", "notes-new"),
         ("/notes/1", "notes-show"),

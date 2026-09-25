@@ -116,6 +116,17 @@ async fn create(
 
 ## Sign-in without script
 
+`cargo lui auth` (after `cargo lui install`) writes every account page as a no-script form on
+the starter's `users` model and `AuthMailer`: sign in, sign up (which mails a verification
+link), sign out, forgot and reset password, email verification and magic link. It writes
+`src/controllers/account.rs` and `src/views/account.rs`, registers them, points the
+starter's mail links at the pages (`/verify/<token>`, `/reset/<token>`,
+`/magic-link/<token>`) and does the cookie setting below in each `config/*.yaml`. The
+forgot and magic-link forms give the same answer whether or not an account exists, and each
+mailed link works once. `examples/loco-app` runs exactly these files, through Loco's router
+and Blitz. Mail needs a `mailer:` section (`smtp` on 1025 with Mailpit in development,
+`stub: true` in tests).
+
 Loco's `auth::JWT` extractor reads the token from a header by default, which a plain form
 cannot send. Point it at a cookie and have the sign-in form set that cookie on its redirect:
 
@@ -133,11 +144,11 @@ auth:
 ```rust
 let token = user.generate_jwt(&jwt.secret, jwt.expiration)?;
 let cookie = format!("auth={token}; Path=/; HttpOnly; SameSite=Lax; Max-Age={}", jwt.expiration);
-Ok(ui.redirect("/notes").cookie(cookie).ok("Signed in."))
+Ok(ui.redirect("/").cookie(cookie).ok("Signed in."))
 ```
 
 Signing out posts to a route that sets the same cookie with `Max-Age=0`.
-`examples/loco-app/src/controllers/auth.rs` has sign-up, sign-in and sign-out in full. A
+`examples/loco-app/src/controllers/account.rs` has every account page in full. A
 route with `auth::JWT` answers Loco's JSON 401 to a signed-out visitor; link to the sign-in
 page from anywhere a visitor may arrive signed out.
 
