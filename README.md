@@ -15,7 +15,8 @@ HTML scaffolds with a JSON API and a React SPA; with loco-ui, `cargo lui install
 adds the account pages, and every page works with script off.
 
 **Server-rendered UI components for Loco and Axum.** Buttons, forms, dialogs, tables, a
-calendar, uploads and a kanban board, written in Maud, in shadcn/ui's look. The HTML and CSS
+calendar, uploads and a kanban board, written in Maud, in a Linear / Magic UI look (Radix-style colour scales, layered shadows,
+gradient accents and CSS-only motion). The HTML and CSS
 platform does the interactive work (`<dialog>`, `popover`, `<details>`, forms that post and
 redirect). One optional 11 KB script makes those forms and links update the page in place
 instead of reloading it; block it and every page still works. On Loco, a scaffold generates
@@ -228,8 +229,9 @@ component gives the HTML to another template engine.
   `layout::Tokens` holds them for light and dark, `ui.page(..).tokens(&t)` applies another set
   once per page, and `docs/theming.md` says what each one affects and which pairs must keep contrast.
   `/?palette=linen` in the demo is the same index under a second palette.
-  `scripts/look.sh` shoots every demo page (light and dark, 1280 and 420 wide) beside the
-  matching shadcn docs page, for comparing the look by eye.
+  `scripts/look.sh` shoots every demo page (light and dark, 1280 and 420 wide), for comparing
+  the look by eye with linear.app and magicui.design (`--no-shadcn` skips the old shadcn docs
+  shots it still takes beside them).
   A test fails if any component CSS names a colour instead of a token.
 
 ## What a page weighs
@@ -246,7 +248,7 @@ there is no second request for CSS, and no script is required.
 | JavaScript required | 0 | 0 |
 | The optional script, `/lui/enhance.js` (cached forever) | 10.6 KB | 3.6 KB |
 
-For comparison, `maud-ui` 0.20.3 (the same stack and look) ships 313 KB of CSS (44 KB gzipped)
+For comparison, `maud-ui` 0.20.3 (the same stack, in shadcn's look) ships 313 KB of CSS (44 KB gzipped)
 and needs an 89 KB script (24 KB gzipped) plus htmx. Two tests keep these numbers honest: the
 stylesheet stays under 88 KB, and every demo page under 128 KB (180 KB for the shadow-DOM
 stream, 224 KB for the index with every component live on it) in `cargo test`. M30's look

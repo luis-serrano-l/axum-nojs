@@ -90,3 +90,24 @@ Loco's GitHub Discussions ("Show and tell"), not an issue, along these lines:
 > next to the note on the removed `--html` scaffolds, be welcome?
 
 Yours: whether, when and where to post it.
+
+## File the M30 Blitz gaps upstream (M30, last box), open
+
+M30 recorded Blitz 0.3.0-beta.2 gaps in FINDINGS.md ("M30 · The Linear / Magic UI look").
+Two already link issues (#196 for `:modal`/`:popover-open`, #863 for transitions); these have
+no upstream issue, and filing one is an outward action:
+
+1. `@starting-style` is parsed but never applied: Stylo resolves starting styles only in its
+   Gecko build (`maybe_resolve_starting_style` is `cfg(feature = "gecko")`).
+2. `@property` is unsupported: a registered property's `initial-value` is ignored and
+   `@keyframes` cannot animate it.
+3. `@supports (animation-timeline: view())` is true, but no scroll timeline runs.
+4. `@media (prefers-reduced-motion: no-preference)` never matches.
+5. `get_client_bounding_rect` ignores `translate` and `scale`.
+6. A `z-index: -1` `::after` inside an `isolation: isolate` element with a sized
+   `radial-gradient` is not painted (the card `.glow()`); the cause is not isolated yet.
+
+Suggested: one issue per item on github.com/DioxusLabs/blitz, each with a minimal HTML file
+(items 1–4 can share one "motion features" issue if the maintainers prefer), then replace
+"(no upstream issue yet; the owner files it)" in FINDINGS.md with the links. Nothing else in
+the library waits on it: every effect has its at-rest fallback proved in Blitz today.

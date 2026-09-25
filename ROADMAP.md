@@ -1281,7 +1281,7 @@ shadows and motion chosen. The no-script rules are unchanged:
   it.
 - [x] Budget: measure the stylesheet size before and after, keep the growth under 15 KB
   gzipped, and put the figure in README. Also run `cargo bench -p loco-ui` for the stylesheet.
-- [ ] README feature matrix, findings and `docs/comparison.md` say "Linear / Magic UI look"
+- [x] README feature matrix, findings and `docs/comparison.md` say "Linear / Magic UI look"
   instead of "shadcn look". FINDINGS gets the Blitz gaps for `@starting-style`, `@property`
   and `animation-timeline`, each with an issue link.
 

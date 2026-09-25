@@ -83,25 +83,25 @@ focus indicators). The pairs to check, with the default palette's ratios:
 
 | Pair | Where it shows | Light | Dark | Needs |
 |---|---|---|---|---|
-| `fg` on `bg` | body text | 19.9 | 19.1 | 4.5 |
-| `fg` on `popover` | text in dialogs, popovers, menus | 19.9 | 17.0 | 4.5 |
-| `muted` on `bg` | notes, table headers | 4.8 | 7.8 | 4.5 |
-| `muted` on `secondary` | inactive tabs in the tab list | 4.4 | 5.8 | 4.5 (3 at 18px+) |
-| `primary` on `bg` | links | 17.7 | 15.7 | 4.5 |
-| `on-primary` on `primary` | primary buttons, current page | 17.0 | 14.0 | 4.5 |
-| `on-accent` on `accent` | hovered menu items and rows | 16.1 | 14.3 | 4.5 |
-| `danger` on `bg` | validation messages | 5.2 | 9.4 | 4.5 |
-| `on-primary` on `danger` | danger buttons | 5.0 | 8.4 | 4.5 |
-| `ok` on `bg` | success text | 4.7 | 10.6 | 4.5 |
-| `warn` on `bg` | warning text | 4.6 | 13.0 | 4.5 |
-| `ring` on `bg` | focus ring | 2.6 | 4.1 | 3 |
-| `line`, `input` on `bg` | borders | 1.3 | 1.3–1.9 | none: borders are not the only cue |
+| `fg` on `bg` | body text | 16.0 | 16.2 | 4.5 |
+| `fg` on `popover` | text in dialogs, popovers, menus | 16.0 | 15.2 | 4.5 |
+| `muted` on `bg` | notes, table headers | 5.8 | 9.1 | 4.5 |
+| `muted` on `secondary` | inactive tabs in the tab list | 5.2 | 7.6 | 4.5 |
+| `link` on `bg` | links | 5.9 | 9.1 | 4.5 |
+| `on-primary` on `primary` | primary buttons, current page (both gradient stops too) | 5.2 | 5.2 | 4.5 |
+| `on-accent` on `accent` | hovered menu items and rows | 14.4 | 12.4 | 4.5 |
+| `danger` on `bg` | validation messages | 5.1 | 9.0 | 4.5 |
+| `on-danger` on `danger` | danger buttons and badges | 5.1 | 9.0 | 4.5 |
+| `ok` on `bg` | success text | 5.0 | 10.1 | 4.5 |
+| `warn` on `bg` | warning text | 5.2 | 12.3 | 4.5 |
+| `ring` on `bg` | focus ring | 2.4 | 3.1 | 3 |
+| `line`, `input` on `bg` | borders | 1.4–1.5 | 1.6–2.0 | none: borders are not the only cue |
 
-Two pairs sit under the line on purpose, both copied from shadcn: inactive tab labels in the
-light scheme (4.4, half a point short; the active tab is `fg` on `bg`), and the light ring
-(2.6). The ring is never the only focus cue: the focused control's border turns `ring` too,
-and buttons, which have no border change, get the ring on top of the pressed surface. If you
-need strict AA for focus, set `ring` to `muted` (`#71717a`, 4.8).
+Every text pair clears 4.5 in both schemes, and a test in `layout.rs` keeps it so. One pair
+sits under the line on purpose: the light ring (2.4), brand step 8 as Radix draws it. The ring
+is never the only focus cue: the focused control's border turns `ring` too, and buttons, which
+have no border change, get the ring on top of the pressed surface. If you need strict AA for
+focus, set `ring` to `var(--lui-brand-9)` (5.1 on the light background).
 
 `muted` is the one most palettes get wrong: a grey that reads fine on white drops under 4.5
 on a tinted background. `on-primary` is the second: a mid-tone primary has no colour that

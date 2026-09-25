@@ -1,4 +1,4 @@
-# Draft: shadcn look for Loco, HTML first, script optional
+# Draft: a Linear / Magic UI look for Loco, HTML first, script optional
 
 *A draft for the owner to edit and post (r/rust, This Week in Rust, a blog). Nothing here has
 been published.*
@@ -6,7 +6,7 @@ been published.*
 ---
 
 **loco-ui** is a server-rendered UI kit for Loco and Axum: buttons, forms, dialogs, menus, tabs, data tables,
-a calendar and date picker, uploads and a kanban board written in Maud, in shadcn/ui's look.
+a calendar and date picker, uploads and a kanban board written in Maud, in a Linear / Magic UI look.
 Every one of them works with JavaScript turned off; one optional script only makes updates land in place.
 
 That last part is the point, and it is tested rather than just claimed. CI renders every demo
