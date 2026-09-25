@@ -22,6 +22,7 @@ loco = ["axum", "dep:loco-rs", "dep:async-trait"]
 [dependencies]
 maud.workspace = true
 axum-nojs-caps = { path = "../axum-nojs-caps", version = "0.1.0" }
+axum-nojs-macros = { path = "../axum-nojs-macros", version = "0.1.0" }
 http = { version = "1", optional = true }
 axum = { workspace = true, optional = true }
 futures-util = { version = "0.3", optional = true, default-features = false, features = ["std"] }

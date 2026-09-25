@@ -44,6 +44,6 @@ jobs:
         cargo test -p axum-nojs --features loco loco
         cargo test -p axum-nojs --features loco --doc loco
     - name: Rustdoc
-      run: cargo doc --no-deps -p axum-nojs-caps -p axum-nojs --all-features
+      run: cargo doc --no-deps -p axum-nojs-caps -p axum-nojs-macros -p axum-nojs --all-features
       env:
         RUSTDOCFLAGS: -D warnings

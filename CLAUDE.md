@@ -37,7 +37,10 @@ scripts/verify.sh                  # everything above plus a <script> grep and t
 - `axum-nojs-caps/` – the detection crate: `Caps`/`Cap` bitset, `@supports` beacons, cookie and
   query parsing, `beacon_cookie`, and an `axum` feature with the extractor and beacon route.
   `axum-nojs` re-exports it as `axum_nojs::caps`, so nothing else changes.
-- `axum-nojs/` – the library crate. Depends only on `maud` and `axum-nojs-caps`. Feature `http` adds
+- `axum-nojs-macros/` – the `nojs!` proc macro (Maud plus components written like elements), re-exported
+  as `axum_nojs::nojs` and in the prelude. A token walker over `proc-macro2`/`quote`, no `syn`; its
+  rules are tested in `axum-nojs/tests/nojs.rs` and its errors pinned with `trybuild` in `tests/ui/`.
+- `axum-nojs/` – the library crate. Depends only on `maud`, `axum-nojs-caps` and `axum-nojs-macros`. Feature `http` adds
   `Redirect::into_http` and `Streamed` (a chunk stream); feature `axum` adds the `Ui` extractor,
   `IntoResponse` for `Page`/`Redirect`/`Streamed`, the `/nojs/caps` beacon route, and
   `Saved<T>` (the only use of serde); feature `loco` adds `loco::Initializer`, which mounts

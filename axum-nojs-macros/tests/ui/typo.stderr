@@ -1,0 +1,10 @@
+error[E0599]: no method named `vertcal` found for struct `Tabs<'a>` in the current scope
+ --> tests/ui/typo.rs:5:34
+  |
+5 |     let _ = nojs! { Tabs("demo") vertcal { tab "One" { "1" } } };
+  |                                  ^^^^^^^
+  |
+help: there is a method `vertical` with a similar name
+  |
+5 |     let _ = nojs! { Tabs("demo") vertical { tab "One" { "1" } } };
+  |                                      +

@@ -27,7 +27,7 @@ cargo test -p axum-nojs --features loco loco
 cargo test -p axum-nojs --features loco --doc loco
 
 echo "== rustdoc (deny warnings, all features)"
-RUSTDOCFLAGS="-D warnings" cargo doc --no-deps -p axum-nojs-caps -p axum-nojs --all-features
+RUSTDOCFLAGS="-D warnings" cargo doc --no-deps -p axum-nojs-caps -p axum-nojs-macros -p axum-nojs --all-features
 
 echo "== no <script> outside enhance.rs"
 # The enhancement tag is built in axum-nojs/src/enhance.rs; nothing else may write one.

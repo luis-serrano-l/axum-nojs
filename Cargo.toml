@@ -1,5 +1,5 @@
 [workspace]
-members = ["axum-nojs-caps", "axum-nojs", "demo", "axum-nojs-test", "examples/loco-app", "examples/loco-app/migration"]
+members = ["axum-nojs-caps", "axum-nojs-macros", "axum-nojs", "demo", "axum-nojs-test", "examples/loco-app", "examples/loco-app/migration"]
 resolver = "2"
 
 [workspace.dependencies]

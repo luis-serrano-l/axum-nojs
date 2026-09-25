@@ -1,0 +1,22 @@
+[package]
+name = "axum-nojs-macros"
+version = "0.1.0"
+edition = "2024"
+description = "The `nojs!` macro for axum-nojs: Maud markup where components are written like elements"
+readme = "../README.md"
+license = "MIT"
+repository = "https://github.com/luis-serrano-l/axum-nojs"
+keywords = ["no-js", "maud", "ssr", "components", "axum"]
+categories = ["web-programming", "template-engine"]
+
+[lib]
+proc-macro = true
+
+[dependencies]
+proc-macro2 = "1"
+quote = "1"
+
+[dev-dependencies]
+axum-nojs = { path = "../axum-nojs" }
+maud.workspace = true
+trybuild = "1"

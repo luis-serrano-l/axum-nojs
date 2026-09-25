@@ -654,3 +654,26 @@ sea-orm-cli 2 for `db entities` (1.1 is refused). Signed out, a scaffolded route
 Loco's JSON 401, not a page; the example links to `/signin` from its front page rather than
 adding a redirect layer. The sign-in token travels in an `HttpOnly` cookie
 (`auth.jwt.location: {from: Cookie, name: auth}`), so no page needs script to send it.
+
+### M28 · `nojs!` in the editor
+
+Checked with rust-analyzer 1.96 over LSP (hover, go to definition and completion at
+positions in `axum-nojs/tests/nojs.rs`), since the macro keeps the span of every name it
+turns into a call:
+
+- Hover works on a component (`Dialog` shows `Ui::dialog` and its doc), on an attribute
+  (`small`, `confirm`, `maxlength`) and on an item and its modifiers (`tab`, `badge`), each
+  with the setter's signature and first doc line. Go to definition lands on the method.
+- Completion works after a component or an item: typing `sm` after `Dialog(..)` offers the
+  builder's setters (`small`, `large`, `danger`, `closedby`..). The list also carries the
+  trait methods every builder has (`render`, `clone`, `into`) and is not sorted by name.
+- Nothing is offered for a component name itself (`Dia` does not complete to `Dialog`):
+  the name is a method on `Ui` only once it has been expanded.
+- rustfmt does not format inside `nojs!`, as with `html!`.
+
+Compiler errors are rustc's own at the written token (pinned by the `trybuild` tests in
+`axum-nojs-macros/tests/ui/`): a misspelled attribute gives "no method named `vertcal` …
+there is a method `vertical` with a similar name", a missing argument "this method takes 1
+argument but 0 arguments were supplied" under `Tabs()`, a wrong value "expected `usize`,
+found `&str`" under the value. The `.stderr` files follow rustc's wording, so a new stable
+release can require `TRYBUILD=overwrite` once.

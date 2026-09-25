@@ -1,0 +1,5 @@
+error: `p { .. }` is markup, but this block holds items; put markup inside an item's block (an item with no arguments is `p()`)
+ --> tests/ui/mixed_block.rs:5:54
+  |
+5 |     let _ = nojs! { Tabs("demo") { tab "One" { "1" } p { "stray" } } };
+  |                                                      ^

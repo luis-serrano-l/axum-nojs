@@ -851,7 +851,7 @@ the attribute form must compile down to the same builder, so both forms stay one
   (paragraph ↔ source) and `every_setter_is_in_props` (PROPS ↔ source: names, arguments,
   and a switch has none, a condition one `bool`). Both share one source reader. Bulk adders
   (`.options(iter)`, `.rows(iter)`) are values; items add exactly one thing.
-- [ ] `axum-nojs-macros` (proc macro, re-exported as `axum_nojs::nojs` and in the prelude)
+- [x] `axum-nojs-macros` (proc macro, re-exported as `axum_nojs::nojs` and in the prelude)
   with `nojs!`, a superset of `html!` that expands to the builder chain, so the dot form and
   the attribute form are one code path. Target shape:
   ```rust
@@ -861,7 +861,7 @@ the attribute form must compile down to the same builder, so both forms stay one
           p { "This cannot be undone." }
           Input("reason", "Tell us why (optional)") placeholder="Moving on";
       }
-      Tabs("projects") vertical=[narrow] {
+      Tabs("projects") vertical[narrow] {
           @for p in &projects {
               tab (p.name) badge=(p.open_issues) { p { (p.summary) } }
           }
@@ -874,13 +874,13 @@ the attribute form must compile down to the same builder, so both forms stay one
     `(..)` holds the required arguments, text first as today. A user's own component (M24)
     works the same once it has an `impl Ui` method (an extension trait outside the crate).
   - `x="v"` or `x=(expr)` is `.x(v)`; `x=(a, b)` is `.x(a, b)`; a bare `x` is `.x()`;
-    `x=[cond]` calls `.x()` only when `cond` holds (Maud's toggle syntax).
+    `x[cond]` calls `.x()` only when `cond` holds and `x=[option]` calls `.x(v)` only for
+    `Some(v)` (Maud's toggle and optional syntax, checked in maud_macros 0.27).
   - Lowercase names inside a component's block are its item adders (`tab`, `item`, `link`,
     `column`, `text`..): `tab "Use" badge=3 { .. }` is `.tab("Use", html!{..}).badge(3)`, so an
     item's attributes are the last-item modifiers. An adder that takes a closure (`lazy`) gets
-    `|| html!{..}`. A proc macro cannot read `PROPS` (a const in another crate), so the
-    body is passed through a trait both `Markup` and `Fn() -> Markup` implement, and every
-    adder that takes a body accepts it: no list of closure adders in the macro.
+    `|| html!{..}` when the caller writes `lazy "Why" || { .. }`. A proc macro cannot read
+    `PROPS` (a const in another crate), so the closure is marked in the markup, not looked up.
   - `@for`, `@if`, `@match` and `@let` among items expand to a fold over the builder, so items
     built from data stay inline. Plain Maud elsewhere passes through untouched, so `nojs!` can
     replace `html!` in any route; a component's block that is not items becomes `.body(..)`.
@@ -889,6 +889,19 @@ the attribute form must compile down to the same builder, so both forms stay one
     every expanded call must keep the span of the attribute it came from; a `trybuild` test
     pins the error text for a typo, a missing required argument and a wrong value type.
   - Record in FINDINGS whatever rust-analyzer does and does not offer inside `nojs!`.
+  Done: `axum-nojs-macros` (proc-macro2 + quote, no syn), `pub use` as `axum_nojs::nojs` and in
+  the prelude; rules and syntax in its crate doc (with a doctest). Two rules were settled while
+  building it: an item is a lowercase name followed by an argument (a literal or `(..)`; an
+  item with none is `name()`), since in Maud an element name is never followed by one, which
+  keeps `select`, `link`, `option`, `summary`, `time`, `header` usable both as items and as
+  elements; and a component with no required arguments leaves out the parentheses
+  (`Card title="Plan" { .. }`). `axum-nojs/tests/nojs.rs` has one test per rule, each
+  comparing against the dot form: component and `;`, body block, every attribute form,
+  items (arguments, modifiers, `||` closures, `()`, nested items continuing the chain in a
+  kanban), `@for`/`@if`/`@else if`/`@else`/`@match`/`@let` among items, plain Maud passing
+  through (a markup `@match` on `Some(..)`, brace attribute values), and `ctx =>`. `trybuild`
+  pins four errors: typo, missing argument, wrong type, markup mixed into items (our own
+  message). rust-analyzer: FINDINGS, M28 (hover, go to definition and setter completion work).
 - [ ] Both forms tested: a test renders each component once in the dot form and once in
   `nojs!` and asserts identical HTML; doctests show both in every component header
   (common call first, per convention 5).

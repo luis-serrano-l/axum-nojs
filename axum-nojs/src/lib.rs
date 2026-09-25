@@ -110,6 +110,8 @@ pub mod wizard;
 pub use axum_nojs_caps as caps;
 
 pub use axum_nojs_caps::{Cap, Caps};
+/// Maud's `html!` with components written like elements: see [`axum_nojs_macros`].
+pub use axum_nojs_macros::nojs;
 pub use icon::Icon;
 pub use popover::MenuItem;
 #[cfg(feature = "axum")]
@@ -130,6 +132,7 @@ pub struct ComponentsGuide;
 pub mod prelude {
     #[cfg(feature = "axum")]
     pub use crate::Saved;
+    pub use crate::nojs;
     pub use crate::{Cap, Caps, Icon, MenuItem, Page, Redirect, Theme, Ui};
     pub use maud::{Markup, Render, html};
 }
