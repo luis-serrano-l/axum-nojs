@@ -4,7 +4,7 @@
 GitHub Pages) · **[Source on GitHub](https://github.com/luis-serrano-l/axum-nojs)**
 
 **0 KB JavaScript required** · verified in CI by a script-less renderer ([Blitz](axum-nojs-test/tests/demo.rs)) and
-[a test that allows one optional script and nothing inline](demo/src/lib.rs) · strict CSP
+[a test that allows one optional script and nothing inline](demo/src/tests.rs) · strict CSP
 
 **The no-JS UI kit for Rust servers.** Buttons, forms, dialogs, tables, a calendar, uploads and
 a kanban board for Axum and Maud, in shadcn/ui's look, that work with JavaScript turned off.
@@ -84,7 +84,7 @@ scripts/snapshot.sh    # static snapshot of every page into target/site/ (no scr
 The index lists every component in groups (overlays, disclosure, navigation, input, feedback,
 server state), each with one line on what it is for and the platform features it is built on.
 A component page shows the live component with the code that drew it joined underneath: the
-lines between `// code: <href>` and `// end code` in `demo/src/lib.rs`, cut from that file at
+lines between `// code: <href>` and `// end code` in `demo/src/routes/`, cut from those files at
 compile time so the page and the code cannot drift, and highlighted on the server by
 [syntect](https://crates.io/crates/syntect), a dependency of the demo only, coloured with the
 `--nojs-*` tokens. To show more of a handler, move its markers.
@@ -345,7 +345,11 @@ docs/latency.md             what made pages faster, what did not, and the order 
 axum-nojs/src/<name>.rs     one component each: dialog, popover, tabs, accordion, table, paged_table, wizard,
                             combobox, pager, form, counter, theme, toast, breadcrumbs, skeleton,
                             empty_state, stat, drawer, palette (command palette)
-demo/src/lib.rs             Axum routes, ≤15 lines each, plus the no-script test
+demo/src/lib.rs             PATHS and router(), which merges each group's routes()
+demo/src/routes/<group>.rs  Axum routes, ≤15 lines each, one file per index group (overlays, input, table…)
+demo/src/site.rs            the component index, the page shell, the index page and the theme switch
+demo/src/code.rs            the code under each component page: SOURCES, snippet(), syntect highlighting
+demo/src/tests.rs           the no-script test, strict CSP, snippets, state round trips
 demo/src/snapshot.rs        the static snapshot for GitHub Pages (scripts/snapshot.sh)
 .github/workflows/pages.yml builds the snapshot and deploys it to GitHub Pages
 axum-nojs/loco-templates/   Loco scaffold overrides: HTML controller + Maud views, Post/Redirect/Get

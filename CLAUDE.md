@@ -10,7 +10,7 @@ platform (`<dialog>`, `popover`, invoker commands, `<details name>`, `<datalist>
 transitions) and ordinary form round trips. **Every page must work with script disabled.** One
 optional script, `axum-nojs/src/enhance.rs`, served at `/nojs/enhance.js`, upgrades swap roots
 (`id` + `data-nojs="swap"`) to fetch-and-replace in place. It is the only `<script>` allowed: a
-test enforces that (`demo/src/lib.rs::tests::pages_ship_only_the_enhancement_script`), Blitz
+test enforces that (`demo/src/tests.rs::pages_ship_only_the_enhancement_script`), Blitz
 (no script engine) proves every route works without it, and `scripts/browser-check.mjs` drives
 headless Firefox to prove the script does its job. Never add inline script, handlers or a
 second file; when something needs more, extend `enhance.rs` and keep the no-script path intact.
@@ -44,7 +44,10 @@ scripts/verify.sh                  # everything above plus a <script> grep and t
   the script and beacon routes in a Loco app. Everything else is plain functions over strings
   (`Ui::from_request`, `Page::into_string`, `Redirect::set_cookies`, `caps::beacon_cookie`).
 - `demo/` – Axum lib + binary, one route per component, one `use axum_nojs::prelude::*`.
-  Each component page shows the code between its `// code: <href>` and `// end code`
+  Routes live in `demo/src/routes/<group>.rs`, one file per index group, each with a
+  `routes()` that `router()` in `lib.rs` merges; the shell and index are in `site.rs`, the
+  snippet machinery in `code.rs`, the tests in `tests.rs`. A new route file must also be
+  added to `SOURCES` in `code.rs`. Each component page shows the code between its `// code: <href>` and `// end code`
   markers (a test fails if a component page has none), so keep the markers around the
   component call when editing a route.
   Handlers take `ui: Ui` (plus `Saved<T>` / `Form<T>` when they need them) and return `Page`
