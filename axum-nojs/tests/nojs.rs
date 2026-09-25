@@ -167,7 +167,7 @@ fn control_flow_among_items() {
 #[test]
 fn plain_maud_passes_through() {
     let ui = ui();
-    let who: Option<&str> = Some("Ada");
+    let who: Option<&str> = ["Ada"].first().copied();
     let on = true;
     same(
         nojs! {
