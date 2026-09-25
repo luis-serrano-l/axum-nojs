@@ -203,7 +203,7 @@ impl Ui {
             caps: self.caps,
             theme: self.theme,
             lang: self.strings.lang(),
-            title: title.to_string(),
+            title: title.into(),
             tokens: None,
             body,
             cookies: self.state.set_cookies(),
@@ -245,8 +245,8 @@ pub struct Page {
     caps: Caps,
     lang: &'static str,
     theme: Theme,
-    title: String,
-    tokens: Option<Tokens>,
+    title: Box<str>,
+    tokens: Option<Box<Tokens>>,
     body: Markup,
     cookies: Vec<String>,
     css: Vec<&'static str>,
@@ -301,7 +301,7 @@ impl Page {
 
     /// Render under other [`Tokens`] (a palette is a value, see `docs/theming.md`).
     pub fn tokens(mut self, tokens: &Tokens) -> Self {
-        self.tokens = Some(*tokens);
+        self.tokens = Some(Box::new(*tokens));
         self
     }
 
@@ -323,7 +323,7 @@ impl Render for Page {
             self.lang,
             &self.title,
             self.theme,
-            self.tokens.as_ref(),
+            self.tokens.as_deref(),
             &self.css,
             self.script,
             self.body.clone(),
