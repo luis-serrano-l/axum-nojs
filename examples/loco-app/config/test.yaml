@@ -1,0 +1,34 @@
+logger:
+  enable: false
+  level: <%= get_env(name="LOG_LEVEL", default="info") %>
+  format: compact
+
+server:
+  port: <%= get_env(name="PORT", default="5150") %>
+  binding: <%= get_env(name="BINDING", default="localhost") %>
+  host: http://localhost
+  middlewares: {}
+
+workers:
+  # No background jobs in this app.
+  mode: ForegroundBlocking
+
+database:
+  uri: <%= get_env(name="DATABASE_URL", default="sqlite://loco_app_test.sqlite?mode=rwc") %>
+  enable_logging: false
+  connect_timeout: 500
+  idle_timeout: 500
+  min_connections: 1
+  max_connections: 1
+  auto_migrate: true
+  dangerously_truncate: true
+  dangerously_recreate: true
+
+auth:
+  jwt:
+    # Loco's auth::JWT reads the token from the cookie the sign-in form sets.
+    location:
+      from: Cookie
+      name: auth
+    secret: xtg75PjSi1aUG1FGmZRP
+    expiration: 604800 # 7 days

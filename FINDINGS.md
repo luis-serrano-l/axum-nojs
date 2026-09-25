@@ -199,6 +199,7 @@ engine, so passing there is proof the page needs none.
 | Header reads "axum-nojs· zero": leading space of a span after an inline is trimmed | [#857](https://github.com/DioxusLabs/blitz/pull/857) (open PR, whitespace collapsing across spans) |
 | `/tabs` vertical strip: the panel's left rule spans one row, not the column: Blitz builds boxes only for `::before`/`::after` (`blitz-dom/src/layout/construct.rs`), so `::details-content` never gets one; the panel's own padding is what keeps the shot readable | tracked under [#119](https://github.com/DioxusLabs/blitz/issues/119) (roadmap: pseudo-elements); no dedicated issue |
 | `/inputs`: selects render as an empty box (option text and `<selectedcontent>` not drawn), range inputs as a plain box with no thumb, the colour input as a blank box; the two-thumb pair shows only its track. `blitz-paint` `render/form_controls.rs` draws only checkboxes and radios. The Blitz test asserts on attributes and geometry (both thumbs share one track) instead | [#258](https://github.com/DioxusLabs/blitz/issues/258) ("Tracking: Form controls") |
+| `loco-notes-edit.png` (the Loco example): the textarea and the `type=date` field are blank though the HTML carries `>Hello</textarea>` and `value="2026-10-01"`. `blitz-dom` `layout/construct.rs` `create_text_editor` seeds the editor from the `value` attribute only (a textarea's text child is ignored), and `date` is not among the input types that get an editor. `examples/loco-app/tests/pages.rs` asserts the prefilled values on the HTML instead | [#258](https://github.com/DioxusLabs/blitz/issues/258) ("Tracking: Form controls") |
 | `/table`: the sticky header cells paint at the top of the viewport, leaving an empty row in the table | `stylo_taffy::convert::position` maps `sticky` to `relative` with a `TODO`; tracked under [#389](https://github.com/DioxusLabs/blitz/issues/389) ("position sticky") |
 
 The DSD gap is pinned by a test (`blitz_has_no_declarative_shadow_dom`) that fails the day
@@ -631,3 +632,25 @@ variant). Brotli's larger window could make the copy nearly free. The fix within
 rule would be a `<link rel="stylesheet">` inside the shadow root to a cached CSS URL, which
 costs a request on the first view. Not done: the demo is the only streamed page, and the
 budget test gives that variant 128 KB.
+
+### M27 · Loco
+
+Generating `examples/loco-app` with the scaffold templates (`cargo loco generate scaffold note
+title:string! body:text done:bool! due:date`, the real generator reading `.loco-templates/`)
+found four bugs that rendering through `rrgen` alone had not:
+
+- `new` takes no `State`, so `#[debug_handler]` assumed state `()` and `auth::JWT` (which
+  needs `AppContext: FromRef<S>`) failed. The template now writes
+  `#[debug_handler(state = AppContext)]` there.
+- `ActiveModel::default()` is ambiguous: SeaORM's `ActiveModelTrait::default` and `Default`.
+  The template writes `ActiveModel { ..Default::default() }`.
+- Loco's `prelude_use` lists the timestamp types too, which the controller never names: the
+  import is `#[allow(unused_imports)]`.
+- The list, show and form views had no `<h1>`; the Blitz test (`is_visible("h1")`) caught it.
+
+What an app needs besides the templates: `maud` as a direct dependency (`html!` expands to
+`maud::` paths), a `tests/models/mod.rs` for the model generator to inject into, and
+sea-orm-cli 2 for `db entities` (1.1 is refused). Signed out, a scaffolded route answers
+Loco's JSON 401, not a page; the example links to `/signin` from its front page rather than
+adding a redirect layer. The sign-in token travels in an `HttpOnly` cookie
+(`auth.jwt.location: {from: Cookie, name: auth}`), so no page needs script to send it.

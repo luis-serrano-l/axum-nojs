@@ -792,16 +792,25 @@ loco-rs source (fetch it into `~/.cargo/registry` with a scratch crate) before r
   Maud side by side per controller. Decision: no Tera bridge (a Tera function gets JSON, not
   `ui`'s caps and state; typed builder chains would become unchecked keyword arguments; output
   would need `| safe`). The `loco` module doc has the same views module as a doctest.
-- [ ] Generator: a scaffold override (`cargo loco generate override` templates, or our own
+- [x] Generator: a scaffold override (`cargo loco generate override` templates, or our own
   template set) that emits Maud views built from `ui.*` for list/show/new/edit, PRG included.
-  In progress: `axum-nojs/loco-templates/scaffold/api/{controller,dto}.t`, copied into an app's
+  Done: `axum-nojs/loco-templates/scaffold/api/{controller,dto}.t`, copied into an app's
   `.loco-templates/` (Loco reads overrides there by the built-in file names). `controller.t`
   writes an HTML controller (list with `.paged`, show, new, create, edit, update, delete; PRG
   and flash; the form re-rendered with values and `FieldErrors` on bad input); `dto.t` writes
   `src/views/<plural>.rs` instead of a DTO. Posts are parsed field by field with
-  `loco::Submitted`. Render-checked through `rrgen`; ticked once `examples/loco-app` is
-  generated with them and compiles (next box).
-- [ ] `examples/loco-app`: a minimal Loco app (one model, CRUD, sign-in) with script off;
+  `loco::Submitted`. Proven by generating `examples/loco-app`'s notes with the real
+  `cargo loco generate scaffold`, which found four template bugs (FINDINGS, M27).
+- [x] `examples/loco-app`: a minimal Loco app (one model, CRUD, sign-in) with script off;
   Blitz renders its routes and the only-one-script test covers them.
+  Done: trimmed from `loco new` (sqlite, no assets, blocking workers): users + sign up/in/out
+  as forms, the JWT in an `HttpOnly` `auth` cookie (`auth.jwt.location`), the axum-nojs
+  initializer line, and `notes` from `cargo loco generate scaffold note title:string!
+  body:text done:bool! due:date`. A workspace member, so `cargo test` and verify.sh run it.
+  `tests/pages.rs` boots Loco's router: signed out → 401; sign-up/sign-in errors on the form;
+  create with a missing title re-renders with values; then each GET page has exactly one
+  script, the enhancement one, and renders in Blitz to `tests/shots/loco-*.png`; update and
+  delete redirect. Blitz leaves the textarea and date value blank (FINDINGS; the HTML is
+  asserted).
 - [ ] `docs/loco.md` and a README section: install, the initializer line, a controller, a
   form with validation, the generator.

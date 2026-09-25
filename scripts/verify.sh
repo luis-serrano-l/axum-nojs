@@ -22,7 +22,7 @@ cargo clippy -p axum-nojs --features loco --all-targets -- -D warnings
 
 echo "== tests (unit, doc, only-one-script, Blitz layout + screenshots)"
 cargo test --workspace
-# Nothing in the workspace turns `loco` on, so its tests and doctests run here.
+# `examples/loco-app` turns `loco` on for the workspace run; these check the crate on its own.
 cargo test -p axum-nojs --features loco loco
 cargo test -p axum-nojs --features loco --doc loco
 
@@ -31,7 +31,7 @@ RUSTDOCFLAGS="-D warnings" cargo doc --no-deps -p axum-nojs-caps -p axum-nojs --
 
 echo "== no <script> outside enhance.rs"
 # The enhancement tag is built in axum-nojs/src/enhance.rs; nothing else may write one.
-if grep -rn '<script' axum-nojs/src demo/src axum-nojs-test/src \
+if grep -rn '<script' axum-nojs/src demo/src axum-nojs-test/src examples/loco-app/src \
      | grep -v '^axum-nojs/src/enhance.rs:' \
      | grep -v 'matches("<script")' \
      | grep -v '^\S*:\s*//' \
