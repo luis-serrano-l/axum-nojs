@@ -621,12 +621,12 @@ shadcn styling, 84 components, 31 blocks, 15 JS widget shells. It needs htmx plu
 say the no-JS browser check "was not run"), and its API is `Props { .., ..Default::default() }`.
 Do not chase its breadth or wrap JS widgets. Win on what it cannot promise: zero required
 script, proven in CI, with server-side flows included.
-- [ ] Name: `maud-ui` rules out a generic `*-ui`; the differentiator belongs in the name.
+- [x] Name: `maud-ui` rules out a generic `*-ui`; the differentiator belongs in the name.
   Proposed `nojs-ui` (+ `nojs-ui-caps`, `nojs-ui-test`, Axum stays the `axum` feature; free
   on crates.io as of 2026-09-24), or keep `axum-nojs`. Ask the owner before renaming; the
   `nojs-*` classes, `--nojs-*` tokens and `/nojs/` routes stay either way.
-  Blocked on the owner: question and suggested answer (keep `axum-nojs`, decide together
-  with M27) in BLOCKED.md.
+  Answered 2026-09-24: keep `axum-nojs`. Loco support is a `loco` feature on the same crate
+  (M27), so no rename.
 - [x] Measure and publish: bytes shipped per demo page (HTML, CSS, script = 0 required),
   `stylesheet()` size raw and gzip, next to maud-ui's numbers; a bench or test keeps them
   from regressing.
@@ -710,8 +710,16 @@ script, proven in CI, with server-side flows included.
   Posting to r/rust / This Week in Rust and hosting are outward actions: ask the owner first.
   Partly done: keywords set (`no-js`, `maud`, `ssr`, `components`, `axum`; the 23-character
   `progressive-enhancement` exceeds crates.io's 20-character limit, so it is in the
-  description), and the post drafted in `docs/launch-post.md`. Blocked on the owner: hosting
-  the demo and posting (BLOCKED.md, with a suggested plan).
+  description), and the post drafted in `docs/launch-post.md`.
+  Hosting answered 2026-09-24: a static snapshot on GitHub Pages (no server). Posting stays
+  with the owner (BLOCKED.md).
+  - [ ] Static snapshot: export every GET page in `PATHS` to HTML (both caps variants where
+    they differ, the enhancement script off), rewrite links to relative `.html`, and add a
+    banner on every page: forms, cookies and paging need the real server (`cargo run -p demo`).
+    `<dialog>`, `popover`, `<details>` and tooltips keep working. A script (`scripts/snapshot.sh`)
+    writes it to `target/site/`, and a test checks that every exported page has the banner and no `<script>`.
+  - [ ] A Pages workflow (`.github/workflows/pages.yml`) that builds the snapshot and deploys it.
+    Enabling Pages in the repository settings and pushing are the owner's actions.
 
 ## M27 · Loco fit (only if the owner picks Loco)
 The owner thinks [Loco](https://loco.rs) (Rails-style, built on Axum) is the best home for
@@ -720,12 +728,10 @@ should already work there; this milestone makes it a first-class fit instead of 
 Loco's default views are Tera templates and its scaffolds generate them, so the gap is
 wiring, generators and docs, not components. Check every Loco API named below against the
 loco-rs source (fetch it into `~/.cargo/registry` with a scratch crate) before relying on it.
-- [ ] Decision: commit to Loco as the primary target? Owner only; if no, skip this milestone.
-  If yes, it also bears on M26's naming box (a `loco-nojs`/`nojs-ui` split, or one crate with
-  a `loco` feature).
-  Blocked on the owner: question and suggested answer (yes, as a `loco` feature; decide the
-  name at the same time) in BLOCKED.md. The boxes below wait on it.
-- [ ] `loco` feature (or `axum-nojs-loco` crate): an `Initializer` whose `after_routes` mounts
+- [x] Decision: commit to Loco as the primary target? Owner only; if no, skip this milestone.
+  Answered 2026-09-24: yes, as a `loco` feature on `axum-nojs` (not a separate crate), and
+  the crate keeps its name (M26).
+- [ ] `loco` feature: an `Initializer` whose `after_routes` mounts
   `/nojs/enhance.js` and the `/nojs/caps` beacon route, so an app adds one line to
   `app.rs::initializers`.
 - [ ] Handlers return Loco's `Result<Response>`: `Page`, `Redirect` and `Streamed` convert with
