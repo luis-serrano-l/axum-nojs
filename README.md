@@ -324,6 +324,7 @@ axum-nojs/src/<name>.rs     one component each: dialog, popover, tabs, accordion
                             empty_state, stat, drawer, palette (command palette)
 demo/src/lib.rs             Axum routes, ≤15 lines each, plus the no-script test
 demo/src/snapshot.rs        the static snapshot for GitHub Pages (scripts/snapshot.sh)
+.github/workflows/pages.yml builds the snapshot and deploys it to GitHub Pages
 axum-nojs-test/src/lib.rs   Page: render a route through Blitz, assert layout, screenshot
 axum-nojs-test/tests/       every route rendered and captured; layout assertions
 axum-nojs-test/examples/probe.rs   render any HTML file through Blitz, print boxes

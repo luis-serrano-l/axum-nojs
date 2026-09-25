@@ -725,8 +725,12 @@ script, proven in CI, with server-side flows included.
     file (the exact query if `PATHS` has it, else the route's first export); POST targets and
     `/table.csv` stay absolute and fail, as the banner says. `.nojekyll` is written too. The test
     also checks every `.html` link resolves.
-  - [ ] A Pages workflow (`.github/workflows/pages.yml`) that builds the snapshot and deploys it.
+  - [x] A Pages workflow (`.github/workflows/pages.yml`) that builds the snapshot and deploys it.
     Enabling Pages in the repository settings and pushing are the owner's actions.
+    Done: on push to `main` (and by hand), `scripts/snapshot.sh` then
+    `actions/upload-pages-artifact` and `actions/deploy-pages`. Settings → Pages → Source
+    "GitHub Actions" and the push are the owner's (BLOCKED.md). `scripts/verify.sh` now also
+    runs `cargo fmt --check`, as CI does.
 
 ## M27 · Loco fit (only if the owner picks Loco)
 The owner thinks [Loco](https://loco.rs) (Rails-style, built on Axum) is the best home for

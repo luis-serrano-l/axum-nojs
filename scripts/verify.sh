@@ -6,6 +6,9 @@
 set -eu
 cd "$(dirname "$0")/.."
 
+echo "== format (CI runs the same check)"
+cargo fmt --all --check
+
 echo "== build"
 cargo build --workspace --all-targets
 

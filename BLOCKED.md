@@ -32,8 +32,9 @@ so nothing gets renamed.
 Hosting answered 2026-09-24: **a static snapshot on GitHub Pages.** Pages serves only static
 files, so the snapshot shows every page as it renders, and `<dialog>`, `popover`, `<details>`
 and tooltips still work. Forms, cookies and paging need the server, and a banner on every page
-says so. The export and the Pages workflow are ROADMAP M26 sub-boxes. Turning Pages on in the
-repository settings and pushing are yours.
+says so. The export (`scripts/snapshot.sh`) and the workflow (`.github/workflows/pages.yml`) are done.
+Yours: Settings → Pages → Source "GitHub Actions", then push `main`; the site lands at
+https://luis-serrano-l.github.io/axum-nojs/ (put that link in `docs/launch-post.md`).
 
 Posting stays with you and waits for the publish: the draft is `docs/launch-post.md`, and the
 suggested order is crate first, then r/rust and This Week in Rust, with the Pages link filled in.

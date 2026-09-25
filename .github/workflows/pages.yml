@@ -1,0 +1,47 @@
+name: Pages
+
+# The static snapshot of the demo (scripts/snapshot.sh) on GitHub Pages. Pages serves files
+# only: every page renders and <dialog>, popover, <details> and tooltips work, while forms,
+# cookies and paging need `cargo run -p demo` (each page carries a banner saying so).
+# Turn Pages on in the repository settings with "GitHub Actions" as the source.
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One deployment at a time; a newer push waits instead of cancelling one in progress.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: dtolnay/rust-toolchain@stable
+    - uses: Swatinem/rust-cache@v2
+    - name: Snapshot
+      run: scripts/snapshot.sh target/site
+    - uses: actions/upload-pages-artifact@v3
+      with:
+        path: target/site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+    - id: deployment
+      uses: actions/deploy-pages@v4

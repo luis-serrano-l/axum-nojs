@@ -108,7 +108,12 @@ fn finish(html: &str, names: &[String], other: Option<&str>, baseline: bool) -> 
         .or_else(|| html.find("<body"))
         .and_then(|i| html[i..].find('>').map(|j| i + j + 1))
         .unwrap_or(0);
-    format!("{}{}{}", &html[..at], banner(other, baseline).into_string(), &html[at..])
+    format!(
+        "{}{}{}",
+        &html[..at],
+        banner(other, baseline).into_string(),
+        &html[at..]
+    )
 }
 
 /// Point every root-relative URL that names an exported page at its file: the exact path and
@@ -174,14 +179,22 @@ mod tests {
         for page in &pages {
             assert!(page.html.contains(BANNER), "{}: no banner", page.name);
             assert_eq!(page.html.matches("<script").count(), 0, "{}", page.name);
-            assert!(!page.html.contains(r#"class="nojs-caps""#), "{}: beacons", page.name);
+            assert!(
+                !page.html.contains(r#"class="nojs-caps""#),
+                "{}: beacons",
+                page.name
+            );
             // Every link to a page is to a file that exists.
             for (i, _) in page.html.match_indices("href=\"") {
                 let url = &page.html[i + 6..];
                 let url = &url[..url.find('"').unwrap()];
                 let file = url.split('#').next().unwrap();
                 if file.ends_with(".html") {
-                    assert!(names.contains(&file), "{}: {url} is not exported", page.name);
+                    assert!(
+                        names.contains(&file),
+                        "{}: {url} is not exported",
+                        page.name
+                    );
                 }
             }
         }
