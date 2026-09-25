@@ -692,3 +692,27 @@ async fn the_playground_renders_what_was_chosen() {
     );
     assert!(html.contains(r#"name="pg.Button.primary" type="checkbox" value="true" checked"#));
 }
+
+/// The theme builder's download is the chosen overrides as a CSS file.
+#[tokio::test]
+async fn theme_builder_downloads_its_css() {
+    let req = Request::get("/theme.css?light.primary=%23ff5500&radius=4")
+        .body(Body::empty())
+        .unwrap();
+    let res = router().oneshot(req).await.unwrap();
+    assert_eq!(res.headers()["content-type"], "text/css; charset=utf-8");
+    assert!(
+        res.headers()["content-disposition"]
+            .to_str()
+            .unwrap()
+            .contains("theme.css")
+    );
+    let bytes = axum::body::to_bytes(res.into_body(), usize::MAX)
+        .await
+        .unwrap();
+    let css = String::from_utf8(bytes.to_vec()).unwrap();
+    assert!(
+        css.contains("--lui-primary: #ff5500;") && css.contains("--lui-radius: 4px;"),
+        "{css}"
+    );
+}

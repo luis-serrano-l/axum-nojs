@@ -5,6 +5,12 @@ name a colour of their own (a test in `loco-ui/src/lib.rs` fails if one does), s
 nineteen values, not a stylesheet. `layout::Tokens` holds them; `ui.page(..).tokens(&t)` emits them once
 per page.
 
+To pick them by eye, the demo's theme builder (`/theme`, `cargo run -p demo`) has a colour input
+for the main roles in light and dark and a radius, previews a card, a form, buttons, a badge
+and an alert in them, and downloads the result as `theme.css`. Paste that file after the
+stylesheet (`page.css(include_str!("theme.css"))`), or copy its values into a `Tokens`. It needs
+no script: the form sends the colours in the URL, so a theme can be shared as a link.
+
 ## The tokens
 
 The roles are shadcn/ui's, under `--lui-*` names. The default is shadcn's neutral (zinc)

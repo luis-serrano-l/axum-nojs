@@ -14,13 +14,12 @@ use serde::Deserialize;
 pub(crate) fn routes() -> Router {
     Router::new()
         .route("/", get(index))
-        .route("/theme", post(theme_submit))
         .route("/lang", post(lang_submit))
 }
 
 /// Every component in the index: path, title (what each route passes to `page`), group, the
 /// platform features it is built on, and what it is for in plain words.
-pub(crate) const COMPONENTS: [(&str, &str, &str, &str, &str); 43] = [
+pub(crate) const COMPONENTS: [(&str, &str, &str, &str, &str); 44] = [
     (
         "/feedback",
         "Alerts, progress and tooltips",
@@ -322,6 +321,13 @@ pub(crate) const COMPONENTS: [(&str, &str, &str, &str, &str); 43] = [
         "popover, a menu on a secondary button",
         "Actions on one thing from a button in its corner.",
     ),
+    (
+        "/theme",
+        "Theme builder",
+        "Primitives",
+        "<input type=color>, --lui-* custom properties, a GET form, a CSS download",
+        "Pick the colours and the radius, see a few components in them, download theme.css.",
+    ),
 ];
 
 /// The index's layers, bottom up, each with the groups it holds (as in `docs/layers.svg`).
@@ -537,12 +543,12 @@ async fn index(ui: Ui) -> Page {
 }
 
 #[derive(Deserialize)]
-struct ThemeForm {
+pub(crate) struct ThemeForm {
     theme: String,
 }
 
 /// Keep the picked theme and go back to the page the toggle was on.
-async fn theme_submit(ui: Ui, headers: HeaderMap, Form(f): Form<ThemeForm>) -> Redirect {
+pub(crate) async fn theme_submit(ui: Ui, headers: HeaderMap, Form(f): Form<ThemeForm>) -> Redirect {
     ui.redirect(&back_to(&headers))
         .theme(Theme::parse(&f.theme))
 }

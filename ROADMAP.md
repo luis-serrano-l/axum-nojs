@@ -1167,9 +1167,18 @@ every Loco API named below against loco-rs 1.2 before relying on it, as M27 did.
   tried page renders the choice and its line; the browser check ticks a prop and sees the
   swap in place; axe clean. Blitz counts scoped to the demo stage now that previews repeat
   components.
-- [ ] Theme builder without script: `/theme` with colour inputs and a radius, posted to the
+- [x] Theme builder without script: `/theme` with colour inputs and a radius, posted to the
   server, a live preview of a few components, and a `theme.css` download of the `--lui-*`
   overrides (maud-ui's `/theme`, without its script). `docs/theming.md` links it.
+  Done: `demo/src/routes/theme.rs`: `GET /theme` (the theme toggle keeps `POST /theme`), a
+  form of colour inputs (`ui.color`) for nine roles (bg, fg, muted, line, primary,
+  on-primary, accent, on-accent, danger) in light and dark plus a radius (`ui.range`); the
+  roles it does not edit are derived (card and popover from bg, input from line, ring from
+  muted, secondary from accent). Only `#rrggbb` values are accepted (a test). The preview is a
+  card with an input, buttons, a badge and an alert under each scheme's values as inline
+  custom properties; `/theme.css` downloads the overrides in `Tokens::css`'s cascade order
+  (test). Default: a GET form rather than a post, so a theme is a shareable link and no state
+  is kept. Index entry, PATHS, `docs/theming.md` links it; axe clean.
 - [ ] Component status (Primer): `stable | beta` in `props::COMPONENTS`, shown on the demo
   page, the index and the spec JSON; README says what each status promises.
 - [ ] Copy-paste mode (shadcn, templUI), last: `cargo lui add <component>` vendors a

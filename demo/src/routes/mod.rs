@@ -12,4 +12,5 @@ pub(crate) mod own;
 pub(crate) mod primitives;
 pub(crate) mod server_state;
 pub(crate) mod table;
+pub(crate) mod theme;
 pub(crate) mod widgets;

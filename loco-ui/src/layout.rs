@@ -400,6 +400,10 @@ tbody tr:hover { background: color-mix(in srgb, var(--lui-accent) 50%, transpare
 .lui-hl-m { color: var(--lui-fg); font-weight: 600; }
 .lui-hl-f { color: var(--lui-fg); }
 /* The demo's props tables under the snippet: one <details> per builder. */
+.lui-theme-builder { display: grid; gap: calc(var(--lui-space) * 2); max-width: none; }
+.lui-theme-builder fieldset { display: grid; grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr)); gap: var(--lui-space); margin: 0; padding: calc(var(--lui-space) * 2); border: 1px solid var(--lui-line); border-radius: var(--lui-radius); }
+.lui-theme-previews { display: grid; grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr)); gap: calc(var(--lui-space) * 2); margin-block: calc(var(--lui-space) * 2); }
+.lui-theme-preview { padding: calc(var(--lui-space) * 2); background: var(--lui-bg); color: var(--lui-fg); border: 1px solid var(--lui-line); border-radius: var(--lui-radius); }
 .lui-props { max-width: none; margin: 0 0 2rem; }
 .lui-props details { border: 1px solid var(--lui-line); border-radius: var(--lui-radius); margin: 0 0 0.5rem; }
 .lui-props summary { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.25rem 0.5rem; padding: 0.5rem 0.75rem; cursor: pointer; }

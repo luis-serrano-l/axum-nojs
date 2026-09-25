@@ -18,7 +18,7 @@ use tower_http::compression::{
 };
 
 /// Every demo path the no-script test and the screenshot test visit.
-pub const PATHS: [&str; 47] = [
+pub const PATHS: [&str; 48] = [
     "/",
     "/caps",
     "/button?loading=1",
@@ -44,6 +44,7 @@ pub const PATHS: [&str; 47] = [
     "/form?layout=inline",
     "/form?errors=1",
     "/chart",
+    "/theme?light.primary=%232f5bea&radius=12",
     "/sidebar",
     "/nav-menu",
     "/description-list",
@@ -76,6 +77,7 @@ pub fn router() -> Router {
     Router::new()
         .merge(site::routes())
         .merge(routes::primitives::routes())
+        .merge(routes::theme::routes())
         .merge(routes::blocks::routes())
         .merge(routes::overlays::routes())
         .merge(routes::disclosure::routes())
