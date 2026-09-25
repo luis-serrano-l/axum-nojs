@@ -1318,3 +1318,12 @@ consistent.
   source, a second try or a workaround; fix those, or add a doc line where the fix is a doc.
 - [ ] `docs/api.md`: the rules a caller can rely on, one page, with a before/after for each
   fix from this milestone.
+- [ ] Less code in the demo: the owner still sees too much code in the demo routes (asked
+  2026-09-25, "not totally sure, but worth checking"). Measure each route's code between its
+  `// code:` markers, list the patterns that repeat across routes (a field with its label and
+  error, a form with its submit, a card with a title and actions, a table fed from a slice,
+  a page's title plus lede), and for each decide: a better default (so the common call needs no
+  setter), a generator (a builder that takes a struct or slice and emits the whole thing), a
+  new prop, or leave it as is because it is the caller's own content. Write the decision per
+  pattern in `docs/api.md`, implement the ones that pay off, and report the line count of the
+  demo snippets before and after in README.
