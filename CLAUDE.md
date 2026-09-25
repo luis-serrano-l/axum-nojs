@@ -76,9 +76,11 @@ scripts/verify.sh                  # everything above plus a <script> grep and t
    `--nojs-*` custom properties defined in `layout.rs`.
 4. Root element carries a single `nojs-<component>` class; sub-parts use `nojs-<component>-<part>`.
    Output should be readable via `curl`.
-5. No macros beyond `html!`. A component is a builder struct holding `&Ui` (or what it needs
+5. No macros beyond `html!` and `nojs!` (the `axum-nojs-macros` crate: Maud plus components
+   written like elements, expanding to the builder chain). A component is a builder struct holding `&Ui` (or what it needs
    from it) plus an `impl Ui { pub fn <name>(&self, required…) -> <Name> }` in the same file,
-   and `impl Render for <Name>`, so a route writes `(ui.<name>(..).setter()..)` inside `html!`.
+   and `impl Render for <Name>`, so a route writes `(ui.<name>(..).setter()..)` inside `html!`,
+   or `Name(..) setter item "x" { .. }` inside `nojs!`.
    Required arguments stay in the call (text first); everything else is a chained setter. An
    id the caller does not care about is derived from the label with `crate::slug`, with an
    `.id()` override. Components read their own input from `ui` (`ui.param`, `ui.params`,
@@ -93,6 +95,13 @@ scripts/verify.sh                  # everything above plus a <script> grep and t
    emit only one variant, never both.
    A root that should update in place gets `id=(enhance::swap_id(prefix, key))` and
    `data-nojs="swap"`; the markup must behave identically without the script.
+   Every builder with setters carries `pub const PROPS: &'static [Prop]` (name, `PropKind`,
+   arguments as written, default, HTML attribute, first doc sentence) and an entry in
+   `props::COMPONENTS`, so `axum_nojs::props()`, the spec JSON and the demo's props tables
+   list it; the doc header's main doctest ends with the same call in `nojs!` and an
+   `assert_eq!` on the HTML. Tests fail when a setter is missing from `PROPS`, a builder or
+   constructor from `props()`, or a header lacks its `nojs!` twin. Demo snippets use
+   `nojs!` unless the route keeps the builder in a variable.
 6. Server-held state (theme, counter, active tab) travels via cookie or `?query=`; mutations use
    `<form method="post">` + redirect (Post/Redirect/Get), never GET side effects.
 7. Update the README feature matrix and Findings when a component or its fallback changes.

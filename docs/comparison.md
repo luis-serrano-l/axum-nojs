@@ -18,14 +18,18 @@ general. Corrections are welcome.
 | CSS shipped | 57.6 KB (10.3 KB gzip), all components, inlined once | 313 KB (44 KB gzip) | yours | yours or a crate's |
 | Components | primitives, 19 components, 4 widgets, and a guide for your own | 84 components and 31 blocks | none | from the ecosystem |
 | Server state | URL, cookies and forms (Post/Redirect/Get), read by the components from `ui` | per component | on the server, swapped in as fragments | signals in the browser, server functions |
-| API shape | builders on `ui` | `Props` structs | markup | components as functions |
+| API shape | builders on `ui`, or the same written as elements in `nojs!` | `Props` structs | markup | components as functions |
 
 ## One button, two API shapes
 
-axum-nojs:
+axum-nojs, as a builder or as an element in `nojs!` (the macro expands to the builder):
 
 ```rust
 (ui.button("Ship it").primary())
+```
+
+```rust
+nojs! { Button("Ship it") primary; }
 ```
 
 maud-ui's `Props` style, schematically (field names illustrative):
@@ -50,10 +54,19 @@ Both are fine Rust. The builder wins where this library lives:
   meaning: a setter with no argument switches something on (`.danger()`), one that takes a
   `bool` is set from a condition (`.loading(busy)`), and ids come from the label.
 
+`Props` puts a name on every value at the call site; `nojs!` does too, as attributes
+(`Dialog("Delete account") small danger confirm=("Delete", "/delete") { .. }`), while items
+stay items (`tab "Use" badge=3 { .. }`, not a nested struct) and `@for`/`@if` build them from
+data. A misspelled attribute is rustc's own error at that attribute, with the setter it meant.
+
 Two things `Props` do better, the builders now do too: every builder is plain data (`Clone`
 and `Debug`, so a route can keep one in a variable, build it in a loop or print it), and every
 option is listed in one place, a "Setters" paragraph on the builder type grouping values and
-items, switches and conditions. Two tests keep both true.
+items, switches and conditions. Two tests keep both true. The options are also data:
+`axum_nojs::props()` lists every component's setters with their kind, arguments, default, the
+HTML attribute they set and a line of documentation. The same list is in
+`spec/components.json` and is shown as a table on every demo page. We found no equivalent
+in maud-ui's getting-started guide, where the `Props` struct and the compiler are the reference.
 
 ## When to pick which
 

@@ -47,12 +47,14 @@ use serde::{Deserialize, Serialize};
 struct Settings { name: String }
 
 // `Ui` is what the server knows about this browser, its theme and the page's UI state.
+// `nojs!` is Maud's `html!` with components written like elements.
 async fn show(ui: Ui, Saved(s): Saved<Settings>) -> Page {
-    ui.page("Account", html! {
-        (ui.flash())
-        (ui.form("/account").text("name", "Name").required().value(&s.name).submit("Save"))
-        (ui.dialog("Delete account").danger().confirm("Delete", "/account/delete")
-            .body(html! { p { "This cannot be undone." } }))
+    ui.page("Account", nojs! {
+        Flash;
+        Form("/account") submit="Save" { text "name" "Name" required value=(&s.name); }
+        Dialog("Delete account") danger confirm=("Delete", "/account/delete") {
+            p { "This cannot be undone." }
+        }
     })
 }
 
@@ -66,6 +68,15 @@ let app = Router::new()
     .merge(axum_nojs::caps::router())     // the beacons that tell the server what the browser supports
     .merge(axum_nojs::enhance::router()); // the optional script
 ```
+
+Each element is the builder a route could also chain by hand, and `nojs!` expands to exactly
+that: `Form("/account") submit="Save" { text "name" "Name" required; }` is
+`ui.form("/account").submit("Save").text("name", "Name").required()`. Attributes are setters
+(`x="v"`, a bare `x` switches on, `x[cond]` only when `cond`, `x=[option]` only for `Some`),
+items take their modifiers as attributes, and `@for`/`@if` build items from data. A typo is
+rustc's own "no method named `requird` … did you mean `required`" at the attribute.
+`axum_nojs::props()` lists every component's setters with kind, arguments, default and the
+HTML attribute they set; the demo shows them as a table on each page.
 
 With `axum-nojs = { features = ["axum"] }`. Without Axum, `Ui::from_request(path, query,
 cookies)` or `Ui::from(Caps::all())` gives the same builders and `.render().into_string()` the

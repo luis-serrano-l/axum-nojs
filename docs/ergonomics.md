@@ -383,3 +383,59 @@ the pager `?page`, the select its filter box, the palette whether `?q` names a c
 | Import lines naming `axum_nojs` items | 1 line of about 70 names | `prelude::*` plus 3 lines for types a helper names |
 | Hand-parsed cookies (`settings`, `count`, `inputs`, `wizard`, `notes`) | 5 parsers | 0: `Saved<T>` |
 | `(ui, markup)` tuples and `prg::<Body>(..)` calls | 9 and 12 | 0 and 0 |
+
+## M28: components written like elements
+
+The owner liked how maud-ui's `Props` put a name on every value, and wanted the call to read
+like the Maud around it (`a href=".."`). `nojs!` is `html!` with components as elements; it
+expands to the builder chain, so both forms stay one code path and the dot form remains for a
+builder a route keeps in a variable.
+
+```rust
+// before: the board built in a loop, outside the markup
+let mut k = ui.kanban("/kanban");
+for (lane, title) in LANES {
+    k = k.column(lane, title);
+    if lane == "doing" {
+        k = k.limit(2);
+    }
+    for (key, _) in board.0.iter().filter(|(_, l)| l == lane) {
+        if let Some((key, text, note)) = CARDS.iter().find(|c| c.0 == key) {
+            k = k.card(key, text).note(note);
+        }
+    }
+}
+// after: items from data, inline
+let k = nojs! {
+    Kanban("/kanban") {
+        @for (lane, title) in LANES {
+            column (lane) (title) limit=[(lane == "doing").then_some(2)] {
+                @for (key, _) in board.0.iter().filter(|(_, l)| l == lane) {
+                    @if let Some((key, text, note)) = CARDS.iter().find(|c| c.0 == key) {
+                        card (key) (text) note=(note);
+                    }
+                }
+            }
+        }
+    }
+};
+```
+
+```rust
+// before
+(ui.dialog("Delete account").id("confirm").title("Delete account?").small().danger()
+    .confirm("Delete account", "/dialog/delete").cancel("Keep it")
+    .body(html! { p { "This cannot be undone." } }))
+// after
+Dialog("Delete account") id="confirm" title="Delete account?" small danger
+    confirm=("Delete account", "/dialog/delete") cancel="Keep it" {
+    p { "This cannot be undone." }
+}
+```
+
+| | Before | After |
+|---|---|---|
+| Demo snippets in `nojs!` | 0 | 41 blocks; the rest keep a builder in a variable |
+| `let mut` builders mutated in a loop, in snippets | 2 (kanban, upload) | 0 |
+| Route lines (`demo/src/routes/`) | 1791 | 1798: nested blocks take a line more, loops a few less |
+| Where to read a component's options | its **Setters** paragraph | the same, plus `axum_nojs::props()`, `spec/components.json` and a props table on each demo page |

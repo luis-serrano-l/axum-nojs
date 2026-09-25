@@ -200,3 +200,25 @@ fn another_name_for_ui() {
         html! { (ctx.badge("Hi").danger()) },
     );
 }
+
+/// README's first example, in `nojs!` and by hand, renders the same.
+#[test]
+fn the_readme_example() {
+    let ui = Ui::from_request("/account", "", "nojs-flash=Saved.");
+    let name = String::from("Ada");
+    same(
+        nojs! {
+            Flash;
+            Form("/account") submit="Save" { text "name" "Name" required value=(&name); }
+            Dialog("Delete account") danger confirm=("Delete", "/account/delete") {
+                p { "This cannot be undone." }
+            }
+        },
+        html! {
+            (ui.flash())
+            (ui.form("/account").text("name", "Name").required().value(&name).submit("Save"))
+            (ui.dialog("Delete account").danger().confirm("Delete", "/account/delete")
+                .body(html! { p { "This cannot be undone." } }))
+        },
+    );
+}

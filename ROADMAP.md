@@ -955,6 +955,14 @@ the attribute form must compile down to the same builder, so both forms stay one
   page's HTML is byte-identical outside the snippet box (48 exported pages diffed) except
   `/settings`, which gains a Form props table now that `Form(..)` is inside its snippet.
   Route lines 1791 → 1798: nested blocks take a line more, loops a few less.
-- [ ] Docs: CLAUDE.md convention 5 and the macro rule (`nojs!`, `PROPS`), README first example,
+- [x] Docs: CLAUDE.md convention 5 and the macro rule (`nojs!`, `PROPS`), README first example,
   `docs/ergonomics.md` before/after, `docs/comparison.md` (maud-ui's `Props` vs ours, now
   with names at the call site and a listable prop table, which maud-ui's docs say it lacks).
+  Done: CLAUDE.md convention 5 (the macro rule is now `html!` and `nojs!`; `PROPS`,
+  `props::COMPONENTS`, the header's `nojs!` twin and the tests that enforce them; demo
+  snippets in `nojs!` unless a builder is kept), the workspace layout lists
+  `axum-nojs-macros`; README's first example in `nojs!` (tested as `the_readme_example`) with
+  a paragraph on the attribute rules and `props()`; `docs/ergonomics.md` "M28" with the
+  kanban and dialog before/after and the counts; `docs/comparison.md` gains the `nojs!`
+  button, names at the call site, and the listable props.
+
