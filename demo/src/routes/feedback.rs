@@ -91,7 +91,7 @@ async fn dashboard_page(ui: Ui) -> Page {
         lui! {
             div class="lui-stat-grid" {
                 // code: /dashboard
-                Stat("Visitors", "12,480") delta="+8.2%" note="last 7 days";
+                Stat("Visitors", "12,480") delta="+8.2%" note="last 7 days" reveal;
                 Stat("Orders", if none { "0" } else { "3" }) delta=(if none { "-3" } else { "0" });
                 Stat("Error rate", "0.4%") delta="-0.2 pt" down_is_good href="/table";
                 Stat("p95 latency", "38 ms") delta="+6 ms" down_is_good;

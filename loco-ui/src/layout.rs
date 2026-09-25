@@ -271,6 +271,22 @@ pub const DEPTH_DARK: &str = "  --lui-shadow-xs: 0 1px 1px rgb(0 0 0 / 0.3), 0 1
   --lui-gradient-ring: linear-gradient(in oklch 135deg, var(--lui-brand-11), var(--lui-brand-8));
 ";
 
+/// The showpiece effects' tokens for the light scheme, emitted after [`DEPTH_LIGHT`]; every
+/// effect is opt-in by its setter. `--lui-shimmer` is the sweep of `.shimmer()` over a filled
+/// button or badge, `--lui-shimmer-surface` the sweep over a plain one; `--lui-glow` is the
+/// spotlight of a card's `.glow()`, `--lui-beam` the lit arc of `.beam()`. The durations are
+/// emitted here only: `:root` always carries the light block, so the dark one inherits them.
+pub const EFFECTS_LIGHT: &str = "  --lui-shimmer: rgb(255 255 255 / 0.45); --lui-shimmer-surface: color-mix(in srgb, var(--lui-brand-9) 18%, transparent);
+  --lui-glow: color-mix(in srgb, var(--lui-brand-9) 22%, transparent); --lui-beam: var(--lui-brand-9);
+  --lui-shimmer-duration: 2.5s; --lui-beam-duration: 6s; --lui-marquee-duration: 40s;
+";
+
+/// [`EFFECTS_LIGHT`] for the dark scheme: a fainter sweep, a stronger glow (a faint one is
+/// lost on a near-black card) and the beam in the brand's lighter text step.
+pub const EFFECTS_DARK: &str = "  --lui-shimmer: rgb(255 255 255 / 0.3); --lui-shimmer-surface: rgb(255 255 255 / 0.1);
+  --lui-glow: color-mix(in srgb, var(--lui-brand-9) 40%, transparent); --lui-beam: var(--lui-brand-11);
+";
+
 /// A scale made at run time by [`Scale::derive`], as `#rrggbb` steps.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct DerivedScale {
@@ -402,6 +418,7 @@ impl Tokens {
                 + &Scale::declarations(&pick(&self.brand), "brand")
                 + &p.declarations()
                 + if dark { DEPTH_DARK } else { DEPTH_LIGHT }
+                + if dark { EFFECTS_DARK } else { EFFECTS_LIGHT }
         };
         let (light, dark) = (scheme(&self.light, false), scheme(&self.dark, true));
         format!(

@@ -42,9 +42,10 @@
         { "name": "invoker commands", "baseline": { "chrome": "135", "firefox": "144", "safari": "26.2" } },
         { "name": "popovertarget", "baseline": { "chrome": "114", "firefox": "125", "safari": "17" } },
         { "name": "aria-busy", "baseline": { "chrome": "1", "firefox": "1", "safari": "1" } },
-        { "name": "prefers-reduced-motion", "baseline": { "chrome": "74", "firefox": "63", "safari": "10.1" } }
+        { "name": "prefers-reduced-motion", "baseline": { "chrome": "74", "firefox": "63", "safari": "10.1" } },
+        { "name": "translate", "baseline": { "chrome": "104", "firefox": "72", "safari": "14.1" } }
       ],
-      "fallback": "a popover command becomes popovertarget; other commands need the component's own fallback",
+      "fallback": "a popover command becomes popovertarget; other commands need the component's own fallback; a shimmer button is at rest without translate",
       "needs_js": "no",
       "builders": [
         {
@@ -82,7 +83,8 @@
             { "name": "formaction", "kind": "value", "args": "action: &'a str", "default": "", "attr": "formaction", "doc": "`formaction`." },
             { "name": "formnovalidate", "kind": "switch", "args": "", "default": "off", "attr": "formnovalidate", "doc": "`formnovalidate`." },
             { "name": "rel", "kind": "value", "args": "rel: &'a str", "default": "", "attr": "rel", "doc": "`rel` of a link (`\"prev\"`, `\"next\"`)." },
-            { "name": "current", "kind": "condition", "args": "on: bool", "default": "off", "attr": "", "doc": "`aria-current=\"page\"`." }
+            { "name": "current", "kind": "condition", "args": "on: bool", "default": "off", "attr": "", "doc": "`aria-current=\"page\"`." },
+            { "name": "shimmer", "kind": "switch", "args": "", "default": "off", "attr": "", "doc": "A light sweeps across the button, over its own background." }
           ]
         }
       ]
@@ -96,9 +98,10 @@
         { "name": ":user-invalid", "baseline": { "chrome": "119", "firefox": "88", "safari": "16.5" } },
         { "name": "role=\"switch\"", "baseline": { "chrome": "1", "firefox": "1", "safari": "1" } },
         { "name": "appearance: none", "baseline": { "chrome": "84", "firefox": "80", "safari": "15.4" } },
-        { "name": "<fieldset>", "baseline": { "chrome": "1", "firefox": "1", "safari": "1" } }
+        { "name": "<fieldset>", "baseline": { "chrome": "1", "firefox": "1", "safari": "1" } },
+        { "name": "linear-gradient(in oklch", "baseline": { "chrome": "111", "firefox": "127", "safari": "16.2" } }
       ],
-      "fallback": "none needed: native controls; the switch stays a checkbox without appearance: none",
+      "fallback": "none needed: native controls; the switch stays a checkbox without appearance: none; a gradient border is a plain one without in oklch gradients",
       "needs_js": "partial",
       "needs_js_note": "a live character count while typing needs the enhancement script",
       "builders": [
@@ -135,7 +138,8 @@
             { "name": "aria_controls", "kind": "value", "args": "id: &'a str", "default": "", "attr": "aria-controls", "doc": "`aria-controls`." },
             { "name": "form", "kind": "value", "args": "id: &'a str", "default": "", "attr": "form", "doc": "`form`." },
             { "name": "class", "kind": "value", "args": "class: &'a str", "default": "", "attr": "class", "doc": "A class on the control, for a component's part name." },
-            { "name": "id", "kind": "value", "args": "id: &'a str", "default": "", "attr": "id", "doc": "The control's id, `f-<name>` by default." }
+            { "name": "id", "kind": "value", "args": "id: &'a str", "default": "", "attr": "id", "doc": "The control's id, `f-<name>` by default." },
+            { "name": "gradient_border", "kind": "switch", "args": "", "default": "off", "attr": "", "doc": "The border drawn with `--lui-gradient-ring`." }
           ]
         },
         {
@@ -157,9 +161,10 @@
       "name": "Badge",
       "module": "badge",
       "features": [
-        { "name": "<span>", "baseline": { "chrome": "1", "firefox": "1", "safari": "1" } }
+        { "name": "<span>", "baseline": { "chrome": "1", "firefox": "1", "safari": "1" } },
+        { "name": "translate", "baseline": { "chrome": "104", "firefox": "72", "safari": "14.1" } }
       ],
-      "fallback": "none needed",
+      "fallback": "none needed; a shimmer badge is at rest without translate",
       "needs_js": "no",
       "builders": [
         {
@@ -173,7 +178,8 @@
             { "name": "outline", "kind": "switch", "args": "", "default": "off", "attr": "", "doc": "A border and no fill." },
             { "name": "ok", "kind": "switch", "args": "", "default": "off", "attr": "", "doc": "A tint of `--lui-ok`." },
             { "name": "warn", "kind": "switch", "args": "", "default": "off", "attr": "", "doc": "A tint of `--lui-warn`." },
-            { "name": "href", "kind": "value", "args": "href: &'a str", "default": "", "attr": "href", "doc": "Make the badge a link." }
+            { "name": "href", "kind": "value", "args": "href: &'a str", "default": "", "attr": "href", "doc": "Make the badge a link." },
+            { "name": "shimmer", "kind": "switch", "args": "", "default": "off", "attr": "", "doc": "A light sweeps across the badge, over its own fill." }
           ]
         }
       ]
@@ -182,9 +188,15 @@
       "name": "Card",
       "module": "card",
       "features": [
-        { "name": "grid", "baseline": { "chrome": "57", "firefox": "52", "safari": "10.1" } }
+        { "name": "grid", "baseline": { "chrome": "57", "firefox": "52", "safari": "10.1" } },
+        { "name": "conic-gradient", "baseline": { "chrome": "69", "firefox": "83", "safari": "12.1" } },
+        { "name": "@property", "baseline": { "chrome": "85", "firefox": "128", "safari": "16.4" } },
+        { "name": "mask-composite", "baseline": { "chrome": "120", "firefox": "53", "safari": "15.4" } },
+        { "name": "color-mix()", "baseline": { "chrome": "111", "firefox": "113", "safari": "16.2" } },
+        { "name": "linear-gradient(in oklch", "baseline": { "chrome": "111", "firefox": "127", "safari": "16.2" } },
+        { "name": "animation-timeline: view()", "baseline": { "chrome": "115", "firefox": "no", "safari": "26" } }
       ],
-      "fallback": "none needed",
+      "fallback": "none needed; each showpiece effect is at rest without its feature or under reduced motion",
       "needs_js": "no",
       "builders": [
         {
@@ -198,7 +210,11 @@
             { "name": "header", "kind": "value", "args": "markup: Markup", "default": "", "attr": "", "doc": "More header content, placed at the top right beside the title." },
             { "name": "body", "kind": "value", "args": "markup: Markup", "default": "", "attr": "", "doc": "The main content." },
             { "name": "footer", "kind": "value", "args": "markup: Markup", "default": "", "attr": "", "doc": "A row at the bottom, usually buttons." },
-            { "name": "id", "kind": "value", "args": "id: &'a str", "default": "", "attr": "id", "doc": "The root's id, for a link to the card or a swap target." }
+            { "name": "id", "kind": "value", "args": "id: &'a str", "default": "", "attr": "id", "doc": "The root's id, for a link to the card or a swap target." },
+            { "name": "beam", "kind": "switch", "args": "", "default": "off", "attr": "", "doc": "A light runs round the border, drawn with a conic gradient." },
+            { "name": "glow", "kind": "switch", "args": "", "default": "off", "attr": "", "doc": "A spotlight at the top centre that brightens and grows on hover." },
+            { "name": "gradient_border", "kind": "switch", "args": "", "default": "off", "attr": "", "doc": "The border drawn with `--lui-gradient-ring`." },
+            { "name": "reveal", "kind": "switch", "args": "", "default": "off", "attr": "", "doc": "Fades and rises as it scrolls into view." }
           ]
         }
       ]
@@ -1189,9 +1205,10 @@
       "name": "Stat",
       "module": "stat",
       "features": [
-        { "name": "repeat(auto-fit", "baseline": { "chrome": "57", "firefox": "52", "safari": "10.1" } }
+        { "name": "repeat(auto-fit", "baseline": { "chrome": "57", "firefox": "52", "safari": "10.1" } },
+        { "name": "animation-timeline: view()", "baseline": { "chrome": "115", "firefox": "no", "safari": "26" } }
       ],
-      "fallback": "none needed",
+      "fallback": "none needed; a reveal tile is shown in place without animation-timeline",
       "needs_js": "no",
       "builders": [
         {
@@ -1204,7 +1221,8 @@
             { "name": "trend", "kind": "value", "args": "trend: Trend", "default": "", "attr": "", "doc": "Override the direction read from the delta's sign." },
             { "name": "down_is_good", "kind": "switch", "args": "", "default": "off", "attr": "", "doc": "A fall is good news (error rates, latency)." },
             { "name": "note", "kind": "value", "args": "note: &'a str", "default": "", "attr": "", "doc": "Small print under the value." },
-            { "name": "href", "kind": "value", "args": "href: &'a str", "default": "", "attr": "href", "doc": "Make the whole card a link to the details." }
+            { "name": "href", "kind": "value", "args": "href: &'a str", "default": "", "attr": "href", "doc": "Make the whole card a link to the details." },
+            { "name": "reveal", "kind": "switch", "args": "", "default": "off", "attr": "", "doc": "Fades and rises as it scrolls into view." }
           ]
         }
       ]
@@ -1435,6 +1453,32 @@
             { "name": "label", "kind": "value", "args": "label: &'a str", "default": "Search", "attr": "", "doc": "The opener's label (default \"Search\")." },
             { "name": "key", "kind": "value", "args": "key: char", "default": "", "attr": "", "doc": "The access key (default `k`)." },
             { "name": "id", "kind": "value", "args": "id: &'a str", "default": "palette", "attr": "id", "doc": "The palette's id instead of `palette`." }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Marquee",
+      "module": "marquee",
+      "features": [
+        { "name": "inert", "baseline": { "chrome": "102", "firefox": "112", "safari": "15.5" } },
+        { "name": "translate", "baseline": { "chrome": "104", "firefox": "72", "safari": "14.1" } },
+        { "name": "animation-play-state", "baseline": { "chrome": "43", "firefox": "16", "safari": "9" } },
+        { "name": "mask-image", "baseline": { "chrome": "120", "firefox": "53", "safari": "15.4" } }
+      ],
+      "fallback": "at rest: the items wrap and the copy is hidden, without translate or under reduced motion",
+      "needs_js": "no",
+      "builders": [
+        {
+          "builder": "Marquee",
+          "lui": "Marquee",
+          "status": "beta",
+          "calls": ["ui.marquee(label: &str)"],
+          "props": [
+            { "name": "text", "kind": "item", "args": "text: &'a str", "default": "", "attr": "", "doc": "One item of plain text." },
+            { "name": "item", "kind": "item", "args": "markup: Markup", "default": "", "attr": "", "doc": "One item of markup: a logo, a quote, a card." },
+            { "name": "reverse", "kind": "switch", "args": "", "default": "off", "attr": "", "doc": "Scroll towards the end of the line instead of the start." },
+            { "name": "duration", "kind": "number", "args": "seconds: u32", "default": "40", "attr": "style", "doc": "Seconds for one full loop (`--lui-marquee-duration`)." }
           ]
         }
       ]

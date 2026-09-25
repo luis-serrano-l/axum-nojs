@@ -33,6 +33,10 @@ async fn button_page(ui: Ui) -> Page {
                     Badge("New"); Badge("Draft") secondary; Badge("Failed") danger;
                     Badge("rust") outline; Badge("Paid") ok; Badge("Pending") warn;
                 });
+                Cluster(lui! {
+                    Button("Upgrade") primary shimmer; Button("What's new") shimmer;
+                    Badge("New") shimmer; Badge("Beta") outline shimmer;
+                });
                 Cluster(lui! { @for icon in Icon::ALL { Icon(icon) label=(icon.name()); } }) gap=3;
                 // end code
                 p class="lui-note" { "The server decides a button is loading: " a href=(if loading { "/button" } else { "/button?loading=1" }) { @if loading { "stop" } @else { "start" } } "." }
@@ -53,6 +57,7 @@ async fn field_page(ui: Ui) -> Page {
                 Input("name", "Name") placeholder="Ada Lovelace" help="As it should appear on invoices.";
                 Input("email", "Email") email required value=(email)
                     error=(if bad { "An email address needs an @." } else { "" });
+                Input("key", "API key") gradient_border placeholder="sk-live-...";
                 Checkbox("terms", "I accept the terms") required;
                 Switch("digest", "Weekly digest") checked=(ui.param("digest").is_some());
                 RadioGroup("plan", "Plan") value=(ui.param("plan").unwrap_or("free")) {
@@ -87,6 +92,13 @@ async fn card_page(ui: Ui) -> Page {
                 Card title="Storage" description="Resets on the 1st."
                     footer=(lui! { LinkButton("Upgrade", "/card"); }) {
                     p { "3.2 GB of 5 GB used." }
+                }
+                Card title="Pro" description="A beam runs round the border." beam glow
+                    footer=(lui! { Button("Start trial") primary shimmer; }) {
+                    p { "The light at the top grows when you point at it." }
+                }
+                Card title="Changelog" description="A gradient border." gradient_border reveal {
+                    p { "Fades in as it scrolls into view." }
                 }
             });
             // end code

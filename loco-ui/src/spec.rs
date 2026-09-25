@@ -77,6 +77,13 @@ const DETAILS_NAME: Feature = f("<details name", b("120", "130", "17.2"));
 const DETAILS_CONTENT: Feature = f("::details-content", b("131", "143", "18.4"));
 const COOKIE: Feature = f("cookie", ALWAYS);
 const PREFERS_COLOR_SCHEME: Feature = f("prefers-color-scheme", b("76", "67", "12.1"));
+/// The showpiece effects (M30): what `.shimmer()`, `.beam()`, `.glow()`, `.gradient_border()`,
+/// `.reveal()` and the marquee need; each is at rest without it.
+const TRANSLATE: Feature = f("translate", b("104", "72", "14.1"));
+const MASK_COMPOSITE: Feature = f("mask-composite", b("120", "53", "15.4"));
+const COLOR_MIX: Feature = f("color-mix()", b("111", "113", "16.2"));
+const IN_OKLCH: Feature = f("linear-gradient(in oklch", b("111", "127", "16.2"));
+const VIEW_TIMELINE: Feature = f("animation-timeline: view()", b("115", "no", "26"));
 
 /// Every component, in README order.
 pub const SPECS: &[ComponentSpec] = &[
@@ -123,8 +130,9 @@ pub const SPECS: &[ComponentSpec] = &[
             f("popovertarget", b("114", "125", "17")),
             f("aria-busy", ALWAYS),
             f("prefers-reduced-motion", b("74", "63", "10.1")),
+            TRANSLATE,
         ],
-        fallback: "a popover command becomes popovertarget; other commands need the component's own fallback",
+        fallback: "a popover command becomes popovertarget; other commands need the component's own fallback; a shimmer button is at rest without translate",
         needs_js: NeedsJs::No,
     },
     ComponentSpec {
@@ -137,8 +145,9 @@ pub const SPECS: &[ComponentSpec] = &[
             f("role=\"switch\"", ALWAYS),
             f("appearance: none", b("84", "80", "15.4")),
             f("<fieldset>", ALWAYS),
+            IN_OKLCH,
         ],
-        fallback: "none needed: native controls; the switch stays a checkbox without appearance: none",
+        fallback: "none needed: native controls; the switch stays a checkbox without appearance: none; a gradient border is a plain one without in oklch gradients",
         needs_js: NeedsJs::Partial(
             "a live character count while typing needs the enhancement script",
         ),
@@ -146,15 +155,23 @@ pub const SPECS: &[ComponentSpec] = &[
     ComponentSpec {
         name: "Badge",
         module: "badge",
-        features: &[f("<span>", ALWAYS)],
-        fallback: "none needed",
+        features: &[f("<span>", ALWAYS), TRANSLATE],
+        fallback: "none needed; a shimmer badge is at rest without translate",
         needs_js: NeedsJs::No,
     },
     ComponentSpec {
         name: "Card",
         module: "card",
-        features: &[f("grid", b("57", "52", "10.1"))],
-        fallback: "none needed",
+        features: &[
+            f("grid", b("57", "52", "10.1")),
+            f("conic-gradient", b("69", "83", "12.1")),
+            f("@property", b("85", "128", "16.4")),
+            MASK_COMPOSITE,
+            COLOR_MIX,
+            IN_OKLCH,
+            VIEW_TIMELINE,
+        ],
+        fallback: "none needed; each showpiece effect is at rest without its feature or under reduced motion",
         needs_js: NeedsJs::No,
     },
     ComponentSpec {
@@ -581,8 +598,8 @@ pub const SPECS: &[ComponentSpec] = &[
     ComponentSpec {
         name: "Stat",
         module: "stat",
-        features: &[f("repeat(auto-fit", b("57", "52", "10.1"))],
-        fallback: "none needed",
+        features: &[f("repeat(auto-fit", b("57", "52", "10.1")), VIEW_TIMELINE],
+        fallback: "none needed; a reveal tile is shown in place without animation-timeline",
         needs_js: NeedsJs::No,
     },
     ComponentSpec {
@@ -683,6 +700,18 @@ pub const SPECS: &[ComponentSpec] = &[
         needs_js: NeedsJs::Partial(
             "arrow keys through live results and a global Ctrl+K need script",
         ),
+    },
+    ComponentSpec {
+        name: "Marquee",
+        module: "marquee",
+        features: &[
+            f("inert", b("102", "112", "15.5")),
+            TRANSLATE,
+            f("animation-play-state", b("43", "16", "9")),
+            f("mask-image", b("120", "53", "15.4")),
+        ],
+        fallback: "at rest: the items wrap and the copy is hidden, without translate or under reduced motion",
+        needs_js: NeedsJs::No,
     },
 ];
 
@@ -862,6 +891,7 @@ mod tests {
         ("input_otp", include_str!("input_otp.rs")),
         ("drawer", include_str!("drawer.rs")),
         ("palette", include_str!("palette.rs")),
+        ("marquee", include_str!("marquee.rs")),
     ];
 
     fn header(source: &str) -> String {

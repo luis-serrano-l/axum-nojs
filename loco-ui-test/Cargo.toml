@@ -19,4 +19,6 @@ png = "0.18"
 
 [dev-dependencies]
 demo = { path = "../demo" }
+loco-ui = { path = "../loco-ui" }
+maud.workspace = true
 tokio.workspace = true

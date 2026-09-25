@@ -11,6 +11,9 @@
 //! Safari 14.1); `:user-invalid` (baseline 2023) so a field is not red before it is touched;
 //! `<output for>` counts characters; `role="switch"` on a checkbox (ARIA 1.2) drawn as a
 //! track and thumb with `appearance: none`; `<fieldset>` + `<legend>` for a radio group.
+//! `.gradient_border()` draws a text field's or textarea's border with `--lui-gradient-ring`, a
+//! padding-box layer over a border-box one, behind `@supports` for
+//! `linear-gradient(in oklch, ..)` (Chrome 111, Firefox 127, Safari 16.2); nothing moves.
 //!
 //! **Accessibility:** every field has a `<label for>`; help, counter and error are joined by
 //! `aria-describedby`, a server error sets `aria-invalid` and is `role="alert"`; the switch is
@@ -21,7 +24,8 @@
 //! enhancement script does; without it the counter shows the length the server rendered).
 //!
 //! **Fallback:** none needed: every control is a native one, and the switch is still a
-//! checkbox where `appearance: none` is not supported.
+//! checkbox where `appearance: none` is not supported. A `.gradient_border()` field keeps its
+//! plain border where `in oklch` gradients are not supported.
 //!
 //! ```rust
 //! use loco_ui::prelude::*;
@@ -31,6 +35,10 @@
 //! // The same in `lui!`:
 //! let same = lui! { Input("name", "Name"); };
 //! assert_eq!(same.into_string(), name);
+//! // An opt-in gradient border, a class on the control.
+//! let key = ui.input("key", "API key").gradient_border().render().into_string();
+//! assert!(key.contains(r#"class="lui-input-gradient-border""#));
+//! assert_eq!(lui! { Input("key", "API key") gradient_border; }.into_string(), key);
 //! // Setters as on form fields, and one per input type.
 //! let email = ui.input("email", "Email").email().required().value("ada@x.org")
 //!     .help("We never share it.").error("Already taken.");
@@ -123,6 +131,7 @@ pub(crate) struct Extra<'a> {
     aria_controls: Option<&'a str>,
     class: Option<&'a str>,
     form: Option<&'a str>,
+    gradient_border: bool,
 }
 
 impl<'a> Field<'a> {
@@ -154,7 +163,8 @@ impl<'a> Field<'a> {
 /// `.date(..)`, `.time(..)`, `.datetime(..)`, `.help(..)`, `.maxlength(..)`, `.value(..)`, `.error(..)`,
 /// `.placeholder(..)`, `.list(..)`, `.autocomplete(..)`, `.inputmode(..)`, `.step(..)`,
 /// `.aria_controls(..)`, `.form(..)`, `.class(..)`, `.id(..)`; switches: `.email()`,
-/// `.password()`, `.multiple()`, `.required()`, `.search()`, `.hide_label()`, `.autofocus()`;
+/// `.password()`, `.multiple()`, `.required()`, `.search()`, `.hide_label()`, `.autofocus()`,
+/// `.gradient_border()`;
 /// from a condition: `.checked(bool)`.
 #[derive(Clone, Debug)]
 pub struct Input<'a>(Field<'a>);
@@ -233,6 +243,8 @@ impl Input<'_> {
         Prop::new("id", PropKind::Value, "id: &'a str")
             .attr("id")
             .doc("The control's id, `f-<name>` by default."),
+        Prop::new("gradient_border", PropKind::Switch, "")
+            .doc("The border drawn with `--lui-gradient-ring`."),
     ];
 }
 
@@ -455,6 +467,13 @@ impl<'a> Input<'a> {
         self.0.id = Some(id);
         self
     }
+
+    /// The border drawn with `--lui-gradient-ring`, on a text field or textarea: the one
+    /// field a page leads with. A plain border without `in oklch` gradients.
+    pub fn gradient_border(mut self) -> Self {
+        self.0.extra.gradient_border = true;
+        self
+    }
 }
 
 impl Render for Input<'_> {
@@ -534,8 +553,13 @@ impl Render for Field<'_> {
         }
         let echo = !matches!(f.kind, FieldKind::File { .. } | FieldKind::Password);
         let x = &f.extra;
+        let gradient = x.gradient_border.then_some("lui-input-gradient-border");
+        let class = match (x.class, gradient) {
+            (Some(c), Some(g)) => Some(format!("{c} {g}")),
+            (c, g) => c.or(g).map(str::to_string),
+        };
         let control = html! {
-            input id=(id) class=[x.class] name=(f.name) type=(kind) value=[echo.then_some(f.value)]
+            input id=(id) class=[class.as_deref()] name=(f.name) type=(kind) value=[echo.then_some(f.value)]
                 required[f.required] min=[min] max=[max] step=[x.step] pattern=[pattern] title=[pattern.and(help)]
                 accept=[accept] multiple[multiple] maxlength=[f.maxlength] placeholder=[f.placeholder]
                 form=[x.form] list=[x.list] autocomplete=[x.autocomplete] autofocus[x.autofocus] inputmode=[x.inputmode]
@@ -549,7 +573,7 @@ impl Render for Field<'_> {
             div class="lui-field" {
                 label for=(id) { (f.label) @if f.required { " *" } }
                 @if let FieldKind::Textarea { rows } = f.kind {
-                    textarea id=(id) name=(f.name) rows=(rows) required[f.required] maxlength=[f.maxlength] placeholder=[f.placeholder]
+                    textarea id=(id) class=[gradient] name=(f.name) rows=(rows) required[f.required] maxlength=[f.maxlength] placeholder=[f.placeholder]
                         aria-invalid=[invalid] aria-describedby=[described.as_deref()] { (f.value) }
                 } @else if let FieldKind::Select(options) = &f.kind {
                     select id=(id) name=(f.name) required[f.required] aria-invalid=[invalid] aria-describedby=[described.as_deref()] {
@@ -717,6 +741,13 @@ input::file-selector-button { font: inherit; font-weight: 500; color: var(--lui-
 .lui-field :is(input, textarea):user-invalid, .lui-field [aria-invalid=true] { border-color: var(--lui-danger); }
 .lui-field [aria-invalid=true] ~ label, .lui-field:has([aria-invalid=true]) > label { color: var(--lui-danger); }
 .lui-error { color: var(--lui-danger); margin: 0; font-size: 0.875rem; }
+/* .gradient_border(): the page's fill on the padding box over the ring gradient on the border box. */
+@supports (background: linear-gradient(in oklch, currentColor, transparent)) {
+  :is(input, textarea).lui-input-gradient-border {
+    border-color: transparent;
+    background: linear-gradient(var(--lui-bg), var(--lui-bg)) padding-box, var(--lui-gradient-ring) border-box;
+  }
+}
 .lui-radio-group { margin: 0; padding: 0; border: 0; gap: 0.75rem; }
 .lui-radio-group legend { padding: 0; margin-bottom: 0.75rem; font-size: 0.875rem; font-weight: 500; }
 .lui-radio-group[aria-invalid=true] legend { color: var(--lui-danger); }

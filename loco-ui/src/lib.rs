@@ -83,6 +83,7 @@ pub mod kanban;
 pub mod layout;
 #[cfg(feature = "loco")]
 pub mod loco;
+pub mod marquee;
 pub mod meter;
 pub mod nav_menu;
 mod oklch;
@@ -325,6 +326,7 @@ pub const COMPONENT_CSS: &[&str] = &[
     input_otp::CSS,
     drawer::CSS,
     palette::CSS,
+    marquee::CSS,
 ];
 
 #[cfg(test)]
