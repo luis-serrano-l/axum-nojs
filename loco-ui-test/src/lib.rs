@@ -27,7 +27,7 @@ use blitz_html::HtmlDocument;
 use blitz_traits::shell::{ColorScheme, Viewport};
 use tower::ServiceExt;
 
-/// Viewport used for every page, in CSS pixels.
+/// Viewport used for every page unless [`Page::render_at`] names another, in CSS pixels.
 pub const WIDTH: u32 = 1000;
 pub const HEIGHT: u32 = 700;
 
@@ -36,6 +36,8 @@ pub struct Page {
     doc: HtmlDocument,
     /// The HTML as the server sent it, for string assertions.
     pub html: String,
+    /// The viewport it was laid out in (and is painted at), in CSS pixels.
+    size: (u32, u32),
 }
 
 /// An element's box in CSS pixels, relative to the page.
@@ -51,6 +53,19 @@ impl Page {
     /// GET `path` from `router` with a raw `Cookie` header and render the response.
     pub async fn render(router: Router, path: &str, cookie: &str) -> Page {
         Page::render_expecting(router, path, cookie, 200).await
+    }
+
+    /// [`Page::render`] in a viewport `width` by `height` CSS pixels: a phone (420 wide) or a
+    /// laptop (1280), for layouts that change with the width.
+    pub async fn render_at(
+        router: Router,
+        path: &str,
+        cookie: &str,
+        width: u32,
+        height: u32,
+    ) -> Page {
+        let page = Page::render(router, path, cookie).await;
+        Page::from_html_at(page.html, width, height)
     }
 
     /// [`Page::render`] for a response with another status (a 404 page, say).
@@ -69,15 +84,24 @@ impl Page {
 
     /// Render a standalone HTML string.
     pub fn from_html(html: String) -> Page {
+        Page::from_html_at(html, WIDTH, HEIGHT)
+    }
+
+    /// Render a standalone HTML string in a viewport `width` by `height` CSS pixels.
+    pub fn from_html_at(html: String, width: u32, height: u32) -> Page {
         let config = DocumentConfig {
-            viewport: Some(Viewport::new(WIDTH, HEIGHT, 1.0, ColorScheme::Light)),
+            viewport: Some(Viewport::new(width, height, 1.0, ColorScheme::Light)),
             base_url: Some("http://localhost/".into()),
             ua_stylesheets: Some(Vec::new()),
             ..Default::default()
         };
         let mut doc = HtmlDocument::from_html(&html, config);
         doc.resolve(0.0);
-        Page { doc, html }
+        Page {
+            doc,
+            html,
+            size: (width, height),
+        }
     }
 
     /// The underlying Blitz document, for anything not wrapped here.
@@ -184,10 +208,11 @@ impl Page {
 
     /// Paint the page to `path` as an RGBA PNG at the viewport size.
     pub fn screenshot(&mut self, path: impl AsRef<Path>) -> std::io::Result<()> {
+        let (width, height) = self.size;
         let mut buf = render_to_buffer::<VelloCpuImageRenderer, _>(
-            |scene| blitz_paint::paint_scene(scene, &mut self.doc, 1.0, WIDTH, HEIGHT, 0, 0),
-            WIDTH,
-            HEIGHT,
+            |scene| blitz_paint::paint_scene(scene, &mut self.doc, 1.0, width, height, 0, 0),
+            width,
+            height,
         );
         // vello_cpu hands back premultiplied RGBA; PNG wants straight alpha.
         for px in buf.as_chunks_mut::<4>().0 {
@@ -203,7 +228,7 @@ impl Page {
             std::fs::create_dir_all(dir)?;
         }
         let file = std::fs::File::create(path)?;
-        let mut enc = png::Encoder::new(std::io::BufWriter::new(file), WIDTH, HEIGHT);
+        let mut enc = png::Encoder::new(std::io::BufWriter::new(file), width, height);
         enc.set_color(png::ColorType::Rgba);
         enc.set_depth(png::BitDepth::Eight);
         let mut writer = enc.write_header()?;

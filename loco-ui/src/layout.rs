@@ -636,9 +636,35 @@ tbody tr:hover { background: color-mix(in srgb, var(--lui-accent) 50%, transpare
 .lui-yes { color: var(--lui-ok); font-weight: 600; }
 .lui-no { color: var(--lui-danger); font-weight: 600; }
 
-/* Demo shell, after the shadcn docs: toolbar with the way back and the theme switch, the
-   lede under a title, "built on" as outline badges, the plate (a preview box over a muted
-   code block), and the index as a grid of cards per group. */
+/* Demo shell, after the shadcn docs: the sidebar of every component beside the page, a
+   toolbar with the way back and the theme switch, the lede under a title, "built on" as
+   outline badges, the plate (a preview box over a muted code block), and the index as a
+   gallery of the components themselves, per group. */
+/* The frame: from 60rem the component list is a sticky column beside a readable page (the
+   index spreads wider); narrower, it follows a closed <details> that hides it until opened,
+   so it is a plain <nav> of links either way and needs no script. */
+/* Wider than <main> (52rem): the frame spreads to 84rem, centred, by negative margins (not
+   :has(), which Blitz lacks); the header follows where :has() works. */
+.lui-site {
+  display: grid; gap: calc(var(--lui-space) * 3); width: min(84rem, calc(100vw - 2rem));
+  margin-inline: calc((100% - min(84rem, calc(100vw - 2rem))) / 2);
+}
+body:has(.lui-site) > .lui-header { max-width: 84rem; }
+.lui-site-main { min-width: 0; }
+.lui-site-menu > summary {
+  padding: 0.5rem 0.75rem; font-size: 0.875rem; border: 1px solid var(--lui-line);
+  border-radius: var(--lui-radius); background: var(--lui-card); box-shadow: var(--lui-shadow-xs);
+}
+.lui-site-menu[open] > summary { margin-bottom: var(--lui-space); }
+@media (max-width: 59.99rem) {
+  .lui-site-menu:not([open]) + .lui-sidebar { display: none; }
+}
+@media (min-width: 60rem) {
+  .lui-site { grid-template-columns: 14rem minmax(0, 1fr); gap: calc(var(--lui-space) * 6); align-items: start; }
+  .lui-site-menu { display: none; }
+  .lui-site-nav { position: sticky; top: calc(var(--lui-space) * 2); max-height: calc(100vh - var(--lui-space) * 4); overflow-y: auto; }
+  .lui-site-main:not(.lui-site-wide) { max-width: 56rem; }
+}
 .lui-toolbar { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: var(--lui-space); margin: 0 0 calc(var(--lui-space) * 3); min-height: 2.25rem; }
 .lui-popover-row { display: flex; justify-content: space-between; gap: var(--lui-space); margin-bottom: calc(var(--lui-space) * 2); }
 .lui-back { color: var(--lui-muted); text-decoration: none; font-size: 0.875rem; font-weight: 500; }
@@ -646,7 +672,7 @@ tbody tr:hover { background: color-mix(in srgb, var(--lui-accent) 50%, transpare
 .lui-back:hover { color: var(--lui-fg); }
 .lui-lede { font-size: 1.125rem; line-height: 1.75rem; color: var(--lui-muted); margin-bottom: 1rem; }
 .lui-built { color: var(--lui-muted); font-size: 0.875rem; margin: 0 0 1.5rem; }
-.lui-built code, .lui-index li code {
+.lui-built code {
   display: inline-block; margin: 0 0.25rem 0.25rem 0; padding: 0.125rem 0.5rem; white-space: nowrap;
   font-size: 0.75rem; line-height: 1rem; font-weight: 500; color: var(--lui-fg);
   background: transparent; border: 1px solid var(--lui-line); border-radius: var(--lui-radius-sm);
@@ -713,20 +739,23 @@ tbody tr:hover { background: color-mix(in srgb, var(--lui-accent) 50%, transpare
 .lui-index h2 { margin: 3rem 0 0.25rem; font-size: 1.5rem; line-height: 2rem; }
 .lui-index-layer { margin: 0 0 1rem; color: var(--lui-muted); font-size: 0.875rem; }
 .lui-index h3 { margin: 1.5rem 0 0.75rem; font-size: 0.875rem; font-weight: 500; color: var(--lui-muted); text-transform: uppercase; letter-spacing: 0.05em; }
-.lui-index ul { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: 1rem; }
-/* Each component is a card; its title link stretches over the whole card. */
-.lui-index li {
-  position: relative; display: grid; align-content: start; gap: 0.5rem; padding: 1.25rem; max-width: none;
+.lui-index > ul { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr)); gap: 1rem; }
+/* Each component is a card: its name (the link to its page), what it is for, and the
+   component itself, live, on a small stage. Widgets, blocks and flows take the whole row. */
+.lui-index > ul > li {
+  display: grid; grid-template-rows: auto auto 1fr; min-width: 0; max-width: none; padding: 1rem;
   background: var(--lui-card); border: 1px solid var(--lui-line); border-radius: var(--lui-radius-lg);
-  box-shadow: var(--lui-shadow-xs); transition: background-color 0.15s;
+  box-shadow: var(--lui-shadow-xs);
 }
-.lui-index li:hover { background: color-mix(in srgb, var(--lui-accent) 50%, var(--lui-card)); }
-.lui-index li a { font-size: 1rem; font-weight: 600; line-height: 1.5rem; text-decoration: none; color: var(--lui-fg); }
-.lui-index li a::after { content: ""; position: absolute; inset: 0; border-radius: inherit; }
-.lui-index li a:focus-visible { outline: none; }
-.lui-index li:has(a:focus-visible) { outline: 3px solid color-mix(in srgb, var(--lui-ring) 50%, transparent); }
-.lui-index li p { margin: 0 0 0.5rem; font-size: 0.875rem; color: var(--lui-muted); }
-.lui-index li span { display: block; }
+.lui-index > ul > li.lui-index-wide { grid-column: 1 / -1; }
+.lui-index > ul > li > p { margin: 0 0 0.25rem; }
+.lui-index > ul > li > p:first-child > a { font-size: 1rem; font-weight: 600; line-height: 1.5rem; color: var(--lui-fg); text-decoration: none; }
+.lui-index > ul > li > p:first-child > a:hover { text-decoration: underline; }
+.lui-index-stage {
+  min-width: 0; margin-top: 0.75rem; padding: calc(var(--lui-space) * 3) calc(var(--lui-space) * 2);
+  background: var(--lui-bg); border: 1px solid var(--lui-line); border-radius: var(--lui-radius);
+}
+.lui-index-stage > :last-child { margin-bottom: 0; }
 
 @media (prefers-reduced-motion: reduce) {
   *, ::before, ::after, ::backdrop { animation-duration: 0s !important; transition-duration: 0s !important; }

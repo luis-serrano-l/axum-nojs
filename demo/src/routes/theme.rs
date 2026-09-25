@@ -20,6 +20,9 @@ pub(crate) fn routes() -> Router {
         .route("/theme.css", get(download))
 }
 
+/// The page's live component, which the index shows too (`site::preview`).
+pub(crate) const PREVIEWS: &[super::Preview] = &[("/theme", |ui| pickers(ui, &chosen(ui)))];
+
 /// Radix Colors' step 9 of a few brand scales, offered as swatches.
 const BRANDS: [&str; 7] = [
     "#3e63dd", "#0090ff", "#12a594", "#46a758", "#f76b15", "#e93d82", "#6e56cf",
@@ -121,16 +124,15 @@ fn preview(ui: &Ui, c: &Chosen, dark: bool) -> Markup {
     }
 }
 
-async fn builder(ui: Ui) -> Page {
-    let c = chosen(&ui);
+/// The form that picks the theme, and the previews in both schemes.
+fn pickers(ui: &Ui, c: &Chosen) -> Markup {
     let download = format!(
         "/theme.css?brand={}&gray={}&radius={}",
         c.brand.replace('#', "%23"),
         c.gray.replace('#', "%23"),
         c.radius
     );
-    let rust = c.brand_scale.rust("BRAND") + &c.gray_scale.rust("GRAY");
-    let body = lui! {
+    lui! {
         // code: /theme
         form method="get" action="/theme" class="lui-theme-builder" {
             fieldset {
@@ -148,10 +150,18 @@ async fn builder(ui: Ui) -> Page {
             })
         }
         div class="lui-theme-previews" {
-            (preview(&ui, &c, false))
-            (preview(&ui, &c, true))
+            (preview(ui, c, false))
+            (preview(ui, c, true))
         }
         // end code
+    }
+}
+
+async fn builder(ui: Ui) -> Page {
+    let c = chosen(&ui);
+    let rust = c.brand_scale.rust("BRAND") + &c.gray_scale.rust("GRAY");
+    let body = lui! {
+        (pickers(&ui, &c))
         details { summary { "theme.css" } pre tabindex="0" aria-label="theme.css" { code { (css(&c)) } } }
         details { summary { "The scales in Rust" } pre tabindex="0" aria-label="The scales in Rust" { code { (rust) } } }
     };

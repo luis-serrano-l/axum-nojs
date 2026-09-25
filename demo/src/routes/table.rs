@@ -18,6 +18,11 @@ pub(crate) fn routes() -> Router {
         .route("/table/edit", post(table_edit))
 }
 
+/// Each page's live component, which the index shows too (`site::preview`), without the
+/// visitor's renamed kinds there.
+pub(crate) const PREVIEWS: &[super::Preview] =
+    &[("/table", |ui| files_page(ui, &Kinds::default()))];
+
 const FILES: [(&str, u32, &str); 12] = [
     ("archive.tar", 40960, "backup"),
     ("build.rs", 1200, "script"),
@@ -89,8 +94,8 @@ impl Kinds {
 }
 
 /// The table only renders and links; a row can expand, has its own menu and can be selected.
-async fn table_page(ui: Ui, Saved(kinds): Saved<Kinds>) -> Page {
-    let t = files_table(&ui);
+fn files_page(ui: &Ui, kinds: &Kinds) -> Markup {
+    let t = files_table(ui);
     let files = files(&t);
     let rows = files.iter().map(|f| Row::new([html! { code { (f.0) } }, html! { (loco_ui::paged_table::thousands(f.1 as usize / 1024)) " KB" }, html! { (kinds.of(&f.0, f.2)) }])
         .key(&f.0)
@@ -111,6 +116,11 @@ async fn table_page(ui: Ui, Saved(kinds): Saved<Kinds>) -> Page {
         .empty("No files match this filter.")
         .loading(ui.param("loading") == Some("1"));
     // end code
+    t.render()
+}
+
+async fn table_page(ui: Ui, Saved(kinds): Saved<Kinds>) -> Page {
+    let t = files_page(&ui, &kinds);
     page(
         &ui,
         "Table",

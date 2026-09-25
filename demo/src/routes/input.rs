@@ -23,12 +23,18 @@ pub(crate) fn routes() -> Router {
         .route("/otp", get(otp_page))
 }
 
-async fn combobox_page(ui: Ui) -> Page {
-    page(
-        &ui,
-        "Combobox",
-        lui! {
-            (ui.flash())
+/// Each page's live component, which the index shows too (`site::preview`), empty there.
+pub(crate) const PREVIEWS: &[super::Preview] = &[
+    ("/combobox", combobox),
+    ("/form", |ui| signup_form(ui, &[], &[])),
+    ("/wizard", |ui| signup(ui, &Signup::default(), &[]).render()),
+    ("/inputs", |ui| inputs(ui, &Inputs::default())),
+    ("/toggle-group", toggle_group),
+    ("/otp", otp),
+];
+
+fn combobox(ui: &Ui) -> Markup {
+    lui! {
             // One swap root around the form and its results: the script searches as you type.
             div id="langs" data-lui="swap" {
                 // code: /combobox
@@ -40,6 +46,16 @@ async fn combobox_page(ui: Ui) -> Page {
                 }
                 // end code
             }
+    }
+}
+
+async fn combobox_page(ui: Ui) -> Page {
+    page(
+        &ui,
+        "Combobox",
+        lui! {
+            (ui.flash())
+            (combobox(&ui))
             p class="lui-note" { "Pick several: each result adds a chip, each chip's \u{d7} removes it, and the chips ride along with the next search. Type a language that is not here to get a Create row." }
         },
     )
@@ -170,7 +186,8 @@ async fn wizard_submit(
         .into_response()
 }
 
-fn form_view(ui: &Ui, values: &[(String, String)], errors: &[(&str, &str)]) -> Page {
+/// The sign-up form, with the values and messages of a post the server refused.
+fn signup_form(ui: &Ui, values: &[(String, String)], errors: &[(&str, &str)]) -> Markup {
     let inline = ui.param("layout") == Some("inline");
     // code: /form
     let form = lui! {
@@ -190,6 +207,12 @@ fn form_view(ui: &Ui, values: &[(String, String)], errors: &[(&str, &str)]) -> P
         }
     };
     // end code
+    form
+}
+
+fn form_view(ui: &Ui, values: &[(String, String)], errors: &[(&str, &str)]) -> Page {
+    let inline = ui.param("layout") == Some("inline");
+    let form = signup_form(ui, values, errors);
     page(
         ui,
         "Validated form",
@@ -343,6 +366,15 @@ async fn inputs_page(ui: Ui, Query(q): Query<Inputs>, Saved(saved): Saved<Inputs
         "Select, range, colour",
         lui! {
             (ui.flash())
+            (inputs(&ui, &v))
+            p class="lui-note" { "Without the enhancement script the outputs and the swatch show the last saved values and update on submit, and the country filter needs its button." }
+        },
+    )
+}
+
+/// The form of select, range and colour, showing `v`.
+fn inputs(ui: &Ui, v: &Inputs) -> Markup {
+    lui! {
             form id="inputs" data-lui="swap" class="lui-form" method="post" action="/inputs" {
                 // code: /inputs
                 Select("size", v.size.as_deref().unwrap_or("m")) options=(SIZES) label="Size";
@@ -353,9 +385,7 @@ async fn inputs_page(ui: Ui, Query(q): Query<Inputs>, Saved(saved): Saved<Inputs
                 // end code
                 (ui.button("Save").primary())
             }
-            p class="lui-note" { "Without the enhancement script the outputs and the swatch show the last saved values and update on submit, and the country filter needs its button." }
-        },
-    )
+    }
 }
 
 /// Only known sizes, countries and `#rrggbb` colours are kept; numbers are clamped.
@@ -385,9 +415,8 @@ async fn inputs_submit(ui: Ui, Form(f): Form<Inputs>) -> Redirect {
 }
 
 /// One pick (alignment) and several (style), sent with the form they sit in.
-async fn toggle_group_page(ui: Ui) -> Page {
-    let picked = |name| ui.params(name).collect::<Vec<_>>().join(", ");
-    let body = lui! {
+fn toggle_group(ui: &Ui) -> Markup {
+    lui! {
         form method="get" action="/toggle-group" {
             Stack(lui! {
                 // code: /toggle-group
@@ -397,25 +426,38 @@ async fn toggle_group_page(ui: Ui) -> Page {
                 }
                 // end code
                 Button("Apply") primary;
-                p class="lui-note" { "Alignment: " (picked("align")) ". Style: " (picked("style")) "." }
             })
         }
+    }
+}
+
+async fn toggle_group_page(ui: Ui) -> Page {
+    let picked = |name| ui.params(name).collect::<Vec<_>>().join(", ");
+    let body = lui! {
+        (toggle_group(&ui))
+        p class="lui-note" { "Alignment: " (picked("align")) ". Style: " (picked("style")) "." }
     };
     page(&ui, "Toggle group", body)
 }
 
 /// A one-time code: one field the phone offers to fill from the message.
-async fn otp_page(ui: Ui) -> Page {
-    let body = lui! {
+fn otp(ui: &Ui) -> Markup {
+    lui! {
         form method="get" action="/otp" {
             Stack(lui! {
                 // code: /otp
                 InputOtp("code", "Code from the text message");
                 // end code
                 Button("Verify") primary;
-                @if let Some(code) = ui.param("code") { p class="lui-note" { "Sent " code { (code) } "." } }
             })
         }
+    }
+}
+
+async fn otp_page(ui: Ui) -> Page {
+    let body = lui! {
+        (otp(&ui))
+        @if let Some(code) = ui.param("code") { p class="lui-note" { "Sent " code { (code) } "." } }
     };
     page(&ui, "One-time code", body)
 }

@@ -17,12 +17,15 @@ pub(crate) fn routes() -> Router {
         .route("/popover/signout", post(popover_signout))
 }
 
-async fn dialog_page(ui: Ui) -> Page {
-    page(
-        &ui,
-        "Dialog",
-        lui! {
-            (ui.flash())
+/// Each page's live component, which the index shows too (`site::preview`).
+pub(crate) const PREVIEWS: &[super::Preview] = &[
+    ("/dialog", dialog),
+    ("/popover", menus),
+    ("/context-menu", context_menu),
+];
+
+fn dialog(ui: &Ui) -> Markup {
+    lui! {
             // code: /dialog
             Dialog("Delete account") id="confirm" title="Delete account?" small danger
                 confirm=("Delete account", "/dialog/delete") cancel="Keep it" {
@@ -30,6 +33,16 @@ async fn dialog_page(ui: Ui) -> Page {
                 Input("reason", "Tell us why (optional)") placeholder="Moving on";
             }
             // end code
+    }
+}
+
+async fn dialog_page(ui: Ui) -> Page {
+    page(
+        &ui,
+        "Dialog",
+        lui! {
+            (ui.flash())
+            (dialog(&ui))
             p class="lui-note" { "Opened by an invoker button; the footer is a real form posting to " code { "/dialog/delete" } " with a hidden " code { "returns_to" } " so the server comes back here. Server-opened: " a href="/dialog?dialog=confirm" { "?dialog=confirm" } }
         },
     )
@@ -55,12 +68,8 @@ async fn dialog_delete(ui: Ui, Form(f): Form<DeleteForm>) -> Redirect {
         .flash(&msg)
 }
 
-async fn popover_page(ui: Ui) -> Page {
-    page(
-        &ui,
-        "Popover menu",
-        lui! {
-            (ui.flash())
+fn menus(ui: &Ui) -> Markup {
+    lui! {
             div class="lui-popover-row" {
                 // code: /popover
                 Menu("Account") {
@@ -79,6 +88,16 @@ async fn popover_page(ui: Ui) -> Page {
                 }
                 // end code
             }
+    }
+}
+
+async fn popover_page(ui: Ui) -> Page {
+    page(
+        &ui,
+        "Popover menu",
+        lui! {
+            (ui.flash())
+            (menus(&ui))
             p class="lui-note" { "Links, a heading, a disabled item, a submenu that is another popover, and a " code { "<form method=\"post\">" } " action. Click outside or press Escape to close; the second menu opens end-aligned." }
         },
     )
@@ -90,13 +109,13 @@ async fn popover_signout(ui: Ui) -> Redirect {
 }
 
 /// Actions on one thing, behind a "more" button in its corner.
-async fn context_menu_page(ui: Ui) -> Page {
+fn context_menu(ui: &Ui) -> Markup {
     let items = [
         loco_ui::popover::MenuItem::link("Open", "/table"),
         loco_ui::popover::MenuItem::link("Download", "/table.csv"),
         loco_ui::popover::MenuItem::action("Delete", "/blocks/record/delete").danger(),
     ];
-    let body = lui! {
+    lui! {
         div style="max-width: 24rem" {
             // code: /context-menu
             ContextMenu("report.pdf") items=(items) {
@@ -104,6 +123,12 @@ async fn context_menu_page(ui: Ui) -> Page {
             }
             // end code
         }
+    }
+}
+
+async fn context_menu_page(ui: Ui) -> Page {
+    let body = lui! {
+        (context_menu(&ui))
         p class="lui-note" { "A right-click cannot be caught without script, so the menu hangs on a button in the corner." }
     };
     page(&ui, "Context menu", body)
