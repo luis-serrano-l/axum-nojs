@@ -1,5 +1,12 @@
 # loco-ui on Loco
 
+**Server-rendered scaffolds for Loco 1.x, zero JavaScript required.** Loco 1.0 removed its
+`--html`/`--htmx` scaffolds in favour of a JSON API and a React SPA, so a Loco app that wants
+server-rendered pages has had no first-party answer. With loco-ui, `cargo lui install` sets the
+app up, `cargo loco generate scaffold` writes HTML controllers and Maud views for a model,
+`cargo lui auth` writes the account pages, and every page works with JavaScript off (one
+optional 11 KB script updates them in place).
+
 [Loco](https://loco.rs) is a Rails-style framework on Axum, so a Loco controller is an Axum
 handler and takes `ui: Ui` like any other. The `loco` feature adds the one piece of wiring
 Loco needs, a form helper and a scaffold. The API reference is the `loco_ui::loco` module

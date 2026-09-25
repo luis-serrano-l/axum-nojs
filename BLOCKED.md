@@ -74,3 +74,19 @@ so a copied file cannot stand alone. Options:
 
 Suggested answer: 1, with the command writing `src/components/<name>.rs` and registering its
 CSS through `Page::css`. Nothing is built until you choose.
+
+## Ask Loco to link loco-ui (M29, last box), open
+
+An outward action, and it waits for the publish (M13/M29): a crate that is only a git
+dependency is a hard thing to link to. Suggested, once `loco-ui` is on crates.io: a post in
+Loco's GitHub Discussions ("Show and tell"), not an issue, along these lines:
+
+> loco-ui: server-rendered scaffolds for Loco 1.x. `cargo lui install` adds an initializer
+> and scaffold templates, so `cargo loco generate scaffold` writes HTML controllers and Maud
+> views (Post/Redirect/Get, validation that re-renders, paging from `PagerMeta`), and
+> `cargo lui auth` writes sign-in, sign-up, reset and magic-link pages. Every page works with
+> JavaScript off (tested in CI with a script-less renderer); an optional 11 KB script updates
+> pages in place. Example app: examples/loco-app. Would a link from the generators docs,
+> next to the note on the removed `--html` scaffolds, be welcome?
+
+Yours: whether, when and where to post it.

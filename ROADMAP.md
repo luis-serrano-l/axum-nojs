@@ -1196,7 +1196,15 @@ every Loco API named below against loco-rs 1.2 before relying on it, as M27 did.
   BLOCKED.md; not started.
 
 ### Positioning
-- [ ] README and `docs/loco.md` lead with "server-rendered scaffolds for Loco 1.x, zero
+- [x] README and `docs/loco.md` lead with "server-rendered scaffolds for Loco 1.x, zero
   JavaScript"; `docs/comparison.md` gains the maud-ui numbers above and a Loco column.
+  Done: README and `docs/loco.md` open with "Server-rendered scaffolds for Loco 1.x, zero
+  JavaScript required" and the three commands (`cargo lui install`, `cargo loco generate
+  scaffold`, `cargo lui auth`). "Required" keeps the owner's "HTML first, script optional"
+  (the optional script is still there). `docs/comparison.md`'s table gains a "Loco 1.x on its
+  own" column (React SPA scaffolds, no HTML ones since 1.0), rows "On Loco" and "Languages",
+  maud-ui's 21 components that need JS and "no integration", and current numbers (69.6 KB CSS,
+  58 builders, axe-clean); "When to pick which" gains loco-ui on Loco.
 - [ ] Ask to be linked from Loco's docs or discussions once the crate is published. Outward
   action: owner only (BLOCKED.md).
+  Blocked on the owner: in BLOCKED.md with a suggested message; waits for the publish.

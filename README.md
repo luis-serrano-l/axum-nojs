@@ -9,6 +9,11 @@ script-less renderer ([Blitz](loco-ui-test/tests/demo.rs)) and
 axe-clean: no serious or critical violation on any demo route, both capability variants,
 light and dark ([browser check](scripts/browser-check.mjs), in CI)
 
+**Server-rendered scaffolds for Loco 1.x, zero JavaScript required.** Loco 1.0 replaced its
+HTML scaffolds with a JSON API and a React SPA; with loco-ui, `cargo lui install` and then
+`cargo loco generate scaffold` write HTML controllers and Maud views instead, `cargo lui auth`
+adds the account pages, and every page works with script off.
+
 **Server-rendered UI components for Loco and Axum.** Buttons, forms, dialogs, tables, a
 calendar, uploads and a kanban board, written in Maud, in shadcn/ui's look. The HTML and CSS
 platform does the interactive work (`<dialog>`, `popover`, `<details>`, forms that post and
