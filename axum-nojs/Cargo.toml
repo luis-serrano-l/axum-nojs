@@ -16,6 +16,8 @@ http = ["dep:http", "dep:futures-util"]
 # Axum glue on top of `http`: extractors, the `/nojs/caps` beacon route, `IntoResponse` impls.
 # `Saved<T>` keeps a serde value in a cookie.
 axum = ["http", "dep:axum", "dep:bytes", "dep:serde", "dep:serde_urlencoded", "dep:form_urlencoded", "axum-nojs-caps/axum"]
+# Loco on top of `axum`: an initializer that mounts `/nojs/enhance.js` and `/nojs/caps`.
+loco = ["axum", "dep:loco-rs", "dep:async-trait"]
 
 [dependencies]
 maud.workspace = true
@@ -27,11 +29,14 @@ bytes = { version = "1", optional = true }
 serde = { version = "1", optional = true }
 serde_urlencoded = { version = "0.7", optional = true }
 form_urlencoded = { version = "1", optional = true }
+loco-rs = { version = "1.2", optional = true, default-features = false }
+async-trait = { version = "0.1", optional = true }
 
 [dev-dependencies]
 serde.workspace = true
 axum.workspace = true
 tokio.workspace = true
+tower = { version = "0.5", features = ["util"] }
 hyper = { version = "1", features = ["server", "http1", "http2"] }
 hyper-util = { version = "0.1", features = ["tokio", "server-auto", "http1", "http2"] }
 http-body-util = "0.1"

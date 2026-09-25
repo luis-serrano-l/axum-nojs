@@ -37,8 +37,11 @@ jobs:
       run: |
         cargo clippy -p axum-nojs --all-targets
         cargo clippy -p axum-nojs --features http --all-targets
+        cargo clippy -p axum-nojs --features loco --all-targets
     - name: Tests
-      run: cargo test --workspace
+      run: |
+        cargo test --workspace
+        cargo test -p axum-nojs --features loco loco
     - name: Rustdoc
       run: cargo doc --no-deps -p axum-nojs-caps -p axum-nojs --all-features
       env:

@@ -40,7 +40,8 @@ scripts/verify.sh                  # everything above plus a <script> grep and t
 - `axum-nojs/` – the library crate. Depends only on `maud` and `axum-nojs-caps`. Feature `http` adds
   `Redirect::into_http` and `Streamed` (a chunk stream); feature `axum` adds the `Ui` extractor,
   `IntoResponse` for `Page`/`Redirect`/`Streamed`, the `/nojs/caps` beacon route, and
-  `Saved<T>` (the only use of serde). Everything else is plain functions over strings
+  `Saved<T>` (the only use of serde); feature `loco` adds `loco::Initializer`, which mounts
+  the script and beacon routes in a Loco app. Everything else is plain functions over strings
   (`Ui::from_request`, `Page::into_string`, `Redirect::set_cookies`, `caps::beacon_cookie`).
 - `demo/` – Axum lib + binary, one route per component, one `use axum_nojs::prelude::*`.
   Each component page shows the code between its `// code: <href>` and `// end code`

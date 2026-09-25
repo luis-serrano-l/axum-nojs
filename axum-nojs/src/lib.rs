@@ -74,6 +74,8 @@ pub mod icon;
 pub mod input;
 pub mod kanban;
 pub mod layout;
+#[cfg(feature = "loco")]
+pub mod loco;
 pub mod meter;
 pub mod paged_table;
 pub mod pager;

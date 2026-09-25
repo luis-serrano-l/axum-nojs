@@ -742,9 +742,14 @@ loco-rs source (fetch it into `~/.cargo/registry` with a scratch crate) before r
 - [x] Decision: commit to Loco as the primary target? Owner only; if no, skip this milestone.
   Answered 2026-09-24: yes, as a `loco` feature on `axum-nojs` (not a separate crate), and
   the crate keeps its name (M26).
-- [ ] `loco` feature: an `Initializer` whose `after_routes` mounts
+- [x] `loco` feature: an `Initializer` whose `after_routes` mounts
   `/nojs/enhance.js` and the `/nojs/caps` beacon route, so an app adds one line to
   `app.rs::initializers`.
+  Done: `axum-nojs/src/loco.rs`, feature `loco` (loco-rs 1.2, `default-features = false`,
+  plus `async-trait`, which Loco's trait uses). `Box::new(axum_nojs::loco::Initializer)`;
+  `after_routes` merges `caps::router()` and `enhance::router()` and adds the `slim` layer
+  (not `csp`: the app owns its policy). `loco::mount(router)` does the same by hand; a test
+  checks both routes answer. `verify.sh` and CI run clippy and the tests with `--features loco`.
 - [ ] Handlers return Loco's `Result<Response>`: `Page`, `Redirect` and `Streamed` convert with
   `?`/`.into_response()`, no wrapper; a doctest shows a Loco controller using `ui: Ui`.
 - [ ] Validation errors: Loco models validate with the `validator` crate; a helper maps

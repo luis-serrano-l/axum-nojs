@@ -109,6 +109,10 @@ thin wrapper over plain functions on strings, so any server can do the same in a
 | Out-of-order streaming | | `Streamed::into_stream()` → chunks | `impl IntoResponse for Streamed` |
 | The optional script | serve `enhance::JS` at `enhance::SCRIPT_PATH` | same | `enhance::router()` |
 
+On [Loco](https://loco.rs), `--features loco` adds `axum_nojs::loco::Initializer`: one line
+in `App::initializers` mounts the script and the beacon route, and controllers take `ui: Ui`
+like any Axum handler.
+
 `axum-nojs/examples/hyper_server.rs` is the whole of it on raw hyper: three components, the
 beacon route, a POST answered with PRG, the script served by hand. `.into_string()` on any
 component gives the HTML to another template engine.
