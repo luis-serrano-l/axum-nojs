@@ -24,6 +24,7 @@
 
 use maud::{Markup, Render, html};
 
+use crate::props::{Prop, PropKind};
 use crate::{Ui, slug};
 
 /// A progress bar, made by [`Ui::progress`].
@@ -34,6 +35,13 @@ pub struct Progress<'a> {
     value: u64,
     max: u64,
     label: Option<&'a str>,
+}
+
+impl Progress<'_> {
+    /// Every setter with its kind, arguments, default and the HTML attribute it sets; listed by
+    /// [`crate::props`] and kept in step with the setters by a test.
+    pub const PROPS: &'static [Prop] = &[Prop::new("label", PropKind::Value, "text: &'a str")
+        .doc("A label above the bar, with the percentage beside it.")];
 }
 
 impl Ui {

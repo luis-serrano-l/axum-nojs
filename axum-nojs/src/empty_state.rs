@@ -26,6 +26,7 @@
 use maud::{Markup, Render, html};
 
 use crate::button::Button;
+use crate::props::{Prop, PropKind};
 use crate::{Caps, Ui};
 
 /// What a list shows when there is nothing in it, made by [`Ui::empty_state`].
@@ -38,6 +39,20 @@ pub struct EmptyState<'a> {
     text: Option<Markup>,
     link: Option<(&'a str, &'a str)>,
     post: Option<(&'a str, &'a str)>,
+}
+
+impl EmptyState<'_> {
+    /// Every setter with its kind, arguments, default and the HTML attribute it sets; listed by
+    /// [`crate::props`] and kept in step with the setters by a test.
+    pub const PROPS: &'static [Prop] = &[
+        Prop::new("icon", PropKind::Value, "icon: &'a str")
+            .doc("A glyph or emoji above the title, hidden from screen readers."),
+        Prop::new("text", PropKind::Value, "text: Markup").doc("One or two sentences."),
+        Prop::new("link", PropKind::Value, "label: &'a str, href: &'a str")
+            .doc("A link to follow."),
+        Prop::new("post", PropKind::Value, "label: &'a str, action: &'a str")
+            .doc("A button posting to `action`."),
+    ];
 }
 
 impl Ui {

@@ -24,6 +24,7 @@
 use maud::{Markup, Render, html};
 
 use crate::Ui;
+use crate::props::{Prop, PropKind};
 
 /// An avatar, made by [`Ui::avatar`].
 ///
@@ -33,6 +34,19 @@ pub struct Avatar<'a> {
     name: &'a str,
     src: Option<&'a str>,
     size: Option<&'static str>,
+}
+
+impl Avatar<'_> {
+    /// Every setter with its kind, arguments, default and the HTML attribute it sets; listed by
+    /// [`crate::props`] and kept in step with the setters by a test.
+    pub const PROPS: &'static [Prop] = &[
+        Prop::new("src", PropKind::Value, "src: &'a str")
+            .attr("src")
+            .doc("The picture's URL."),
+        Prop::new("small", PropKind::Switch, "")
+            .doc("1.5rem across instead of 2rem, for lists and table rows."),
+        Prop::new("large", PropKind::Switch, "").doc("3rem across, for a profile header."),
+    ];
 }
 
 impl Ui {

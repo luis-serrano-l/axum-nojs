@@ -35,6 +35,7 @@
 use maud::{Markup, Render, html};
 
 use crate::button::Button;
+use crate::props::{Prop, PropKind};
 use crate::{Icon, Ui, enhance};
 
 /// A file the server holds: its name, size, a thumbnail and a link.
@@ -60,6 +61,29 @@ pub struct Upload<'a> {
     hint: Option<&'a str>,
     files: Vec<Held<'a>>,
     remove: Option<&'a str>,
+}
+
+impl Upload<'_> {
+    /// Every setter with its kind, arguments, default and the HTML attribute it sets; listed by
+    /// [`crate::props`] and kept in step with the setters by a test.
+    pub const PROPS: &'static [Prop] = &[
+        Prop::new("accept", PropKind::Value, "types: &'a str")
+            .attr("accept")
+            .doc("`accept`."),
+        Prop::new("multiple", PropKind::Switch, "")
+            .attr("multiple")
+            .doc("Several files at once."),
+        Prop::new("hint", PropKind::Value, "text: &'a str").doc("Small print in the drop zone."),
+        Prop::new("file", PropKind::Item, "name: &'a str, size: u64")
+            .doc("A file the server already holds, `size` in bytes."),
+        Prop::new("preview", PropKind::Modifier, "src: &'a str")
+            .doc("A thumbnail for the file added last (an image URL)."),
+        Prop::new("href", PropKind::Modifier, "href: &'a str")
+            .attr("href")
+            .doc("A link to the file added last, on its name."),
+        Prop::new("remove", PropKind::Value, "action: &'a str")
+            .doc("A Remove button per file, posting `<name>=<file name>` to `action`."),
+    ];
 }
 
 impl Ui {

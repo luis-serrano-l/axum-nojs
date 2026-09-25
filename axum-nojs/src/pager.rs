@@ -36,6 +36,7 @@ use std::rc::Rc;
 use maud::{Markup, Render, html};
 
 use crate::button::Button;
+use crate::props::{Prop, PropKind};
 use crate::{Cap, Caps, Ui, enhance};
 
 /// A load-more list, made by [`Ui::pager`]: pages 1 to `?page=` of the rows, 10 per page
@@ -50,6 +51,22 @@ pub struct Pager<'a> {
     page: usize,
     per_page: usize,
     row: Option<Rc<dyn Fn(usize) -> Markup + 'a>>,
+}
+
+impl Pager<'_> {
+    /// Every setter with its kind, arguments, default and the HTML attribute it sets; listed by
+    /// [`crate::props`] and kept in step with the setters by a test.
+    pub const PROPS: &'static [Prop] = &[
+        Prop::new("per_page", PropKind::Number, "per_page: usize")
+            .default("10")
+            .doc("Rows per page."),
+        Prop::new(
+            "rows",
+            PropKind::Value,
+            "row: impl Fn(usize) -> Markup + 'a",
+        )
+        .doc("Row `i` (0-based) of the list."),
+    ];
 }
 
 /// The row closure is shown as `<fn>`: a builder is still printable data.

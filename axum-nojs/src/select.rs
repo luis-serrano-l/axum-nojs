@@ -47,6 +47,7 @@
 use maud::{Markup, Render, html};
 
 use crate::input::Input;
+use crate::props::{Prop, PropKind};
 use crate::{Cap, Ui};
 
 /// One option: its value, its text (what the filter matches), an optional icon and optional
@@ -63,6 +64,13 @@ pub struct SelectOption<'a> {
     pub icon: Option<&'a str>,
     /// Markup shown instead of `text` when the select is rich.
     pub content: Option<Markup>,
+}
+
+impl SelectOption<'_> {
+    /// Every setter with its kind, arguments, default and the HTML attribute it sets; listed by
+    /// [`crate::props`] and kept in step with the setters by a test.
+    pub const PROPS: &'static [Prop] = &[Prop::new("content", PropKind::Value, "content: Markup")
+        .doc("Rich markup instead of the text (with `Caps::BaseSelect` only).")];
 }
 
 impl<'a> SelectOption<'a> {
@@ -121,6 +129,39 @@ pub struct Select<'a> {
     search: Option<&'a str>,
     search_over: usize,
     label: Option<&'a str>,
+}
+
+impl Select<'_> {
+    /// Every setter with its kind, arguments, default and the HTML attribute it sets; listed by
+    /// [`crate::props`] and kept in step with the setters by a test.
+    pub const PROPS: &'static [Prop] = &[
+        Prop::new(
+            "options",
+            PropKind::Value,
+            "options: impl IntoIterator<Item = O>",
+        )
+        .doc("Options with no `<optgroup>`."),
+        Prop::new(
+            "group",
+            PropKind::Value,
+            "label: &'a str, options: impl IntoIterator<Item = O>",
+        )
+        .doc("Options under `<optgroup label>`."),
+        Prop::new(
+            "groups",
+            PropKind::Value,
+            "groups: impl IntoIterator<Item = (&'a str, G)>",
+        )
+        .doc("Several labelled groups at once."),
+        Prop::new("search", PropKind::Value, "action: &'a str")
+            .doc("A filter box submitting `<name>-q` to `action` with GET."),
+        Prop::new("search_over", PropKind::Number, "n: usize")
+            .default("15")
+            .doc("Show the filter box above this many options (default 15)."),
+        Prop::new("label", PropKind::Value, "label: &'a str")
+            .attr("label")
+            .doc("A `<label>` above the select, in a `div.nojs-field` like a form field."),
+    ];
 }
 
 impl Ui {

@@ -30,6 +30,7 @@ use maud::{Markup, Render, html};
 
 use crate::Ui;
 use crate::flash::{Level, parse};
+use crate::props::{Prop, PropKind};
 
 /// The request's flash messages as toasts in the corner, made by [`Ui::toasts`]; nothing when
 /// there are none.
@@ -39,6 +40,13 @@ use crate::flash::{Level, parse};
 pub struct Toasts<'a> {
     ui: &'a Ui,
     dismiss: bool,
+}
+
+impl Toasts<'_> {
+    /// Every setter with its kind, arguments, default and the HTML attribute it sets; listed by
+    /// [`crate::props`] and kept in step with the setters by a test.
+    pub const PROPS: &'static [Prop] = &[Prop::new("dismiss", PropKind::Switch, "")
+        .doc("A close link on each toast, back to this page.")];
 }
 
 impl Ui {

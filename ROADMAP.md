@@ -820,3 +820,91 @@ loco-rs source (fetch it into `~/.cargo/registry` with a scratch crate) before r
   (what it writes and needs, field kinds) and the Loco settings that affect pages
   (`secure_headers` presets, `csp`). README has a "Use with Loco" section linking both the
   doc and `examples/loco-app`.
+
+## M28 · Props written like attributes, and props you can list
+The owner read maud-ui's getting-started page (2026-09-24) and liked two things: the props
+(named values at the call site) and how fast its swaps feel. They want a component call to
+read like the Maud element around it, `name=value` the way `a href="/tabs?tab.demo=2"` does,
+instead of `.name(value)`, keeping the dot form where it reads better (a route building a
+component in a loop, a value from a condition). And they want the props introspectable.
+M26 kept builders over `Props { .., ..Default::default() }` for good reasons (components read
+`ui`, list adders with last-item modifiers, short calls stay short); nothing here undoes that:
+the attribute form must compile down to the same builder, so both forms stay one code path.
+- [x] Decision (owner): which attribute form. Options shown with the `/dialog` call and a
+  tabs strip built from data: A, a `nojs!` macro (Maud plus components); B, public fields plus
+  struct update (`Tabs { vertical: true, ..ui.tabs("demo") }`); C, builders only.
+  Answered 2026-09-24: A. B was dropped because it reads longer than the dot form, freezes
+  every internal field as public API (`#[non_exhaustive]` forbids struct update outside the
+  crate) and brings back nested item structs. CLAUDE.md's "no macros beyond `html!`" becomes
+  "no macros beyond `html!` and `nojs!`".
+- [x] One source of truth per component: a `PROPS: &[Prop]` const on each builder
+  (`Prop { name, kind: Text | Switch | Condition | Number | Item | Modifier, default, attr,
+  doc }`), where `attr` is the HTML attribute or element it maps to. The existing
+  "**Setters.**" paragraph is generated from it (or checked against it by
+  `every_setter_is_listed_on_its_builder`), so docs, macro and introspection cannot drift.
+  Done: `props.rs` (`Prop`, `PropKind`: value, number, switch, condition, item, modifier)
+  and a `PROPS` const on all 43 builders that have a **Setters.** paragraph (263 setters),
+  generated once from the source and then kept by hand. `args` is the Rust argument list;
+  `attr` is filled where the setter writes that attribute; `default` is `off` for switches
+  and conditions and the constructor's literal where there is one. The paragraph is not
+  generated (rustdoc cannot read a const); it is checked: `every_setter_is_listed_on_its_builder`
+  (paragraph ↔ source) and `every_setter_is_in_props` (PROPS ↔ source: names, arguments,
+  and a switch has none, a condition one `bool`). Both share one source reader. Bulk adders
+  (`.options(iter)`, `.rows(iter)`) are values; items add exactly one thing.
+- [ ] `axum-nojs-macros` (proc macro, re-exported as `axum_nojs::nojs` and in the prelude)
+  with `nojs!`, a superset of `html!` that expands to the builder chain, so the dot form and
+  the attribute form are one code path. Target shape:
+  ```rust
+  nojs! {
+      Dialog("Delete account") id="confirm" title="Delete account?" small danger
+          confirm=("Delete account", "/dialog/delete") cancel="Keep it" {
+          p { "This cannot be undone." }
+          Input("reason", "Tell us why (optional)") placeholder="Moving on";
+      }
+      Tabs("projects") vertical=[narrow] {
+          @for p in &projects {
+              tab (p.name) badge=(p.open_issues) { p { (p.summary) } }
+          }
+          lazy "Archive" { (archive(&ui)) }
+      }
+  }
+  ```
+  Rules, each with a test:
+  - A capitalized name is a component: `Tabs(..)` is `ui.tabs(..)` (snake case of the name),
+    `(..)` holds the required arguments, text first as today. A user's own component (M24)
+    works the same once it has an `impl Ui` method (an extension trait outside the crate).
+  - `x="v"` or `x=(expr)` is `.x(v)`; `x=(a, b)` is `.x(a, b)`; a bare `x` is `.x()`;
+    `x=[cond]` calls `.x()` only when `cond` holds (Maud's toggle syntax).
+  - Lowercase names inside a component's block are its item adders (`tab`, `item`, `link`,
+    `column`, `text`..): `tab "Use" badge=3 { .. }` is `.tab("Use", html!{..}).badge(3)`, so an
+    item's attributes are the last-item modifiers. An adder that takes a closure (`lazy`) gets
+    `|| html!{..}`. A proc macro cannot read `PROPS` (a const in another crate), so the
+    body is passed through a trait both `Markup` and `Fn() -> Markup` implement, and every
+    adder that takes a body accepts it: no list of closure adders in the macro.
+  - `@for`, `@if`, `@match` and `@let` among items expand to a fold over the builder, so items
+    built from data stay inline. Plain Maud elsewhere passes through untouched, so `nojs!` can
+    replace `html!` in any route; a component's block that is not items becomes `.body(..)`.
+  - `ui` is taken from scope by that name (documented); `nojs!(ctx => ..)` names another.
+  - A misspelled prop is rustc's own method-not-found error ("did you mean `vertical`?"), so
+    every expanded call must keep the span of the attribute it came from; a `trybuild` test
+    pins the error text for a typo, a missing required argument and a wrong value type.
+  - Record in FINDINGS whatever rust-analyzer does and does not offer inside `nojs!`.
+- [ ] Both forms tested: a test renders each component once in the dot form and once in
+  `nojs!` and asserts identical HTML; doctests show both in every component header
+  (common call first, per convention 5).
+- [ ] Introspection: `axum_nojs::props()` lists every component with its `PROPS`; the M5 spec
+  JSON (`spec/components.json`, `cargo run -p demo -- spec`) gains a `props` array per
+  component; each demo component page shows a props table (name, kind, default, HTML
+  attribute, doc) under its code snippet, generated from the same list; `Debug` on a builder
+  prints only the props set away from their default.
+- [ ] Swap speed: measure the enhancement script's click-to-paint on a table sort, a tab and
+  a pager (Firefox via `scripts/browser-check.mjs` timings) beside an htmx swap of the same
+  fragment; if ours is slower, close the gap in `enhance.rs` (answer with only the swap
+  root's fragment when asked, prefetch on `pointerdown`, skip the view transition on fast
+  answers). Numbers go in README "What a page weighs"; the no-script path stays as it is.
+- [ ] Demo: routes move to `nojs!` where it reads better (every snippet between the `// code:`
+  markers, so each component page teaches the attribute form); the dot form stays where a route
+  keeps a builder in a variable. Count route lines before and after.
+- [ ] Docs: CLAUDE.md convention 5 and the macro rule (`nojs!`, `PROPS`), README first example,
+  `docs/ergonomics.md` before/after, `docs/comparison.md` (maud-ui's `Props` vs ours, now
+  with names at the call site and a listable prop table, which maud-ui's docs say it lacks).

@@ -23,6 +23,7 @@
 use maud::{Markup, Render, html};
 
 use crate::Ui;
+use crate::props::{Prop, PropKind};
 
 /// A badge, made by [`Ui::badge`].
 ///
@@ -33,6 +34,21 @@ pub struct Badge<'a> {
     text: &'a str,
     tone: Option<&'static str>,
     href: Option<&'a str>,
+}
+
+impl Badge<'_> {
+    /// Every setter with its kind, arguments, default and the HTML attribute it sets; listed by
+    /// [`crate::props`] and kept in step with the setters by a test.
+    pub const PROPS: &'static [Prop] = &[
+        Prop::new("secondary", PropKind::Switch, "").doc("The quieter `--nojs-secondary` fill."),
+        Prop::new("danger", PropKind::Switch, "").doc("Filled with `--nojs-danger`."),
+        Prop::new("outline", PropKind::Switch, "").doc("A border and no fill."),
+        Prop::new("ok", PropKind::Switch, "").doc("A tint of `--nojs-ok`."),
+        Prop::new("warn", PropKind::Switch, "").doc("A tint of `--nojs-warn`."),
+        Prop::new("href", PropKind::Value, "href: &'a str")
+            .attr("href")
+            .doc("Make the badge a link."),
+    ];
 }
 
 impl Ui {

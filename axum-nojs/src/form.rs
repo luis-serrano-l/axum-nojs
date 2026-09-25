@@ -63,6 +63,7 @@ use maud::{Markup, Render, html};
 
 use crate::button::Button;
 use crate::input::{Field, FieldKind};
+use crate::props::{Prop, PropKind};
 use crate::{Caps, Ui, enhance};
 
 /// A POST form of fields, made by [`Ui::form`], or the fields alone, made by [`Ui::fields`].
@@ -84,6 +85,65 @@ pub struct Form<'a> {
     values: &'a [(String, String)],
     errors: &'a [(&'a str, &'a str)],
     id: Option<&'a str>,
+}
+
+impl Form<'_> {
+    /// Every setter with its kind, arguments, default and the HTML attribute it sets; listed by
+    /// [`crate::props`] and kept in step with the setters by a test.
+    pub const PROPS: &'static [Prop] = &[
+        Prop::new("group", PropKind::Item, "legend: &'a str")
+            .doc("A `<fieldset>` with this `<legend>` around the fields added after it."),
+        Prop::new("text", PropKind::Item, "name: &'a str, label: &'a str")
+            .doc("Single-line text."),
+        Prop::new("password", PropKind::Item, "name: &'a str, label: &'a str")
+            .doc("`type=\"password\"`."),
+        Prop::new("email", PropKind::Item, "name: &'a str, label: &'a str")
+            .doc("`type=\"email\"`."),
+        Prop::new("number", PropKind::Item, "name: &'a str, label: &'a str, min: i64, max: i64")
+            .doc("A whole number from `min` to `max`, inclusive."),
+        Prop::new("pattern", PropKind::Item, "name: &'a str, label: &'a str, pattern: &'a str, hint: &'a str")
+            .doc("Text that must match `pattern` (the HTML `pattern` attribute)."),
+        Prop::new("textarea", PropKind::Item, "name: &'a str, label: &'a str, rows: u8")
+            .doc("Multi-line text, `rows` high."),
+        Prop::new("file", PropKind::Item, "name: &'a str, label: &'a str, accept: &'a str")
+            .doc("A file picker."),
+        Prop::new("date", PropKind::Item, "name: &'a str, label: &'a str, min: &'a str, max: &'a str")
+            .doc("`type=\"date\"`, bounds as `YYYY-MM-DD`."),
+        Prop::new("time", PropKind::Item, "name: &'a str, label: &'a str, min: &'a str, max: &'a str")
+            .doc("`type=\"time\"`, bounds as `HH:MM`."),
+        Prop::new("select", PropKind::Item, "name: &'a str, label: &'a str, options: impl IntoIterator<Item = &'a str>")
+            .doc("A `<select>` of `options`, each its own value and text."),
+        Prop::new("checkbox", PropKind::Item, "name: &'a str, label: &'a str")
+            .doc("A checkbox posting `true` when ticked and nothing when not (so a `bool` with `#[serde(default)]` reads it)."),
+        Prop::new("hidden", PropKind::Item, "name: &'a str, value: &'a str")
+            .doc("`type=\"hidden\"`."),
+        Prop::new("required", PropKind::Modifier, "")
+            .doc("The `required` attribute, and a `*` after the label."),
+        Prop::new("help", PropKind::Modifier, "help: &'a str")
+            .doc("Help text under the field."),
+        Prop::new("maxlength", PropKind::Modifier, "max: usize")
+            .doc("`maxlength`, counted in an `<output>` under the field."),
+        Prop::new("value", PropKind::Modifier, "value: &'a str").attr("value")
+            .doc("The field's current value (ignored for files)."),
+        Prop::new("checked", PropKind::Modifier, "checked: bool")
+            .doc("Tick the checkbox."),
+        Prop::new("error", PropKind::Modifier, "message: &'a str")
+            .doc("A server message beside the field."),
+        Prop::new("placeholder", PropKind::Modifier, "placeholder: &'a str")
+            .doc("Placeholder text."),
+        Prop::new("multiple", PropKind::Modifier, "")
+            .doc("The file picker takes several files."),
+        Prop::new("submit", PropKind::Value, "label: &'a str").default("Submit")
+            .doc("Label of the submit button."),
+        Prop::new("inline", PropKind::Switch, "")
+            .doc("Labels beside the fields on screens wider than 40rem, above them on narrower ones."),
+        Prop::new("values", PropKind::Value, "values: &'a [(String, String)]")
+            .doc("Submitted values by field name, as a form post parses them."),
+        Prop::new("errors", PropKind::Value, "errors: &'a [(&'a str, &'a str)]")
+            .doc("Server messages `(field name, message)`."),
+        Prop::new("id", PropKind::Value, "id: &'a str").attr("id")
+            .doc("What the swap root's id is built from, when two forms on a page post to the same action (one per tab, say)."),
+    ];
 }
 
 impl Ui {

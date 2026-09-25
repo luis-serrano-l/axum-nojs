@@ -24,6 +24,7 @@
 use maud::{Markup, Render, html};
 
 use crate::Ui;
+use crate::props::{Prop, PropKind};
 
 /// Placeholder bars, made by [`Ui::skeleton`]; the last one is shorter, like the end of a
 /// paragraph.
@@ -34,6 +35,18 @@ pub struct Skeleton<'a> {
     lines: usize,
     label: &'a str,
     heading: bool,
+}
+
+impl Skeleton<'_> {
+    /// Every setter with its kind, arguments, default and the HTML attribute it sets; listed by
+    /// [`crate::props`] and kept in step with the setters by a test.
+    pub const PROPS: &'static [Prop] = &[
+        Prop::new("label", PropKind::Value, "label: &'a str")
+            .default("Loading")
+            .doc("What screen readers hear instead of \"Loading\"."),
+        Prop::new("heading", PropKind::Switch, "")
+            .doc("Start with a wider, taller bar standing in for a heading."),
+    ];
 }
 
 impl Ui {

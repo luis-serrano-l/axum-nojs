@@ -42,6 +42,7 @@
 use maud::{Markup, Render, html};
 
 use crate::Ui;
+use crate::props::{Prop, PropKind};
 
 /// How much a message matters: sets its colour and how it is announced.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -111,6 +112,18 @@ pub struct Flash<'a> {
     ui: &'a Ui,
     dismiss: bool,
     auto_hide: bool,
+}
+
+impl Flash<'_> {
+    /// Every setter with its kind, arguments, default and the HTML attribute it sets; listed by
+    /// [`crate::props`] and kept in step with the setters by a test.
+    pub const PROPS: &'static [Prop] = &[
+        Prop::new("dismiss", PropKind::Switch, "").doc(
+            "A dismiss link on each message, back to this page (which no longer has the flash).",
+        ),
+        Prop::new("auto_hide", PropKind::Switch, "")
+            .doc("Fade calm messages out after a few seconds."),
+    ];
 }
 
 impl Ui {

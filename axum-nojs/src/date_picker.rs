@@ -34,6 +34,7 @@ use maud::{Markup, Render, html};
 
 use crate::button::Button;
 use crate::calendar::Date;
+use crate::props::{Prop, PropKind};
 use crate::{Cap, Icon, Ui};
 
 /// A date field, made by [`Ui::date_picker`].
@@ -51,6 +52,29 @@ pub struct DatePicker<'a> {
     disabled: Option<fn(Date) -> bool>,
     required: bool,
     native: bool,
+}
+
+impl DatePicker<'_> {
+    /// Every setter with its kind, arguments, default and the HTML attribute it sets; listed by
+    /// [`crate::props`] and kept in step with the setters by a test.
+    pub const PROPS: &'static [Prop] = &[
+        Prop::new("value", PropKind::Value, "date: &'a str")
+            .attr("value")
+            .doc("The current value, `YYYY-MM-DD` (a saved date)."),
+        Prop::new("min", PropKind::Value, "date: &'a str")
+            .attr("min")
+            .doc("The first day that can be picked, `YYYY-MM-DD`."),
+        Prop::new("max", PropKind::Value, "date: &'a str")
+            .attr("max")
+            .doc("The last day that can be picked, `YYYY-MM-DD`."),
+        Prop::new("disabled", PropKind::Value, "off: fn(Date) -> bool").doc(
+            "Days for which `off` returns true cannot be picked (the native control ignores this).",
+        ),
+        Prop::new("required", PropKind::Switch, "")
+            .doc("A day must be picked before the form submits."),
+        Prop::new("native", PropKind::Switch, "")
+            .doc("The browser's own `<input type=\"date\">` instead of the calendar."),
+    ];
 }
 
 impl Ui {

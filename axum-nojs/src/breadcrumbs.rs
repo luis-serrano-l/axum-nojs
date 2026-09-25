@@ -26,6 +26,7 @@
 use maud::{Markup, Render, html};
 
 use crate::Ui;
+use crate::props::{Prop, PropKind};
 
 /// A trail of links ending in the current page, made by [`Ui::breadcrumbs`].
 ///
@@ -34,6 +35,17 @@ use crate::Ui;
 pub struct Breadcrumbs<'a> {
     trail: Vec<(&'a str, &'a str)>,
     here: &'a str,
+}
+
+impl Breadcrumbs<'_> {
+    /// Every setter with its kind, arguments, default and the HTML attribute it sets; listed by
+    /// [`crate::props`] and kept in step with the setters by a test.
+    pub const PROPS: &'static [Prop] = &[
+        Prop::new("link", PropKind::Item, "label: &'a str, href: &'a str")
+            .doc("One step from the root towards this page."),
+        Prop::new("here", PropKind::Value, "label: &'a str")
+            .doc("The current page, last in the trail and not a link."),
+    ];
 }
 
 impl Ui {

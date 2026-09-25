@@ -82,6 +82,7 @@ pub mod pager;
 pub mod palette;
 pub mod popover;
 pub mod progress;
+pub mod props;
 pub mod range;
 #[cfg(feature = "axum")]
 pub mod saved;
@@ -440,13 +441,19 @@ mod tests {
         assert!(missing.is_empty(), "not Clone + Debug: {missing:?}");
     }
 
-    /// Every option discoverable in one place: a builder whose doc has a `**Setters.**`
-    /// paragraph names every setter of its `impl` blocks there (grouped by the convention:
-    /// values and items, no-argument switches, `bool` conditions).
-    #[test]
-    fn every_setter_is_listed_on_its_builder() {
+    /// A builder with a `**Setters.**` paragraph, read from the source: its name, doc, the
+    /// file's source and every setter (`pub fn` taking `self` and returning `Self`) of its
+    /// `impl` blocks as (name, arguments after `self`).
+    struct Builder {
+        name: String,
+        doc: String,
+        source: String,
+        setters: Vec<(String, String)>,
+    }
+
+    fn builders() -> Vec<Builder> {
         let dir = concat!(env!("CARGO_MANIFEST_DIR"), "/src");
-        let mut missing = Vec::new();
+        let mut found = Vec::new();
         for entry in std::fs::read_dir(dir).unwrap() {
             let source = std::fs::read_to_string(entry.unwrap().path()).unwrap();
             let lines: Vec<&str> = source.lines().collect();
@@ -483,24 +490,141 @@ mod tests {
                         body.push('\n');
                     }
                 }
+                let mut setters = Vec::new();
                 for (at, _) in body.match_indices("pub fn ") {
                     let sig = &body[at..body[at..].find('{').map_or(body.len(), |e| at + e)];
                     let setter: String = sig["pub fn ".len()..]
                         .chars()
                         .take_while(|c| c.is_alphanumeric() || *c == '_')
                         .collect();
-                    if sig.contains("self")
-                        && sig.contains("-> Self")
-                        && !doc.contains(&format!("`.{setter}("))
-                    {
-                        missing.push(format!("{name}::{setter}"));
+                    if !(sig.contains("self") && sig.contains("-> Self")) {
+                        continue;
                     }
+                    // The arguments after `self`, on one line and without a trailing comma.
+                    let open = sig.find('(').unwrap();
+                    let close = sig.rfind(") ->").unwrap();
+                    let args = sig[open + 1..close]
+                        .split_whitespace()
+                        .collect::<Vec<_>>()
+                        .join(" ");
+                    let args = args
+                        .trim_start_matches("mut ")
+                        .trim_start_matches("self")
+                        .trim_start_matches(',')
+                        .trim()
+                        .trim_end_matches(',')
+                        .replace("( ", "(")
+                        .replace(" )", ")");
+                    setters.push((setter, args));
+                }
+                found.push(Builder {
+                    name,
+                    doc,
+                    source: source.clone(),
+                    setters,
+                });
+            }
+        }
+        assert!(found.len() > 30, "found only {} builders", found.len());
+        found
+    }
+
+    /// Every option discoverable in one place: a builder whose doc has a `**Setters.**`
+    /// paragraph names every setter of its `impl` blocks there (grouped by the convention:
+    /// values and items, no-argument switches, `bool` conditions).
+    #[test]
+    fn every_setter_is_listed_on_its_builder() {
+        let mut missing = Vec::new();
+        for b in builders() {
+            for (setter, _) in &b.setters {
+                if !b.doc.contains(&format!("`.{setter}(")) {
+                    missing.push(format!("{}::{setter}", b.name));
                 }
             }
         }
         assert!(
             missing.is_empty(),
             "setters missing from their builder's **Setters.** list: {missing:?}"
+        );
+    }
+
+    /// Every setter is in its builder's `PROPS` with the arguments it takes, nothing else is,
+    /// and the kind agrees with the arguments (a switch takes none, a condition one `bool`).
+    #[test]
+    fn every_setter_is_in_props() {
+        let mut wrong = Vec::new();
+        for b in builders() {
+            // The builder's own `PROPS` block: an `impl Name` holding `pub const PROPS`.
+            let head = [
+                format!("\nimpl {} {{", b.name),
+                format!("\nimpl {}<'_> {{", b.name),
+            ];
+            let block = head.iter().find_map(|h| {
+                b.source.match_indices(h.as_str()).find_map(|(at, _)| {
+                    let block = &b.source[at..at + b.source[at..].find("\n}").unwrap()];
+                    block.contains("pub const PROPS").then_some(block)
+                })
+            });
+            let Some(block) = block else {
+                wrong.push(format!("{}: no PROPS", b.name));
+                continue;
+            };
+            // The string literals of `text`, in order, with `\"` unescaped.
+            let literals = |text: &str| {
+                let mut found = Vec::new();
+                let mut chars = text.chars();
+                while let Some(c) = chars.next() {
+                    if c != '"' {
+                        continue;
+                    }
+                    let mut lit = String::new();
+                    while let Some(c) = chars.next() {
+                        match c {
+                            '\\' => lit.push(chars.next().unwrap()),
+                            '"' => break,
+                            c => lit.push(c),
+                        }
+                    }
+                    found.push(lit);
+                }
+                found
+            };
+            let mut listed = Vec::new();
+            for entry in block.split("Prop::new(").skip(1) {
+                let lits = literals(entry);
+                let (name, args) = (lits[0].clone(), lits[1].clone());
+                let kind = entry.split("PropKind::").nth(1).unwrap();
+                let kind = &kind[..kind.find(',').unwrap()];
+                listed.push((name.clone(), args.clone()));
+                let fits = match kind {
+                    "Switch" => args.is_empty(),
+                    "Condition" => args.ends_with(": bool") && !args.contains(','),
+                    _ => true,
+                };
+                if !fits {
+                    wrong.push(format!("{}::{name}: {kind} does not fit `{args}`", b.name));
+                }
+            }
+            for setter in &b.setters {
+                if !listed.contains(setter) {
+                    wrong.push(format!(
+                        "{}::{}({}) not in PROPS",
+                        b.name, setter.0, setter.1
+                    ));
+                }
+            }
+            for prop in &listed {
+                if !b.setters.contains(prop) {
+                    wrong.push(format!(
+                        "{}::{}({}) in PROPS but not a setter",
+                        b.name, prop.0, prop.1
+                    ));
+                }
+            }
+        }
+        assert!(
+            wrong.is_empty(),
+            "PROPS out of step with the setters: {wrong:#?}"
         );
     }
 

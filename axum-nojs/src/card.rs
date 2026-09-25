@@ -29,6 +29,7 @@
 use maud::{Markup, Render, html};
 
 use crate::Ui;
+use crate::props::{Prop, PropKind};
 
 /// A card, made by [`Ui::card`].
 ///
@@ -42,6 +43,24 @@ pub struct Card<'a> {
     body: Option<Markup>,
     footer: Option<Markup>,
     id: Option<&'a str>,
+}
+
+impl Card<'_> {
+    /// Every setter with its kind, arguments, default and the HTML attribute it sets; listed by
+    /// [`crate::props`] and kept in step with the setters by a test.
+    pub const PROPS: &'static [Prop] = &[
+        Prop::new("title", PropKind::Value, "title: &'a str").doc("The heading at the top (`h3`)."),
+        Prop::new("description", PropKind::Value, "text: &'a str")
+            .doc("Muted text under the title."),
+        Prop::new("header", PropKind::Value, "markup: Markup")
+            .doc("More header content, placed at the top right beside the title."),
+        Prop::new("body", PropKind::Value, "markup: Markup").doc("The main content."),
+        Prop::new("footer", PropKind::Value, "markup: Markup")
+            .doc("A row at the bottom, usually buttons."),
+        Prop::new("id", PropKind::Value, "id: &'a str")
+            .attr("id")
+            .doc("The root's id, for a link to the card or a swap target."),
+    ];
 }
 
 impl Ui {

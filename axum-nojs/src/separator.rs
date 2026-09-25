@@ -23,6 +23,7 @@
 use maud::{Markup, Render, html};
 
 use crate::Ui;
+use crate::props::{Prop, PropKind};
 
 /// A separator, made by [`Ui::separator`].
 ///
@@ -31,6 +32,17 @@ use crate::Ui;
 pub struct Separator<'a> {
     label: Option<&'a str>,
     vertical: bool,
+}
+
+impl Separator<'_> {
+    /// Every setter with its kind, arguments, default and the HTML attribute it sets; listed by
+    /// [`crate::props`] and kept in step with the setters by a test.
+    pub const PROPS: &'static [Prop] = &[
+        Prop::new("label", PropKind::Value, "text: &'a str")
+            .doc("A word in the middle of the line."),
+        Prop::new("vertical", PropKind::Switch, "")
+            .doc("Down instead of across, between items in a row (a `ui.cluster`)."),
+    ];
 }
 
 impl Ui {

@@ -35,6 +35,7 @@
 
 use maud::{Markup, Render, html};
 
+use crate::props::{Prop, PropKind};
 use crate::{Cap, Icon, Ui, slug};
 
 /// Navigation in a drawer beside the page's content, made by [`Ui::drawer`].
@@ -51,6 +52,26 @@ pub struct Drawer<'a> {
     title: Option<&'a str>,
     sidebar: bool,
     open: bool,
+}
+
+impl Drawer<'_> {
+    /// Every setter with its kind, arguments, default and the HTML attribute it sets; listed by
+    /// [`crate::props`] and kept in step with the setters by a test.
+    pub const PROPS: &'static [Prop] = &[
+        Prop::new("nav", PropKind::Value, "nav: Markup")
+            .doc("The navigation inside the drawer, usually a `ul` of links."),
+        Prop::new("body", PropKind::Value, "body: Markup")
+            .doc("The page's content, beside the drawer."),
+        Prop::new("id", PropKind::Value, "id: &str")
+            .attr("id")
+            .doc("The drawer's id instead of the label's slug."),
+        Prop::new("title", PropKind::Value, "title: &'a str")
+            .doc("A heading at the top of the panel (also its accessible name)."),
+        Prop::new("sidebar", PropKind::Switch, "").doc("A permanent sidebar above 60rem."),
+        Prop::new("open", PropKind::Condition, "open: bool")
+            .attr("open")
+            .doc("Render it open (non-modal) from the server."),
+    ];
 }
 
 impl Ui {

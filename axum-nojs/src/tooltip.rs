@@ -27,6 +27,7 @@
 
 use maud::{Markup, PreEscaped, Render, html};
 
+use crate::props::{Prop, PropKind};
 use crate::{Ui, slug};
 
 /// A trigger with a tooltip, made by [`Ui::tooltip`].
@@ -38,6 +39,18 @@ pub struct Tooltip<'a> {
     trigger: Markup,
     below: bool,
     id: Option<&'a str>,
+}
+
+impl Tooltip<'_> {
+    /// Every setter with its kind, arguments, default and the HTML attribute it sets; listed by
+    /// [`crate::props`] and kept in step with the setters by a test.
+    pub const PROPS: &'static [Prop] = &[
+        Prop::new("below", PropKind::Switch, "")
+            .doc("Show the text under the trigger instead of above it."),
+        Prop::new("id", PropKind::Value, "id: &'a str")
+            .attr("id")
+            .doc("The tooltip's id, `nojs-tooltip-<slug of the text>` by default."),
+    ];
 }
 
 impl Ui {

@@ -25,6 +25,7 @@
 use maud::{Markup, Render, html};
 
 use crate::Ui;
+use crate::props::{Prop, PropKind};
 
 /// A wrapping row, made by [`Ui::cluster`].
 ///
@@ -34,6 +35,19 @@ pub struct Cluster {
     content: Markup,
     justify: Option<&'static str>,
     gap: Option<u8>,
+}
+
+impl Cluster {
+    /// Every setter with its kind, arguments, default and the HTML attribute it sets; listed by
+    /// [`crate::props`] and kept in step with the setters by a test.
+    pub const PROPS: &'static [Prop] = &[
+        Prop::new("between", PropKind::Switch, "")
+            .doc("First child at the start, last at the end, the rest spread between."),
+        Prop::new("end", PropKind::Switch, "")
+            .doc("Children packed at the end of the row (a dialog's or card's actions)."),
+        Prop::new("gap", PropKind::Number, "n: u8")
+            .doc("The gap as a step of the `--nojs-space-*` scale."),
+    ];
 }
 
 impl Ui {

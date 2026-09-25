@@ -47,6 +47,7 @@
 use maud::{Markup, Render, html};
 
 use crate::button::Button;
+use crate::props::{Prop, PropKind};
 use crate::{Cap, Caps, Icon, Ui, slug};
 
 /// Where the menu opens relative to its button.
@@ -150,6 +151,41 @@ pub struct Menu<'a> {
     label: &'a str,
     items: Vec<MenuItem<'a>>,
     placement: Placement,
+}
+
+impl Menu<'_> {
+    /// Every setter with its kind, arguments, default and the HTML attribute it sets; listed by
+    /// [`crate::props`] and kept in step with the setters by a test.
+    pub const PROPS: &'static [Prop] = &[
+        Prop::new("link", PropKind::Item, "text: &'a str, href: &'a str").doc("A link."),
+        Prop::new("action", PropKind::Item, "text: &'a str, action: &'a str")
+            .attr("action")
+            .doc("A `<form method=\"post\">` button posting to `action`."),
+        Prop::new("heading", PropKind::Item, "text: &'a str").doc("A section heading."),
+        Prop::new("separator", PropKind::Item, "").doc("A rule between groups."),
+        Prop::new(
+            "submenu",
+            PropKind::Item,
+            "text: &'a str, items: impl IntoIterator<Item = I>",
+        )
+        .doc("A nested menu of `items` (`MenuItem`s or `(text, href)` links)."),
+        Prop::new("icon", PropKind::Modifier, "icon: &'a str").doc(
+            "A glyph or emoji before the item's text (decorative, hidden from assistive tech).",
+        ),
+        Prop::new("shortcut", PropKind::Modifier, "keys: &'a str")
+            .doc("A shortcut shown after the item's text, as `<kbd>`."),
+        Prop::new("disabled", PropKind::Modifier, "")
+            .attr("disabled")
+            .doc("The item is shown but not usable."),
+        Prop::new("danger", PropKind::Modifier, "").doc("The item is destructive."),
+        Prop::new("id", PropKind::Value, "id: &str")
+            .attr("id")
+            .doc("The menu's id instead of the label's slug."),
+        Prop::new("align_end", PropKind::Switch, "").doc(
+            "Open below the button with right edges aligned, for a button at the end of a row.",
+        ),
+        Prop::new("open_right", PropKind::Switch, "").doc("Open to the right of the button."),
+    ];
 }
 
 impl Ui {

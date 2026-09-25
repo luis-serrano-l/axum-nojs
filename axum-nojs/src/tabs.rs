@@ -54,6 +54,7 @@ use std::rc::Rc;
 
 use maud::{Markup, Render, html};
 
+use crate::props::{Prop, PropKind};
 use crate::{Cap, Ui};
 
 /// One tab: a title, a panel (ready or rendered on demand), an optional badge count.
@@ -93,6 +94,27 @@ pub struct Tabs<'a> {
     tabs: Vec<Tab<'a>>,
     vertical: bool,
     select_below: bool,
+}
+
+impl Tabs<'_> {
+    /// Every setter with its kind, arguments, default and the HTML attribute it sets; listed by
+    /// [`crate::props`] and kept in step with the setters by a test.
+    pub const PROPS: &'static [Prop] = &[
+        Prop::new("tab", PropKind::Item, "title: &'a str, body: Markup")
+            .doc("A tab titled `title` with its panel."),
+        Prop::new(
+            "lazy",
+            PropKind::Item,
+            "title: &'a str, body: impl Fn() -> Markup + 'a",
+        )
+        .doc("A tab whose panel is rendered only when it is the open one."),
+        Prop::new("badge", PropKind::Modifier, "count: usize")
+            .doc("A count after the title of the tab added last."),
+        Prop::new("vertical", PropKind::Switch, "")
+            .doc("Titles in a column on the left, the open panel beside them."),
+        Prop::new("select_below", PropKind::Switch, "")
+            .doc("On screens under 40rem the titles give way to a `<select>`."),
+    ];
 }
 
 impl Ui {

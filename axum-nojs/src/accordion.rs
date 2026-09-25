@@ -44,6 +44,7 @@
 use maud::{Markup, Render, html};
 
 use crate::Ui;
+use crate::props::{Prop, PropKind};
 
 /// One section: a title, a body, an optional icon before the title and summary line under it.
 #[derive(Clone, Debug)]
@@ -67,6 +68,23 @@ pub struct Accordion<'a> {
     items: Vec<Item<'a>>,
     multi: bool,
     controls: bool,
+}
+
+impl Accordion<'_> {
+    /// Every setter with its kind, arguments, default and the HTML attribute it sets; listed by
+    /// [`crate::props`] and kept in step with the setters by a test.
+    pub const PROPS: &'static [Prop] = &[
+        Prop::new("item", PropKind::Item, "title: &'a str, body: Markup")
+            .doc("A section titled `title` with its body."),
+        Prop::new("icon", PropKind::Modifier, "icon: &'a str")
+            .doc("Text (an emoji or a glyph) before the title of the section added last, hidden from assistive tech."),
+        Prop::new("summary", PropKind::Modifier, "summary: &'a str")
+            .doc("A muted line under the title of the section added last, visible while it is closed."),
+        Prop::new("multi", PropKind::Switch, "")
+            .doc("Several sections may be open at once (`?open.<group>=0,2`)."),
+        Prop::new("controls", PropKind::Switch, "")
+            .doc("\"Expand all\" and \"Collapse all\" links above the sections (with `multi`)."),
+    ];
 }
 
 impl Ui {

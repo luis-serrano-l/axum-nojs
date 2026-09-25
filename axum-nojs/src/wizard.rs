@@ -47,6 +47,7 @@
 
 use maud::{Markup, Render, html};
 
+use crate::props::{Prop, PropKind};
 use crate::{Ui, enhance, form::Form};
 
 /// What a step shows: fields (listed by the review) or any markup.
@@ -100,6 +101,29 @@ pub struct Wizard<'a> {
     at: Option<usize>,
     finish: &'a str,
     progress: bool,
+}
+
+impl Wizard<'_> {
+    /// Every setter with its kind, arguments, default and the HTML attribute it sets; listed by
+    /// [`crate::props`] and kept in step with the setters by a test.
+    pub const PROPS: &'static [Prop] = &[
+        Prop::new("step", PropKind::Item, "title: &'a str, body: impl Into<StepBody<'a>>")
+            .doc("A step titled `title` showing `body`."),
+        Prop::new("review", PropKind::Item, "title: &'a str")
+            .doc("The last step."),
+        Prop::new("optional", PropKind::Modifier, "")
+            .doc("The step added last can be skipped."),
+        Prop::new("values", PropKind::Value, "values: &'a [(String, String)]")
+            .doc("What the visitor entered so far, by field name, for every step's fields and the review."),
+        Prop::new("at", PropKind::Number, "n: usize")
+            .doc("Show step `n` whatever the request says."),
+        Prop::new("errors", PropKind::Value, "errors: &'a [(&'a str, &'a str)]")
+            .doc("Server messages `(field name, message)` for the posted step."),
+        Prop::new("finish", PropKind::Value, "label: &'a str").default("Finish")
+            .doc("Label of the last step's submit button."),
+        Prop::new("progress", PropKind::Condition, "progress: bool")
+            .doc("Show the `<progress>` bar (on by default)."),
+    ];
 }
 
 impl Ui {
@@ -172,7 +196,7 @@ impl<'a> Wizard<'a> {
     }
 
     /// What the visitor entered so far, by field name, for every step's fields and the
-    /// review (the pairs the posts carried, kept in a [`crate::Saved`] cookie say).
+    /// review: the pairs the posts carried, usually kept in a [`crate::Saved`] cookie.
     pub fn values(mut self, values: &'a [(String, String)]) -> Self {
         self.values = values;
         self

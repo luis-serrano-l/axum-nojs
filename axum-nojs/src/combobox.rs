@@ -47,6 +47,7 @@
 use maud::{Markup, Render, html};
 
 use crate::input::Input;
+use crate::props::{Prop, PropKind};
 use crate::{Icon, Ui, state::encode};
 
 /// A search form sending `name` (the text) and `sel` (the selection) by GET, made by
@@ -65,6 +66,42 @@ pub struct Combobox<'a> {
     create: Option<&'a str>,
     label: &'a str,
     placeholder: &'a str,
+}
+
+impl Combobox<'_> {
+    /// Every setter with its kind, arguments, default and the HTML attribute it sets; listed by
+    /// [`crate::props`] and kept in step with the setters by a test.
+    pub const PROPS: &'static [Prop] = &[
+        Prop::new(
+            "options",
+            PropKind::Value,
+            "values: impl IntoIterator<Item = &'a str>",
+        )
+        .doc("Suggestions with no `<optgroup>`."),
+        Prop::new(
+            "group",
+            PropKind::Value,
+            "label: &'a str, values: impl IntoIterator<Item = &'a str>",
+        )
+        .doc("Suggestions under `<optgroup label>`."),
+        Prop::new(
+            "results",
+            PropKind::Value,
+            "results: impl IntoIterator<Item = &'a str>",
+        )
+        .doc("The server's own results for the query."),
+        Prop::new("multi", PropKind::Switch, "")
+            .doc("Results add to the selection instead of replacing it."),
+        Prop::new("create", PropKind::Value, "action: &'a str")
+            .doc("A \"Create\" row posting to `action` when the query matches nothing."),
+        Prop::new("label", PropKind::Value, "label: &'a str")
+            .default("Search")
+            .attr("label")
+            .doc("Accessible name of the input."),
+        Prop::new("placeholder", PropKind::Value, "placeholder: &'a str")
+            .default("Type to search…")
+            .doc("Placeholder of the input."),
+    ];
 }
 
 impl Ui {

@@ -21,6 +21,7 @@
 
 use maud::{Markup, Render, html};
 
+use crate::props::{Prop, PropKind};
 use crate::{Ui, slug};
 
 /// A meter, made by [`Ui::meter`].
@@ -35,6 +36,24 @@ pub struct Meter<'a> {
     high: Option<i64>,
     optimum: Option<i64>,
     label: Option<&'a str>,
+}
+
+impl Meter<'_> {
+    /// Every setter with its kind, arguments, default and the HTML attribute it sets; listed by
+    /// [`crate::props`] and kept in step with the setters by a test.
+    pub const PROPS: &'static [Prop] = &[
+        Prop::new("label", PropKind::Value, "text: &'a str")
+            .doc("A label above the meter, with the value beside it."),
+        Prop::new("low", PropKind::Number, "low: i64")
+            .attr("low")
+            .doc("Below this is \"low\"."),
+        Prop::new("high", PropKind::Number, "high: i64")
+            .attr("high")
+            .doc("Above this is \"high\"."),
+        Prop::new("optimum", PropKind::Number, "optimum: i64")
+            .attr("optimum")
+            .doc("The best value."),
+    ];
 }
 
 impl Ui {

@@ -30,6 +30,7 @@
 use maud::{Markup, Render, html};
 
 use crate::button::Button;
+use crate::props::{Prop, PropKind};
 use crate::{Cap, Icon, Ui, enhance, slug};
 
 /// A card: its key (what the move posts), title and small print.
@@ -58,6 +59,20 @@ pub struct Kanban<'a> {
     ui: &'a Ui,
     action: &'a str,
     columns: Vec<Column<'a>>,
+}
+
+impl Kanban<'_> {
+    /// Every setter with its kind, arguments, default and the HTML attribute it sets; listed by
+    /// [`crate::props`] and kept in step with the setters by a test.
+    pub const PROPS: &'static [Prop] = &[
+        Prop::new("column", PropKind::Item, "key: &'a str, title: &'a str").doc("A column."),
+        Prop::new("limit", PropKind::Modifier, "limit: usize")
+            .doc("A work-in-progress limit for the column added last."),
+        Prop::new("card", PropKind::Modifier, "key: &'a str, title: &'a str")
+            .doc("A card in the column added last."),
+        Prop::new("note", PropKind::Modifier, "text: &'a str")
+            .doc("Small print under the card added last."),
+    ];
 }
 
 impl Ui {

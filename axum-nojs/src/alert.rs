@@ -22,6 +22,7 @@
 
 use maud::{Markup, Render, html};
 
+use crate::props::{Prop, PropKind};
 use crate::{Icon, Ui};
 
 /// A callout, made by [`Ui::alert`].
@@ -35,6 +36,21 @@ pub struct Alert<'a> {
     body: Option<Markup>,
     tone: Option<&'static str>,
     icon: Option<Icon>,
+}
+
+impl Alert<'_> {
+    /// Every setter with its kind, arguments, default and the HTML attribute it sets; listed by
+    /// [`crate::props`] and kept in step with the setters by a test.
+    pub const PROPS: &'static [Prop] = &[
+        Prop::new("description", PropKind::Value, "text: &'a str")
+            .doc("A line of text under the title."),
+        Prop::new("body", PropKind::Value, "markup: Markup")
+            .doc("Markup under the title (a list, a link), after the description."),
+        Prop::new("icon", PropKind::Value, "icon: Icon").doc("Another icon than the tone's own."),
+        Prop::new("danger", PropKind::Switch, "").doc("Something went wrong."),
+        Prop::new("warn", PropKind::Switch, "").doc("Something to watch."),
+        Prop::new("ok", PropKind::Switch, "").doc("Something worked."),
+    ];
 }
 
 impl Ui {

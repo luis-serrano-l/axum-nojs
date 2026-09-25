@@ -35,6 +35,7 @@
 use maud::{Markup, Render, html};
 
 use crate::Ui;
+use crate::props::{Prop, PropKind};
 
 /// A slider with the server's current value beside it, made by [`Ui::range`] or, as a
 /// low/high pair over one track, by [`Ui::range_pair`]. 0 to 100 in steps of 1 unless told
@@ -49,6 +50,28 @@ pub struct Range<'a> {
     max: i64,
     step: i64,
     label: Option<&'a str>,
+}
+
+impl Range<'_> {
+    /// Every setter with its kind, arguments, default and the HTML attribute it sets; listed by
+    /// [`crate::props`] and kept in step with the setters by a test.
+    pub const PROPS: &'static [Prop] = &[
+        Prop::new("min", PropKind::Number, "min: i64")
+            .default("0")
+            .attr("min")
+            .doc("Lowest value."),
+        Prop::new("max", PropKind::Number, "max: i64")
+            .default("100")
+            .attr("max")
+            .doc("Highest value."),
+        Prop::new("step", PropKind::Number, "step: i64")
+            .default("1")
+            .attr("step")
+            .doc("Distance between allowed values (at least 1)."),
+        Prop::new("label", PropKind::Value, "label: &'a str")
+            .attr("label")
+            .doc("A `<label>` above the slider, in a `div.nojs-field` like a form field."),
+    ];
 }
 
 impl Ui {

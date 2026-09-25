@@ -73,6 +73,7 @@ use crate::button::Button;
 use crate::input::Input;
 use crate::paged_table::{PagedTableOptions, paged_table_with};
 use crate::popover::{MenuItem, Placement, menu};
+use crate::props::{Prop, PropKind};
 use crate::{Cap, Caps, Icon, Ui, enhance, slug};
 
 /// One column: the query key it sorts by, its header text, whether it can be sorted, how
@@ -144,6 +145,27 @@ pub struct Row<'a> {
     detail: Option<Markup>,
     menu: Vec<MenuItem<'a>>,
     values: Vec<&'a str>,
+}
+
+impl Row<'_> {
+    /// Every setter with its kind, arguments, default and the HTML attribute it sets; listed by
+    /// [`crate::props`] and kept in step with the setters by a test.
+    pub const PROPS: &'static [Prop] = &[
+        Prop::new("detail", PropKind::Value, "detail: Markup")
+            .doc("A block shown under the first cell when its `<details>` is opened."),
+        Prop::new(
+            "values",
+            PropKind::Value,
+            "values: impl IntoIterator<Item = &'a str>",
+        )
+        .doc("The raw text of each cell, in column order, for editing the row in place."),
+        Prop::new(
+            "menu",
+            PropKind::Value,
+            "items: impl IntoIterator<Item = MenuItem<'a>>",
+        )
+        .doc("Items of the row's action menu (needs a `key`)."),
+    ];
 }
 
 impl<'a> Row<'a> {
@@ -604,6 +626,39 @@ pub struct Table<'a> {
     empty: &'a str,
     loading: bool,
     edit: Option<&'a str>,
+}
+
+impl Table<'_> {
+    /// Every setter with its kind, arguments, default and the HTML attribute it sets; listed by
+    /// [`crate::props`] and kept in step with the setters by a test.
+    pub const PROPS: &'static [Prop] = &[
+        Prop::new("column", PropKind::Item, "key: &'a str, label: &'a str")
+            .doc("A column."),
+        Prop::new("sortable", PropKind::Modifier, "")
+            .doc("The column added last sorts the table."),
+        Prop::new("numeric", PropKind::Modifier, "")
+            .doc("The column added last holds numbers."),
+        Prop::new("editable", PropKind::Modifier, "")
+            .doc("The column added last becomes a text box when its row is edited in place (`Table::edit`)."),
+        Prop::new("edit", PropKind::Value, "action: &'a str")
+            .doc("Rows (with a `Row::key`) can be edited in place."),
+        Prop::new("width", PropKind::Modifier, "width: &'a str")
+            .doc("A CSS width for the column added last, such as `6rem` or `30%`."),
+        Prop::new("rows", PropKind::Value, "rows: impl IntoIterator<Item = Row<'a>>")
+            .doc("The rows, already sorted and filtered as `Table::sort` and `Table::filter` say."),
+        Prop::new("paged", PropKind::Number, "total: usize")
+            .doc("Page the rows."),
+        Prop::new("choose_columns", PropKind::Switch, "")
+            .doc("A \"Columns\" chooser."),
+        Prop::new("bulk", PropKind::Value, "action: &'a str, buttons: impl IntoIterator<Item = (&'a str, &'a str)>")
+            .doc("A checkbox per row (rows need a `Row::key`) and a bar of `(value, label)` buttons posting to `action`."),
+        Prop::new("csv", PropKind::Value, "href: &'a str")
+            .doc("A \"Download CSV\" link to `href` with the current sort, filter and columns appended."),
+        Prop::new("empty", PropKind::Value, "message: &'a str").default("No rows match.")
+            .doc("What the body says when there are no rows."),
+        Prop::new("loading", PropKind::Condition, "loading: bool")
+            .doc("Skeleton rows with `aria-busy` instead of the rows."),
+    ];
 }
 
 impl Ui {

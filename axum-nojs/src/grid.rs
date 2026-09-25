@@ -26,6 +26,7 @@
 use maud::{Markup, Render, html};
 
 use crate::Ui;
+use crate::props::{Prop, PropKind};
 
 /// A responsive grid, made by [`Ui::grid`].
 ///
@@ -35,6 +36,13 @@ pub struct Grid<'a> {
     min: &'a str,
     content: Markup,
     gap: Option<u8>,
+}
+
+impl Grid<'_> {
+    /// Every setter with its kind, arguments, default and the HTML attribute it sets; listed by
+    /// [`crate::props`] and kept in step with the setters by a test.
+    pub const PROPS: &'static [Prop] = &[Prop::new("gap", PropKind::Number, "n: u8")
+        .doc("The gap as a step of the `--nojs-space-*` scale.")];
 }
 
 impl Ui {

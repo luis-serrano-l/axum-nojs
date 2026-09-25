@@ -41,6 +41,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use maud::{Markup, Render, html};
 
 use crate::button::Button;
+use crate::props::{Prop, PropKind};
 use crate::{Icon, Ui, enhance};
 
 /// A calendar day, `YYYY-MM-DD`, in the proleptic Gregorian calendar.
@@ -208,6 +209,31 @@ pub struct Calendar<'a> {
     radio: bool,
     required: bool,
     value: Option<Date>,
+}
+
+impl Calendar<'_> {
+    /// Every setter with its kind, arguments, default and the HTML attribute it sets; listed by
+    /// [`crate::props`] and kept in step with the setters by a test.
+    pub const PROPS: &'static [Prop] = &[
+        Prop::new("today", PropKind::Value, "date: &str")
+            .doc("The date to mark as today (`YYYY-MM-DD`), instead of the server's clock in UTC."),
+        Prop::new("min", PropKind::Value, "date: &str")
+            .doc("The first day that can be picked (`YYYY-MM-DD`)."),
+        Prop::new("max", PropKind::Value, "date: &str")
+            .doc("The last day that can be picked (`YYYY-MM-DD`)."),
+        Prop::new("disabled", PropKind::Value, "off: fn(Date) -> bool").attr("disabled")
+            .doc("Days for which `off` returns true cannot be picked."),
+        Prop::new("event", PropKind::Item, "date: &str, text: &'a str")
+            .doc("A dot under the day `date` (`YYYY-MM-DD`), with `text` for screen readers and as the day's tooltip."),
+        Prop::new("sunday_first", PropKind::Switch, "")
+            .doc("Weeks start on Sunday instead of Monday."),
+        Prop::new("radio", PropKind::Switch, "")
+            .doc("Each day is a radio button named after the calendar, to post inside a form, instead of a link."),
+        Prop::new("value", PropKind::Value, "date: &str").attr("value")
+            .doc("The picked day (`YYYY-MM-DD`) when it does not come from the query string."),
+        Prop::new("required", PropKind::Switch, "").attr("required")
+            .doc("In radio mode, a day must be picked before the form submits."),
+    ];
 }
 
 impl Ui {

@@ -25,6 +25,7 @@
 use maud::{Markup, Render, html};
 
 use crate::Ui;
+use crate::props::{Prop, PropKind};
 
 /// A side-and-main layout, made by [`Ui::split`].
 ///
@@ -36,6 +37,19 @@ pub struct Split<'a> {
     width: Option<&'a str>,
     side_end: bool,
     gap: Option<u8>,
+}
+
+impl Split<'_> {
+    /// Every setter with its kind, arguments, default and the HTML attribute it sets; listed by
+    /// [`crate::props`] and kept in step with the setters by a test.
+    pub const PROPS: &'static [Prop] = &[
+        Prop::new("side_width", PropKind::Value, "width: &'a str")
+            .doc("The side's width, any CSS length."),
+        Prop::new("side_end", PropKind::Switch, "")
+            .doc("The side after the main part, in the markup and on screen."),
+        Prop::new("gap", PropKind::Number, "n: u8")
+            .doc("The gap as a step of the `--nojs-space-*` scale."),
+    ];
 }
 
 impl Ui {

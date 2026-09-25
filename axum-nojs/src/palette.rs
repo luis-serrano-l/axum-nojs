@@ -40,6 +40,7 @@
 use maud::{Markup, Render, html};
 
 use crate::input::Input;
+use crate::props::{Prop, PropKind};
 use crate::{Cap, Icon, Ui};
 
 /// One destination in the palette.
@@ -86,6 +87,32 @@ pub struct Palette<'a> {
     group: &'a str,
     label: &'a str,
     key: char,
+}
+
+impl Palette<'_> {
+    /// Every setter with its kind, arguments, default and the HTML attribute it sets; listed by
+    /// [`crate::props`] and kept in step with the setters by a test.
+    pub const PROPS: &'static [Prop] = &[
+        Prop::new("command", PropKind::Item, "label: &'a str, href: &'a str").doc("A destination."),
+        Prop::new(
+            "commands",
+            PropKind::Value,
+            "commands: impl IntoIterator<Item = (&'a str, &'a str)>",
+        )
+        .doc("Several `(label, href)` destinations at once."),
+        Prop::new("keywords", PropKind::Modifier, "keywords: &'a str")
+            .doc("Extra words that find the command added last, space-separated."),
+        Prop::new("group", PropKind::Value, "heading: &'a str")
+            .doc("List the commands added after this under a heading."),
+        Prop::new("label", PropKind::Value, "label: &'a str")
+            .default("Search")
+            .doc("The opener's label (default \"Search\")."),
+        Prop::new("key", PropKind::Value, "key: char").doc("The access key (default `k`)."),
+        Prop::new("id", PropKind::Value, "id: &'a str")
+            .default("palette")
+            .attr("id")
+            .doc("The palette's id instead of `palette`."),
+    ];
 }
 
 impl Ui {

@@ -33,6 +33,7 @@
 use maud::{Markup, Render, html};
 
 use crate::button::Button;
+use crate::props::{Prop, PropKind};
 use crate::{Caps, Ui};
 
 /// A colour input with a swatch of its current value, made by [`Ui::color`].
@@ -45,6 +46,19 @@ pub struct Color<'a> {
     presets: &'a [&'a str],
     alpha: Option<u8>,
     label: Option<&'a str>,
+}
+
+impl Color<'_> {
+    /// Every setter with its kind, arguments, default and the HTML attribute it sets; listed by
+    /// [`crate::props`] and kept in step with the setters by a test.
+    pub const PROPS: &'static [Prop] = &[
+        Prop::new("presets", PropKind::Value, "presets: &'a [&'a str]")
+            .doc("`#rrggbb` swatches that post `<name>-preset` when clicked."),
+        Prop::new("alpha", PropKind::Number, "percent: u8")
+            .doc("An opacity slider (`<name>-alpha`) at `percent`, clamped to 100."),
+        Prop::new("label", PropKind::Value, "label: &'a str")
+            .doc("A `<label>` above the picker, in a `div.nojs-field` like a form field."),
+    ];
 }
 
 impl Ui {

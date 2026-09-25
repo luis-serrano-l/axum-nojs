@@ -39,6 +39,7 @@
 use maud::{Markup, Render, html};
 
 use crate::Ui;
+use crate::props::{Prop, PropKind};
 
 /// Input type of a field.
 #[derive(Clone, Debug)]
@@ -123,6 +124,81 @@ impl<'a> Field<'a> {
 /// from a condition: `.checked(bool)`.
 #[derive(Clone, Debug)]
 pub struct Input<'a>(Field<'a>);
+
+impl Input<'_> {
+    /// Every setter with its kind, arguments, default and the HTML attribute it sets; listed by
+    /// [`crate::props`] and kept in step with the setters by a test.
+    pub const PROPS: &'static [Prop] = &[
+        Prop::new("email", PropKind::Switch, "").doc("`type=\"email\"`."),
+        Prop::new("password", PropKind::Switch, "").doc("`type=\"password\"`."),
+        Prop::new("number", PropKind::Value, "min: i64, max: i64")
+            .doc("A whole number from `min` to `max`, inclusive."),
+        Prop::new(
+            "pattern",
+            PropKind::Value,
+            "pattern: &'a str, hint: &'a str",
+        )
+        .attr("pattern")
+        .doc("Text that must match `pattern`."),
+        Prop::new("textarea", PropKind::Number, "rows: u8").doc("Multi-line text, `rows` high."),
+        Prop::new("file", PropKind::Value, "accept: &'a str").doc("A file picker."),
+        Prop::new("date", PropKind::Value, "min: &'a str, max: &'a str")
+            .doc("`type=\"date\"`, bounds as `YYYY-MM-DD`."),
+        Prop::new("time", PropKind::Value, "min: &'a str, max: &'a str")
+            .doc("`type=\"time\"`, bounds as `HH:MM`."),
+        Prop::new("multiple", PropKind::Switch, "")
+            .attr("multiple")
+            .doc("The file picker takes several files."),
+        Prop::new("required", PropKind::Switch, "")
+            .attr("required")
+            .doc("The `required` attribute, and a `*` after the label."),
+        Prop::new("help", PropKind::Value, "help: &'a str").doc("Help text under the field."),
+        Prop::new("maxlength", PropKind::Number, "max: usize")
+            .attr("maxlength")
+            .doc("`maxlength`, counted in an `<output>` under the field."),
+        Prop::new("value", PropKind::Value, "value: &'a str")
+            .attr("value")
+            .doc("The current value (ignored for files and passwords)."),
+        Prop::new("checked", PropKind::Condition, "checked: bool")
+            .attr("checked")
+            .doc("Tick the checkbox or switch."),
+        Prop::new("error", PropKind::Value, "message: &'a str")
+            .doc("A server message under the field."),
+        Prop::new("placeholder", PropKind::Value, "placeholder: &'a str")
+            .attr("placeholder")
+            .doc("Placeholder text."),
+        Prop::new("search", PropKind::Switch, "").doc("`type=\"search\"`."),
+        Prop::new("hide_label", PropKind::Switch, "")
+            .doc("Only the control, the label kept as its `aria-label`."),
+        Prop::new("list", PropKind::Value, "id: &'a str")
+            .attr("list")
+            .doc("`list`."),
+        Prop::new("autocomplete", PropKind::Value, "value: &'a str")
+            .attr("autocomplete")
+            .doc("`autocomplete` (`\"off\"`, `\"email\"`, `\"new-password\"`)."),
+        Prop::new("autofocus", PropKind::Switch, "")
+            .attr("autofocus")
+            .doc("`autofocus`."),
+        Prop::new("inputmode", PropKind::Value, "mode: &'a str")
+            .attr("inputmode")
+            .doc("`inputmode` (`\"numeric\"`), the on-screen keyboard to show."),
+        Prop::new("step", PropKind::Number, "step: i64")
+            .attr("step")
+            .doc("`step` of a number field."),
+        Prop::new("aria_controls", PropKind::Value, "id: &'a str")
+            .attr("aria-controls")
+            .doc("`aria-controls`."),
+        Prop::new("form", PropKind::Value, "id: &'a str")
+            .attr("form")
+            .doc("`form`."),
+        Prop::new("class", PropKind::Value, "class: &'a str")
+            .attr("class")
+            .doc("A class on the control, for a component's part name."),
+        Prop::new("id", PropKind::Value, "id: &'a str")
+            .attr("id")
+            .doc("The control's id, `f-<name>` by default."),
+    ];
+}
 
 impl Ui {
     /// A single-line text field named `name` under `label`; the setters change its type.
@@ -462,6 +538,24 @@ pub struct RadioGroup<'a> {
     required: bool,
     help: Option<&'a str>,
     error: Option<&'a str>,
+}
+
+impl RadioGroup<'_> {
+    /// Every setter with its kind, arguments, default and the HTML attribute it sets; listed by
+    /// [`crate::props`] and kept in step with the setters by a test.
+    pub const PROPS: &'static [Prop] = &[
+        Prop::new("option", PropKind::Item, "value: &'a str, label: &'a str")
+            .doc("One choice posting `value`, labelled `label`."),
+        Prop::new("value", PropKind::Value, "value: &'a str")
+            .attr("value")
+            .doc("The value of the choice that is selected."),
+        Prop::new("required", PropKind::Switch, "")
+            .attr("required")
+            .doc("One choice must be picked before the form submits."),
+        Prop::new("help", PropKind::Value, "help: &'a str").doc("Help text under the choices."),
+        Prop::new("error", PropKind::Value, "message: &'a str")
+            .doc("A server message under the choices."),
+    ];
 }
 
 impl Ui {

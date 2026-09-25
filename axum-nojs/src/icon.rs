@@ -27,6 +27,7 @@
 use maud::{Markup, PreEscaped, Render, html};
 
 use crate::Ui;
+use crate::props::{Prop, PropKind};
 
 /// Which icon to draw.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -205,6 +206,13 @@ impl Icon {
 pub struct IconMark<'a> {
     icon: Icon,
     label: Option<&'a str>,
+}
+
+impl IconMark<'_> {
+    /// Every setter with its kind, arguments, default and the HTML attribute it sets; listed by
+    /// [`crate::props`] and kept in step with the setters by a test.
+    pub const PROPS: &'static [Prop] = &[Prop::new("label", PropKind::Value, "label: &'a str")
+        .doc("The name a screen reader says, for an icon that carries meaning on its own.")];
 }
 
 impl Ui {

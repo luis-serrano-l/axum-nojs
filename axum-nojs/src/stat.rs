@@ -28,6 +28,7 @@
 use maud::{Markup, Render, html};
 
 use crate::Ui;
+use crate::props::{Prop, PropKind};
 
 /// Which way the number moved.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -54,6 +55,22 @@ pub struct Stat<'a> {
     down_is_good: bool,
     note: Option<&'a str>,
     href: Option<&'a str>,
+}
+
+impl Stat<'_> {
+    /// Every setter with its kind, arguments, default and the HTML attribute it sets; listed by
+    /// [`crate::props`] and kept in step with the setters by a test.
+    pub const PROPS: &'static [Prop] = &[
+        Prop::new("delta", PropKind::Value, "text: &'a str").doc("The change."),
+        Prop::new("trend", PropKind::Value, "trend: Trend")
+            .doc("Override the direction read from the delta's sign."),
+        Prop::new("down_is_good", PropKind::Switch, "")
+            .doc("A fall is good news (error rates, latency)."),
+        Prop::new("note", PropKind::Value, "note: &'a str").doc("Small print under the value."),
+        Prop::new("href", PropKind::Value, "href: &'a str")
+            .attr("href")
+            .doc("Make the whole card a link to the details."),
+    ];
 }
 
 impl Ui {

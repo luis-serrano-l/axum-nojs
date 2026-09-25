@@ -64,6 +64,7 @@
 
 use maud::{Markup, Render, html};
 
+use crate::props::{Prop, PropKind};
 use crate::{Cap, Icon, Ui, slug};
 
 /// Width of a dialog: `max-width` of 20, 28 or 40 rem.
@@ -106,6 +107,37 @@ pub struct Dialog<'a> {
     close: &'a str,
     cancel: &'a str,
     closedby: &'a str,
+}
+
+impl Dialog<'_> {
+    /// Every setter with its kind, arguments, default and the HTML attribute it sets; listed by
+    /// [`crate::props`] and kept in step with the setters by a test.
+    pub const PROPS: &'static [Prop] = &[
+        Prop::new("body", PropKind::Value, "body: Markup")
+            .doc("What the dialog says."),
+        Prop::new("id", PropKind::Value, "id: &str").attr("id")
+            .doc("The dialog's id instead of the trigger's slug."),
+        Prop::new("open", PropKind::Condition, "open: bool").attr("open")
+            .doc("Render the dialog already open (non-modal, no backdrop)."),
+        Prop::new("title", PropKind::Value, "title: &'a str")
+            .doc("A title in a header with a close control."),
+        Prop::new("small", PropKind::Switch, "")
+            .doc("20 rem wide."),
+        Prop::new("large", PropKind::Switch, "")
+            .doc("40 rem wide."),
+        Prop::new("danger", PropKind::Switch, "")
+            .doc("Red confirm button and title rule."),
+        Prop::new("confirm", PropKind::Value, "label: &'a str, action: &'a str")
+            .doc("A confirm button labelled `label`."),
+        Prop::new("returns_to", PropKind::Value, "path: &'a str")
+            .doc("Where the server should send the browser after the confirm form, posted as a hidden `returns_to` field."),
+        Prop::new("close", PropKind::Value, "label: &'a str").default("Close")
+            .doc("Label of the closing button when there is no confirm form."),
+        Prop::new("cancel", PropKind::Value, "label: &'a str").default("Cancel")
+            .doc("Label of the cancel button beside the confirm button."),
+        Prop::new("closedby", PropKind::Value, "closedby: &'a str").default("any").attr("closedby")
+            .doc("The `closedby` attribute."),
+    ];
 }
 
 impl Ui {

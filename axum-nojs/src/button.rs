@@ -37,6 +37,7 @@
 
 use maud::{Markup, Render, html};
 
+use crate::props::{Prop, PropKind};
 use crate::{Cap, Caps, Ui};
 
 /// The colour a button takes.
@@ -79,6 +80,73 @@ pub struct Button<'a> {
     disabled: bool,
     loading: bool,
     attrs: Attrs<'a>,
+}
+
+impl Button<'_> {
+    /// Every setter with its kind, arguments, default and the HTML attribute it sets; listed by
+    /// [`crate::props`] and kept in step with the setters by a test.
+    pub const PROPS: &'static [Prop] = &[
+        Prop::new("primary", PropKind::Switch, "")
+            .doc("The main action of a form or page."),
+        Prop::new("danger", PropKind::Switch, "")
+            .doc("Destroys or removes something."),
+        Prop::new("ghost", PropKind::Switch, "")
+            .doc("No border or fill until hovered."),
+        Prop::new("small", PropKind::Switch, "")
+            .doc("2rem tall instead of 2.25rem."),
+        Prop::new("icon", PropKind::Switch, "")
+            .doc("Square, for a glyph or an icon."),
+        Prop::new("submit", PropKind::Switch, "")
+            .doc("`type=\"submit\"`, the default unless a command or popover target is set."),
+        Prop::new("reset", PropKind::Switch, "")
+            .doc("`type=\"reset\"`."),
+        Prop::new("command", PropKind::Value, "command: &'a str, target: &'a str").attr("command")
+            .doc("An invoker command (`command`, `commandfor`)."),
+        Prop::new("popovertarget", PropKind::Value, "id: &'a str").attr("popovertarget")
+            .doc("Toggle the popover with this id (`popovertarget`)."),
+        Prop::new("form", PropKind::Value, "id: &'a str").attr("form")
+            .doc("Submit the form with this id, wherever the button sits in the page (`form=`)."),
+        Prop::new("name", PropKind::Value, "name: &'a str").attr("name")
+            .doc("Sent as `name=value` with the form when this button submits it."),
+        Prop::new("value", PropKind::Value, "value: &'a str").attr("value")
+            .doc("The submitted `value` that goes with `name`."),
+        Prop::new("label", PropKind::Value, "label: &'a str")
+            .doc("`aria-label`."),
+        Prop::new("class", PropKind::Value, "class: &'a str").attr("class")
+            .doc("One more class after the button's own, for a component's part name."),
+        Prop::new("disabled", PropKind::Switch, "").attr("disabled")
+            .doc("Greyed out and not clickable."),
+        Prop::new("loading", PropKind::Condition, "on: bool")
+            .doc("A spinner before the text, `disabled` and `aria-busy`, while `on`."),
+        Prop::new("content", PropKind::Value, "markup: Markup")
+            .doc("Markup to show instead of the text."),
+        Prop::new("id", PropKind::Value, "id: &'a str").attr("id")
+            .doc("The element's `id`."),
+        Prop::new("role", PropKind::Value, "role: &'a str").attr("role")
+            .doc("`role`, for a button that is a menu item or a tab, or a link that acts as a button."),
+        Prop::new("title", PropKind::Value, "title: &'a str").attr("title")
+            .doc("`title`."),
+        Prop::new("style", PropKind::Value, "style: impl Into<String>").attr("style")
+            .doc("Inline `style`, for a per-element custom property or anchor name."),
+        Prop::new("aria_haspopup", PropKind::Value, "kind: &'a str").attr("aria-haspopup")
+            .doc("`aria-haspopup` (`\"menu\"`, `\"dialog\"`)."),
+        Prop::new("pressed", PropKind::Condition, "on: bool")
+            .doc("`aria-pressed`, for a toggle button."),
+        Prop::new("accesskey", PropKind::Value, "key: &'a str").attr("accesskey")
+            .doc("`accesskey`."),
+        Prop::new("aria_keyshortcuts", PropKind::Value, "keys: &'a str").attr("aria-keyshortcuts")
+            .doc("`aria-keyshortcuts`, the shortcut spelled out for assistive technology."),
+        Prop::new("formmethod", PropKind::Value, "method: &'a str").attr("formmethod")
+            .doc("`formmethod`."),
+        Prop::new("formaction", PropKind::Value, "action: &'a str").attr("formaction")
+            .doc("`formaction`."),
+        Prop::new("formnovalidate", PropKind::Switch, "").attr("formnovalidate")
+            .doc("`formnovalidate`."),
+        Prop::new("rel", PropKind::Value, "rel: &'a str").attr("rel")
+            .doc("`rel` of a link (`\"prev\"`, `\"next\"`)."),
+        Prop::new("current", PropKind::Condition, "on: bool")
+            .doc("`aria-current=\"page\"`."),
+    ];
 }
 
 /// The less common attributes, each set by the setter of the same name.

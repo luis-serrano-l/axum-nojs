@@ -38,6 +38,7 @@ use maud::{Markup, Render, html};
 
 use crate::button::Button;
 use crate::input::Input;
+use crate::props::{Prop, PropKind};
 use crate::{Cap, Caps, Icon, Ui, enhance};
 
 /// A number with buttons posting `op` to `action`, made by [`Ui::counter`]. Unbounded and
@@ -53,6 +54,25 @@ pub struct Counter<'a> {
     max: Option<i64>,
     step: i64,
     typed: bool,
+}
+
+impl Counter<'_> {
+    /// Every setter with its kind, arguments, default and the HTML attribute it sets; listed by
+    /// [`crate::props`] and kept in step with the setters by a test.
+    pub const PROPS: &'static [Prop] = &[
+        Prop::new("min", PropKind::Number, "min: i64")
+            .attr("min")
+            .doc("Lowest value."),
+        Prop::new("max", PropKind::Number, "max: i64")
+            .attr("max")
+            .doc("Highest value."),
+        Prop::new("step", PropKind::Number, "step: i64")
+            .default("1")
+            .attr("step")
+            .doc("How far one click moves (at least 1)."),
+        Prop::new("typed", PropKind::Switch, "")
+            .doc("A number field and a Set button posting `op=set&value=n`."),
+    ];
 }
 
 impl Ui {
