@@ -14,11 +14,17 @@ pub(crate) fn routes() -> Router {
         .route("/description-list", get(description_list_page))
 }
 
-async fn feedback_page(ui: Ui) -> Page {
-    page(
-        &ui,
-        "Alerts, progress and tooltips",
-        lui! {
+/// Each page's live component, which the index shows too (`site::preview`).
+pub(crate) const PREVIEWS: &[super::Preview] = &[
+    ("/feedback", feedback),
+    ("/toast", toasts),
+    ("/dashboard", stats),
+    ("/chart", charts),
+    ("/description-list", description_list),
+];
+
+fn feedback(ui: &Ui) -> Markup {
+    lui! {
             Stack(lui! {
                 // code: /feedback
                 Alert("Heads up") description="Deploys pause at 18:00 on Fridays.";
@@ -34,10 +40,36 @@ async fn feedback_page(ui: Ui) -> Page {
                 });
                 Separator label="or";
                 // end code
+            }) gap=6;
+    }
+}
+
+async fn feedback_page(ui: Ui) -> Page {
+    page(
+        &ui,
+        "Alerts, progress and tooltips",
+        lui! {
+            Stack(lui! {
+                (feedback(&ui))
                 p class="lui-note" { "Hover or tab to the buttons for their tooltips. The meter turns amber past 60 and red past 80 because its best value is 0." }
             }) gap=6;
         },
     )
+}
+
+/// The buttons that post for a toast, and the toasts that came back.
+fn toasts(ui: &Ui) -> Markup {
+    lui! {
+            // code: /toast
+            form method="post" action="/toast" class="lui-cluster" {
+                (ui.button("Send invite").primary().name("kind").value("ok"))
+                (ui.button("Copy link").name("kind").value("warn"))
+                (ui.button("Sync now").name("kind").value("danger"))
+                (ui.button("All three").name("kind").value("all"))
+            }
+            Toasts dismiss;
+            // end code
+    }
 }
 
 /// Toasts come back from a post like a flash: the one-shot cookie, several at once.
@@ -47,15 +79,7 @@ async fn toast_page(ui: Ui) -> Page {
         "Toasts",
         lui! {
             p { "Each button posts, the server redirects back, and the answer shows in the corner. Calm ones fade after five seconds (hover to keep them); errors stay until dismissed." }
-            form method="post" action="/toast" class="lui-cluster" {
-                (ui.button("Send invite").primary().name("kind").value("ok"))
-                (ui.button("Copy link").name("kind").value("warn"))
-                (ui.button("Sync now").name("kind").value("danger"))
-                (ui.button("All three").name("kind").value("all"))
-            }
-            // code: /toast
-            Toasts dismiss;
-            // end code
+            (toasts(&ui))
         },
     )
 }
@@ -82,13 +106,10 @@ async fn toast_submit(ui: Ui, Form(f): Form<ToastForm>) -> Redirect {
     back
 }
 
-/// Stat cards over a list that may be empty (`?orders=none`).
-async fn dashboard_page(ui: Ui) -> Page {
+/// Stat cards; the orders count follows `?orders=none`.
+fn stats(ui: &Ui) -> Markup {
     let none = ui.param("orders") == Some("none");
-    page(
-        &ui,
-        "Stats and empty states",
-        lui! {
+    lui! {
             div class="lui-stat-grid" {
                 // code: /dashboard
                 Stat("Visitors", "12,480") delta="+8.2%" note="last 7 days";
@@ -97,6 +118,17 @@ async fn dashboard_page(ui: Ui) -> Page {
                 Stat("p95 latency", "38 ms") delta="+6 ms" down_is_good;
                 // end code
             }
+    }
+}
+
+/// Stat cards over a list that may be empty (`?orders=none`).
+async fn dashboard_page(ui: Ui) -> Page {
+    let none = ui.param("orders") == Some("none");
+    page(
+        &ui,
+        "Stats and empty states",
+        lui! {
+            (stats(&ui))
             h2 { "Recent orders" }
             @if none {
                 // code: /dashboard
@@ -114,11 +146,8 @@ async fn dashboard_page(ui: Ui) -> Page {
 }
 
 /// Bars, a line and a sparkline, drawn on the server as SVG with the data in a hidden table.
-async fn chart_page(ui: Ui) -> Page {
-    page(
-        &ui,
-        "Charts",
-        lui! {
+fn charts(ui: &Ui) -> Markup {
+    lui! {
             // code: /chart
             Chart("Signups") description="New accounts per weekday, this week" {
                 point "Mon" 12.0; point "Tue" 18.0; point "Wed" 9.0; point "Thu" 22.0; point "Fri" 15.0;
@@ -133,14 +162,23 @@ async fn chart_page(ui: Ui) -> Page {
                 }
             }
             // end code
+    }
+}
+
+async fn chart_page(ui: Ui) -> Page {
+    page(
+        &ui,
+        "Charts",
+        lui! {
+            (charts(&ui))
             p class="lui-note" { "Hover a bar or a point for its value (the browser's own tooltip). The numbers are also a table that screen readers read and that stays when the picture cannot load." }
         },
     )
 }
 
 /// Terms beside their details, or stacked above them.
-async fn description_list_page(ui: Ui) -> Page {
-    let body = lui! {
+fn description_list(ui: &Ui) -> Markup {
+    lui! {
         // code: /description-list
         DescriptionList {
             item "Plan" "Team"; item "Seats" "12 of 20";
@@ -151,6 +189,9 @@ async fn description_list_page(ui: Ui) -> Page {
             item "Billing email" "ada@example.com"; item "Tax id" "ES-B12345678";
         }
         // end code
-    };
-    page(&ui, "Description list", body)
+    }
+}
+
+async fn description_list_page(ui: Ui) -> Page {
+    page(&ui, "Description list", description_list(&ui))
 }

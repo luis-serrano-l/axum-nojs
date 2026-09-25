@@ -23,6 +23,74 @@ async fn index_under_another_palette() {
     shot(&mut page, "index-alt");
 }
 
+/// The index is a gallery: every group (one list each, as many as the sidebar's headings) has
+/// a component rendered live on a stage, with a box, not just its name.
+#[tokio::test]
+async fn every_group_on_the_index_has_a_live_component() {
+    let page = Page::render_at(demo::router(), "/", MODERN, 1280, 900).await;
+    let groups = page.count(".lui-index > ul");
+    assert_eq!(groups, page.count(".lui-site-nav .lui-sidebar-heading"));
+    assert!(groups >= 10, "{groups} groups");
+    for i in 1..=groups {
+        let live = format!(".lui-index > ul:nth-of-type({i}) .lui-index-stage > [class*='lui-']");
+        assert!(
+            page.is_visible(&live),
+            "group {i}: no live component on its stage"
+        );
+    }
+    assert!(
+        page.is_visible(".lui-index-stage .lui-dialog > .lui-button"),
+        "a dialog shows its trigger"
+    );
+}
+
+/// The sidebar lists every component beside the page from 60rem, the current one marked, and
+/// folds into a `<details>` above the page on a phone. Shots at 1280 and 420 wide.
+#[tokio::test]
+async fn the_sidebar_is_a_column_when_wide_and_folds_when_narrow() {
+    for path in ["/", "/dialog"] {
+        let name = if path == "/" { "index" } else { "dialog" };
+        let mut wide = Page::render_at(demo::router(), path, MODERN, 1280, 900).await;
+        let nav = wide
+            .bbox(".lui-site-nav .lui-sidebar")
+            .expect("the sidebar");
+        let main = wide.bbox(".lui-site-main").unwrap();
+        assert!(
+            nav.x + nav.width <= main.x,
+            "{path}: the sidebar is beside the page: {nav:?} {main:?}"
+        );
+        assert!(
+            main.width > 832.0 || path != "/",
+            "{path}: the index is wider than 52rem: {main:?}"
+        );
+        assert_eq!(
+            wide.display(".lui-site-menu").as_deref(),
+            Some("none"),
+            "{path}"
+        );
+        assert!(
+            wide.is_visible(&format!(".lui-sidebar a[aria-current=page][href='{path}']")),
+            "{path}"
+        );
+        shot(&mut wide, &format!("{name}-1280"));
+        let mut narrow = Page::render_at(demo::router(), path, MODERN, 420, 900).await;
+        assert!(
+            narrow.is_visible(".lui-site-menu summary"),
+            "{path}: the fold"
+        );
+        assert!(
+            !narrow.is_visible(".lui-site-nav .lui-sidebar"),
+            "{path}: folded until opened"
+        );
+        let menu = narrow.bbox(".lui-site-menu").unwrap();
+        assert!(
+            menu.y < narrow.bbox("h1").unwrap().y,
+            "{path}: the fold is above the page"
+        );
+        shot(&mut narrow, &format!("{name}-420"));
+    }
+}
+
 /// Screenshot every route twice: as a modern browser and as one that supports nothing.
 #[tokio::test]
 async fn every_route_renders_and_is_captured() {
@@ -516,8 +584,11 @@ async fn table_sort_links_and_pages() {
         page.exists("colgroup col[style*='width: 7rem']"),
         "column width in the colgroup"
     );
-    assert!(page.is_visible("a[aria-current=page]"));
-    assert_eq!(page.text("a[aria-current=page]").as_deref(), Some("2"));
+    assert!(page.is_visible(".lui-site-main a[aria-current=page]"));
+    assert_eq!(
+        page.text(".lui-site-main a[aria-current=page]").as_deref(),
+        Some("2")
+    );
     assert!(
         page.exists("a[rel=prev][href*='page=1'][href*='cols=name%2Csize']")
             && page.exists("a[rel=next][href*='page=3']")

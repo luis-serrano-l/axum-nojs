@@ -30,7 +30,26 @@ struct Session {
 #[derive(Default, Deserialize, Serialize)]
 struct AppNotes(Vec<(String, String)>);
 
+/// Each page's live component, which the index shows too (`site::preview`): the sign-in card,
+/// and the notes of someone who has none yet.
+pub(crate) const PREVIEWS: &[super::Preview] = &[
+    ("/app/signin", |ui| signin_card(ui, &[], &[])),
+    ("/app/notes", |ui| notes(ui, &AppNotes::default())),
+];
+
 fn signin_view(ui: &Ui, values: &[(String, String)], errors: &[(&str, &str)]) -> Page {
+    page(
+        ui,
+        "Sign in",
+        html! {
+            (ui.flash())
+            (signin_card(ui, values, errors))
+        },
+    )
+}
+
+/// The sign-in form in a card, with the values and messages of a refused post.
+fn signin_card(ui: &Ui, values: &[(String, String)], errors: &[(&str, &str)]) -> Markup {
     // code: /app/signin
     let form = lui! {
         Form("/app/signin") submit="Sign in" values=(values) errors=(errors) {
@@ -40,14 +59,7 @@ fn signin_view(ui: &Ui, values: &[(String, String)], errors: &[(&str, &str)]) ->
         }
     };
     // end code
-    page(
-        ui,
-        "Sign in",
-        html! {
-            (ui.flash())
-            (ui.card().title("Sign in").description("Any email and a password of 8 characters or more.").body(html! { (form) }))
-        },
-    )
+    html! { (ui.card().title("Sign in").description("Any email and a password of 8 characters or more.").body(html! { (form) })) }
 }
 
 async fn signin_page(ui: Ui) -> Page {
@@ -87,7 +99,7 @@ async fn signout(ui: Ui) -> Redirect {
         .forget::<Session>()
 }
 
-async fn notes_page(ui: Ui, Saved(session): Saved<Session>, Saved(notes): Saved<AppNotes>) -> Page {
+async fn notes_page(ui: Ui, Saved(session): Saved<Session>, Saved(saved): Saved<AppNotes>) -> Page {
     if session.email.is_empty() {
         return page(
             &ui,
@@ -100,6 +112,24 @@ async fn notes_page(ui: Ui, Saved(session): Saved<Session>, Saved(notes): Saved<
             },
         );
     }
+    page(
+        &ui,
+        "Notes",
+        html! {
+            (ui.flash())
+            (ui.stack(html! {
+                (ui.cluster(html! {
+                    span class="lui-note" { "Signed in as " strong { (session.email) } }
+                    form method="post" action="/app/signout" { (ui.button("Sign out").ghost().small()) }
+                }).between())
+                (notes(&ui, &saved))
+            }).gap(6))
+        },
+    )
+}
+
+/// The form that adds a note over the table of notes: filter, sort, rename, delete, pages.
+fn notes(ui: &Ui, notes: &AppNotes) -> Markup {
     // code: /app/notes
     let t = ui
         .table("notes", "/app/notes")
@@ -142,21 +172,7 @@ async fn notes_page(ui: Ui, Saved(session): Saved<Session>, Saved(notes): Saved<
         }
     };
     // end code
-    page(
-        &ui,
-        "Notes",
-        html! {
-            (ui.flash())
-            (ui.stack(html! {
-                (ui.cluster(html! {
-                    span class="lui-note" { "Signed in as " strong { (session.email) } }
-                    form method="post" action="/app/signout" { (ui.button("Sign out").ghost().small()) }
-                }).between())
-                (add)
-                (t)
-            }).gap(6))
-        },
-    )
+    html! { (add) (t) }
 }
 
 #[derive(Deserialize)]

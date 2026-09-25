@@ -22,16 +22,27 @@ pub(crate) fn routes() -> Router {
         .route("/swap", get(swap_page).post(swap_submit))
 }
 
-async fn list_page(ui: Ui) -> Page {
-    page(
-        &ui,
-        "Load-more list",
-        lui! {
+/// Each page's live component, which the index shows too (`site::preview`), with a visitor's
+/// saved values left out there, and the streamed page's section while it loads.
+pub(crate) const PREVIEWS: &[super::Preview] = &[
+    ("/counter", |ui| counter(ui, 0).render()),
+    ("/settings", |ui| settings(ui, &Settings::default())),
+    ("/list", list),
+    ("/caps", caps),
+    ("/stream", |ui| pending(ui, "fast", 100)),
+    ("/swap", |ui| swap(ui, &Notes::default())),
+];
+
+fn list(ui: &Ui) -> Markup {
+    lui! {
             // code: /list
             Pager("/list", 50) per_page=8 rows=|i| { "Row " (i + 1) };
             // end code
-        },
-    )
+    }
+}
+
+async fn list_page(ui: Ui) -> Page {
+    page(&ui, "Load-more list", list(&ui))
 }
 
 #[derive(Default, Deserialize, Serialize)]
@@ -77,13 +88,21 @@ struct Notes(Vec<(String, String)>);
 /// Two controls outside any swap root that name their target: the link swaps one `<span>`,
 /// the form appends to a list. The same requests are plain navigations without the script.
 async fn swap_page(ui: Ui, Saved(notes): Saved<Notes>) -> Page {
-    let n: u32 = ui.param("n").and_then(|n| n.parse().ok()).unwrap_or(1);
     page(
         &ui,
         "Swap targets",
         lui! {
             (ui.flash())
             p class="lui-note" { "Neither control sits inside a swap root. " code { "data-lui-target" } " names the root to update and " code { "data-lui-swap" } " how; without the script both are ordinary navigations to the same URL." }
+            (swap(&ui, &notes))
+        },
+    )
+}
+
+/// The count a link adds to and the notes a form appends to, each naming its target.
+fn swap(ui: &Ui, notes: &Notes) -> Markup {
+    let n: u32 = ui.param("n").and_then(|n| n.parse().ok()).unwrap_or(1);
+    lui! {
             // code: /swap
             p { "Count: " span id="count" data-lui="swap" { (n) } " " a href={ "/swap?n=" (n + 1) } data-lui-target="#count" { "Add one" }
                 " · " a href={ "/swap?n=" (n + 10) } data-lui-target="#count" data-lui-push="false" { "Add ten, keep the URL" } }
@@ -97,8 +116,7 @@ async fn swap_page(ui: Ui, Saved(notes): Saved<Notes>) -> Page {
             }
             ol id="log" data-lui="swap" { @for (_, note) in &notes.0 { li { (note) } } }
             // end code
-        },
-    )
+    }
 }
 
 #[derive(Deserialize)]
@@ -138,11 +156,8 @@ struct Settings {
 
 /// Tabs + form + flash. Everything survives a full navigation: the tab in the `lui-ui`
 /// cookie, the values in `lui-settings`, the flash in a one-shot cookie.
-async fn settings_page(ui: Ui, Saved(s): Saved<Settings>) -> Page {
-    page(
-        &ui,
-        "Settings",
-        lui! {
+fn settings(ui: &Ui, s: &Settings) -> Markup {
+    lui! {
             // code: /settings
             Flash dismiss auto_hide;
             Tabs("settings") {
@@ -160,6 +175,15 @@ async fn settings_page(ui: Ui, Saved(s): Saved<Settings>) -> Page {
                 }
             }
             // end code
+    }
+}
+
+async fn settings_page(ui: Ui, Saved(s): Saved<Settings>) -> Page {
+    page(
+        &ui,
+        "Settings",
+        lui! {
+            (settings(&ui, &s))
             p class="lui-note" { "Go to " a href="/" { "the index" } " and come back: the open tab and the values are remembered. Saving with notifications off stacks a warning under the confirmation; the name " code { "admin" } " is refused with an alert. The confirmation fades after six seconds unless reduced motion is on." }
         },
     )
@@ -190,9 +214,7 @@ async fn stream_page(ui: Ui) -> Streamed {
             @else { "This browser has no declarative shadow DOM: sections stream in document order." } }
         @for (id, ms) in sections {
             // code: /stream
-            (ui.slot(id, html! { section class="lui-stream-section lui-stream-pending" {
-                (ui.skeleton(2).label(&format!("Loading {id} ({ms} ms)")).heading())
-            } }))
+            (ui.slot(id, pending(&ui, id, ms)))
             // end code
         }
     };
@@ -201,6 +223,15 @@ async fn stream_page(ui: Ui) -> Streamed {
     sections
         .into_iter()
         .fold(page, |page, (id, ms)| page.fill(id, section(id, ms)))
+    // end code
+}
+
+/// A section while it loads, which the index shows too.
+fn pending(ui: &Ui, id: &str, ms: u64) -> Markup {
+    // code: /stream
+    html! { section class="lui-stream-section lui-stream-pending" {
+        (ui.skeleton(2).label(&format!("Loading {id} ({ms} ms)")).heading())
+    } }
     // end code
 }
 
@@ -218,6 +249,17 @@ async fn caps_page(ui: Ui) -> Page {
         html! {
             @if probed { p { "Beacons have fired. Rows below drive which markup every component emits." } }
             @else { p class="lui-error" { "Not probed yet: the beacons fire while this page loads. Reload to see the result." } }
+            (caps(&ui))
+            p class="lui-note" { "Cookies: " @for n in ui.names() { code { "lui-cap-" (n) } " " } }
+            p class="lui-note" { "To view any page as another browser, add " code { "?caps=popover,anchor" } " to its URL: the query wins over the cookies." }
+        },
+    )
+}
+
+/// The capabilities table: supported, not, or not known yet.
+fn caps(ui: &Ui) -> Markup {
+    let probed = ui.has(Cap::Probed);
+    html! {
             table class="lui-caps-table" {
                 thead { tr { th { "Capability" } th { "Supported" } th { "Effect" } th { "@supports test" } } }
                 // code: /caps
@@ -231,8 +273,5 @@ async fn caps_page(ui: Ui) -> Page {
                 } }
                 // end code
             }
-            p class="lui-note" { "Cookies: " @for n in ui.names() { code { "lui-cap-" (n) } " " } }
-            p class="lui-note" { "To view any page as another browser, add " code { "?caps=popover,anchor" } " to its URL: the query wins over the cookies." }
-        },
-    )
+    }
 }

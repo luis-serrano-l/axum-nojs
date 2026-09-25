@@ -97,15 +97,21 @@ HTML; `loco-ui/examples/hyper_server.rs` shows a raw hyper server.
 ## Run the demo
 
 ```sh
-cargo run -p demo      # http://127.0.0.1:3000: index grouped by what the platform gives, every page links back
+cargo run -p demo      # http://127.0.0.1:3000: every component live on the index, a sidebar of them on every page
 cargo dev              # same, restarted when Rust source changes (cargo install cargo-watch)
 cargo test             # includes: only the enhancement <script> on any route, and Blitz layout tests
 scripts/verify.sh      # build + clippy -D warnings + tests + screenshots + <script> grep + Firefox check
 scripts/snapshot.sh    # static snapshot of every page into target/site/ (no script, relative links, a banner)
 ```
 
-The index lists every component in groups (overlays, disclosure, navigation, input, feedback,
-server state), each with one line on what it is for and the platform features it is built on.
+The index is a gallery: every component rendered live on a small stage, in groups (overlays,
+disclosure, navigation, input, feedback, server state), under its name, which links to its
+page, and one line on what it is for. Each is the same call its page shows: a function beside
+the route (`PREVIEWS` in each `demo/src/routes/<group>.rs`) that the page calls around its
+`// code:` markers and the index calls too; dialogs, drawers and toasts show their trigger. A
+sidebar lists every component under its group on the index and every page, the current one
+marked `aria-current="page"`; below 60rem it folds into a `<details>` above the page, with no
+script.
 A component page shows the live component with the code that drew it joined underneath: the
 lines between `// code: <href>` and `// end code` in `demo/src/routes/`, cut from those files at
 compile time so the page and the code cannot drift, and highlighted on the server by
@@ -236,13 +242,15 @@ there is no second request for CSS, and no script is required.
 | The whole stylesheet, every component and block (`stylesheet()`) | 69.6 KB | 12.3 KB |
 | A demo page, stylesheet and props tables included (`/nav` … `/calendar`) | 78–101 KB | 14.5–16.8 KB |
 | `/stream` with declarative shadow DOM (the stylesheet twice: once for the shadow root) | 145 KB | 25.0 KB |
+| The index, every component live on it (M31) | 213 KB | 36 KB |
 | JavaScript required | 0 | 0 |
 | The optional script, `/lui/enhance.js` (cached forever) | 10.6 KB | 3.6 KB |
 
 For comparison, `maud-ui` 0.20.3 (the same stack and look) ships 313 KB of CSS (44 KB gzipped)
 and needs an 89 KB script (24 KB gzipped) plus htmx. Two tests keep these numbers honest: the
 stylesheet stays under 88 KB, and every demo page under 120 KB (168 KB for the shadow-DOM
-stream) in `cargo test`. (Before M29 added the blocks, the chart and six more components, the
+stream, 224 KB for the index with every component live on it) in `cargo test`. The sidebar
+of every component adds about 6.5 KB to each page since M31. (Before M29 added the blocks, the chart and six more components, the
 same limits were 64, 96 and 128 KB; M30's colour scales, depth tokens and motion raised them
 from 72, 104 and 152 KB.)
 

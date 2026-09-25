@@ -9,9 +9,13 @@ pub(crate) fn routes() -> Router {
     Router::new().route("/pricing", get(pricing_page))
 }
 
+/// Each page's live component, which the index shows too (`site::preview`); the index adds
+/// [`PRICING_CSS`] as this page does.
+pub(crate) const PREVIEWS: &[super::Preview] = &[("/pricing", pricing)];
+
 /// Three tiers from `pricing.rs`, a component written outside the library; monthly or yearly
 /// is a link that changes one parameter.
-async fn pricing_page(ui: Ui) -> Page {
+fn pricing(ui: &Ui) -> Markup {
     let yearly = ui.param("billing") == Some("yearly");
     let (period, [hobby, pro, team]) = if yearly {
         ("/year", ["$0", "$120", "$480"])
@@ -26,7 +30,7 @@ async fn pricing_page(ui: Ui) -> Page {
         let b = ui.link_button(text, href).small().current(on);
         if on { b } else { b.ghost() }
     };
-    page(&ui, "Pricing card", html! { (ui.stack(lui! {
+    html! { (ui.stack(lui! {
         (ui.cluster(html! { (pick("Monthly", &by_month, !yearly)) (pick("Yearly", &by_year, yearly)) }).gap(1))
         // code: /pricing
         Grid("14rem", lui! {
@@ -41,6 +45,12 @@ async fn pricing_page(ui: Ui) -> Page {
             }
         });
         // end code
+    }).gap(6)) }
+}
+
+async fn pricing_page(ui: Ui) -> Page {
+    page(&ui, "Pricing card", html! { (ui.stack(lui! {
+        (pricing(&ui))
         p class="lui-note" { "The card lives in " code { "demo/src/pricing.rs" } ": an extension trait on " code { "Ui" } ", a builder, " code { "impl Render" } " and a CSS const added with " code { "Page::css" } ". See " code { "docs/components.md" } "." }
     }).gap(6)) }).css(PRICING_CSS)
 }

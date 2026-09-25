@@ -10,11 +10,11 @@ pub(crate) fn routes() -> Router {
         .route("/accordion", get(accordion_page))
 }
 
-async fn tabs_page(ui: Ui) -> Page {
-    page(
-        &ui,
-        "Tabs",
-        lui! {
+/// Each page's live component, which the index shows too (`site::preview`).
+pub(crate) const PREVIEWS: &[super::Preview] = &[("/tabs", tabs), ("/accordion", accordion)];
+
+fn tabs(ui: &Ui) -> Markup {
+    lui! {
             // Hovering or focusing a tab title fetches it early; the click reuses the answer.
             // code: /tabs
             div data-lui-prefetch {
@@ -26,6 +26,15 @@ async fn tabs_page(ui: Ui) -> Page {
                 }
             }
             // end code
+    }
+}
+
+async fn tabs_page(ui: Ui) -> Page {
+    page(
+        &ui,
+        "Tabs",
+        lui! {
+            (tabs(&ui))
             p class="lui-note" { "Deep link: " a href="/tabs?tab.demo=2" { "?tab.demo=2" } ". Leave and come back: the tab is remembered. The third tab is lazy; under 40rem the strip becomes a select." }
             h2 { "Vertical" }
             (ui.tabs("side").vertical()
@@ -36,11 +45,8 @@ async fn tabs_page(ui: Ui) -> Page {
     )
 }
 
-async fn accordion_page(ui: Ui) -> Page {
-    page(
-        &ui,
-        "Accordion",
-        lui! {
+fn accordion(ui: &Ui) -> Markup {
+    lui! {
             // code: /accordion
             Accordion("faq") multi controls {
                 item "Does this need JavaScript?" icon="\u{1F50D}"
@@ -61,6 +67,15 @@ async fn accordion_page(ui: Ui) -> Page {
                 }
             }
             // end code
+    }
+}
+
+async fn accordion_page(ui: Ui) -> Page {
+    page(
+        &ui,
+        "Accordion",
+        lui! {
+            (accordion(&ui))
             p class="lui-note" { "Deep link: " a href="/accordion?open.faq=0,2" { "?open.faq=0,2" } ". Leave and come back: the open sections are remembered." }
         },
     )

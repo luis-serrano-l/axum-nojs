@@ -12,12 +12,17 @@ pub(crate) fn routes() -> Router {
         .route("/layout", get(layout_page))
 }
 
-async fn button_page(ui: Ui) -> Page {
+/// Each page's live component, which the index shows too (`site::preview`).
+pub(crate) const PREVIEWS: &[super::Preview] = &[
+    ("/button", buttons),
+    ("/field", fields),
+    ("/card", cards),
+    ("/layout", layouts),
+];
+
+fn buttons(ui: &Ui) -> Markup {
     let loading = ui.param("loading") == Some("1");
-    page(
-        &ui,
-        "Buttons and badges",
-        lui! {
+    lui! {
             Stack(lui! {
                 // code: /button
                 Cluster(lui! {
@@ -35,19 +40,28 @@ async fn button_page(ui: Ui) -> Page {
                 });
                 Cluster(lui! { @for icon in Icon::ALL { Icon(icon) label=(icon.name()); } }) gap=3;
                 // end code
+            });
+    }
+}
+
+async fn button_page(ui: Ui) -> Page {
+    let loading = ui.param("loading") == Some("1");
+    page(
+        &ui,
+        "Buttons and badges",
+        lui! {
+            Stack(lui! {
+                (buttons(&ui))
                 p class="lui-note" { "The server decides a button is loading: " a href=(if loading { "/button" } else { "/button?loading=1" }) { @if loading { "stop" } @else { "start" } } "." }
             });
         },
     )
 }
 
-async fn field_page(ui: Ui) -> Page {
+fn fields(ui: &Ui) -> Markup {
     let email = ui.param("email").unwrap_or("");
     let bad = !email.is_empty() && !email.contains('@');
-    page(
-        &ui,
-        "Fields",
-        lui! {
+    lui! {
             form class="lui-stack" method="get" action="/field" {
                 // code: /field
                 Input("name", "Name") placeholder="Ada Lovelace" help="As it should appear on invoices.";
@@ -62,20 +76,20 @@ async fn field_page(ui: Ui) -> Page {
                 Button("Check") primary;
                 // end code
             }
-        },
-    )
+    }
 }
 
-async fn card_page(ui: Ui) -> Page {
+async fn field_page(ui: Ui) -> Page {
+    page(&ui, "Fields", fields(&ui))
+}
+
+fn cards(ui: &Ui) -> Markup {
     let team = [
         ("Ada Lovelace", "Owner"),
         ("Grace Hopper", "Admin"),
         ("Alan Turing", "Member"),
     ];
-    page(
-        &ui,
-        "Cards and avatars",
-        lui! {
+    lui! {
             // code: /card
             Grid("16rem", lui! {
                 Card title="Team" description="3 people can edit this project."
@@ -90,16 +104,16 @@ async fn card_page(ui: Ui) -> Page {
                 }
             });
             // end code
-        },
-    )
+    }
 }
 
-async fn layout_page(ui: Ui) -> Page {
+async fn card_page(ui: Ui) -> Page {
+    page(&ui, "Cards and avatars", cards(&ui))
+}
+
+fn layouts(ui: &Ui) -> Markup {
     let tile = |t: &str| html! { div class="lui-layout-tile" { (t) } };
-    page(
-        &ui,
-        "Layout",
-        lui! {
+    lui! {
             // code: /layout
             Stack(lui! {
                 Cluster(lui! { h3 { "Cluster" } Cluster(lui! { Button("Export"); Button("New") primary; }); }) between;
@@ -108,6 +122,9 @@ async fn layout_page(ui: Ui) -> Page {
                     side_width="12rem";
             }) gap=6;
             // end code
-        },
-    )
+    }
+}
+
+async fn layout_page(ui: Ui) -> Page {
+    page(&ui, "Layout", layouts(&ui))
 }

@@ -1,5 +1,6 @@
-//! What every page shares: the component index, the shell around each page (toolbar, title,
-//! the stage and its code), the index page and the theme switch.
+//! What every page shares: the component index, the shell around each page (the sidebar of
+//! every component, toolbar, title, the stage and its code), the index page (a gallery of the
+//! components themselves) and the theme switch.
 
 use crate::code::CODE;
 use axum::{
@@ -421,6 +422,50 @@ const LINEN: Tokens = Tokens {
     space: "8px",
 };
 
+/// A component page's live component, from the `PREVIEWS` beside its route: the function its
+/// page calls between the `// code:` markers, so the index shows the same call the page does.
+pub(crate) fn preview(href: &str) -> Option<fn(&Ui) -> Markup> {
+    use crate::routes::*;
+    [
+        primitives::PREVIEWS,
+        theme::PREVIEWS,
+        overlays::PREVIEWS,
+        disclosure::PREVIEWS,
+        navigation::PREVIEWS,
+        input::PREVIEWS,
+        feedback::PREVIEWS,
+        table::PREVIEWS,
+        server_state::PREVIEWS,
+        widgets::PREVIEWS,
+        blocks::PREVIEWS,
+        flows::PREVIEWS,
+        own::PREVIEWS,
+    ]
+    .into_iter()
+    .flatten()
+    .find(|p| p.0 == href)
+    .map(|p| p.1)
+}
+
+/// Every component under its group, in the index's order, the current page marked. From 60rem
+/// it is a sticky column beside the page; narrower, the `<details>` before it hides it until
+/// opened (CSS in `layout.rs`, no script).
+fn sidebar(ui: &Ui) -> Markup {
+    let mut nav = ui.sidebar("Components").link("Overview", "/");
+    for group in LAYERS.iter().flat_map(|l| l.2) {
+        nav = nav.group(group);
+        for (href, title, ..) in COMPONENTS.iter().filter(|c| c.2 == *group) {
+            nav = nav.link(title, href);
+        }
+    }
+    html! {
+        div class="lui-site-nav" {
+            details class="lui-site-menu" { summary { "Browse components" } }
+            (nav)
+        }
+    }
+}
+
 /// The row above every title: the way back to the index (not on the index), the language of
 /// the components' own words, and the theme switch.
 fn toolbar(ui: &Ui, back: bool) -> Markup {
@@ -441,12 +486,24 @@ fn toolbar(ui: &Ui, back: bool) -> Markup {
 /// what it is for and built on, then the body on a stage with the code that drew it underneath.
 pub(crate) fn shell(ui: &Ui, title: &str, body: Markup) -> Markup {
     let component = COMPONENTS.iter().find(|c| c.1 == title);
-    let Some(c) = component else {
-        return html! { (toolbar(ui, false)) h1 { (title) } (body) };
+    let page = match component {
+        Some(c) => component_page(ui, c, body),
+        None => html! { (toolbar(ui, false)) h1 { (title) } (body) },
     };
     html! {
+        div class="lui-site" {
+            (sidebar(ui))
+            div class={ "lui-site-main" @if component.is_none() { " lui-site-wide" } } { (page) }
+        }
+    }
+}
+
+/// A component page: what it is for and built on, then the body on a stage with the code
+/// that drew it underneath, and the props of the builders that code calls.
+fn component_page(ui: &Ui, c: &(&str, &str, &str, &str, &str), body: Markup) -> Markup {
+    html! {
         (toolbar(ui, true))
-        h1 { (title) @if beta(c.0) { " " (ui.badge("beta").warn()) } }
+        h1 { (c.1) @if beta(c.0) { " " (ui.badge("beta").warn()) } }
         p class="lui-lede" { (c.4) }
         p class="lui-built" { "Built on " @for f in c.3.split(", ") { code { (f) } " " } }
         // The live component and the code that drew it, joined as one plate.
@@ -536,7 +593,7 @@ async fn index(ui: Ui) -> Page {
         "Components",
         html! {
             @let count = |groups: &[&str]| COMPONENTS.iter().filter(|c| groups.contains(&c.2)).count();
-            p class="lui-lede" { (count(LAYERS[0].2)) " primitives, " (count(LAYERS[1].2)) " components, " (count(LAYERS[2].2)) " widgets and one of your own, for Axum and Maud, all working with JavaScript turned off. The HTML platform and plain form posts do the work. Each page loads one optional script, " code { "/lui/enhance.js" } ", which updates the same markup in place instead of reloading. Block it and every page still works." }
+            p class="lui-lede" { (count(LAYERS[0].2)) " primitives, " (count(LAYERS[1].2)) " components, " (count(LAYERS[2].2)) " widgets and one of your own, for Axum and Maud, all working with JavaScript turned off. The HTML platform and plain form posts do the work. Each page loads one optional script, " code { "/lui/enhance.js" } ", which updates the same markup in place instead of reloading. Block it and every page still works. Every component below is live: the same call its page shows, and its name leads to that page." }
             @if !ui.has(Cap::Probed) { p class="lui-note" { "First visit: this page is the fallback variant. Reload and the server will know your browser." } }
             p class="lui-note" { "Theme: " @if linen { a href="/" { "neutral" } " · linen and copper" } @else { "neutral · " a href="/?palette=linen" { "linen and copper" } } ", see " code { "docs/theming.md" } }
             div class="lui-index" { @for (layer, blurb, groups) in LAYERS {
@@ -544,8 +601,12 @@ async fn index(ui: Ui) -> Page {
                 p class="lui-index-layer" { (blurb) }
                 @for group in groups.iter() {
                     @if groups.len() > 1 { h3 { (group) } }
-                    ul { @for (href, title, _, feats, what) in COMPONENTS.iter().filter(|c| c.2 == *group) {
-                        li { a href=(href) { (title) } @if beta(href) { " " (ui.badge("beta").warn()) } div { p { (what) } span { @for f in feats.split(", ") { code { (f) } " " } } } }
+                    ul { @for (href, title, .., what) in COMPONENTS.iter().filter(|c| c.2 == *group) {
+                        li class=[wide(href).then_some("lui-index-wide")] {
+                            p { a href=(href) { (title) } @if beta(href) { " " (ui.badge("beta").warn()) } }
+                            p class="lui-note" { (what) }
+                            div class="lui-index-stage" { @if let Some(preview) = preview(href) { (preview(&ui)) } }
+                        }
                     } }
                 }
             } }
@@ -553,7 +614,18 @@ async fn index(ui: Ui) -> Page {
             @for (href, ..) in COMPONENTS { link rel="prefetch" href=(href); }
         },
     );
+    let page = page.css(crate::pricing::PRICING_CSS);
     if linen { page.tokens(&LINEN) } else { page }
+}
+
+/// Components shown across the whole row of the index: the blocks and flows (whole pages),
+/// the pricing cards, and the few components as wide as the page they sit on.
+fn wide(href: &str) -> bool {
+    let groups = ["Blocks", "Your own", "Complete flows"];
+    COMPONENTS
+        .iter()
+        .any(|c| c.0 == href && groups.contains(&c.2))
+        || ["/kanban", "/table", "/theme", "/nav", "/inputs", "/chart"].contains(&href)
 }
 
 #[derive(Deserialize)]

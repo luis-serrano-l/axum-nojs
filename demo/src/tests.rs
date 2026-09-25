@@ -2,7 +2,7 @@
 //! round trips, and markup that follows the capabilities.
 
 use crate::code::{SOURCES, highlight, snippet};
-use crate::site::{COMPONENTS, LAYERS};
+use crate::site::{COMPONENTS, LAYERS, preview};
 use crate::{PATHS, router};
 use axum::body::Body;
 use axum::http::Request;
@@ -38,6 +38,68 @@ async fn every_route_is_served_under_a_strict_csp() {
         html.matches("<script").count() == 0,
         "a script-less page has no script tag"
     );
+}
+
+/// The index shows every component live: each has a preview beside its route, and the index
+/// puts it on a stage under the component's name, linked to its page. Every page carries the
+/// sidebar with every component, the current one marked.
+#[tokio::test]
+async fn the_index_shows_every_component_and_every_page_the_sidebar() {
+    let body = |path: &'static str| async move {
+        let res = router()
+            .oneshot(Request::get(path).body(Body::empty()).unwrap())
+            .await
+            .unwrap();
+        let bytes = axum::body::to_bytes(res.into_body(), usize::MAX)
+            .await
+            .unwrap();
+        String::from_utf8(bytes.to_vec()).unwrap()
+    };
+    let index = body("/").await;
+    for (href, title, ..) in COMPONENTS {
+        assert!(
+            preview(href).is_some(),
+            "{href}: no preview beside its route"
+        );
+        let card = index
+            .split(&format!(
+                "<p><a href=\"{href}\">{}</a>",
+                html! { (title) }.into_string()
+            ))
+            .nth(1)
+            .unwrap_or_else(|| panic!("{href}: no card on the index"));
+        let stage = card.split("class=\"lui-index-stage\">").nth(1).unwrap();
+        assert!(
+            stage.starts_with('<') && stage.contains("class=\"lui-"),
+            "{href}: empty stage"
+        );
+    }
+    for (path, current) in [
+        ("/", "/"),
+        ("/dialog?dialog=confirm", "/dialog"),
+        ("/blocks/auth", "/blocks/auth"),
+    ] {
+        let html = body(path).await;
+        let nav = html
+            .split("<nav class=\"lui-sidebar\" aria-label=\"Components\">")
+            .nth(1)
+            .expect("the sidebar");
+        let nav = nav.split("</nav>").next().unwrap();
+        assert_eq!(
+            nav.matches("<a href").count(),
+            COMPONENTS.len() + 1,
+            "{path}: every component and the overview"
+        );
+        assert_eq!(nav.matches("aria-current=\"page\"").count(), 1, "{path}");
+        assert!(
+            nav.contains(&format!("<a href=\"{current}\" aria-current=\"page\">")),
+            "{path}"
+        );
+        assert!(
+            html.contains("<details class=\"lui-site-menu\">"),
+            "{path}: the narrow-screen fold"
+        );
+    }
 }
 
 #[test]
@@ -77,9 +139,13 @@ async fn pages_ship_only_the_enhancement_script() {
             // raised in M29 (from 128 and 96 KB) as blocks, a chart and six components joined
             // the one stylesheet (README: "What a page weighs"), and again in M30 (from 152
             // and 104 KB) for the colour scales, depth tokens and motion; M30's budget box
-            // holds that growth under 15 KB gzipped.
+            // holds that growth under 15 KB gzipped. The index shows every component live
+            // since M31 (the same calls their pages make, the calendar, table and theme builder
+            // among them), so it gets its own budget: about 36 KB gzipped.
             let budget = if html.contains("shadowrootmode") {
                 168
+            } else if path == "/" {
+                224
             } else {
                 120
             } * 1024;

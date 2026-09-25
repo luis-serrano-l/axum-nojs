@@ -23,17 +23,32 @@ pub(crate) fn routes() -> Router {
         .route("/kanban", get(kanban_page).post(kanban_move))
 }
 
-async fn calendar_page(ui: Ui) -> Page {
+/// Each page's live component, which the index shows too (`site::preview`), with a visitor's
+/// saved files and board left out there.
+pub(crate) const PREVIEWS: &[super::Preview] = &[
+    ("/calendar", calendar),
+    ("/upload", |ui| upload(ui, &[])),
+    ("/kanban", |ui| kanban(ui, &Board::default())),
+];
+
+/// A month with two events coming up; weekends cannot be picked.
+fn calendar(ui: &Ui) -> Markup {
     let soon = |days| Date::today().add_days(days).to_string();
     let (invoice, release) = (soon(6), soon(21));
-    page(
-        &ui,
-        "Calendar",
-        lui! {
+    lui! {
             // code: /calendar
             Calendar("day") disabled=(|d| d.weekday() >= 5)
                 event=(&invoice, "Invoice due") event=(&release, "Release");
             // end code
+    }
+}
+
+async fn calendar_page(ui: Ui) -> Page {
+    page(
+        &ui,
+        "Calendar",
+        lui! {
+            (calendar(&ui))
             p class="lui-note" { @match ui.param("day") {
                 Some(d) => { "You picked " (d) ". Weekends cannot be picked; a dot marks an event." },
                 None => { "Pick a weekday. The month links and the days are ordinary links: the page comes back with " code { "?day=" } " set." },
@@ -92,8 +107,8 @@ fn upload_type(name: &str) -> Option<&'static str> {
     }
 }
 
-async fn upload_page(ui: Ui, Saved(who): Saved<Uploader>) -> Page {
-    let files = uploads(&who.id);
+/// The drop zone and the files kept so far.
+fn upload(ui: &Ui, files: &[Held]) -> Markup {
     let links: Vec<String> = (0..files.len())
         .map(|n| format!("/upload/file/{n}"))
         .collect();
@@ -109,6 +124,11 @@ async fn upload_page(ui: Ui, Saved(who): Saved<Uploader>) -> Page {
         }
     };
     // end code
+    up
+}
+
+async fn upload_page(ui: Ui, Saved(who): Saved<Uploader>) -> Page {
+    let up = upload(&ui, &uploads(&who.id));
     page(&ui, "Upload", html! { (ui.flash()) (up) })
 }
 
@@ -222,7 +242,8 @@ impl Default for Board {
     }
 }
 
-async fn kanban_page(ui: Ui, Saved(board): Saved<Board>) -> Page {
+/// The board, each card where the visitor last put it.
+fn kanban(ui: &Ui, board: &Board) -> Markup {
     // code: /kanban
     let k = lui! {
         Kanban("/kanban") {
@@ -238,6 +259,11 @@ async fn kanban_page(ui: Ui, Saved(board): Saved<Board>) -> Page {
         }
     };
     // end code
+    k
+}
+
+async fn kanban_page(ui: Ui, Saved(board): Saved<Board>) -> Page {
+    let k = kanban(&ui, &board);
     page(
         &ui,
         "Kanban",
