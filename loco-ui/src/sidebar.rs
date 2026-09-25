@@ -62,12 +62,14 @@ struct Link<'a> {
 
 /// A navigation column, made by [`Ui::sidebar`].
 ///
-/// **Setters.** Values and items: `.group(..)`, `.link(..)`, `.icon(..)`, `.badge(..)`.
+/// **Setters.** Values and items: `.group(..)`, `.link(..)`, `.icon(..)`, `.badge(..)`,
+/// `.id(..)`.
 #[derive(Clone, Debug)]
 pub struct Sidebar<'a> {
     label: &'a str,
     here: String,
     groups: Vec<(Option<&'a str>, Vec<Link<'a>>)>,
+    id: Option<&'a str>,
 }
 
 impl Sidebar<'_> {
@@ -83,6 +85,9 @@ impl Sidebar<'_> {
             .doc("An icon before the link added last."),
         Prop::new("badge", PropKind::Modifier, "text: impl Display")
             .doc("A count after the link added last."),
+        Prop::new("id", PropKind::Value, "id: &'a str")
+            .attr("id")
+            .doc("The prefix of the group headings' ids instead of `lui-sidebar-<label>`."),
     ];
 }
 
@@ -93,6 +98,7 @@ impl Ui {
             label,
             here: self.state.path().to_string(),
             groups: vec![(None, Vec::new())],
+            id: None,
         }
     }
 }
@@ -132,11 +138,20 @@ impl<'a> Sidebar<'a> {
         }
         self
     }
+
+    /// The prefix of the group headings' ids instead of `lui-sidebar-<label>`.
+    pub fn id(mut self, id: &'a str) -> Self {
+        self.id = Some(id);
+        self
+    }
 }
 
 impl Render for Sidebar<'_> {
     fn render(&self) -> Markup {
-        let root = format!("lui-sidebar-{}", slug(self.label));
+        let root = self.id.map_or_else(
+            || format!("lui-sidebar-{}", slug(self.label)),
+            str::to_string,
+        );
         html! {
             nav class="lui-sidebar" aria-label=(self.label) {
                 @for (i, (heading, links)) in self.groups.iter().enumerate().filter(|(_, g)| g.0.is_some() || !g.1.is_empty()) {

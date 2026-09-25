@@ -289,14 +289,16 @@ pub(crate) const ENTRIES: &[Entry] = &[
     },
     Entry {
         builder: "Range",
-        call: "Range(\"volume\", 40)",
-        props: &["min", "max", "step", "label"],
+        call: "Range(\"volume\", \"Volume\")",
+        props: &["value", "min", "max", "step"],
         rest: ";",
         build: |t| {
-            let b = with(t.ui.range("volume", 40), t.num("min"), |b, v| b.min(v));
+            let b = with(t.ui.range("volume", "Volume"), t.num("value"), |b, v| {
+                b.value(v)
+            });
+            let b = with(b, t.num("min"), |b, v| b.min(v));
             let b = with(b, t.num("max"), |b, v| b.max(v));
-            let b = with(b, t.num("step"), |b, v| b.step(v));
-            with(b, t.text("label"), |b, v| b.label(v)).render()
+            with(b, t.num("step"), |b, v| b.step(v)).render()
         },
     },
     Entry {

@@ -740,8 +740,8 @@ async fn counter_and_inputs() {
         "opacity 60% in the code"
     );
     assert!(page.exists(".lui-color input[type=range][name=accent-alpha][value='60']"));
-    assert_eq!(page.count("#country optgroup"), 3, "grouped countries");
-    assert!(page.exists("#country option[value=jp][selected]"));
+    assert_eq!(page.count("#f-country optgroup"), 3, "grouped countries");
+    assert!(page.exists("#f-country option[value=jp][selected]"));
     assert!(
         page.is_visible(".lui-select-search input[name=country-q]")
             && page.exists(".lui-select-search button[formmethod=get][formaction='/inputs']"),
@@ -752,15 +752,15 @@ async fn counter_and_inputs() {
         "3 options: none"
     );
     assert!(
-        page.exists("#size option[value=l] .lui-select-icon"),
+        page.exists("#f-size option[value=l] .lui-select-icon"),
         "icons in options"
     );
 
     let filtered = Page::render(demo::router(), "/inputs?country=es&country-q=arg", MODERN).await;
     assert!(
-        filtered.exists("#country option[value=es]")
-            && filtered.exists("#country option[value=ar]")
-            && !filtered.exists("#country option[value=jp]"),
+        filtered.exists("#f-country option[value=es]")
+            && filtered.exists("#f-country option[value=ar]")
+            && !filtered.exists("#f-country option[value=jp]"),
         "filter keeps matches and the selected option"
     );
 }

@@ -242,7 +242,7 @@ pub(crate) const COMPONENTS: &[Component] = &[
     Component {
         module: "color",
         builder: "Color",
-        calls: &["ui.color(name: &str, value: &str)"],
+        calls: &["ui.color(name: &str, label: &str)"],
         props: crate::color::Color::PROPS,
         status: Status::Stable,
     },
@@ -394,8 +394,8 @@ pub(crate) const COMPONENTS: &[Component] = &[
         module: "range",
         builder: "Range",
         calls: &[
-            "ui.range(name: &str, value: i64)",
-            "ui.range_pair(name: &str, (a, b): (i64, i64))",
+            "ui.range(name: &str, label: &str)",
+            "ui.range_pair(name: &str, label: &str)",
         ],
         props: crate::range::Range::PROPS,
         status: Status::Stable,
@@ -403,7 +403,7 @@ pub(crate) const COMPONENTS: &[Component] = &[
     Component {
         module: "select",
         builder: "Select",
-        calls: &["ui.select(name: &str, selected: &str)"],
+        calls: &["ui.select(name: &str, label: &str)"],
         props: crate::select::Select::PROPS,
         status: Status::Stable,
     },

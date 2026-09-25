@@ -755,7 +755,8 @@
           "status": "beta",
           "calls": ["ui.error_summary(errors: &[(&str, &str)])"],
           "props": [
-            { "name": "title", "kind": "value", "args": "text: &'a str", "default": "There is a problem", "attr": "", "doc": "The heading." }
+            { "name": "title", "kind": "value", "args": "text: &'a str", "default": "There is a problem", "attr": "", "doc": "The heading." },
+            { "name": "field", "kind": "item", "args": "name: &'a str, label: &'a str", "default": "", "attr": "", "doc": "The label of the field `name`, written before its message as a form's summary does." }
           ]
         }
       ]
@@ -858,14 +859,15 @@
           "builder": "Select",
           "lui": "Select",
           "status": "stable",
-          "calls": ["ui.select(name: &str, selected: &str)"],
+          "calls": ["ui.select(name: &str, label: &str)"],
           "props": [
             { "name": "options", "kind": "value", "args": "options: impl IntoIterator<Item = O>", "default": "", "attr": "", "doc": "Options with no `<optgroup>`." },
             { "name": "group", "kind": "value", "args": "label: &'a str, options: impl IntoIterator<Item = O>", "default": "", "attr": "", "doc": "Options under `<optgroup label>`." },
             { "name": "groups", "kind": "value", "args": "groups: impl IntoIterator<Item = (&'a str, G)>", "default": "", "attr": "", "doc": "Several labelled groups at once." },
             { "name": "search", "kind": "value", "args": "action: &'a str", "default": "", "attr": "", "doc": "A filter box submitting `<name>-q` to `action` with GET." },
             { "name": "search_over", "kind": "number", "args": "n: usize", "default": "15", "attr": "", "doc": "Show the filter box above this many options (default 15)." },
-            { "name": "label", "kind": "value", "args": "label: &'a str", "default": "", "attr": "", "doc": "A `<label>` above the select, in a `div.lui-field` like a form field." }
+            { "name": "value", "kind": "value", "args": "value: &'a str", "default": "", "attr": "", "doc": "The chosen option's value, instead of the query's `name`." },
+            { "name": "error", "kind": "value", "args": "message: &'a str", "default": "", "attr": "", "doc": "A server message under the select, which gets `aria-invalid`." }
           ]
         },
         {
@@ -896,12 +898,13 @@
           "builder": "Range",
           "lui": "Range",
           "status": "stable",
-          "calls": ["ui.range(name: &str, value: i64)", "ui.range_pair(name: &str, (a, b): (i64, i64))"],
+          "calls": ["ui.range(name: &str, label: &str)", "ui.range_pair(name: &str, label: &str)"],
           "props": [
+            { "name": "value", "kind": "number", "args": "value: i64", "default": "", "attr": "value", "doc": "The value (a pair's low one), instead of the query's." },
+            { "name": "values", "kind": "value", "args": "low: i64, high: i64", "default": "", "attr": "", "doc": "A pair's two values, put in order, instead of the query's." },
             { "name": "min", "kind": "number", "args": "min: i64", "default": "0", "attr": "min", "doc": "Lowest value." },
             { "name": "max", "kind": "number", "args": "max: i64", "default": "100", "attr": "max", "doc": "Highest value." },
-            { "name": "step", "kind": "number", "args": "step: i64", "default": "1", "attr": "step", "doc": "Distance between allowed values (at least 1)." },
-            { "name": "label", "kind": "value", "args": "label: &'a str", "default": "", "attr": "", "doc": "A `<label>` above the slider, in a `div.lui-field` like a form field." }
+            { "name": "step", "kind": "number", "args": "step: i64", "default": "1", "attr": "step", "doc": "Distance between allowed values (at least 1)." }
           ]
         }
       ]
@@ -920,11 +923,11 @@
           "builder": "Color",
           "lui": "Color",
           "status": "stable",
-          "calls": ["ui.color(name: &str, value: &str)"],
+          "calls": ["ui.color(name: &str, label: &str)"],
           "props": [
+            { "name": "value", "kind": "value", "args": "value: &'a str", "default": "", "attr": "value", "doc": "The `#rrggbb` colour, instead of the query's `name`." },
             { "name": "presets", "kind": "value", "args": "presets: &'a [&'a str]", "default": "", "attr": "", "doc": "`#rrggbb` swatches that post `<name>-preset` when clicked." },
-            { "name": "alpha", "kind": "number", "args": "percent: u8", "default": "", "attr": "", "doc": "An opacity slider (`<name>-alpha`) at `percent`, clamped to 100." },
-            { "name": "label", "kind": "value", "args": "label: &'a str", "default": "", "attr": "", "doc": "A `<label>` above the picker, in a `div.lui-field` like a form field." }
+            { "name": "alpha", "kind": "number", "args": "percent: u8", "default": "", "attr": "", "doc": "An opacity slider (`<name>-alpha`) at `percent`, clamped to 100." }
           ]
         }
       ]
@@ -1038,7 +1041,8 @@
           "status": "stable",
           "calls": ["ui.progress(value: u64, max: u64)"],
           "props": [
-            { "name": "label", "kind": "value", "args": "text: &'a str", "default": "", "attr": "", "doc": "A label above the bar, with the percentage beside it." }
+            { "name": "label", "kind": "value", "args": "text: &'a str", "default": "", "attr": "", "doc": "A label above the bar, with the percentage beside it." },
+            { "name": "id", "kind": "value", "args": "id: &'a str", "default": "", "attr": "id", "doc": "The bar's id instead of `lui-progress-<label>`." }
           ]
         }
       ]
@@ -1061,7 +1065,8 @@
             { "name": "label", "kind": "value", "args": "text: &'a str", "default": "", "attr": "", "doc": "A label above the meter, with the value beside it." },
             { "name": "low", "kind": "number", "args": "low: i64", "default": "", "attr": "low", "doc": "Below this is \"low\"." },
             { "name": "high", "kind": "number", "args": "high: i64", "default": "", "attr": "high", "doc": "Above this is \"high\"." },
-            { "name": "optimum", "kind": "number", "args": "optimum: i64", "default": "", "attr": "optimum", "doc": "The best value." }
+            { "name": "optimum", "kind": "number", "args": "optimum: i64", "default": "", "attr": "optimum", "doc": "The best value." },
+            { "name": "id", "kind": "value", "args": "id: &'a str", "default": "", "attr": "id", "doc": "The meter's id instead of `lui-meter-<label>`." }
           ]
         }
       ]
@@ -1281,7 +1286,8 @@
             { "name": "group", "kind": "item", "args": "heading: &'a str", "default": "", "attr": "", "doc": "Start a group of links under a small heading." },
             { "name": "link", "kind": "item", "args": "text: &'a str, href: &'a str", "default": "", "attr": "href", "doc": "A link; the one to the current path is marked current." },
             { "name": "icon", "kind": "modifier", "args": "icon: impl Into<Glyph<'a>>", "default": "", "attr": "", "doc": "An icon before the link added last." },
-            { "name": "badge", "kind": "modifier", "args": "text: impl Display", "default": "", "attr": "", "doc": "A count after the link added last." }
+            { "name": "badge", "kind": "modifier", "args": "text: impl Display", "default": "", "attr": "", "doc": "A count after the link added last." },
+            { "name": "id", "kind": "value", "args": "id: &'a str", "default": "", "attr": "id", "doc": "The prefix of the group headings' ids instead of `lui-sidebar-<label>`." }
           ]
         }
       ]
@@ -1304,7 +1310,8 @@
           "calls": ["ui.nav_menu(label: &str)"],
           "props": [
             { "name": "link", "kind": "item", "args": "text: &'a str, href: &'a str", "default": "", "attr": "href", "doc": "A link in the row; the one to the current path is marked current." },
-            { "name": "panel", "kind": "item", "args": "text: &'a str, items: impl IntoIterator<Item = I>", "default": "", "attr": "", "doc": "A button that opens a panel of `items` (`MenuItem`s or `(text, href)` links)." }
+            { "name": "panel", "kind": "item", "args": "text: &'a str, items: impl IntoIterator<Item = I>", "default": "", "attr": "", "doc": "A button that opens a panel of `items` (`MenuItem`s or `(text, href)` links)." },
+            { "name": "id", "kind": "value", "args": "id: &'a str", "default": "", "attr": "id", "doc": "The prefix of the panels' ids instead of `nav-<label>`." }
           ]
         }
       ]
@@ -1374,7 +1381,14 @@
           "status": "beta",
           "calls": ["ui.context_menu(label: &str)"],
           "props": [
-            { "name": "items", "kind": "value", "args": "items: impl IntoIterator<Item = MenuItem<'a>>", "default": "", "attr": "", "doc": "The actions: `MenuItem::link`, `MenuItem::action`." },
+            { "name": "link", "kind": "item", "args": "text: &'a str, href: &'a str", "default": "", "attr": "", "doc": "A link." },
+            { "name": "action", "kind": "item", "args": "text: &'a str, action: &'a str", "default": "", "attr": "action", "doc": "A `<form method=\"post\">` button posting to `action`." },
+            { "name": "group", "kind": "item", "args": "text: &'a str", "default": "", "attr": "", "doc": "A heading over the items after it." },
+            { "name": "separator", "kind": "item", "args": "", "default": "", "attr": "", "doc": "A rule between groups." },
+            { "name": "icon", "kind": "modifier", "args": "icon: impl Into<Glyph<'a>>", "default": "", "attr": "", "doc": "An icon, or a glyph or emoji, before the item's text (decorative, hidden from assistive tech)." },
+            { "name": "shortcut", "kind": "modifier", "args": "keys: &'a str", "default": "", "attr": "", "doc": "A shortcut shown after the item's text, as `<kbd>`." },
+            { "name": "disabled", "kind": "modifier", "args": "", "default": "", "attr": "disabled", "doc": "The item is shown but not usable." },
+            { "name": "danger", "kind": "modifier", "args": "", "default": "", "attr": "", "doc": "The item is destructive." },
             { "name": "body", "kind": "value", "args": "body: Markup", "default": "", "attr": "", "doc": "The thing the actions are on." },
             { "name": "id", "kind": "value", "args": "id: &'a str", "default": "", "attr": "id", "doc": "The menu's id instead of `ctx-<label>`." }
           ]

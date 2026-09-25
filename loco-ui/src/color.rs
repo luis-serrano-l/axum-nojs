@@ -25,9 +25,10 @@
 //!
 //! ```rust
 //! use loco_ui::{prelude::*, color::hex_alpha};
-//! let ui = Ui::from(Caps::all());
-//! assert!(ui.color("accent", "#2f5bea").render().into_string().contains("type=\"color\""));
-//! let m = ui.color("accent", "#2f5bea").presets(&["#1f6f5f", "#b3261e"]).alpha(80).label("Accent");
+//! // The value is the query's `accent`, or `.value(..)` (a saved colour).
+//! let ui = Ui::from_request("/", "accent=%232f5bea", "");
+//! assert!(ui.color("accent", "Accent").render().into_string().contains(r##"value="#2f5bea""##));
+//! let m = ui.color("accent", "Accent").value("#2f5bea").presets(&["#1f6f5f", "#b3261e"]).alpha(80);
 //! let html = m.render().into_string();
 //! assert!(html.contains("name=\"accent-preset\" value=\"#b3261e\""));
 //! assert!(html.contains("name=\"accent-alpha\"") && html.contains(r#"<label for="f-accent">"#));
@@ -35,7 +36,7 @@
 //!
 //! // The same in `lui!`:
 //! let same = lui! {
-//!     Color("accent", "#2f5bea") presets=(&["#1f6f5f", "#b3261e"]) alpha=80 label="Accent";
+//!     Color("accent", "Accent") value="#2f5bea" presets=(&["#1f6f5f", "#b3261e"]) alpha=80;
 //! };
 //! assert_eq!(same.into_string(), m.render().into_string());
 //! ```
@@ -49,14 +50,14 @@ use crate::{Caps, Ui};
 
 /// A colour input with a swatch of its current value, made by [`Ui::color`].
 ///
-/// **Setters.** Values and items: `.presets(..)`, `.alpha(..)`, `.label(..)`.
+/// **Setters.** Values and items: `.value(..)`, `.presets(..)`, `.alpha(..)`.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct Color<'a> {
     name: &'a str,
     value: &'a str,
     presets: &'a [&'a str],
     alpha: Option<u8>,
-    label: Option<&'a str>,
+    label: &'a str,
     strings: &'static Strings,
 }
 
@@ -64,21 +65,25 @@ impl Color<'_> {
     /// Every setter with its kind, arguments, default and the HTML attribute it sets; listed by
     /// [`crate::props()`] and kept in step with the setters by a test.
     pub const PROPS: &'static [Prop] = &[
+        Prop::new("value", PropKind::Value, "value: &'a str")
+            .attr("value")
+            .doc("The `#rrggbb` colour, instead of the query's `name`."),
         Prop::new("presets", PropKind::Value, "presets: &'a [&'a str]")
             .doc("`#rrggbb` swatches that post `<name>-preset` when clicked."),
         Prop::new("alpha", PropKind::Number, "percent: u8")
             .doc("An opacity slider (`<name>-alpha`) at `percent`, clamped to 100."),
-        Prop::new("label", PropKind::Value, "label: &'a str")
-            .doc("A `<label>` above the picker, in a `div.lui-field` like a form field."),
     ];
 }
 
 impl Ui {
-    /// A colour input named `name` holding the `#rrggbb` `value`.
-    pub fn color<'a>(&self, name: &'a str, value: &'a str) -> Color<'a> {
+    /// A colour input named `name` under the label `label`, in a `div.lui-field` like a form
+    /// field; it holds the query's `name` (`#000000` without one) unless [`Color::value`]
+    /// says otherwise.
+    pub fn color<'a>(&'a self, name: &'a str, label: &'a str) -> Color<'a> {
         Color {
             name,
-            value,
+            label,
+            value: self.param(name).unwrap_or("#000000"),
             strings: self.strings,
             ..Color::default()
         }
@@ -86,6 +91,12 @@ impl Ui {
 }
 
 impl<'a> Color<'a> {
+    /// The `#rrggbb` colour, instead of the query's `name`: a saved value.
+    pub fn value(mut self, value: &'a str) -> Self {
+        self.value = value;
+        self
+    }
+
     /// `#rrggbb` swatches that post `<name>-preset` when clicked.
     pub fn presets(mut self, presets: &'a [&'a str]) -> Self {
         self.presets = presets;
@@ -95,12 +106,6 @@ impl<'a> Color<'a> {
     /// An opacity slider (`<name>-alpha`) at `percent`, clamped to 100.
     pub fn alpha(mut self, percent: u8) -> Self {
         self.alpha = Some(percent.min(100));
-        self
-    }
-
-    /// A `<label>` above the picker, in a `div.lui-field` like a form field.
-    pub fn label(mut self, label: &'a str) -> Self {
-        self.label = Some(label);
         self
     }
 }
@@ -127,7 +132,7 @@ impl Render for Color<'_> {
         let pct = alpha.unwrap_or(100);
         let preset_name = format!("{name}-preset");
         crate::labelled(
-            label,
+            Some(label),
             &id,
             html! {
                 div class="lui-color" {

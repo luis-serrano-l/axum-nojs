@@ -116,10 +116,10 @@ enum Kind<'a> {
 pub struct MenuItem<'a> {
     kind: Kind<'a>,
     text: &'a str,
-    icon: Option<Glyph<'a>>,
-    shortcut: Option<&'a str>,
-    disabled: bool,
-    danger: bool,
+    pub(crate) icon: Option<Glyph<'a>>,
+    pub(crate) shortcut: Option<&'a str>,
+    pub(crate) disabled: bool,
+    pub(crate) danger: bool,
 }
 
 impl<'a> MenuItem<'a> {
@@ -142,6 +142,16 @@ impl<'a> MenuItem<'a> {
     /// A `<form method="post">` button posting to `action`: for things that change state.
     pub const fn action(text: &'a str, action: &'a str) -> Self {
         Self::new(Kind::Action(action), text)
+    }
+
+    /// A heading over the items after it.
+    pub(crate) const fn group(text: &'a str) -> Self {
+        Self::new(Kind::Heading, text)
+    }
+
+    /// A rule between groups.
+    pub(crate) const fn separator() -> Self {
+        Self::new(Kind::Separator, "")
     }
 
     /// Destructive: coloured with `--lui-danger`.

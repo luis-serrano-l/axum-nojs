@@ -31,14 +31,19 @@
 //!
 //! ```rust
 //! use loco_ui::{prelude::*, select::SelectOption};
-//! let mut ui = Ui::from_request("/shop", "food-q=k", "");
+//! // The chosen value is the query's `food`, as a form posted back by GET leaves it.
+//! let mut ui = Ui::from_request("/shop", "food=leek&food-q=k", "");
 //! ui.caps = Caps::all();
 //! // Plain tuples of (value, label) or (value, label, icon) are options.
-//! let m = ui.select("size", "l").options([("s", "Small", "🐭"), ("l", "Large", "🐘")]).label("Size");
+//! let m = ui.select("size", "Size").options([("s", "Small", "🐭"), ("l", "Large", "🐘")]).value("l");
 //! let m = m.render().into_string();
-//! assert!(m.contains("<selectedcontent>") && m.contains(r#"<label for="size">Size</label>"#));
+//! assert!(m.contains("<selectedcontent>") && m.contains(r#"<label for="f-size">Size</label>"#));
+//! assert!(m.contains(r#"<option value="l" selected>"#));
+//! // A server error, linked from the error summary like a form field's.
+//! let bad = ui.select("size", "Size").options([("s", "Small")]).error("Pick a size.");
+//! assert!(bad.render().into_string().contains(r#"aria-describedby="f-size-error""#));
 //!
-//! let m = ui.select("food", "leek")
+//! let m = ui.select("food", "Food")
 //!     .group("Fruit", [SelectOption::new("apple", "Apple"), SelectOption::new("kiwi", "Kiwi").body(html! { b { "Kiwi" } })])
 //!     .group("Vegetables", [("leek", "Leek")])
 //!     .search("/shop")
@@ -48,7 +53,7 @@
 //! assert!(m.contains("formmethod=\"get\" formaction=\"/shop\""));
 //!
 //! // The same in `lui!`:
-//! let same = lui! { Select("food", "leek") search="/shop" search_over=2 {
+//! let same = lui! { Select("food", "Food") search="/shop" search_over=2 {
 //!     group "Fruit" ([
 //!         SelectOption::new("apple", "Apple"),
 //!         SelectOption::new("kiwi", "Kiwi").body(html! { b { "Kiwi" } }),
@@ -145,16 +150,17 @@ struct Group<'a> {
 /// A select, made by [`Ui::select`]. No filter box unless [`Select::search`] asks for one.
 ///
 /// **Setters.** Values and items: `.options(..)`, `.group(..)`, `.groups(..)`, `.search(..)`,
-/// `.search_over(..)`, `.label(..)`.
+/// `.search_over(..)`, `.value(..)`, `.error(..)`.
 #[derive(Clone, Debug)]
 pub struct Select<'a> {
     ui: &'a Ui,
     name: &'a str,
+    label: &'a str,
     selected: &'a str,
     groups: Vec<Group<'a>>,
     search: Option<&'a str>,
     search_over: usize,
-    label: Option<&'a str>,
+    error: Option<&'a str>,
 }
 
 impl Select<'_> {
@@ -184,23 +190,28 @@ impl Select<'_> {
         Prop::new("search_over", PropKind::Number, "n: usize")
             .default("15")
             .doc("Show the filter box above this many options (default 15)."),
-        Prop::new("label", PropKind::Value, "label: &'a str")
-            .doc("A `<label>` above the select, in a `div.lui-field` like a form field."),
+        Prop::new("value", PropKind::Value, "value: &'a str")
+            .doc("The chosen option's value, instead of the query's `name`."),
+        Prop::new("error", PropKind::Value, "message: &'a str")
+            .doc("A server message under the select, which gets `aria-invalid`."),
     ];
 }
 
 impl Ui {
-    /// A select named `name` with `selected` chosen; add options with [`Select::options`] or
+    /// A select named `name` under the label `label`, in a `div.lui-field` like a form field
+    /// (its id is `f-<name>`); the chosen option is the query's `name` unless
+    /// [`Select::value`] says otherwise. Add options with [`Select::options`] or
     /// [`Select::group`].
-    pub fn select<'a>(&'a self, name: &'a str, selected: &'a str) -> Select<'a> {
+    pub fn select<'a>(&'a self, name: &'a str, label: &'a str) -> Select<'a> {
         Select {
             ui: self,
             name,
-            selected,
+            label,
+            selected: self.param(name).unwrap_or(""),
             groups: Vec::new(),
             search: None,
             search_over: 15,
-            label: None,
+            error: None,
         }
     }
 }
@@ -255,9 +266,16 @@ impl<'a> Select<'a> {
         self
     }
 
-    /// A `<label>` above the select, in a `div.lui-field` like a form field.
-    pub fn label(mut self, label: &'a str) -> Self {
-        self.label = Some(label);
+    /// The chosen option's value, instead of the query's `name`: a saved value.
+    pub fn value(mut self, value: &'a str) -> Self {
+        self.selected = value;
+        self
+    }
+
+    /// A server message under the select, which gets `aria-invalid`; the error summary links
+    /// to it as it does to a form field. An empty message is no error.
+    pub fn error(mut self, message: &'a str) -> Self {
+        self.error = (!message.is_empty()).then_some(message);
         self
     }
 }
@@ -267,12 +285,15 @@ impl Render for Select<'_> {
         let Select {
             ui,
             name,
+            label,
             selected,
             ref groups,
             search,
             search_over,
-            label,
+            error,
         } = *self;
+        let id = format!("f-{name}");
+        let error_id = format!("{id}-error");
         let rich = ui.has(Cap::BaseSelect);
         let total: usize = groups.iter().map(|g| g.options.len()).sum();
         let search = search.filter(|_| total > search_over);
@@ -296,8 +317,8 @@ impl Render for Select<'_> {
             }
         };
         crate::labelled(
-            label,
-            name,
+            Some(label),
+            &id,
             html! {
                 span class="lui-select" {
                     @if let Some(action) = search {
@@ -306,7 +327,8 @@ impl Render for Select<'_> {
                             (ui.button(ui.text(Text::Filter)).formmethod("get").formaction(action).formnovalidate())
                         }
                     }
-                    select id=(name) name=(name) {
+                    select id=(id) name=(name) aria-invalid=[error.map(|_| "true")]
+                        aria-describedby=[error.map(|_| error_id.as_str())] {
                         @if rich { button type="button" { selectedcontent {} } }
                         @for g in groups {
                             @let visible: Vec<&SelectOption> = g.options.iter().filter(|o| shown(o)).collect();
@@ -318,6 +340,7 @@ impl Render for Select<'_> {
                         }
                     }
                 }
+                @if let Some(e) = error { p id=(error_id) class="lui-error" role="alert" { (e) } }
             },
         )
     }

@@ -34,10 +34,13 @@
 //! assert!(m.contains(r##"<li><a href="#f-password">At least 8 characters.</a></li>"##));
 //! assert!(ui.error_summary(&[]).render().into_string().is_empty());
 //!
-//! let m = ui.error_summary(&errors).title("Check your details").render().into_string();
+//! // With the fields' labels, each message reads as a form's summary writes it.
+//! let m = ui.error_summary(&errors).field("email", "Email").title("Check your details");
+//! let m = m.render().into_string();
 //! assert!(m.contains(r#"role="alert""#) && m.contains(">Check your details</a>"));
+//! assert!(m.contains(r##"<a href="#f-email">Email: Enter an email address.</a>"##));
 //! // The same in `lui!`:
-//! let same = lui! { ErrorSummary(&errors) title="Check your details"; };
+//! let same = lui! { ErrorSummary(&errors) title="Check your details" { field "email" "Email"; } };
 //! assert_eq!(same.into_string(), m);
 //! ```
 
@@ -50,7 +53,7 @@ use crate::props::{Prop, PropKind};
 /// A list of the fields in error, made by [`Ui::error_summary`] (and by a
 /// [`Form`](crate::form::Form) with messages).
 ///
-/// **Setters.** Values and items: `.title(..)`.
+/// **Setters.** Values and items: `.title(..)`, `.field(..)`.
 #[derive(Clone, Debug)]
 pub struct ErrorSummary<'a> {
     title: &'a str,
@@ -61,9 +64,14 @@ pub struct ErrorSummary<'a> {
 impl ErrorSummary<'_> {
     /// Every setter with its kind, arguments, default and the HTML attribute it sets; listed by
     /// [`crate::props()`] and kept in step with the setters by a test.
-    pub const PROPS: &'static [Prop] = &[Prop::new("title", PropKind::Value, "text: &'a str")
-        .default("There is a problem")
-        .doc("The heading.")];
+    pub const PROPS: &'static [Prop] = &[
+        Prop::new("title", PropKind::Value, "text: &'a str")
+            .default("There is a problem")
+            .doc("The heading."),
+        Prop::new("field", PropKind::Item, "name: &'a str, label: &'a str").doc(
+            "The label of the field `name`, written before its message as a form's summary does.",
+        ),
+    ];
 }
 
 impl Ui {
@@ -89,6 +97,20 @@ impl<'a> ErrorSummary<'a> {
     /// The heading.
     pub fn title(mut self, text: &'a str) -> Self {
         self.title = text;
+        self
+    }
+
+    /// The label of the field `name`, written before its message as a form's summary does
+    /// ("Email: Enter an email address.").
+    pub fn field(mut self, name: &'a str, label: &'a str) -> Self {
+        let id = format!("f-{name}");
+        for item in self
+            .items
+            .iter_mut()
+            .filter(|i| i.0.as_deref() == Some(id.as_str()))
+        {
+            item.1 = Some(label);
+        }
         self
     }
 

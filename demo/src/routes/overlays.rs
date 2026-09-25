@@ -110,16 +110,15 @@ async fn popover_signout(ui: Ui) -> Redirect {
 
 /// Actions on one thing, behind a "more" button in its corner.
 fn context_menu(ui: &Ui) -> Markup {
-    let items = [
-        loco_ui::popover::MenuItem::link("Open", "/table"),
-        loco_ui::popover::MenuItem::link("Download", "/table.csv"),
-        loco_ui::popover::MenuItem::action("Delete", "/blocks/record/delete").danger(),
-    ];
     lui! {
         div style="max-width: 24rem" {
             // code: /context-menu
-            ContextMenu("report.pdf") items=(items) {
-                p { strong { "report.pdf" } } p class="lui-note" { "2.4 MB · edited yesterday" }
+            ContextMenu("report.pdf") {
+                link "Open" "/table";
+                link "Download" "/table.csv";
+                separator();
+                action "Delete" "/blocks/record/delete" danger;
+                body() { p { strong { "report.pdf" } } p class="lui-note" { "2.4 MB · edited yesterday" } }
             }
             // end code
         }

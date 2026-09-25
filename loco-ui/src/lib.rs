@@ -344,9 +344,10 @@ mod tests {
         );
         let sizes = [("s", "Small", "🐭")];
         assert_eq!(
-            render(&ui.select("size", "s").options(sizes)),
+            render(&ui.select("size", "Size").value("s").options(sizes)),
             render(
-                &ui.select("size", "s")
+                &ui.select("size", "Size")
+                    .value("s")
                     .options([select::SelectOption::new("s", "Small").icon("🐭")])
             )
         );
@@ -1044,7 +1045,12 @@ mod tests {
         ),
         (
             "values",
-            "Form and Wizard take the POST body; a table Row its cells as text",
+            "Form and Wizard take the POST body, a table Row its cells as text, a range pair its two numbers",
+        ),
+        ("value", "text on the text controls, a number on the slider"),
+        (
+            "field",
+            "RecordPage adds a field (label, value); ErrorSummary names one (name, label)",
         ),
         (
             "item",
@@ -1118,11 +1124,14 @@ mod tests {
             "links",
             "a palette's destinations from data (every page of an app)",
         ),
-        ("items", "M32: ContextMenu gets Menu's adders"),
     ];
 
     /// `x` beside `xs` on one builder: the plural feeds a slice the caller already holds.
     const TWINS: &[(&str, &str)] = &[
+        (
+            "Range::values",
+            "a pair's two numbers beside `.value(..)` for one",
+        ),
         (
             "Form::values",
             "the POST body beside `.value(..)` for one field",
@@ -1235,10 +1244,6 @@ mod tests {
             "blocks/settings_page",
             "section anchors from their titles, linked from its own nav",
         ),
-        ("meter", "M32: gets `.id(..)`"),
-        ("progress", "M32: gets `.id(..)`"),
-        ("nav_menu", "M32: gets `.id(..)`"),
-        ("sidebar", "M32: gets `.id(..)`"),
     ];
 
     /// Public `_with` functions that are not twins of a plainer one, each with the reason.

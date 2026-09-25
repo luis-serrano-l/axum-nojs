@@ -36,19 +36,25 @@ use crate::{Ui, slug};
 
 /// A progress bar, made by [`Ui::progress`].
 ///
-/// **Setters.** Values and items: `.label(..)`.
+/// **Setters.** Values and items: `.label(..)`, `.id(..)`.
 #[derive(Clone, Debug)]
 pub struct Progress<'a> {
     value: u64,
     max: u64,
     label: Option<&'a str>,
+    id: Option<&'a str>,
 }
 
 impl Progress<'_> {
     /// Every setter with its kind, arguments, default and the HTML attribute it sets; listed by
     /// [`crate::props()`] and kept in step with the setters by a test.
-    pub const PROPS: &'static [Prop] = &[Prop::new("label", PropKind::Value, "text: &'a str")
-        .doc("A label above the bar, with the percentage beside it.")];
+    pub const PROPS: &'static [Prop] = &[
+        Prop::new("label", PropKind::Value, "text: &'a str")
+            .doc("A label above the bar, with the percentage beside it."),
+        Prop::new("id", PropKind::Value, "id: &'a str")
+            .attr("id")
+            .doc("The bar's id instead of `lui-progress-<label>`."),
+    ];
 }
 
 impl Ui {
@@ -58,6 +64,7 @@ impl Ui {
             value,
             max,
             label: None,
+            id: None,
         }
     }
 }
@@ -66,6 +73,12 @@ impl<'a> Progress<'a> {
     /// A label above the bar, with the percentage beside it.
     pub fn label(mut self, text: &'a str) -> Self {
         self.label = Some(text);
+        self
+    }
+
+    /// The bar's id instead of `lui-progress-<label>`.
+    pub fn id(mut self, id: &'a str) -> Self {
+        self.id = Some(id);
         self
     }
 }
@@ -78,7 +91,10 @@ impl Render for Progress<'_> {
         } else {
             0
         };
-        let id = format!("lui-progress-{}", slug(self.label.unwrap_or("bar")));
+        let id = self.id.map_or_else(
+            || format!("lui-progress-{}", slug(self.label.unwrap_or("bar"))),
+            str::to_string,
+        );
         html! {
             div class="lui-progress-field" {
                 @if let Some(l) = self.label {

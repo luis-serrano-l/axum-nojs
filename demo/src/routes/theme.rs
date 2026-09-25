@@ -138,11 +138,11 @@ fn pickers(ui: &Ui, c: &Chosen) -> Markup {
             fieldset {
                 legend { "Scales" }
                 div {
-                    Color("brand", &c.brand) presets=(&BRANDS) label="Brand";
-                    Color("gray", &c.gray) presets=(&GRAYS) label="Gray";
+                    Color("brand", "Brand") value=(&c.brand) presets=(&BRANDS);
+                    Color("gray", "Gray") value=(&c.gray) presets=(&GRAYS);
                 }
             }
-            Range("radius", i64::from(c.radius)) min=0 max=24 label="Radius (px)";
+            Range("radius", "Radius (px)") value=(i64::from(c.radius)) min=0 max=24;
             Cluster(lui! {
                 Button("Preview") primary;
                 LinkButton("Download theme.css", &download);

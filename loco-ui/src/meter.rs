@@ -33,7 +33,8 @@ use crate::{Ui, slug};
 
 /// A meter, made by [`Ui::meter`].
 ///
-/// **Setters.** Values and items: `.label(..)`, `.low(..)`, `.high(..)`, `.optimum(..)`.
+/// **Setters.** Values and items: `.label(..)`, `.low(..)`, `.high(..)`, `.optimum(..)`,
+/// `.id(..)`.
 #[derive(Clone, Debug)]
 pub struct Meter<'a> {
     value: i64,
@@ -43,6 +44,7 @@ pub struct Meter<'a> {
     high: Option<i64>,
     optimum: Option<i64>,
     label: Option<&'a str>,
+    id: Option<&'a str>,
 }
 
 impl Meter<'_> {
@@ -60,6 +62,9 @@ impl Meter<'_> {
         Prop::new("optimum", PropKind::Number, "optimum: i64")
             .attr("optimum")
             .doc("The best value."),
+        Prop::new("id", PropKind::Value, "id: &'a str")
+            .attr("id")
+            .doc("The meter's id instead of `lui-meter-<label>`."),
     ];
 }
 
@@ -74,6 +79,7 @@ impl Ui {
             high: None,
             optimum: None,
             label: None,
+            id: None,
         }
     }
 }
@@ -102,11 +108,20 @@ impl<'a> Meter<'a> {
         self.optimum = Some(optimum);
         self
     }
+
+    /// The meter's id instead of `lui-meter-<label>`.
+    pub fn id(mut self, id: &'a str) -> Self {
+        self.id = Some(id);
+        self
+    }
 }
 
 impl Render for Meter<'_> {
     fn render(&self) -> Markup {
-        let id = format!("lui-meter-{}", slug(self.label.unwrap_or("meter")));
+        let id = self.id.map_or_else(
+            || format!("lui-meter-{}", slug(self.label.unwrap_or("meter"))),
+            str::to_string,
+        );
         html! {
             div class="lui-progress-field" {
                 @if let Some(l) = self.label {

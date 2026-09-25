@@ -377,11 +377,11 @@ fn inputs(ui: &Ui, v: &Inputs) -> Markup {
     lui! {
             form id="inputs" data-lui="swap" class="lui-form" method="post" action="/inputs" {
                 // code: /inputs
-                Select("size", v.size.as_deref().unwrap_or("m")) options=(SIZES) label="Size";
-                Select("country", v.country.as_deref().unwrap_or("es")) groups=(COUNTRIES) search="/inputs" label="Country";
-                Range("volume", v.volume.unwrap_or(40)) step=5 label="Volume";
-                RangePair("price", (v.price_min.unwrap_or(20), v.price_max.unwrap_or(80))) step=5 label="Price";
-                Color("accent", v.accent.as_deref().unwrap_or("#1f6f5f")) presets=(&ACCENTS) alpha=(v.alpha.unwrap_or(100)) label="Accent";
+                Select("size", "Size") value=(v.size.as_deref().unwrap_or("m")) options=(SIZES);
+                Select("country", "Country") value=(v.country.as_deref().unwrap_or("es")) groups=(COUNTRIES) search="/inputs";
+                Range("volume", "Volume") value=(v.volume.unwrap_or(40)) step=5;
+                RangePair("price", "Price") values=(v.price_min.unwrap_or(20), v.price_max.unwrap_or(80)) step=5;
+                Color("accent", "Accent") value=(v.accent.as_deref().unwrap_or("#1f6f5f")) presets=(&ACCENTS) alpha=(v.alpha.unwrap_or(100));
                 // end code
                 (ui.button("Save").primary())
             }

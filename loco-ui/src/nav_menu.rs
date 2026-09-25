@@ -53,13 +53,14 @@ enum Entry<'a> {
 
 /// A row of links and panels, made by [`Ui::nav_menu`].
 ///
-/// **Setters.** Values and items: `.link(..)`, `.panel(..)`.
+/// **Setters.** Values and items: `.link(..)`, `.panel(..)`, `.id(..)`.
 #[derive(Clone, Debug)]
 pub struct NavMenu<'a> {
     caps: Caps,
     label: &'a str,
     here: String,
     entries: Vec<Entry<'a>>,
+    id: Option<&'a str>,
 }
 
 impl NavMenu<'_> {
@@ -75,6 +76,9 @@ impl NavMenu<'_> {
             "text: &'a str, items: impl IntoIterator<Item = I>",
         )
         .doc("A button that opens a panel of `items` (`MenuItem`s or `(text, href)` links)."),
+        Prop::new("id", PropKind::Value, "id: &'a str")
+            .attr("id")
+            .doc("The prefix of the panels' ids instead of `nav-<label>`."),
     ];
 }
 
@@ -86,6 +90,7 @@ impl Ui {
             label,
             here: self.state.path().to_string(),
             entries: Vec::new(),
+            id: None,
         }
     }
 }
@@ -109,11 +114,19 @@ impl<'a> NavMenu<'a> {
         ));
         self
     }
+
+    /// The prefix of the panels' ids instead of `nav-<label>`.
+    pub fn id(mut self, id: &'a str) -> Self {
+        self.id = Some(id);
+        self
+    }
 }
 
 impl Render for NavMenu<'_> {
     fn render(&self) -> Markup {
-        let root = format!("nav-{}", slug(self.label));
+        let root = self
+            .id
+            .map_or_else(|| format!("nav-{}", slug(self.label)), str::to_string);
         html! {
             nav class="lui-nav-menu" aria-label=(self.label) {
                 ul {

@@ -277,7 +277,7 @@ try {
   assert((await text("output[for=f-price_max]")) === "75", "range pair: the high thumb mirrors into its own output");
   // Select: typing in the filter re-renders the options through a GET, nothing is saved.
   await type("input[name=country-q]", "jap");
-  await until(async () => (await js("return [...document.querySelectorAll('#country option')].map(o => o.value).join()")) === "es,jp", "filtered to Japan plus the selected Spain");
+  await until(async () => (await js("return [...document.querySelectorAll('#f-country option')].map(o => o.value).join()")) === "es,jp", "filtered to Japan plus the selected Spain");
   assert(await js("return location.search").then(q => q.includes("country-q=jap")), "select: the filter is a GET in the URL");
   assert(await navigations() === 1, "select: filtered in place");
   await click(".lui-color-presets button[value='#b3261e']");

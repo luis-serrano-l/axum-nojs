@@ -28,16 +28,19 @@
 //!
 //! ```rust
 //! use loco_ui::prelude::*;
-//! let ui = Ui::from(Caps::all());
-//! let m = ui.range("volume", 40).step(5).label("Volume").render().into_string();
-//! assert!(m.contains(r#"<label for="f-volume">Volume</label>"#) && m.contains("<output"));
+//! // The values are the query's (`volume`; `price_min` and `price_max` for a pair), or
+//! // `.value(..)` and `.values(..)` (saved ones).
+//! let ui = Ui::from_request("/", "volume=40&price_min=80&price_max=20", "");
+//! let m = ui.range("volume", "Volume").step(5).render().into_string();
+//! assert!(m.contains(r#"<label for="f-volume">Volume</label>"#) && m.contains("<output for=\"f-volume\">40</output>"));
+//! assert!(ui.range("volume", "Volume").value(70).render().into_string().contains("<output for=\"f-volume\">70</output>"));
 //! // A pair posted the wrong way round is put back in order.
-//! let m = ui.range_pair("price", (80, 20)).step(10).render().into_string();
+//! let m = ui.range_pair("price", "Price").step(10).render().into_string();
 //! assert!(m.contains("name=\"price_min\"") && m.contains("name=\"price_max\""));
 //! assert!(m.contains("<output for=\"f-price_min\">20</output>"));
 //!
 //! // The same in `lui!`:
-//! let same = lui! { RangePair("price", (80, 20)) step=10; };
+//! let same = lui! { RangePair("price", "Price") step=10; };
 //! assert_eq!(same.into_string(), m);
 //! ```
 
@@ -51,15 +54,19 @@ use crate::props::{Prop, PropKind};
 /// low/high pair over one track, by [`Ui::range_pair`]. 0 to 100 in steps of 1 unless told
 /// otherwise.
 ///
-/// **Setters.** Values and items: `.min(..)`, `.max(..)`, `.step(..)`, `.label(..)`.
+/// **Setters.** Values and items: `.value(..)`, `.values(..)`, `.min(..)`, `.max(..)`,
+/// `.step(..)`.
 #[derive(Clone, Debug)]
 pub struct Range<'a> {
     name: &'a str,
-    value: (i64, Option<i64>),
+    label: &'a str,
+    /// The value, or a pair's low one, when known.
+    value: Option<i64>,
+    /// A pair's high value, when known; `None` inside `Some` for a single slider.
+    high: Option<Option<i64>>,
     min: i64,
     max: i64,
     step: i64,
-    label: Option<&'a str>,
     strings: &'static Strings,
 }
 
@@ -67,6 +74,11 @@ impl Range<'_> {
     /// Every setter with its kind, arguments, default and the HTML attribute it sets; listed by
     /// [`crate::props()`] and kept in step with the setters by a test.
     pub const PROPS: &'static [Prop] = &[
+        Prop::new("value", PropKind::Number, "value: i64")
+            .attr("value")
+            .doc("The value (a pair's low one), instead of the query's."),
+        Prop::new("values", PropKind::Value, "low: i64, high: i64")
+            .doc("A pair's two values, put in order, instead of the query's."),
         Prop::new("min", PropKind::Number, "min: i64")
             .default("0")
             .attr("min")
@@ -79,37 +91,57 @@ impl Range<'_> {
             .default("1")
             .attr("step")
             .doc("Distance between allowed values (at least 1)."),
-        Prop::new("label", PropKind::Value, "label: &'a str")
-            .doc("A `<label>` above the slider, in a `div.lui-field` like a form field."),
     ];
 }
 
 impl Ui {
-    /// A range input named `name` at `value`.
-    pub fn range<'a>(&self, name: &'a str, value: i64) -> Range<'a> {
+    /// A range input named `name` under the label `label`, in a `div.lui-field` like a form
+    /// field; at the query's `name` (the middle without one) unless [`Range::value`] says
+    /// otherwise.
+    pub fn range<'a>(&self, name: &'a str, label: &'a str) -> Range<'a> {
         Range {
             strings: self.strings,
             name,
-            value: (value, None),
+            label,
+            value: self.param(name).and_then(|v| v.trim().parse().ok()),
+            high: None,
             min: 0,
             max: 100,
             step: 1,
-            label: None,
         }
     }
 
-    /// Two thumbs over one track, named `<name>_min` and `<name>_max`, at `(low, high)` (put
-    /// in order if they crossed).
-    pub fn range_pair<'a>(&self, name: &'a str, (a, b): (i64, i64)) -> Range<'a> {
-        let (lo, hi) = order(a, b);
+    /// Two thumbs over one track, named `<name>_min` and `<name>_max`, under the label
+    /// `label`; at the query's two values (the whole track without them) unless
+    /// [`Range::values`] says otherwise, put in order if they crossed.
+    pub fn range_pair<'a>(&self, name: &'a str, label: &'a str) -> Range<'a> {
+        let at = |key: String| self.param(&key).and_then(|v| v.trim().parse().ok());
         Range {
-            value: (lo, Some(hi)),
-            ..self.range(name, lo)
+            value: at(format!("{name}_min")),
+            high: Some(at(format!("{name}_max"))),
+            ..self.range(name, label)
         }
     }
 }
 
 impl<'a> Range<'a> {
+    /// The value (a pair's low one), instead of the query's: a saved value.
+    pub fn value(mut self, value: i64) -> Self {
+        self.value = Some(value);
+        self
+    }
+
+    /// A pair's two values, put in order, instead of the query's; on a single slider, the
+    /// value is `low`.
+    pub fn values(mut self, low: i64, high: i64) -> Self {
+        let (low, high) = order(low, high);
+        self.value = Some(low);
+        if self.high.is_some() {
+            self.high = Some(Some(high));
+        }
+        self
+    }
+
     /// Lowest value.
     pub fn min(mut self, min: i64) -> Self {
         self.min = min;
@@ -127,12 +159,6 @@ impl<'a> Range<'a> {
         self.step = step.max(1);
         self
     }
-
-    /// A `<label>` above the slider, in a `div.lui-field` like a form field.
-    pub fn label(mut self, label: &'a str) -> Self {
-        self.label = Some(label);
-        self
-    }
 }
 
 impl Render for Range<'_> {
@@ -140,12 +166,20 @@ impl Render for Range<'_> {
         let Range {
             strings: _,
             name,
+            label,
             value,
+            high,
             min,
             max,
             step,
-            label,
         } = *self;
+        let value = match high {
+            None => (value.unwrap_or((min + max) / 2), None),
+            Some(high) => {
+                let (lo, hi) = order(value.unwrap_or(min), high.unwrap_or(max));
+                (lo, Some(hi))
+            }
+        };
         let control = match value {
             (value, None) => {
                 let (list, id) = (format!("{name}-ticks"), format!("f-{name}"));
@@ -180,7 +214,7 @@ impl Render for Range<'_> {
         } else {
             format!("f-{name}")
         };
-        crate::labelled(label, &id, control)
+        crate::labelled(Some(label), &id, control)
     }
 }
 /// A posted pair in order: the thumbs can cross, the stored range should not.
