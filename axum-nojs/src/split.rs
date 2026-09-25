@@ -16,6 +16,9 @@
 //! let ui = Ui::default();
 //! let m = ui.split(html! { nav { "Settings" } }, html! { p { "Form" } }).render().into_string();
 //! assert!(m.contains(r#"<div class="nojs-split-side"><nav>Settings</nav></div>"#));
+//! // The same in `nojs!`:
+//! let same = nojs! { Split(html! { nav { "Settings" } }, html! { p { "Form" } }); };
+//! assert_eq!(same.into_string(), m);
 //! // A wider side, placed after the main part.
 //! let m = ui.split(html! { aside { "Filters" } }, html! { p { "Results" } }).side_width("20rem").side_end();
 //! let m = m.render().into_string();

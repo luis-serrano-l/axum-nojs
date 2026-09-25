@@ -25,6 +25,17 @@
 //! let m = board.render().into_string();
 //! assert!(m.contains(r#"name="card" value="c1""#) && m.contains(r#"name="to" value="doing""#));
 //! assert!(m.contains("2 / 2") && !m.contains(r#"value="todo" aria-label="Move Write"#));
+//!
+//! // The same in `nojs!`:
+//! let same = nojs! { Kanban("/board/move") {
+//!     column "todo" "To do" { card "c1" "Write the docs"; }
+//!     column "doing" "Doing" limit=2 {
+//!         card "c2" "Calendar" note="M23";
+//!         card "c3" "Upload";
+//!     }
+//!     column "done" "Done";
+//! } };
+//! assert_eq!(same.into_string(), m);
 //! ```
 
 use maud::{Markup, Render, html};

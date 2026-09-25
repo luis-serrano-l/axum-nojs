@@ -42,6 +42,16 @@
 //! let m = m.render().into_string();
 //! assert!(m.contains("<optgroup label=\"Fruit\">") && !m.contains("Apple"), "filtered to 'k'");
 //! assert!(m.contains("formmethod=\"get\" formaction=\"/shop\""));
+//!
+//! // The same in `nojs!`:
+//! let same = nojs! { Select("food", "leek") search="/shop" search_over=2 {
+//!     group "Fruit" ([
+//!         SelectOption::new("apple", "Apple"),
+//!         SelectOption::new("kiwi", "Kiwi").content(html! { b { "Kiwi" } }),
+//!     ]);
+//!     group "Vegetables" ([("leek", "Leek")]);
+//! } };
+//! assert_eq!(same.into_string(), m);
 //! ```
 
 use maud::{Markup, Render, html};

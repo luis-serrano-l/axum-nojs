@@ -45,7 +45,8 @@
 //!   (`tab "Use" badge=3`), its block is its last argument as markup, `|| { .. }` passes that
 //!   markup as a closure instead (`lazy "Why" || { .. }`), and a block that itself holds items
 //!   continues the chain (a kanban `column` with its `card`s). Otherwise the block is plain
-//!   markup, passed to `.body(..)`.
+//!   markup, passed to `.body(..)`. Any setter can stand in an items block the same way
+//!   (`search "/shop";`, `inline();`), for the rare chain whose order matters.
 //! - **`@for`, `@if` / `@else`, `@match` and `@let`** work among items as they do in Maud, so
 //!   items built from data stay inline.
 //! - **`ui`** is taken from the scope by that name; `nojs!(ctx => ..)` names another.

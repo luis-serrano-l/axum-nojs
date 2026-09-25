@@ -28,6 +28,12 @@
 //! assert!(html.contains("name=\"accent-preset\" value=\"#b3261e\""));
 //! assert!(html.contains("name=\"accent-alpha\"") && html.contains(r#"<label for="f-accent">"#));
 //! assert_eq!(hex_alpha("#2f5bea", 80), "#2f5beacc");
+//!
+//! // The same in `nojs!`:
+//! let same = nojs! {
+//!     Color("accent", "#2f5bea") presets=(&["#1f6f5f", "#b3261e"]) alpha=80 label="Accent";
+//! };
+//! assert_eq!(same.into_string(), m.render().into_string());
 //! ```
 
 use maud::{Markup, Render, html};

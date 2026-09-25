@@ -551,6 +551,34 @@ mod tests {
         );
     }
 
+    /// Every component's header shows it both ways: its doctest builds it with the dot form and
+    /// again with `nojs!`, and asserts the two render the same HTML.
+    #[test]
+    fn every_component_header_shows_the_nojs_form() {
+        // Spec entries with no `ui.<component>(..)` of their own.
+        let without_builder = ["enhance", "layout", "caps", "state", "paged_table"];
+        let mut missing = Vec::new();
+        for spec in crate::spec::SPECS {
+            if without_builder.contains(&spec.module) {
+                continue;
+            }
+            let path = format!("{}/src/{}.rs", env!("CARGO_MANIFEST_DIR"), spec.module);
+            let source = std::fs::read_to_string(path).unwrap();
+            let header: String = source
+                .lines()
+                .take_while(|l| l.starts_with("//!") || l.is_empty())
+                .collect::<Vec<_>>()
+                .join("\n");
+            if !(header.contains("nojs!") && header.contains("assert_eq!(")) {
+                missing.push(spec.module);
+            }
+        }
+        assert!(
+            missing.is_empty(),
+            "headers without a `nojs!` twin: {missing:?}"
+        );
+    }
+
     /// Every setter is in its builder's `PROPS` with the arguments it takes, nothing else is,
     /// and the kind agrees with the arguments (a switch takes none, a condition one `bool`).
     #[test]

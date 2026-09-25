@@ -14,6 +14,9 @@
 //! use axum_nojs::prelude::*;
 //! let ui = Ui::default();
 //! assert_eq!(ui.badge("New").render().into_string(), r#"<span class="nojs-badge">New</span>"#);
+//! // The same in `nojs!`:
+//! let same = nojs! { Badge("New"); };
+//! assert_eq!(same.into_string(), ui.badge("New").render().into_string());
 //! let paid = ui.badge("Paid").ok().render().into_string();
 //! assert!(paid.contains("nojs-badge nojs-badge-ok"));
 //! let tag = ui.badge("rust").outline().href("/tags/rust").render().into_string();

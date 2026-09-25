@@ -34,6 +34,11 @@
 //! })
 //! .fill("news", async { html! { p { "Fresh news." } } });
 //! assert!(page.out_of_order());
+//!
+//! // The same slot in `nojs!`:
+//! let same = nojs! { Slot("news", (html! { p { "Loading news…" } })); };
+//! let slot = ui.slot("news", html! { p { "Loading news…" } });
+//! assert_eq!(same.into_string(), slot.into_string());
 //! ```
 
 use std::collections::HashMap;

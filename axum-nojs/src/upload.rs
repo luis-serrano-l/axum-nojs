@@ -30,6 +30,15 @@
 //! let m = m.render().into_string();
 //! assert!(m.contains(r#"accept="image/*" multiple"#) && m.contains(r#"src="/files/cat.png""#));
 //! assert!(m.contains("47.1 KB") && m.contains(r#"name="file" value="notes.txt""#));
+//!
+//! // The same in `nojs!`:
+//! let same = nojs! { Upload("/files", "file")
+//!     accept="image/*" multiple hint="PNG or JPEG, up to 200 KB." {
+//!     file "cat.png" 48_213 preview="/files/cat.png";
+//!     file "notes.txt" 1_024 href="/files/notes.txt";
+//!     remove "/files/remove";
+//! } };
+//! assert_eq!(same.into_string(), m);
 //! ```
 
 use maud::{Markup, Render, html};

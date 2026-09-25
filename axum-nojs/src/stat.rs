@@ -23,6 +23,11 @@
 //!     .href("/errors");
 //! let m = m.render().into_string();
 //! assert!(m.contains("nojs-stat-good") && m.contains("down") && m.contains(r#"href="/errors""#));
+//! // The same in `nojs!`:
+//! let same = nojs! {
+//!     Stat("Error rate", "0.4%") delta="-0.2 pt" down_is_good note="last 7 days" href="/errors";
+//! };
+//! assert_eq!(same.into_string(), m);
 //! ```
 
 use maud::{Markup, Render, html};

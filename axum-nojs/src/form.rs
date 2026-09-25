@@ -57,6 +57,16 @@
 //! assert!(html.contains(">2 / 280</output>"));
 //! assert!(html.contains("accept=\"image/png,image/jpeg\""));
 //! assert!(html.contains(r#"<option value="weekly" selected>"#));
+//!
+//! // The same in `nojs!`:
+//! let same = nojs! { Form("/profile") submit="Save profile" inline {
+//!     group "About you";
+//!     textarea "bio" "Bio" 3 maxlength=280 value="Hi" help="Shown on your profile.";
+//!     file "avatar" "Avatar" "image/png,image/jpeg";
+//!     date "born" "Born" "1900-01-01" "2026-12-31";
+//!     select "digest" "Digest" (["daily", "weekly", "never"]) value="weekly";
+//! } };
+//! assert_eq!(same.into_string(), m.render().into_string());
 //! ```
 
 use maud::{Markup, Render, html};

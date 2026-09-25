@@ -24,6 +24,9 @@
 //! assert!(m.contains("nojs-toast-ok") && m.contains(r#"role="alert""#));
 //! assert!(ui.toasts().dismiss().render().into_string().contains(r#"href="/toast""#));
 //! assert_eq!(Ui::default().toasts().render().into_string(), "");
+//! // The same in `nojs!`:
+//! let same = nojs! { Toasts; };
+//! assert_eq!(same.into_string(), m);
 //! ```
 
 use maud::{Markup, Render, html};

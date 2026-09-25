@@ -23,6 +23,9 @@
 //! let ui = Ui::default();
 //! let name = ui.input("name", "Name").render().into_string();
 //! assert!(name.contains(r#"<label for="f-name">Name</label>"#) && name.contains(r#"type="text""#));
+//! // The same in `nojs!`:
+//! let same = nojs! { Input("name", "Name"); };
+//! assert_eq!(same.into_string(), name);
 //! // Setters as on form fields, and one per input type.
 //! let email = ui.input("email", "Email").email().required().value("ada@x.org")
 //!     .help("We never share it.").error("Already taken.");

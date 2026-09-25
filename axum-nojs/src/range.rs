@@ -30,6 +30,10 @@
 //! let m = ui.range_pair("price", (80, 20)).step(10).render().into_string();
 //! assert!(m.contains("name=\"price_min\"") && m.contains("name=\"price_max\""));
 //! assert!(m.contains("<output for=\"f-price_min\">20</output>"));
+//!
+//! // The same in `nojs!`:
+//! let same = nojs! { RangePair("price", (80, 20)) step=10; };
+//! assert_eq!(same.into_string(), m);
 //! ```
 
 use maud::{Markup, Render, html};

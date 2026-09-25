@@ -28,6 +28,9 @@
 //! assert_eq!(list.shown(), 20);
 //! let m = list.rows(|i| html! { "Row " (i + 1) }).render().into_string();
 //! assert!(m.contains("Row 20") && !m.contains("Row 21") && m.contains("?page=3#more"));
+//! // The same in `nojs!`:
+//! let same = nojs! { Pager("/list", 30) per_page=10 rows=|i| { "Row " (i + 1) }; };
+//! assert_eq!(same.into_string(), m);
 //! ```
 
 use std::fmt;

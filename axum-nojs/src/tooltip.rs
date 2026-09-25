@@ -23,6 +23,11 @@
 //! assert!(m.contains(r#"aria-describedby="nojs-tooltip-copy-the-link""#));
 //! let below = ui.tooltip("Saved", html! { span { "3" } }).below().render().into_string();
 //! assert!(below.contains("nojs-tooltip-below"));
+//! // The same in `nojs!`:
+//! let same = nojs! { Tooltip("Copy the link", nojs! {
+//!     Button("") icon ghost label="Copy" content=(html! { (Icon::Copy) });
+//! }); };
+//! assert_eq!(same.into_string(), m);
 //! ```
 
 use maud::{Markup, PreEscaped, Render, html};

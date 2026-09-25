@@ -42,6 +42,17 @@
 //! let html = m.render().into_string();
 //! assert!(html.contains("<form method=\"post\" action=\"/logout\""));
 //! assert!(html.contains("position-area: bottom span-left") && html.contains(r#"id="account-theme""#));
+//! // The same in `nojs!`:
+//! let same = nojs! { Menu("Account") align_end {
+//!     heading "Signed in as Ada";
+//!     link "Profile" "/profile" icon="@" shortcut="g p";
+//!     link "Billing" "/billing" disabled;
+//!     separator();
+//!     submenu "Theme" ([("Light", "/?t=light"), ("Dark", "/?t=dark")]);
+//!     separator();
+//!     action "Sign out" "/logout" danger;
+//! } };
+//! assert_eq!(same.into_string(), html);
 //! ```
 
 use maud::{Markup, Render, html};

@@ -902,9 +902,17 @@ the attribute form must compile down to the same builder, so both forms stay one
   through (a markup `@match` on `Some(..)`, brace attribute values), and `ctx =>`. `trybuild`
   pins four errors: typo, missing argument, wrong type, markup mixed into items (our own
   message). rust-analyzer: FINDINGS, M28 (hover, go to definition and setter completion work).
-- [ ] Both forms tested: a test renders each component once in the dot form and once in
+- [x] Both forms tested: a test renders each component once in the dot form and once in
   `nojs!` and asserts identical HTML; doctests show both in every component header
   (common call first, per convention 5).
+  Done: all 41 component headers (every spec module with a `ui.<name>(..)`; `enhance`,
+  `layout`, `caps`, `state` and `paged_table` have none) end their main doctest with a
+  `// The same in \`nojs!\`:` twin and `assert_eq!` on the HTML, so the doctests are the
+  per-component test; `every_component_header_shows_the_nojs_form` fails when one is
+  missing. Every component could be written in `nojs!` (the tooltip's trigger is a nested
+  `nojs!`, the stream twin is `Slot(..)`). Switches sit on the component as attributes; any
+  setter may also stand in an items block (`search "/shop";`) when a chain's order matters,
+  now stated in the macro doc.
 - [ ] Introspection: `axum_nojs::props()` lists every component with its `PROPS`; the M5 spec
   JSON (`spec/components.json`, `cargo run -p demo -- spec`) gains a `props` array per
   component; each demo component page shows a props table (name, kind, default, HTML

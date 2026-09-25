@@ -33,6 +33,10 @@
 //! let m = m.render().into_string();
 //! assert!(m.contains(r#"type="radio" name="due" value="2026-09-11""#));
 //! assert!(m.contains(r#"value="2026-09-12" disabled"#) && m.contains("Invoice due"));
+//! // The same in `nojs!`:
+//! let same = nojs! { Calendar("due") radio required min="2026-09-10" max="2026-10-31"
+//!     disabled=(|d| d.weekday() >= 5) event=("2026-09-30", "Invoice due") sunday_first; };
+//! assert_eq!(same.into_string(), m);
 //! ```
 
 use std::fmt;

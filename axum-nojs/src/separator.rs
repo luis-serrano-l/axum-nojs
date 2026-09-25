@@ -18,6 +18,9 @@
 //! let or = ui.separator().label("or").render().into_string();
 //! assert!(or.contains(r#"role="separator""#) && or.contains(">or<"));
 //! assert!(ui.separator().vertical().render().into_string().contains(r#"aria-orientation="vertical""#));
+//! // The same in `nojs!`:
+//! let same = nojs! { Separator label="or"; };
+//! assert_eq!(same.into_string(), or);
 //! ```
 
 use maud::{Markup, Render, html};

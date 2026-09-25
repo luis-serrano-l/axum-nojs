@@ -17,6 +17,9 @@
 //! let ui = Ui::default();
 //! let m = ui.avatar("Ada Lovelace").render().into_string();
 //! assert!(m.contains(r#"role="img" aria-label="Ada Lovelace""#) && m.contains(">AL</span>"));
+//! // The same in `nojs!`:
+//! let same = nojs! { Avatar("Ada Lovelace"); };
+//! assert_eq!(same.into_string(), m);
 //! let m = ui.avatar("Grace Hopper").src("/img/grace.jpg").large().render().into_string();
 //! assert!(m.contains(r#"<img src="/img/grace.jpg" alt="" loading="lazy">"#) && m.contains("nojs-avatar-large"));
 //! ```

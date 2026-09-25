@@ -21,6 +21,15 @@
 //!     .post("Create a file", "/files/new");
 //! let m = m.render().into_string();
 //! assert!(m.contains(r#"href="/table""#) && m.contains(r#"action="/files/new""#));
+//! // The same in `nojs!`:
+//! let same = nojs! {
+//!     EmptyState("No results for \u{201c}zzz\u{201d}") icon="\u{1f50d}"
+//!         text=(html! { "Check the spelling or clear the filter." }) {
+//!         link "Clear the filter" "/table";
+//!         post "Create a file" "/files/new";
+//!     }
+//! };
+//! assert_eq!(same.into_string(), m);
 //! ```
 
 use maud::{Markup, Render, html};

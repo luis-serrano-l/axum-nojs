@@ -21,6 +21,11 @@
 //! // More than four: the middle folds into <details>.
 //! let long = ui.breadcrumbs().link("Home", "/").link("A", "/a").link("B", "/a/b").link("C", "/a/b/c").here("Here");
 //! assert!(long.render().into_string().contains("<details"));
+//! // The same in `nojs!`:
+//! let same = nojs! { Breadcrumbs {
+//!     link "Home" "/"; link "Projects" "/projects"; here "axum-nojs";
+//! } };
+//! assert_eq!(same.into_string(), m);
 //! ```
 
 use maud::{Markup, Render, html};

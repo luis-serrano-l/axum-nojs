@@ -19,6 +19,9 @@
 //! let ui = Ui::default();
 //! let m = ui.grid("15rem", html! { (ui.card().title("A")) (ui.card().title("B")) }).render().into_string();
 //! assert!(m.starts_with(r#"<div class="nojs-grid" style="--nojs-grid-min: 15rem">"#));
+//! // The same in `nojs!`:
+//! let same = nojs! { Grid("15rem", html! { (ui.card().title("A")) (ui.card().title("B")) }); };
+//! assert_eq!(same.into_string(), m);
 //! let m = ui.grid("10rem", html! { p { "x" } }).gap(2).render().into_string();
 //! assert!(m.contains("nojs-grid nojs-gap-2"));
 //! ```

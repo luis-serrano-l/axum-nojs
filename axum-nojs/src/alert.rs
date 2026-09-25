@@ -18,6 +18,9 @@
 //! assert!(m.contains(r#"role="status""#) && m.contains("Heads up"));
 //! let m = ui.alert("Payment failed").danger().description("Your card was declined.").render().into_string();
 //! assert!(m.contains(r#"class="nojs-alert nojs-alert-danger" role="alert""#));
+//! // The same in `nojs!`:
+//! let same = nojs! { Alert("Payment failed") danger description="Your card was declined."; };
+//! assert_eq!(same.into_string(), m);
 //! ```
 
 use maud::{Markup, Render, html};

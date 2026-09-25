@@ -48,6 +48,13 @@
 //! assert!(html.contains("href=\"/docs?tab.docs=0\""));
 //! assert!(html.contains("view-transition-name: nojs-tabs-docs"));
 //! assert!(html.contains("<select name=\"tab.docs\""));
+//! // The same in `nojs!`:
+//! let same = nojs! { Tabs("docs") vertical select_below {
+//!     tab "Install" { p { "cargo add" } }
+//!     tab "Use" badge=3 { p { "html!" } }
+//!     lazy "Changelog" || { p { "(long)" } }
+//! } };
+//! assert_eq!(same.into_string(), html);
 //! ```
 
 use std::rc::Rc;

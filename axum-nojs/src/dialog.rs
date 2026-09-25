@@ -54,6 +54,14 @@
 //! assert!(html.contains("<dialog id=\"confirm\" class=\"nojs-dialog-sm\" closedby=\"closerequest\" aria-labelledby=\"confirm-title\" open>"));
 //! assert!(html.contains("<form method=\"post\" action=\"/account/delete\""));
 //! assert!(html.contains("name=\"returns_to\" value=\"/settings\""));
+//! // The same in `nojs!`:
+//! let same = nojs! { Dialog("Delete account") id="confirm" title="Delete account?" small danger
+//!     confirm=("Delete", "/account/delete") returns_to="/settings" cancel="Keep it"
+//!     closedby="closerequest" open=(true) {
+//!     p { "This cannot be undone." }
+//!     label { "Reason " input name="reason"; }
+//! } };
+//! assert_eq!(same.into_string(), html);
 //!
 //! // From the request: open when the URL says `?dialog=confirm`, and the confirm form
 //! // returns to this page.

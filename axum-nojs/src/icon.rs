@@ -16,6 +16,9 @@
 //! let ui = Ui::default();
 //! let check = ui.icon(Icon::Check).render().into_string();
 //! assert!(check.starts_with(r#"<svg class="nojs-icon" aria-hidden="true""#));
+//! // The same in `nojs!`:
+//! let same = nojs! { Icon(Icon::Check); };
+//! assert_eq!(same.into_string(), check);
 //! // An icon that is the only content of a link or a button needs a name.
 //! let warn = ui.icon(Icon::TriangleAlert).label("Warning").render().into_string();
 //! assert!(warn.contains(r#"role="img" aria-label="Warning""#));

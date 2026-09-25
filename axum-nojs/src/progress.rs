@@ -20,6 +20,9 @@
 //! assert!(m.contains(r#"<progress id="nojs-progress-upload" class="nojs-progress" value="33" max="100">33%</progress>"#));
 //! let m = ui.progress(0, 0).label("Waiting").render().into_string();
 //! assert!(m.contains(r#"class="nojs-progress">"#) && !m.contains("value="));
+//! // The same in `nojs!`:
+//! let same = nojs! { Progress(0, 0) label="Waiting"; };
+//! assert_eq!(same.into_string(), m);
 //! ```
 
 use maud::{Markup, Render, html};

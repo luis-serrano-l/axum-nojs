@@ -15,6 +15,9 @@
 //! let ui = Ui::default();
 //! let m = ui.card().title("Team").body(html! { p { "3 members" } }).render().into_string();
 //! assert!(m.contains(r#"<h3 class="nojs-card-title">Team</h3>"#) && m.contains("3 members"));
+//! // The same in `nojs!`:
+//! let same = nojs! { Card title="Team" { p { "3 members" } } };
+//! assert_eq!(same.into_string(), m);
 //! // A description, an action in the header, and a footer of buttons.
 //! let m = ui.card()
 //!     .title("Plan")

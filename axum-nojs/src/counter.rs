@@ -32,6 +32,10 @@
 //! // The handler's half: the same counter applies the posted `op`, clamped to its bounds.
 //! assert_eq!(bounded.apply("dec", None), 8);
 //! # let _ = plain;
+//!
+//! // The same in `nojs!`:
+//! let same = nojs! { Counter("/counter", 10) min=0 max=10 step=2 typed; };
+//! assert_eq!(same.into_string(), bounded.render().into_string());
 //! ```
 
 use maud::{Markup, Render, html};

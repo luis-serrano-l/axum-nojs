@@ -19,6 +19,9 @@
 //! assert_eq!(ui.skeleton(3).render().into_string().matches("nojs-skeleton-line").count(), 3);
 //! let m = ui.skeleton(2).label("Loading orders").heading().render().into_string();
 //! assert!(m.contains("Loading orders") && m.contains("nojs-skeleton-heading"));
+//! // The same in `nojs!`:
+//! let same = nojs! { Skeleton(2) label="Loading orders" heading; };
+//! assert_eq!(same.into_string(), m);
 //! ```
 
 use maud::{Markup, Render, html};

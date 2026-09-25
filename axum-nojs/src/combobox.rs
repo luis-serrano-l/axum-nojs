@@ -42,6 +42,11 @@
 //! assert!(html.contains("name=\"sel\" value=\"Zig\""), "the selection rides along with the next search");
 //! assert!(html.contains("href=\"/langs?q=ru&amp;sel=Zig&amp;sel=Rust\""), "a result adds itself");
 //! assert!(html.contains("href=\"/langs?q=ru\" aria-label=\"Remove Zig\""), "a chip removes itself");
+//! // The same in `nojs!`:
+//! let same = nojs! { Combobox("q", "/langs") group=("Systems", ["Rust", "Zig"])
+//!     options=(["Ruby"]) multi create="/langs/new" label="Language"
+//!     placeholder="Type a language"; };
+//! assert_eq!(same.into_string(), html);
 //! ```
 
 use maud::{Markup, Render, html};

@@ -17,6 +17,9 @@
 //! let ui = Ui::default();
 //! let m = ui.meter(82, 0, 100).label("Disk").low(60).high(80).optimum(0).render().into_string();
 //! assert!(m.contains(r#"value="82" min="0" max="100" low="60" high="80" optimum="0""#));
+//! // The same in `nojs!`:
+//! let same = nojs! { Meter(82, 0, 100) label="Disk" low=60 high=80 optimum=0; };
+//! assert_eq!(same.into_string(), m);
 //! ```
 
 use maud::{Markup, Render, html};

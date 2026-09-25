@@ -15,6 +15,9 @@
 //! let ui = Ui::default();
 //! let m = ui.cluster(html! { (ui.badge("rust")) (ui.badge("maud")) }).render().into_string();
 //! assert!(m.starts_with(r#"<div class="nojs-cluster">"#));
+//! // The same in `nojs!`:
+//! let same = nojs! { Cluster(html! { (ui.badge("rust")) (ui.badge("maud")) }); };
+//! assert_eq!(same.into_string(), m);
 //! // A toolbar: the title on the left, the actions pushed to the right.
 //! let m = ui.cluster(html! { h2 { "Orders" } (ui.button("New order").primary()) })
 //!     .between()

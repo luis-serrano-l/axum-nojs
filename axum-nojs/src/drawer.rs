@@ -29,8 +29,11 @@
 //! assert!(m.contains(r#"command="show-modal" commandfor="menu""#) && m.contains(r#"closedby="any""#));
 //! // `?dialog=menu` opens it from the server.
 //! let ui = Ui::from_request("/", "dialog=menu", "");
-//! let m = ui.drawer("Menu").title("Browse").sidebar().nav(nav).render().into_string();
+//! let m = ui.drawer("Menu").title("Browse").sidebar().nav(nav.clone()).render().into_string();
 //! assert!(m.contains("nojs-drawer-sidebar") && m.contains(" open>"));
+//! // The same in `nojs!`:
+//! let same = nojs! { Drawer("Menu") title="Browse" sidebar nav=(nav); };
+//! assert_eq!(same.into_string(), m);
 //! ```
 
 use maud::{Markup, Render, html};

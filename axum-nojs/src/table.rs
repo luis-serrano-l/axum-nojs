@@ -60,11 +60,20 @@
 //!     .key("a.txt")
 //!     .detail(html! { p { "Modified today." } })
 //!     .menu([MenuItem::link("Open", "/files/a.txt"), MenuItem::action("Delete", "/files/a.txt/delete").danger()]);
-//! let html = files.rows([row]).render().into_string();
+//! let html = files.rows([row.clone()]).render().into_string();
 //! assert!(html.contains("aria-sort=\"ascending\""));
 //! assert!(html.contains("<input type=\"checkbox\" class=\"nojs-table-check\" name=\"row\" value=\"a.txt\" form=\"nojs-table-files-bulk\""));
 //! assert!(html.contains("href=\"/table.csv?sort=name&amp;dir=asc&amp;q=a&amp;cols=name%2Csize\""));
 //! assert!(!html.contains("<td>—</td>"), "a hidden column's cells are not rendered (its name stays in the chooser)");
+//! // The same in `nojs!`:
+//! let same = nojs! { Table("files", "/table") choose_columns csv="/table.csv" empty="No files yet." {
+//!     column "name" "Name" sortable;
+//!     column "size" "Size" sortable numeric width="6rem";
+//!     column "note" "Note";
+//!     bulk "/files/bulk" ([("archive", "Archive"), ("delete", "Delete")]);
+//!     rows ([row]);
+//! } };
+//! assert_eq!(same.into_string(), html);
 //! ```
 
 use maud::{Markup, Render, html};

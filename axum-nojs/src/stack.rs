@@ -15,6 +15,9 @@
 //! let ui = Ui::default();
 //! let m = ui.stack(html! { p { "One" } p { "Two" } }).render().into_string();
 //! assert_eq!(m, r#"<div class="nojs-stack"><p>One</p><p>Two</p></div>"#);
+//! // The same in `nojs!`:
+//! let same = nojs! { Stack(html! { p { "One" } p { "Two" } }); };
+//! assert_eq!(same.into_string(), m);
 //! // `.gap(n)` picks a step: n × 4px with the default `--nojs-space`.
 //! let m = ui.stack(html! { p { "Tight" } }).gap(2).render().into_string();
 //! assert!(m.contains(r#"class="nojs-stack nojs-gap-2""#));

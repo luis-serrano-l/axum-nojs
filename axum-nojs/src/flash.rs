@@ -37,6 +37,10 @@
 //! let m = ui.flash().dismiss().auto_hide().render().into_string();
 //! assert!(m.contains(r#"role="alert""#) && m.contains("nojs-flash-auto"));
 //! assert_eq!(m.matches(r#"href="/settings""#).count(), 2);
+//!
+//! // The same in `nojs!`:
+//! let same = nojs! { Flash dismiss auto_hide; };
+//! assert_eq!(same.into_string(), m);
 //! ```
 
 use maud::{Markup, Render, html};

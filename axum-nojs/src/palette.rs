@@ -33,6 +33,13 @@
 //! let m = palette.render().into_string();
 //! assert!(m.contains(r#"popovertarget="palette""#) && m.contains(r#"list="palette-list""#));
 //! assert!(m.contains("nojs-palette-results") && m.contains("New invoice"));
+//! // The same in `nojs!`:
+//! let same = nojs! { Palette("/search") {
+//!     group "Go to";
+//!     command "Open settings" "/settings";
+//!     command "New invoice" "/invoices/new" keywords="bill create";
+//! } };
+//! assert_eq!(same.into_string(), m);
 //! let ui = Ui::from_request("/search", "q=open+settings", "");
 //! assert_eq!(ui.palette("/search").command("Open settings", "/settings").exact(), Some("/settings"));
 //! ```

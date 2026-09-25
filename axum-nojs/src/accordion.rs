@@ -39,6 +39,13 @@
 //! assert!(html.contains("href=\"/help?open.faq=2\">Install"), "open item's link removes itself from the list");
 //! assert!(html.contains("href=\"/help?open.faq=0%2C1%2C2\">Expand all"));
 //! assert!(html.contains("class=\"nojs-accordion-summary\">One line."));
+//! // The same in `nojs!`:
+//! let same = nojs! { Accordion("faq") multi controls {
+//!     item "Install" icon="\u{1F4E6}" summary="One line." { p { "cargo add" } }
+//!     item "Use" { p { "html!" } }
+//!     item "More" { (nojs! { Accordion("faq-more") { item "Nested" { p { "Own group." } } } }) }
+//! } };
+//! assert_eq!(same.into_string(), html);
 //! ```
 
 use maud::{Markup, Render, html};

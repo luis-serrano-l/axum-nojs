@@ -43,6 +43,14 @@
 //! assert!(html.contains("<progress class=\"nojs-wizard-progress\" value=\"2\" max=\"2\""));
 //! assert!(html.contains("href=\"/wizard?step.signup=0\" aria-label=\"Edit Email\""));
 //! assert!(html.contains("(skipped)"), "an empty value");
+//! // The same in `nojs!`:
+//! let same = nojs! { Wizard("signup", "/wizard") {
+//!     step "Account" (ui.fields().email("email", "Email").required().value("a@b.c"));
+//!     step "Newsletter" (ui.fields().text("topics", "Topics")) optional;
+//!     review "Review";
+//!     finish "Create account";
+//! } };
+//! assert_eq!(same.into_string(), html);
 //! ```
 
 use maud::{Markup, Render, html};

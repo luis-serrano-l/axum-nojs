@@ -24,6 +24,9 @@
 //! let ui = Ui::from(Caps::all());
 //! let save = ui.button("Save").primary().render().into_string();
 //! assert!(save.contains(r#"class="nojs-button nojs-button-primary""#) && save.contains(r#"type="submit""#));
+//! // The same in `nojs!`:
+//! let same = nojs! { Button("Save") primary; };
+//! assert_eq!(same.into_string(), save);
 //! // A small ghost icon button that toggles a popover, and a link that looks like a button.
 //! let more = ui.button("\u{22ef}").ghost().small().icon().label("More").command("toggle-popover", "menu");
 //! let more = more.render().into_string();

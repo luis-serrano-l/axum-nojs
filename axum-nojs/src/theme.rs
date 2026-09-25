@@ -23,6 +23,10 @@
 //! // The handler the toggle posts to keeps the choice for a year.
 //! let r = ui.redirect("/").theme(Theme::parse("light"));
 //! assert!(r.set_cookies()[0].starts_with("theme=light;"));
+//!
+//! // The same in `nojs!`:
+//! let same = nojs! { ThemeToggle("/theme"); };
+//! assert_eq!(same.into_string(), m);
 //! ```
 
 use maud::{Markup, Render, html};

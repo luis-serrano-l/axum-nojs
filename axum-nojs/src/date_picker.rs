@@ -28,6 +28,9 @@
 //! // The browser's own control, with bounds.
 //! let m = ui.date_picker("due", "Due date").min("2026-01-01").max("2026-12-31").native();
 //! assert!(m.render().into_string().contains(r#"type="date" value="" min="2026-01-01" max="2026-12-31""#));
+//! // The same in `nojs!`:
+//! let same = nojs! { DatePicker("due", "Due date") min="2026-01-01" max="2026-12-31" native; };
+//! assert_eq!(same.into_string(), m.render().into_string());
 //! ```
 
 use maud::{Markup, Render, html};
