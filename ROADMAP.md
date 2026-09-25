@@ -794,6 +794,13 @@ loco-rs source (fetch it into `~/.cargo/registry` with a scratch crate) before r
   would need `| safe`). The `loco` module doc has the same views module as a doctest.
 - [ ] Generator: a scaffold override (`cargo loco generate override` templates, or our own
   template set) that emits Maud views built from `ui.*` for list/show/new/edit, PRG included.
+  In progress: `axum-nojs/loco-templates/scaffold/api/{controller,dto}.t`, copied into an app's
+  `.loco-templates/` (Loco reads overrides there by the built-in file names). `controller.t`
+  writes an HTML controller (list with `.paged`, show, new, create, edit, update, delete; PRG
+  and flash; the form re-rendered with values and `FieldErrors` on bad input); `dto.t` writes
+  `src/views/<plural>.rs` instead of a DTO. Posts are parsed field by field with
+  `loco::Submitted`. Render-checked through `rrgen`; ticked once `examples/loco-app` is
+  generated with them and compiles (next box).
 - [ ] `examples/loco-app`: a minimal Loco app (one model, CRUD, sign-in) with script off;
   Blitz renders its routes and the only-one-script test covers them.
 - [ ] `docs/loco.md` and a README section: install, the initializer line, a controller, a

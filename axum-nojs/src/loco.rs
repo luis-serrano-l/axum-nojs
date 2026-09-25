@@ -302,6 +302,94 @@ fn message(code: &str, message: Option<&str>) -> String {
     .to_string()
 }
 
+/// A posted form read field by field, collecting a message for each field that is missing
+/// or does not parse, so the form can be shown again with the values and the messages. The
+/// scaffold templates (`loco-templates/`) use it; it works for any handler taking
+/// `Form<Vec<(String, String)>>`.
+///
+/// ```rust
+/// use axum_nojs::loco::Submitted;
+/// let mut form = Submitted::new(vec![("title".into(), "".into()), ("stars".into(), "x".into())]);
+/// let title: Option<String> = form.required("title");
+/// let stars: Option<u8> = form.optional("stars");
+/// let done = form.checkbox("done");
+/// assert!((title, stars, done) == (None, None, false) && !form.is_ok());
+/// assert_eq!(form.errors().get("title"), Some("This field is required."));
+/// assert_eq!(form.errors().get("stars"), Some("Check this field."));
+/// ```
+#[derive(Clone, Debug, Default)]
+pub struct Submitted {
+    values: Vec<(String, String)>,
+    errors: Vec<(String, String)>,
+}
+
+impl Submitted {
+    /// The posted `(name, value)` pairs.
+    pub fn new(values: Vec<(String, String)>) -> Self {
+        Self {
+            values,
+            errors: Vec::new(),
+        }
+    }
+
+    fn raw(&self, name: &str) -> &str {
+        self.values
+            .iter()
+            .find(|(n, _)| n == name)
+            .map_or("", |(_, v)| v.trim())
+    }
+
+    fn fail(&mut self, name: &str, message: &str) {
+        if !self.errors.iter().any(|(n, _)| n == name) {
+            self.errors.push((name.to_string(), message.to_string()));
+        }
+    }
+
+    /// The value of `name`; a message if it is empty or does not parse as `T`.
+    pub fn required<T: std::str::FromStr>(&mut self, name: &str) -> Option<T> {
+        if self.raw(name).is_empty() {
+            self.fail(name, "This field is required.");
+            return None;
+        }
+        self.optional(name)
+    }
+
+    /// The value of `name`, `None` when empty; a message if it does not parse as `T`.
+    pub fn optional<T: std::str::FromStr>(&mut self, name: &str) -> Option<T> {
+        let raw = self.raw(name);
+        if raw.is_empty() {
+            return None;
+        }
+        let parsed = raw.parse().ok();
+        if parsed.is_none() {
+            self.fail(name, "Check this field.");
+        }
+        parsed
+    }
+
+    /// Whether the checkbox `name` was ticked (a form's checkbox posts `true`).
+    pub fn checkbox(&self, name: &str) -> bool {
+        matches!(self.raw(name), "true" | "on")
+    }
+
+    /// No field failed.
+    pub fn is_ok(&self) -> bool {
+        self.errors.is_empty()
+    }
+
+    /// What was posted, for [`Form::values`](crate::form::Form::values).
+    pub fn values(&self) -> &[(String, String)] {
+        &self.values
+    }
+
+    /// The messages so far, sorted by field.
+    pub fn errors(&self) -> FieldErrors {
+        let mut errors = self.errors.clone();
+        errors.sort();
+        FieldErrors(errors)
+    }
+}
+
 /// What [`Initializer`] does, for a test or an app that builds its router by hand.
 pub fn mount(router: Router) -> Router {
     router
