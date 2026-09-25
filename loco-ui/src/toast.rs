@@ -7,7 +7,9 @@
 //! **Platform features:** `position: fixed` in the bottom corner (top on narrow screens, clear
 //! of the thumb); `role="status"` per notice and `role="alert"` for danger; a CSS fade with
 //! `@keyframes` that pauses on `:hover` and `:focus-within` and that
-//! `prefers-reduced-motion: reduce` switches off. Danger toasts never fade.
+//! `prefers-reduced-motion: reduce` switches off. Danger toasts never fade. Each toast fades
+//! in and rises on the `--lui-ease-spring` curve through `@starting-style` (Chrome 117,
+//! Firefox 129, Safari 17.5); older browsers show it at once.
 //!
 //! **Fallback:** without CSS animations the toasts stay until the next page; the dismiss link
 //! (`.dismiss()`) clears them sooner. `/lui/enhance.js` carries the list across a
@@ -126,4 +128,10 @@ pub const CSS: &str = r#"
 @keyframes lui-toast-out { to { opacity: 0; visibility: hidden; transform: translateY(0.5rem); } }
 @media (prefers-reduced-motion: reduce) { .lui-toast { animation: none; } }
 @media (max-width: 40rem) { .lui-toasts { bottom: auto; top: calc(var(--lui-space) * 2); inset-inline: 1rem; width: auto; } }
+/* Motion: each toast fades in and rises 8px on the spring as the page (or a swap) shows it;
+   narrow screens stack them at the top, so there they drop in. The fade out is the
+   lui-toast-out animation above. */
+.lui-toast { transition: opacity var(--lui-duration) var(--lui-ease-out), translate var(--lui-duration-slow) var(--lui-ease-spring); }
+@starting-style { .lui-toast { opacity: 0; translate: 0 0.5rem; } }
+@media (max-width: 40rem) { @starting-style { .lui-toast { translate: 0 -0.5rem; } } }
 "#;

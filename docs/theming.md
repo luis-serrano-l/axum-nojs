@@ -63,6 +63,9 @@ every surface in both schemes clears 4.5:1.
 | `--lui-space` | `8px` | The unit every gap, margin and padding is a multiple of (`calc(var(--lui-space) * 3)`). |
 | `--lui-space-1` … `-8` | 4px steps | Not `Tokens` fields, derived from `--lui-space`: steps 1, 2, 3, 4, 6 and 8 are that many halves of it (4, 8, 12, 16, 24, 32px by default). The gaps of `ui.stack`, `ui.cluster`, `ui.grid` and `ui.split` (`.gap(n)`). |
 | `--lui-busy` | `0.6` | Not a `Tokens` field: the opacity of a swap root or form while the enhancement script has a request in flight (`[data-lui-busy]`). Set it to `1` on `:root` or on one root to turn the fade off. |
+| `--lui-duration-fast` / `--lui-duration` / `--lui-duration-slow` | `150ms` / `200ms` / `250ms` | Not `Tokens` fields, on `:root` in `layout.rs`: how long menus, dialogs, toasts and sheets take to come and go. `prefers-reduced-motion: reduce` sets all three to `0s` (and every other transition and animation too). |
+| `--lui-ease-out` | `cubic-bezier(0.16, 1, 0.3, 1)` | Not a `Tokens` field: the curve of fades and of the sheet's slide. |
+| `--lui-ease-spring` | `linear(…)`, else `ease-out` | Not a `Tokens` field: a damped spring (about 5% overshoot) sampled into `linear()`, for the small scale and rise of dialogs, menus and toasts and the slide of the open tab's chip. Browsers without `linear()` (Chrome before 113, Safari before 17.2) get `ease-out`: the token is `ease-out` on `:root` and becomes the spring under `@supports (transition-timing-function: linear(0, 1))`. |
 
 The dark palette applies under `prefers-color-scheme: dark` unless `<html data-theme="light">`,
 and always under `data-theme="dark"`. `theme_toggle` sets that attribute through a cookie, so a
@@ -145,6 +148,11 @@ same three rule blocks the default palette uses, so it wins by source order and 
 changes. The demo shows the pair: `/` is the default, `/?palette=linen` is this one.
 
 ## Beyond the tokens
+
+Motion is the three duration tokens and two curves above. Dialogs, sheets, menus and toasts
+come in through `@starting-style` and leave through `transition-behavior: allow-discrete` on
+`display` and `overlay`; set `--lui-duration: 0s` (or any of them) on `:root` to switch a
+kind of motion off, or give `--lui-ease-spring` your own `linear()` curve.
 
 Fonts are the system stack in two custom properties on `:root`, `--lui-font-sans` and
 `--lui-font-mono`; set either to change every component. The type scale and the page width are

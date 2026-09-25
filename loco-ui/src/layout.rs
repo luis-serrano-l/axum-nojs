@@ -8,7 +8,9 @@
 //! not Firefox) lets elements with a `view-transition-name` morph across full-page navigations.
 //! The root itself swaps instantly: the default 0.25 s cross-fade made every click feel slow.
 //! `<link rel="expect" blocking="render">` (Chrome 124+) holds the transition until `<main>`
-//! is parsed. `prefers-color-scheme` + custom properties give light/dark with no script.
+//! is parsed; it is emitted only with `Cap::ViewTransitions`, since without transitions it
+//! would only delay the first paint. `prefers-color-scheme` + custom properties give
+//! light/dark with no script.
 //!
 //! **Fallback:** browsers without view transitions navigate normally. Theme colours are plain
 //! custom properties switched by a media query and `data-theme`, so no `light-dark()` needed.
@@ -474,7 +476,7 @@ pub(crate) fn page(
                 (meta(title))
                 // Hold a cross-document view transition until `#main` is parsed. Streamed
                 // pages must not: their parse ends only when the last slot has filled.
-                link rel="expect" href="#main" blocking="render";
+                @if caps.has(crate::Cap::ViewTransitions) { link rel="expect" href="#main" blocking="render"; }
                 style { (PreEscaped(stylesheet())) }
                 @if let Some(t) = tokens { style class="lui-tokens" { (PreEscaped(t.css())) } }
                 @if !css.is_empty() { style class="lui-user" { @for c in css { (PreEscaped(crate::minify_css(c))) } } }
@@ -549,6 +551,18 @@ pub const CSS: &str = r#"
 :root {
   --lui-font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --lui-font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+/* Motion: three short durations and two curves. --lui-ease-spring is a damped spring (about
+   5% overshoot) sampled into linear(); a browser without linear() (Chrome before 113, Safari
+   before 17.2) keeps the ease-out declared first. the prefers-reduced-motion block
+   below zeroes every duration. */
+:root {
+  --lui-duration-fast: 150ms; --lui-duration: 200ms; --lui-duration-slow: 250ms;
+  --lui-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --lui-ease-spring: ease-out;
+}
+@supports (transition-timing-function: linear(0, 1)) {
+  :root { --lui-ease-spring: linear(0, 0.033 3%, 0.116 6%, 0.268 10%, 0.435 14%, 0.594 18%, 0.761 23%, 0.886 28%, 0.981 34%, 1.029 40%, 1.046 48%, 1.037 56%, 1.019 66%, 1.004 78%, 1); }
 }
 html {
   font-family: var(--lui-font-sans); line-height: 1.5;
@@ -698,7 +712,8 @@ tbody tr:hover { background: color-mix(in srgb, var(--lui-accent) 50%, transpare
 .lui-index li span { display: block; }
 
 @media (prefers-reduced-motion: reduce) {
-  *, ::before, ::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+  *, ::before, ::after, ::backdrop { animation-duration: 0s !important; transition-duration: 0s !important; }
+  :root { --lui-duration-fast: 0s; --lui-duration: 0s; --lui-duration-slow: 0s; }
   ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; }
 }
 "#;

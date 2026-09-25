@@ -1316,3 +1316,76 @@ async fn blocks_lay_out() {
         }
     }
 }
+
+/// `html` with every `@starting-style{..}` block cut out of its (minified) styles: the page
+/// without the first frames that M30's motion animates from.
+fn without_starting_style(html: &str) -> String {
+    let mut out = String::with_capacity(html.len());
+    let mut rest = html;
+    while let Some(at) = rest.find("@starting-style{") {
+        out.push_str(&rest[..at]);
+        let open = at + rest[at..].find('{').unwrap();
+        let mut depth = 0;
+        let mut end = rest.len();
+        for (i, c) in rest[open..].char_indices() {
+            match c {
+                '{' => depth += 1,
+                '}' => depth -= 1,
+                _ => {}
+            }
+            if depth == 0 {
+                end = open + i + 1;
+                break;
+            }
+        }
+        rest = &rest[end..];
+    }
+    out.push_str(rest);
+    out
+}
+
+/// M30 motion: dialogs, menus, toasts and the drawer animate in through `@starting-style` and
+/// out through `allow-discrete` transitions, and none of it may change where they end up. Each
+/// open element renders visible, fully opaque, untranslated and unscaled, at the same box as
+/// the same page with its starting styles cut out. Blitz parses `@starting-style` and leaves
+/// it out of the cascade (Stylo resolves starting styles only in its Gecko build), so what it
+/// lays out is the final frame (FINDINGS, M30).
+#[tokio::test]
+async fn motion_leaves_the_final_layout_unchanged() {
+    let toasts = format!("{MODERN}; lui-flash=ok%3AInvite%20sent.%0Adanger%3ASync%20failed.");
+    let html = |path: &'static str, cookie: String| async move {
+        Page::render(demo::router(), path, &cookie).await.html
+    };
+    let menu = html("/popover", OLD.to_string()).await.replacen(
+        "<details class=\"lui-popover lui-popover-details",
+        "<details open class=\"lui-popover lui-popover-details",
+        1,
+    );
+    let toast = html("/toast", toasts).await;
+    let cases = [
+        (
+            html("/dialog?dialog=confirm", MODERN.to_string()).await,
+            "dialog[open]",
+        ),
+        (toast.clone(), ".lui-toast-ok"),
+        (toast, ".lui-toast-danger"),
+        (menu, ".lui-popover-details[open] > nav"),
+        (html("/nav", MODERN.to_string()).await, ".lui-drawer-panel"),
+    ];
+    for (html, sel) in cases {
+        assert!(
+            html.contains("@starting-style{"),
+            "{sel}: the page has motion"
+        );
+        let (moving, still) = (
+            Page::from_html(html.clone()),
+            Page::from_html(without_starting_style(&html)),
+        );
+        assert!(moving.is_visible(sel), "{sel} is visible");
+        assert_eq!(moving.opacity(sel), Some(1.0), "{sel} is fully opaque");
+        let at_rest = moving.translate_scale(sel);
+        assert_eq!(at_rest, still.translate_scale(sel), "{sel}: same transform");
+        assert_eq!(at_rest.as_deref(), Some("None None"), "{sel} is not moved");
+        assert_eq!(moving.bbox(sel), still.bbox(sel), "{sel} at its final box");
+    }
+}

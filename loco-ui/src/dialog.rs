@@ -11,6 +11,10 @@
 //! - Invoker commands: `<button command="show-modal" commandfor="id">` and `command="close"`
 //!   (Chrome 135+, Firefox 144+, Safari 26.2+). Closing without a confirm form uses
 //!   `<form method="dialog">` (baseline 2022).
+//! - Motion: `@starting-style` (Chrome 117, Firefox 129, Safari 17.5) and
+//!   `transition-behavior: allow-discrete` on `display` and `overlay` (Chrome 117,
+//!   Firefox 129, Safari 17.4) fade and scale the dialog and its backdrop in and out; older
+//!   browsers open and close it at once, and `prefers-reduced-motion: reduce` zeroes it.
 //! - Focus: the close control sits last in the markup, so the dialog's own focusing steps land
 //!   on the first field in the body, then on the confirm button.
 //!
@@ -362,6 +366,22 @@ pub const CSS: &str = r#"
   display: block; position: fixed; inset: 0; margin: auto; height: fit-content; z-index: 10;
   box-shadow: var(--lui-shadow-lg), var(--lui-highlight), 0 0 0 100vmax var(--lui-overlay);
 }
+
+/* Motion: a fade and a small scale in and out, the backdrop fading with it. display and
+   overlay transition as discrete properties, so a closing modal stays in the top layer until
+   its fade ends; @starting-style gives an opening one (or a :target one) its first frame.
+   Browsers without transition-behavior drop these transitions and open and close at once. */
+.lui-dialog dialog {
+  transition: opacity var(--lui-duration) var(--lui-ease-out), scale var(--lui-duration-slow) var(--lui-ease-spring),
+    display var(--lui-duration) allow-discrete, overlay var(--lui-duration) allow-discrete;
+}
+.lui-dialog dialog:not([open]):not(:target) { opacity: 0; scale: 0.96; }
+@starting-style { .lui-dialog dialog[open], .lui-dialog dialog:target { opacity: 0; scale: 0.96; } }
+.lui-dialog dialog::backdrop {
+  transition: opacity var(--lui-duration) var(--lui-ease-out), display var(--lui-duration) allow-discrete, overlay var(--lui-duration) allow-discrete;
+}
+.lui-dialog dialog:not([open])::backdrop { opacity: 0; }
+@starting-style { .lui-dialog dialog[open]::backdrop { opacity: 0; } }
 "#;
 
 #[cfg(test)]

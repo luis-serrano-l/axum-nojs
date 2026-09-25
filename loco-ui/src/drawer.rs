@@ -8,7 +8,9 @@
 //! - `<dialog>` opened as a modal by an invoker button, `command="show-modal"` (Chrome 135+,
 //!   Firefox 144+, Safari 26.2+), closed by `command="close"` and by `closedby="any"` for
 //!   Escape and light dismiss.
-//! - `@starting-style` (Chrome 117, Firefox 129, Safari 17.5) for the slide in, off under
+//! - `@starting-style` (Chrome 117, Firefox 129, Safari 17.5) for the slide in, and
+//!   `transition-behavior: allow-discrete` on `display` and `overlay` (Chrome 117,
+//!   Firefox 129, Safari 17.4) for the slide out, the backdrop fading with it; off under
 //!   `prefers-reduced-motion`.
 //! - Sidebar mode: above 60rem a `@media` rule shows the closed `<dialog>` in a grid column
 //!   and hides the menu button, so desktop gets a permanent sidebar with no request.
@@ -221,4 +223,20 @@ pub const CSS: &str = r#"
   }
   .lui-drawer-sidebar .lui-drawer-close { display: none; }
 }
+/* Motion: the sheet slides out the way it came in, the backdrop fading with it. The base rule
+   holds the transition so it still runs once :modal stops matching; display and overlay are
+   discrete so the closing sheet keeps its top-layer box until the slide ends. The wide-screen
+   sidebar is a closed dialog shown in the flow, so it never slides. */
+.lui-drawer-panel, .lui-drawer-panel:modal {
+  transition: translate var(--lui-duration-slow) var(--lui-ease-out),
+    display var(--lui-duration-slow) allow-discrete, overlay var(--lui-duration-slow) allow-discrete;
+}
+.lui-drawer-panel:not([open]):not(:target) { translate: -100% 0; }
+@starting-style { .lui-drawer-panel:target { translate: -100% 0; } }
+.lui-drawer-panel::backdrop {
+  transition: opacity var(--lui-duration-slow) var(--lui-ease-out), display var(--lui-duration-slow) allow-discrete, overlay var(--lui-duration-slow) allow-discrete;
+}
+.lui-drawer-panel:not([open])::backdrop { opacity: 0; }
+@starting-style { .lui-drawer-panel[open]::backdrop { opacity: 0; } }
+@media (min-width: 60rem) { .lui-drawer-sidebar > .lui-drawer-panel:not(:modal) { translate: none; transition: none; } }
 "#;

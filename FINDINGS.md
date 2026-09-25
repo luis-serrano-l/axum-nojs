@@ -784,3 +784,34 @@ Let through, with the reason, and nothing else:
   stylesheet 72 KB, demo pages 104 KB, the shadow-DOM stream (which carries the stylesheet
   twice) 152 KB. Splitting the stylesheet per page would bring them back down, at the cost of
   the one-stylesheet rule; not done.
+
+### M30 · The Linear / Magic UI look
+
+**Motion is CSS only and lands where the page already was.** Dialogs, sheets, menus and toasts
+come in through `@starting-style` and leave through `transition-behavior: allow-discrete` on
+`display` and `overlay`, so a closing modal or popover keeps its top-layer box until its fade
+ends. Browsers without `allow-discrete` (Chrome before 117, Firefox before 129) drop the whole
+`transition` declaration and open and close at once; `--lui-ease-spring` is `ease-out` until
+`@supports (transition-timing-function: linear(0, 1))` swaps in the spring. Under
+`prefers-reduced-motion: reduce` every duration is `0s`, `::backdrop` included (`*` does not
+match it). Tabs name their chip only with `Cap::ViewTransitions`, and `<link rel="expect">`
+is sent only then, since without transitions it would only hold the first paint. The test
+`motion_leaves_the_final_layout_unchanged` renders an open dialog, both toasts, an open menu
+and the drawer sidebar twice, as served and with every `@starting-style` block cut out, and
+asserts the same box, opacity 1 and no translate or scale; every PNG in `tests/shots/` came out
+byte-identical.
+
+**What Blitz 0.3.0-beta.2 does with the motion:**
+
+- `@starting-style` is parsed and kept out of the cascade, but Stylo resolves starting styles
+  only in its Gecko build (`maybe_resolve_starting_style` is `cfg(feature = "gecko")`), so
+  Blitz never runs an entry transition and lays out the final frame (no upstream issue yet;
+  the owner files it).
+- `:modal` and `:popover-open` always match false (`blitz-dom` `stylo.rs`), so a modal dialog
+  or an open popover cannot be rendered there; the tests use the server-opened `<dialog open>`
+  and the `<details>` menu instead (issue: https://github.com/DioxusLabs/blitz/issues/196).
+- Transitions start only on a later style change and a Blitz test renders once, so exit
+  transitions and the `transitionend` they end with are not observable there either (issue:
+  https://github.com/DioxusLabs/blitz/issues/863).
+- `get_client_bounding_rect` ignores `translate` and `scale`, so the test reads them from the
+  computed style rather than trusting the box (no upstream issue yet; the owner files it).
