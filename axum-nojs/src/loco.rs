@@ -14,6 +14,39 @@
 //! }
 //! ```
 //!
+//! A controller takes `ui: Ui` beside Loco's extractors and returns Loco's `Result`. `Page`,
+//! `Redirect` and `Streamed` implement `IntoResponse`, and so does Loco's `Error`, so a handler
+//! returns `Result<Page>` (or `Result<Redirect>`) and uses `?` on the model call; or it
+//! returns `Result<Response>` with `.into_response()` when branches answer differently.
+//! No wrapper type:
+//!
+//! ```rust
+//! use axum_nojs::prelude::*;
+//! use loco_rs::prelude::*;
+//!
+//! async fn show(ui: Ui, Path(id): Path<u32>) -> Result<Page> {
+//!     let title = find(id)?; // a model call; Loco's `Error` becomes its own response
+//!     Ok(ui.page(&title, html! { h1 { (title) } }))
+//! }
+//!
+//! async fn remove(ui: Ui, Path(id): Path<u32>) -> Result<Response> {
+//!     if id == 0 {
+//!         return Ok(ui.redirect("/notes").danger("Nothing to delete.").into_response());
+//!     }
+//!     Ok(ui.redirect("/notes").ok("Deleted.").into_response())
+//! }
+//!
+//! pub fn routes() -> Routes {
+//!     Routes::new()
+//!         .prefix("notes")
+//!         .add("/{id}", get(show))
+//!         .add("/{id}/delete", post(remove))
+//! }
+//! # fn find(id: u32) -> Result<String> {
+//! #     if id == 0 { Err(Error::NotFound) } else { Ok(format!("Note {id}")) }
+//! # }
+//! ```
+//!
 //! The strict [`csp`](crate::enhance::csp) layer is not added: an app states its own policy
 //! (add `axum::middleware::from_fn(axum_nojs::enhance::csp)` in `after_routes` to use ours).
 //!
@@ -56,6 +89,26 @@ mod tests {
     use super::*;
     use axum::{body::Body, http::Request, routing::get};
     use tower::ServiceExt;
+
+    async fn show(
+        ui: crate::Ui,
+        axum::extract::Path(id): axum::extract::Path<u32>,
+    ) -> Result<crate::Page> {
+        if id == 0 {
+            return Err(loco_rs::Error::NotFound);
+        }
+        Ok(ui.page("Note", maud::html! { h1 { "Note " (id) } }))
+    }
+
+    #[tokio::test]
+    async fn a_result_of_page_answers_with_the_page_or_locos_error() {
+        let app = Router::new().route("/notes/{id}", get(show));
+        for (path, status) in [("/notes/1", 200), ("/notes/0", 404)] {
+            let req = Request::get(path).body(Body::empty()).unwrap();
+            let res = app.clone().oneshot(req).await.unwrap();
+            assert_eq!(res.status(), status, "{path}");
+        }
+    }
 
     #[tokio::test]
     async fn mounts_the_script_and_the_beacon_beside_the_app() {

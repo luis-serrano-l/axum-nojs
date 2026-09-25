@@ -750,8 +750,12 @@ loco-rs source (fetch it into `~/.cargo/registry` with a scratch crate) before r
   `after_routes` merges `caps::router()` and `enhance::router()` and adds the `slim` layer
   (not `csp`: the app owns its policy). `loco::mount(router)` does the same by hand; a test
   checks both routes answer. `verify.sh` and CI run clippy and the tests with `--features loco`.
-- [ ] Handlers return Loco's `Result<Response>`: `Page`, `Redirect` and `Streamed` convert with
+- [x] Handlers return Loco's `Result<Response>`: `Page`, `Redirect` and `Streamed` convert with
   `?`/`.into_response()`, no wrapper; a doctest shows a Loco controller using `ui: Ui`.
+  Done: nothing to add, since Loco's `Error` implements `IntoResponse`: a handler returns
+  `Result<Page>`/`Result<Redirect>` and uses `?`, or `Result<Response>` with `.into_response()`.
+  The `loco` module doc has a controller (`Routes::new().prefix(..).add(..)`) as a doctest, and
+  a test checks `Result<Page>` answers 200 with the page and 404 for `Error::NotFound`.
 - [ ] Validation errors: Loco models validate with the `validator` crate; a helper maps
   `ValidationErrors` into `Form::errors(..)`/`Input::error(..)` so server errors land on the
   right field.
