@@ -594,7 +594,7 @@
       "name": "Table",
       "module": "table",
       "features": [
-        { "name": "?sort=<col>&dir=asc|desc", "baseline": { "chrome": "1", "firefox": "1", "safari": "1" } },
+        { "name": "?sort.<id>=<col>&dir.<id>=asc|desc", "baseline": { "chrome": "1", "firefox": "1", "safari": "1" } },
         { "name": "<search>", "baseline": { "chrome": "118", "firefox": "118", "safari": "17" } },
         { "name": "aria-sort", "baseline": { "chrome": "1", "firefox": "1", "safari": "1" } },
         { "name": "form attribute", "baseline": { "chrome": "10", "firefox": "4", "safari": "5.1" } },
@@ -651,7 +651,7 @@
       "name": "Paged table",
       "module": "paged_table",
       "features": [
-        { "name": "?page=n", "baseline": { "chrome": "1", "firefox": "1", "safari": "1" } },
+        { "name": "?page.<id>=n", "baseline": { "chrome": "1", "firefox": "1", "safari": "1" } },
         { "name": "<select>", "baseline": { "chrome": "1", "firefox": "1", "safari": "1" } },
         { "name": "<input type=\"number\">", "baseline": { "chrome": "6", "firefox": "29", "safari": "5.1" } },
         { "name": "<output>", "baseline": { "chrome": "10", "firefox": "4", "safari": "7" } }

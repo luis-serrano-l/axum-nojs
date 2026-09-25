@@ -214,7 +214,7 @@ pub(crate) const COMPONENTS: [(&str, &str, &str, &str, &str); 45] = [
         "/table",
         "Table",
         "Server state",
-        "sort links, <search> filter, form= checkboxes, ?cols=, <details> rows, sticky header, ?page=n",
+        "sort links, <search> filter, form= checkboxes, ?cols.<id>=, <details> rows, sticky header, ?page.<id>=n",
         "Sort, filter, page through and select rows of data.",
     ),
     (

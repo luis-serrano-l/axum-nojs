@@ -1342,7 +1342,7 @@ consistent.
   demo snippets before and after in README.
 
 ## M33 · Follow-ups from M32
-- [ ] A table's own query keys: `q`, `sort`, `dir`, `page` and `cols` are shared by every table
+- [x] A table's own query keys: `q`, `sort`, `dir`, `page` and `cols` are shared by every table
   on a page (only `per.<id>` carries the id), so two tables on one page (the /table page and
   its playground table since M32) sort, filter and page together. Prefix them with the table's
   id (`files.q`, `files.sort`, …) as tabs and dialogs already do, keep reading the bare keys

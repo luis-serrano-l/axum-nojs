@@ -521,7 +521,7 @@ async fn blitz_has_no_declarative_shadow_dom() {
 async fn table_sort_links_and_pages() {
     let page = Page::render(
         demo::router(),
-        "/table?sort=size&dir=desc&q=a&per.files=5&page=2&cols=name,size",
+        "/table?sort.files=size&dir.files=desc&q.files=a&per.files=5&page.files=2&cols.files=name,size",
         MODERN,
     )
     .await;
@@ -531,12 +531,12 @@ async fn table_sort_links_and_pages() {
         "every visible column header is a sort link"
     );
     assert!(
-        page.exists("th[aria-sort=descending] a[href*='sort=size'][href*='dir=asc']"),
+        page.exists("th[aria-sort=descending] a[href*='sort.files=size'][href*='dir.files=asc']"),
         "sorted column flips direction"
     );
     assert!(
         page.exists(
-            "th a[href*='sort=name'][href*='q=a'][href*='per.files=5'][href*='cols=name%2Csize']"
+            "th a[href*='sort.files=name'][href*='q.files=a'][href*='per.files=5'][href*='cols.files=name%2Csize']"
         ),
         "other links keep filter, page size and columns"
     );
@@ -546,18 +546,18 @@ async fn table_sort_links_and_pages() {
         "one page of rows"
     );
     assert!(
-        !page.exists("th a[href*='sort=kind']"),
+        !page.exists("th a[href*='sort.files=kind']"),
         "the hidden column has no header"
     );
     assert!(
-        page.exists(".lui-table-cols a[aria-pressed=false][href*='cols=name%2Csize%2Ckind']"),
+        page.exists(".lui-table-cols a[aria-pressed=false][href*='cols.files=name%2Csize%2Ckind']"),
         "the chooser links to showing Kind again"
     );
     assert!(
-        page.exists(".lui-table-cols a[aria-pressed=true][href*='cols=size']"),
+        page.exists(".lui-table-cols a[aria-pressed=true][href*='cols.files=size']"),
         "and to hiding Name"
     );
-    assert!(page.exists("a.lui-table-csv[download][href='/table.csv?sort=size&dir=desc&q=a&per.files=5&cols=name%2Csize']"), "CSV link carries the whole state");
+    assert!(page.exists("a.lui-table-csv[download][href='/table.csv?sort.files=size&dir.files=desc&q.files=a&per.files=5&cols.files=name%2Csize']"), "CSV link carries the whole state");
     assert_eq!(
         page.count("tbody input[type=checkbox][name=row][form='lui-table-files-bulk']"),
         5,
@@ -594,8 +594,8 @@ async fn table_sort_links_and_pages() {
         Some("2")
     );
     assert!(
-        page.exists("a[rel=prev][href*='page=1'][href*='cols=name%2Csize']")
-            && page.exists("a[rel=next][href*='page=3']")
+        page.exists("a[rel=prev][href*='page.files=1'][href*='cols.files=name%2Csize']")
+            && page.exists("a[rel=next][href*='page.files=3']")
     );
     assert_eq!(
         page.text(".lui-paged-table-range").as_deref(),
@@ -603,16 +603,18 @@ async fn table_sort_links_and_pages() {
     );
     assert!(page.exists("select[name='per.files'] option[value='5'][selected]"));
     assert!(
-        page.exists(".lui-paged-table-per input[name=cols][value='name,size']"),
+        page.exists(".lui-paged-table-per input[name='cols.files'][value='name,size']"),
         "the page-size form keeps the columns"
     );
     assert!(
-        page.exists("a.lui-paged-table-end[href*='page=1']")
-            && page.exists("a.lui-paged-table-end[href*='page=5']"),
+        page.exists("a.lui-paged-table-end[href*='page.files=1']")
+            && page.exists("a.lui-paged-table-end[href*='page.files=5']"),
         "first and last links"
     );
     assert!(
-        page.exists(".lui-paged-table-jump input[type=number][name=page][max='5'][value='2']"),
+        page.exists(
+            ".lui-paged-table-jump input[type=number][name='page.files'][max='5'][value='2']"
+        ),
         "jump-to-page form"
     );
     assert!(
@@ -624,7 +626,7 @@ async fn table_sort_links_and_pages() {
     // 36 files at 5 a page is 8 pages: page 5 numbers 1 … 4 5 6 7 8.
     let long = Page::render(
         demo::router(),
-        "/table?page=5",
+        "/table?page.files=5",
         "lui-cap-probed=1; lui-ui=per.files=5",
     )
     .await;
@@ -639,7 +641,7 @@ async fn table_sort_links_and_pages() {
         "one ellipsis before the current page's neighbours"
     );
     assert!(
-        long.exists("a.lui-paged-table-end[href='/table?per.files=5&page=8']"),
+        long.exists("a.lui-paged-table-end[href='/table?per.files=5&page.files=8']"),
         "Last names the remembered size"
     );
     let rows = page.bbox(".lui-table tbody").unwrap();
@@ -651,7 +653,7 @@ async fn table_sort_links_and_pages() {
     // Blitz paints sticky header cells at the viewport top (FINDINGS.md); the row still exists.
     assert!(page.exists(".lui-table thead th"));
 
-    let empty = Page::render(demo::router(), "/table?q=zzz", MODERN).await;
+    let empty = Page::render(demo::router(), "/table?q.files=zzz", MODERN).await;
     assert_eq!(
         empty.text(".lui-table-empty").as_deref(),
         Some("No files match this filter.")

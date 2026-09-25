@@ -117,15 +117,15 @@ try {
 
   // Table: a sort link re-renders the rows in place, URL follows.
   await go("/table?per.files=5");
-  await click(".lui-table th a[href*='sort=size']");
+  await click(".lui-table th a[href*='sort.files=size']");
   await until(async () => (await js("return document.querySelector('.lui-table th[aria-sort]')?.textContent.trim()")) === "Size▲", "sort by size");
-  assert(await js("return location.search") === "?sort=size&dir=asc&per.files=5", "table: URL follows the sort");
+  assert(await js("return location.search") === "?sort.files=size&dir.files=asc&per.files=5", "table: URL follows the sort");
   assert(await navigations() === 1, "table: sorted without a reload");
-  assert(await js("return document.querySelector('a[rel=next]').href.includes('sort=size')"), "table: the pager's links follow the sort swapped in place");
+  assert(await js("return document.querySelector('a[rel=next]').href.includes('sort.files=size')"), "table: the pager's links follow the sort swapped in place");
   await click(".lui-table-cols summary");
-  await click(".lui-table-cols a[href*='cols=name%2Csize']");
+  await click(".lui-table-cols a[href*='cols.files=name%2Csize']");
   await until(async () => (await js("return document.querySelectorAll('.lui-table thead th a').length")) === 2, "column hidden");
-  assert(await js("return location.search").then(q => q.includes("cols=name%2Csize")), "table: hidden column swapped in place with ?cols= in the URL");
+  assert(await js("return location.search").then(q => q.includes("cols.files=name%2Csize")), "table: hidden column swapped in place with ?cols.files= in the URL");
   await js("document.querySelector('tbody tr:nth-child(2) input[type=checkbox]').click(); document.querySelector('#lui-table-files-bulk button[value=archive]').click()");
   await until(async () => (await js("return document.querySelector('.lui-flash')?.textContent || ''")).includes("archive: 1 file"), "bulk form posted and redirected with a flash");
   await js("document.querySelector('tbody tr:first-child .lui-table-detail summary').click()");
@@ -133,9 +133,9 @@ try {
   // Paged table: the page size picked on one visit is remembered on the next (lui-ui cookie).
   await go("/table");
   assert(await text(".lui-paged-table-range") === "1–5 of 36", "table: page size remembered from the earlier visit");
-  await js("const f = document.querySelector('.lui-paged-table-jump'); f.page.value = 7; f.requestSubmit()");
+  await js("const f = document.querySelector('.lui-paged-table-jump'); f.elements['page.files'].value = 7; f.requestSubmit()");
   await until(async () => (await js("return document.querySelector('.lui-paged-table-range')?.textContent")) === "31–35 of 36", "jump to page 7");
-  assert(await js("return location.search").then(q => q.includes("page=7")), "table: the jump is in the URL");
+  assert(await js("return location.search").then(q => q.includes("page.files=7")), "table: the jump is in the URL");
   assert(await navigations() === 1, "table: jumped without a reload");
 
   // Wizard: Next posts, PRG lands on step 2 in place, Back keeps the value.

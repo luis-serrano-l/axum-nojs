@@ -341,7 +341,7 @@ itself can be written in `lui!` without holding the builder in a variable:
 
 ```rust
 use loco_ui::prelude::*;
-let ui = Ui::from_request("/orders", "sort=total&dir=desc&status=paid", "");
+let ui = Ui::from_request("/orders", "sort.orders=total&dir.orders=desc&status=paid", "");
 let orders = [(1, "Ada", "paid", 12.5_f64), (2, "Grace", "pending", 30.0), (3, "Ken", "paid", 20.0)];
 let q = ui.table_query("orders", &["id", "total"]);
 let status = ui.param("status").unwrap_or("");
@@ -377,7 +377,7 @@ assert!(html.into_string().contains("<td>Ken</td>"));
   form and keeps it. A query in `href` (`/orders?status=paid`) is kept the same way.
 - **The search box** is on unless `.hide_search()`; with no sortable column, no search, no
   pager and no chooser a table has no links, so `href` may be `""` for a display-only table
-  (links, if any, are then relative: `?sort=..`, forms post to this page).
+  (links, if any, are then relative: `?sort.<id>=..`, forms post to this page).
 - **Chart** values from data in one call: `.points(SIGNUPS)` beside `.point(label, value)`.
 
 | Before | After |
@@ -396,3 +396,36 @@ Kept, because: `.rows(..)`, `.filter_select(..)` and `Chart::points` take a list
 (rows and options come from data; `.point(..)` still adds one value); `ui.table(id, href)` keeps
 its order (the id keys the query parameters). `Table::sort`, `filter`, `page` and `per_page`
 stay for routes that do hold the builder.
+
+### A table's query keys (M33)
+
+Every query key a table reads and writes carries its id, `<key>.<id>`, the way its page size
+(`per.<id>`), its in-place edit (`edit.<id>`), a tab group (`tab.<id>`) and a wizard
+(`step.<id>`) already did: `q.<id>` (search), `sort.<id>` and `dir.<id>` (sort), `page.<id>`
+(page) and `cols.<id>` (shown columns). The key comes first so the whole family reads alike
+and a key names what it holds before whose it is. Two tables on one page (the /table page and
+its playground) now sort, filter and page on their own. `loco_ui::table::Keys::new(id)` spells
+them for a hand-written link.
+
+```rust
+use loco_ui::prelude::*;
+let ui = Ui::from_request("/p", "sort.files=size&dir.files=desc&q.notes=milk", "");
+let (files, notes) = (ui.table_query("files", &["size"]), ui.table_query("notes", &["text"]));
+assert_eq!((files.sort(), files.filter()), (Some(("size", true)), ""));
+assert_eq!((notes.sort(), notes.filter()), (None, "milk"));
+// Deprecated, read for one release: the bare keys, when the table's own are absent.
+let old = Ui::from_request("/p", "sort=size&q=a&page=2", "");
+let q = old.table_query("files", &["size"]);
+assert_eq!((q.sort(), q.filter(), q.page()), (Some(("size", false)), "a", 2));
+```
+
+- **Deprecated:** the bare `q`, `sort`, `dir`, `page` and `cols`. A table still reads each one
+  when its own `<key>.<id>` is absent, so old bookmarks and hand-written links keep working for
+  one release; its own key wins, and every link and form it writes uses its own. Rewrite links
+  such as `/table?sort=size&dir=desc` as `/table?sort.files=size&dir.files=desc`.
+- **State or query:** only the page size is state (remembered in the `lui-ui` cookie); the
+  others describe one view and stay in the URL, as before.
+- **Kept bare:** the load-more `Pager`'s `page`. It has no id, and a page holds one; a paged
+  table beside it pages by its own `page.<id>`.
+- `.keep(..)`, `.filter_select(..)` and a query in `href` are the page's own parameters, carried
+  as named (`status`), not prefixed.

@@ -9,6 +9,12 @@
 //! while everything else is remembered. In Axum it is an extractor, and returning it as part
 //! of the response writes the cookie back when the query changed something.
 //!
+//! **State or query.** A table's other keys (`q.<id>`, `sort.<id>`, `dir.<id>`, `page.<id>`,
+//! `cols.<id>`, `edit.<id>`) are named the same way but are not state: they describe one view
+//! and live in the URL only, read with `ui.param` by the table ([`crate::table::Keys`]). Only
+//! what a visitor would expect to find again on their next visit (a tab, an open section, a
+//! wizard step, a page size) is remembered.
+//!
 //! **Platform features:** links, cookies, `303 See Other`. Nothing newer than 1997.
 //!
 //! **Fallback:** none needed. Without cookies, state still travels in links on the same page.
@@ -23,7 +29,7 @@
 //!
 //! ```rust
 //! use loco_ui::UiState;
-//! let state = UiState::parse("/settings", "tab.settings=1&page=3", "open.faq=2");
+//! let state = UiState::parse("/settings", "tab.settings=1&page.files=3", "open.faq=2");
 //! assert_eq!(state.tab("settings"), 1);
 //! assert_eq!(state.open("faq"), Some(2));
 //! assert_eq!(state.link("tab.settings", "0"), "/settings?open.faq=2&tab.settings=0");
@@ -61,7 +67,7 @@ fn is_state_key(key: &str) -> bool {
 }
 
 /// Parse `a=b&c=d` pairs, keeping only state keys. Understands `%XX` and `+`. The key is
-/// checked before anything is decoded, so pairs that are not state (`page=3`, `q=…`) cost no
+/// checked before anything is decoded, so pairs that are not state (`page.files=3`, `q.files=…`) cost no
 /// allocation; the state prefixes are unreserved characters a browser never escapes.
 fn parse_pairs(input: &str) -> BTreeMap<String, String> {
     input
@@ -318,7 +324,7 @@ mod tests {
     fn parsing_borrows_until_something_needs_decoding() {
         assert!(matches!(decode("open.faq"), Cow::Borrowed("open.faq")));
         assert_eq!(decode("a%2Cb+c"), "a,b c");
-        let state = UiState::parse("/", "page=3&q=a+b&tab.x=1", "per.t=25&sort=name");
+        let state = UiState::parse("/", "page.t=3&q.t=a+b&tab.x=1", "per.t=25&sort.t=name");
         assert_eq!(
             (state.tab("x"), state.link("tab.x", "2")),
             (1, "/?per.t=25&tab.x=2".to_string())
@@ -327,7 +333,7 @@ mod tests {
 
     #[test]
     fn query_wins_over_cookie_and_links_keep_the_rest() {
-        let s = UiState::parse("/p", "tab.a=2&q=x", "tab.a=1&open.faq=0&dialog=confirm");
+        let s = UiState::parse("/p", "tab.a=2&q.t=x", "tab.a=1&open.faq=0&dialog=confirm");
         assert_eq!(s.tab("a"), 2);
         assert_eq!(s.open("faq"), Some(0));
         assert_eq!(

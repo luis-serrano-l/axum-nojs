@@ -32,7 +32,7 @@ fn bench(c: &mut Criterion) {
     c.bench_function("layout", |b| {
         b.iter(|| ui.page("Title", html! { p { "body" } }).into_string().len())
     });
-    let mut sorted = Ui::from_request("/t", "sort=name", "");
+    let mut sorted = Ui::from_request("/t", "sort.t=name", "");
     sorted.caps = Caps::all();
     let thousand = rows(1000);
     c.bench_function("table 1000 rows", |b| {
@@ -44,7 +44,7 @@ fn bench(c: &mut Criterion) {
                 .len()
         })
     });
-    let mut paged = Ui::from_request("/t", "page=20&q=file", "lui-ui=per.t=25");
+    let mut paged = Ui::from_request("/t", "page.t=20&q.t=file", "lui-ui=per.t=25");
     paged.caps = Caps::all();
     let page = rows(25);
     c.bench_function("paged_table 25 of 1000", |b| {
@@ -61,7 +61,7 @@ fn bench(c: &mut Criterion) {
         b.iter(|| {
             UiState::from_request(
                 black_box("/settings"),
-                black_box("tab.settings=1&page=3&sort=name&q=hello+world"),
+                black_box("tab.settings=1&page.files=3&sort.files=name&q.files=hello+world"),
                 black_box("theme=dark; lui-ui=open.faq=2%2C3&per.files=25; lui-flash=Saved."),
             )
         })

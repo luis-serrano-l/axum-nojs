@@ -339,7 +339,7 @@ pub const SPECS: &[ComponentSpec] = &[
         name: "Table",
         module: "table",
         features: &[
-            f("?sort=<col>&dir=asc|desc", b("1", "1", "1")),
+            f("?sort.<id>=<col>&dir.<id>=asc|desc", b("1", "1", "1")),
             f("<search>", b("118", "118", "17")),
             f("aria-sort", b("1", "1", "1")),
             f("form attribute", b("10", "4", "5.1")),
@@ -357,7 +357,7 @@ pub const SPECS: &[ComponentSpec] = &[
         name: "Paged table",
         module: "paged_table",
         features: &[
-            f("?page=n", b("1", "1", "1")),
+            f("?page.<id>=n", b("1", "1", "1")),
             f("<select>", b("1", "1", "1")),
             f("<input type=\"number\">", b("6", "29", "5.1")),
             f("<output>", b("10", "4", "7")),

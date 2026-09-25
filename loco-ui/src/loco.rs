@@ -159,7 +159,7 @@
 //! ```
 //!
 //! Paging with Loco's `query::fetch_page` (or `query::paginate`, which adds a condition): the
-//! table reads `?page=`, the page size (`per.<id>`), the sort and the filter from the
+//! table reads its page (`?page.<id>=`), page size (`per.<id>`), sort and filter from the
 //! request; Loco asks the database for that page and the count, never every row; and
 //! `.paged_from(&meta)` draws the pager from the answer:
 //!
@@ -198,7 +198,7 @@
 //! #         .append_query_results([[count]])
 //! #         .append_query_results([[note]])
 //! #         .into_connection();
-//! #     let ui = Ui::from_request("/notes", "page=2", "");
+//! #     let ui = Ui::from_request("/notes", "page.notes=2", "");
 //! #     let html = notes_table(&ui, &db).await.unwrap().into_string();
 //! #     assert!(html.contains("11–20 of 42") && html.contains("Eleventh"), "{html}");
 //! #     let log = format!("{:?}", db.into_transaction_log());

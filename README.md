@@ -216,7 +216,7 @@ component gives the HTML to another template engine.
   builder: required arguments in the call, everything else a chained setter named after what
   it changes (`ui.dialog("Delete account").title("Delete account?").danger()`). Setters such as
   `.required()`, `.icon(..)`, `.badge(..)` apply to the item added last (a field, a menu item, a
-  tab). Ids come from the label; state (`?tab.x=`, `?dialog=`, `?page=`, `?sort=`) is read
+  tab). Ids come from the label; state (`?tab.x=`, `?dialog=`, `?page.<id>=`, `?sort.<id>=`) is read
   from `ui`, so a route passes only what the page says differently. No macros beyond `html!`
   and `lui!`. `docs/api.md` has the rules (form controls take `(name, label)`, one word per
   concept), the few exceptions with their reasons, and the renames of M32. M32 also wrote three
@@ -385,8 +385,8 @@ browser-compat-data; `no` means unshipped, so that browser gets the fallback.
 | Accordion | `<details name`, `::details-content`, `interpolate-size` | 120 / 130 / 17.2; 131 / 143 / 18.4; 129 / no / no | plain <details>: no exclusivity, no animation; expand/collapse and every toggle are links either way | No |
 | Combobox | `<datalist>`, `<optgroup>`, `<search>`, `aria-live` | 20 / 4 / 12.1; 20 / 4 / 12.1; 118 / 118 / 17; 1 / 1 / 1 | none needed: chips, results and the create row are links and forms | Partly: static suggestions and per-submit results; live filtering and arrow keys into the results need script |
 | Load-more list | `view-transition-name`, `scroll-margin` | 111 / 144 / 18; 69 / 90 / 14.1 | plain navigation to ?page=n#more | Partly: click-to-load; scroll-to-load needs script |
-| Table | `?sort=<col>&dir=asc|desc`, `<search>`, `aria-sort`, `form attribute`, `<details>`, `<colgroup>`, `tabular-nums`, `position: sticky`, `view-transition-name`, `aria-busy` | 1 / 1 / 1; 118 / 118 / 17; 1 / 1 / 1; 10 / 4 / 5.1; 12 / 49 / 6; 1 / 1 / 1; 52 / 34 / 9.1; 56 / 32 / 13; 111 / 144 / 18; 1 / 1 / 1 | none needed: sorting, filtering, column choice and the bulk form are plain navigations and posts; no select-all without script | No |
-| Paged table | `?page=n`, `<select>`, `<input type="number">`, `<output>` | 1 / 1 / 1; 1 / 1 / 1; 6 / 29 / 5.1; 10 / 4 / 7 | none needed: every control is a link or a form | No |
+| Table | `?sort.<id>=<col>&dir.<id>=asc|desc`, `<search>`, `aria-sort`, `form attribute`, `<details>`, `<colgroup>`, `tabular-nums`, `position: sticky`, `view-transition-name`, `aria-busy` | 1 / 1 / 1; 118 / 118 / 17; 1 / 1 / 1; 10 / 4 / 5.1; 12 / 49 / 6; 1 / 1 / 1; 52 / 34 / 9.1; 56 / 32 / 13; 111 / 144 / 18; 1 / 1 / 1 | none needed: sorting, filtering, column choice and the bulk form are plain navigations and posts; no select-all without script | No |
+| Paged table | `?page.<id>=n`, `<select>`, `<input type="number">`, `<output>` | 1 / 1 / 1; 1 / 1 / 1; 6 / 29 / 5.1; 10 / 4 / 7 | none needed: every control is a link or a form | No |
 | Wizard | `<form method="post">`, `aria-current="step"`, `<fieldset>`, `formnovalidate`, `<progress>` | 1 / 1 / 1; 1 / 1 / 1; 1 / 1 / 1; 4 / 4 / 5; 8 / 16 / 6 | none needed: one form per step, PRG between them | No |
 | Validated form | `required`, `pattern`, `:user-invalid`, `<fieldset>`, `<output>`, `type=date`, `accept`, `field-sizing` | 4 / 4 / 5; 4 / 4 / 5; 119 / 88 / 16.5; 1 / 1 / 1; 10 / 4 / 7; 20 / 57 / 14.1; 1 / 1 / 1; 123 / no / no | server re-renders with messages; no early styling; textareas keep their rows; the counter shows the submitted length | No |
 | Error summary | `role="alert"`, `aria-labelledby`, `autofocus` | 1 / 1 / 1; 1 / 1 / 1; 79 / 110 / 15.4 | where autofocus only works on form controls the summary is still first in the form and read out as an alert | Partly: moving the focus into the field a link points to needs script |

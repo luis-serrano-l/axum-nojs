@@ -6,8 +6,8 @@
 //! page can be bookmarked, and the sort, filter and columns survive paging.
 //!
 //! **Platform features:**
-//! - Ordinary links to `?page=n` that keep `sort`, `dir`, `q`, `cols` and the page size; the
-//!   current page is `aria-current="page"` and the previous/next links are `rel="prev"` /
+//! - Ordinary links to `?page.<id>=n` that keep the table's sort, filter, columns and page
+//!   size (`sort.<id>`, `dir.<id>`, `q.<id>`, `cols.<id>`, `per.<id>`); the current page is `aria-current="page"` and the previous/next links are `rel="prev"` /
 //!   `rel="next"`. Past seven pages only the first, the last and the current one's neighbours
 //!   are numbered; the gaps are an `aria-hidden` ellipsis.
 //! - `<form method="get">` with `<input type="number">` (`min`, `max`) to jump to a page, and another
@@ -30,18 +30,21 @@
 //!
 //! **Server state:** the page size is `per.<id>`, a state key, so the size a visitor picked
 //! is remembered in the `lui-ui` cookie and read back through `state.per_page(id)`. Every
-//! page link still names it, so a shared URL shows the same rows for everyone.
+//! page link still names it, so a shared URL shows the same rows for everyone. The page
+//! itself (`page.<id>`), like the sort and the filter, is a query key only: a bookmark of the
+//! bare path starts on page 1. Each key carries the table's id, so two paged tables on one page
+//! page on their own; the bare `page` of before is still read for one release.
 //!
 //! ```rust
 //! use loco_ui::{prelude::*, table::Row};
 //! // The URL's sort, filter and page, and the page size the visitor picked before.
-//! let ui = Ui::from_request("/table", "sort=name&dir=desc&q=a&page=20", "lui-ui=per.files=25");
+//! let ui = Ui::from_request("/table", "sort.files=name&dir.files=desc&q.files=a&page.files=20", "lui-ui=per.files=25");
 //! let files = ui.table("files", "/table").column("name", "Name").sortable().column("note", "Note");
 //! assert_eq!((files.page(), files.per_page()), (20, 25), "what a database query needs");
 //! // Only this page's rows, and the total after filtering.
 //! let html = files.rows([Row::new([html! { "a" }, html! { "b" }])]).paged(1234).render().into_string();
 //! assert!(html.contains("476–500 of 1,234"));
-//! assert!(html.contains("per.files=25&amp;page=50\">Last"));
+//! assert!(html.contains("per.files=25&amp;page.files=50\">Last"));
 //! assert!(html.contains("<select name=\"per.files\""));
 //! ```
 
@@ -53,7 +56,7 @@ use crate::button::Button;
 use crate::enhance;
 use crate::i18n::Text;
 use crate::input::Input;
-use crate::table::{Column, Encoded, Row, TableOptions, TableQuery, table_in};
+use crate::table::{Column, Encoded, Keys, Row, TableOptions, TableQuery, table_in};
 use crate::{Caps, Icon, UiState};
 
 /// Page sizes offered in the select.
@@ -178,6 +181,7 @@ pub(crate) fn paged_table_with(
     };
     let strings = inner.strings;
     let t = |text| strings.get(text);
+    let keys = Keys::new(id);
     let per_key = if state.is_some() {
         format!("per.{id}")
     } else {
@@ -207,14 +211,14 @@ pub(crate) fn paged_table_with(
     let carried = |skip: &str| {
         let mut pairs: Vec<(&str, &str)> = Vec::with_capacity(5);
         if let Some((k, d)) = sort {
-            pairs.extend([("sort", k), ("dir", dir(d))]);
+            pairs.extend([(keys.sort.as_str(), k), (keys.dir.as_str(), dir(d))]);
         }
         if !filter.is_empty() {
-            pairs.push(("q", filter));
+            pairs.push((&keys.q, filter));
         }
         pairs.extend(inner.keep.iter().copied());
         if let Some(c) = &cols_value {
-            pairs.push(("cols", c));
+            pairs.push((&keys.cols, c));
         }
         if skip != per_key {
             pairs.push((per_key.as_str(), &per));
@@ -228,6 +232,7 @@ pub(crate) fn paged_table_with(
     let link = |n: usize| PageLink {
         href,
         base: &base,
+        key: &keys.page,
         n,
     };
     let mut keep = inner.keep.to_vec();
@@ -265,7 +270,7 @@ pub(crate) fn paged_table_with(
                     form method="get" action=[action] class="lui-paged-table-jump" {
                         @for (k, v) in carried("") { input type="hidden" name=(k) value=(v); }
                         span { (t(Text::Page)) }
-                        (Input::number_within("page", t(Text::Page), Some(1), Some(pages as i64)).hide_label().class("lui-paged-table-page").inputmode("numeric").id(&jump_id).value(&page_text))
+                        (Input::number_within(&keys.page, t(Text::Page), Some(1), Some(pages as i64)).hide_label().class("lui-paged-table-page").inputmode("numeric").id(&jump_id).value(&page_text))
                         span { (strings.fill(Text::OfTotal, &[&Thousands(pages)])) }
                         (Button::new(*caps, t(Text::Go)))
                     }
@@ -343,16 +348,24 @@ impl fmt::Display for Thousands {
     }
 }
 
-/// `href?<carried pairs>page=n`, written into the attribute as it renders.
+/// `href?<carried pairs>page.<id>=n`, written into the attribute as it renders.
 struct PageLink<'a> {
     href: &'a str,
     base: &'a str,
+    key: &'a str,
     n: usize,
 }
 
 impl fmt::Display for PageLink<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}?{}page={}", self.href, self.base, self.n)
+        write!(
+            f,
+            "{}?{}{}={}",
+            self.href,
+            self.base,
+            Encoded(self.key),
+            self.n
+        )
     }
 }
 
@@ -383,7 +396,7 @@ mod tests {
             .per_page(5);
         let m = paged_table_with(&Caps::NONE, "t", "/t", &cols, &[], 12, opts).into_string();
         assert!(
-            m.contains("href=\"/t?sort=n&amp;dir=desc&amp;q=x&amp;per=5&amp;page=3\""),
+            m.contains("href=\"/t?sort.t=n&amp;dir.t=desc&amp;q.t=x&amp;per=5&amp;page.t=3\""),
             "{m}"
         );
         assert!(m.contains("rel=\"prev\"") && m.contains("rel=\"next\""));
@@ -443,10 +456,10 @@ mod tests {
             opts,
         )
         .into_string();
-        assert!(m.contains("href=\"/t?per.t=5&amp;page=8\">Last"), "{m}");
-        assert!(m.contains("href=\"/t?per.t=5&amp;page=1\">First"));
+        assert!(m.contains("href=\"/t?per.t=5&amp;page.t=8\">Last"), "{m}");
+        assert!(m.contains("href=\"/t?per.t=5&amp;page.t=1\">First"));
         assert!(
-            m.contains("name=\"page\" type=\"number\" value=\"2\" min=\"1\" max=\"8\""),
+            m.contains("name=\"page.t\" type=\"number\" value=\"2\" min=\"1\" max=\"8\""),
             "{m}"
         );
         assert!(m.contains("<select name=\"per.t\">"));
@@ -458,8 +471,11 @@ mod tests {
         let rows: Vec<Row> = (1..=12)
             .map(|n| Row::new(vec![html! { "row " (n) }, html! {}]))
             .collect();
-        let ui =
-            crate::Ui::from_request("/t", "sort=n&dir=desc&q=r%C3%A9&page=3&cols=n&other=1", "");
+        let ui = crate::Ui::from_request(
+            "/t",
+            "sort.t=n&dir.t=desc&q.t=r%C3%A9&page.t=3&cols.t=n&other=1",
+            "",
+        );
         let query = TableQuery::from_ui(&ui, "t");
         assert_eq!(query.filter, "r\u{e9}");
         let state = UiState::parse("/t", "per.t=5", "");
@@ -479,7 +495,9 @@ mod tests {
             "sliced to page 3"
         );
         assert!(
-            m.contains("sort=n&amp;dir=desc&amp;q=r%C3%A9&amp;cols=n&amp;per.t=5&amp;page=2"),
+            m.contains(
+                "sort.t=n&amp;dir.t=desc&amp;q.t=r%C3%A9&amp;cols.t=n&amp;per.t=5&amp;page.t=2"
+            ),
             "{m}"
         );
         let huge = UiState::parse("/t", "per.t=100000", "");

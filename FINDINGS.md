@@ -284,7 +284,10 @@ to a colleague, and the browser's Back button is the undo. The component never s
 filters: it renders rows it is given and emits links that ask for others. That keeps it usable
 from `curl` and keeps the data path (a database query) in the handler where it belongs.
 The `<search>` form keeps the sort in hidden inputs and the sort links keep the filter in the
-query, so no action forgets the others; `paged_table` threads `per` through both.
+query, so no action forgets the others; `paged_table` threads `per` through both. Since M33
+each key carries the table's id (`sort.files`, `q.files`, `page.files`, `cols.files`, like
+`per.files`): two tables on one page (the /table page and its playground) had sorted, filtered
+and paged together. The bare keys are still read for one release.
 
 **A remembered page size that still shares.** With a `UiState` the size is the state key
 `per.<table>`, so the `lui-ui` cookie brings back the size a visitor picked. Every page link

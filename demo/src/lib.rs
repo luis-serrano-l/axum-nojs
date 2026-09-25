@@ -59,7 +59,7 @@ pub const PATHS: [&str; 49] = [
     "/blocks/error",
     "/counter",
     "/inputs",
-    "/table?sort=size&dir=desc&q=a&per.files=5&page=2&cols=name,size",
+    "/table?sort.files=size&dir.files=desc&q.files=a&per.files=5&page.files=2&cols.files=name,size",
     "/table?per.files=5&edit.files=src/build.rs",
     "/wizard?step.signup=1",
     "/swap?n=3",

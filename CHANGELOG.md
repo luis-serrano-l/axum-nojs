@@ -8,6 +8,11 @@ follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); the project us
 
 ### `loco-ui`
 
+- M33: a table's query keys carry its id, `<key>.<id>` like `per.<id>` and `edit.<id>`:
+  `q.files`, `sort.files`, `dir.files`, `page.files`, `cols.files`, so two tables on one page
+  sort, filter and page on their own. `table::Keys::new(id)` spells them. The bare `q`, `sort`,
+  `dir`, `page` and `cols` are deprecated and still read, for one release, when the table's own
+  key is absent. The load-more `Pager` keeps its bare `page`.
 - M32, less code per page: `Form` holds any control (`.body(markup)` among its fields,
   `.switch(name, label)`) and `.get()` makes it a filter; `Page::invalid()` answers 422, so a
   POST handler returns `Result<Redirect, Page>`; `Posted` (feature `axum`) reads an urlencoded

@@ -462,7 +462,7 @@ async fn palette_exact_name_redirects_and_toast_posts_stack() {
     assert_eq!(res.status(), 303);
     assert_eq!(
         res.headers().get("location").unwrap(),
-        "/table?sort=size&dir=desc"
+        "/table?sort.files=size&dir.files=desc"
     );
     let res = router()
         .oneshot(Request::get("/palette?q=zzz").body(Body::empty()).unwrap())
@@ -809,4 +809,42 @@ async fn beta_builders_are_marked() {
     assert!(text("/").await.contains(
         "href=\"/chart\">Charts</a> <span class=\"lui-badge lui-badge-warn\">beta</span>"
     ));
+}
+
+/// The /table page holds two tables, the files and the playground's `try`: each reads and
+/// writes its own `q.<id>`, `sort.<id>` and `page.<id>`, so searching one leaves the other.
+#[tokio::test]
+async fn the_two_tables_on_the_table_page_filter_and_sort_on_their_own() {
+    let html = |path: &'static str| async move {
+        let res = router()
+            .oneshot(Request::get(path).body(Body::empty()).unwrap())
+            .await
+            .unwrap();
+        let bytes = axum::body::to_bytes(res.into_body(), usize::MAX)
+            .await
+            .unwrap();
+        String::from_utf8(bytes.to_vec()).unwrap()
+    };
+    let page = html("/table?q.try=zzz&sort.files=size&dir.files=desc").await;
+    assert!(
+        page.contains(r#"id="lui-table-try""#),
+        "the playground table is on the page"
+    );
+    assert!(
+        page.contains("1–10 of 36") && page.contains(r#"aria-sort="descending""#),
+        "the files table ignores the playground's search"
+    );
+    assert!(
+        page.contains(r#"name="q.try""#) && page.contains(r#"value="zzz""#),
+        "the playground keeps its own search"
+    );
+    assert!(
+        page.contains(r#"href="/table?sort.files=size&amp;dir.files=asc&amp;per.files=10""#),
+        "the files table's links carry only its own keys"
+    );
+    let page = html("/table?q.files=zzz").await;
+    assert!(page.contains("No files match this filter.") && page.contains("<td>a.txt</td>"));
+    // The bare keys of before still reach the files table, for one release.
+    let page = html("/table?q=zzz").await;
+    assert!(page.contains("No files match this filter."));
 }

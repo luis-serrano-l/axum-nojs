@@ -67,7 +67,7 @@ async function ready(url) {
 
 // Each case: the page, what to click, and the state that means the update is shown.
 const CASES = [
-  { name: "table sort", path: "/table", click: '#lui-paged-table-files th a[href*="sort=size"]', root: "lui-paged-table-files", shown: "replaced" },
+  { name: "table sort", path: "/table", click: '#lui-paged-table-files th a[href*="sort.files=size"]', root: "lui-paged-table-files", shown: "replaced" },
   { name: "tab", path: "/tabs", click: "#lui-tabs-demo details:nth-of-type(2) > summary a", root: "lui-tabs-demo", shown: "tab" },
   { name: "pager", path: "/list", click: "#lui-pager--list .lui-pager-more", root: "lui-pager--list", shown: "replaced" },
 ];

@@ -21,7 +21,7 @@ list|/list?page=2|pagination
 form|/form|input
 counter|/counter|button
 inputs|/inputs|select
-table|/table?q=a|data-table
+table|/table?q.files=a|data-table
 wizard|/wizard?step.signup=1|
 toast|/toast|sonner
 nav|/nav|sheet

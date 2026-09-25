@@ -40,7 +40,7 @@ fn palette(ui: &Ui) -> loco_ui::palette::Palette<'_> {
         .group("Shortcuts")
         .link("Notification settings", "/settings?tab.settings=1")
         .keywords("email releases")
-        .link("Largest files", "/table?sort=size&dir=desc")
+        .link("Largest files", "/table?sort.files=size&dir.files=desc")
         .keywords("sort size big")
         .link("Open the delete dialog", "/dialog?dialog=confirm")
         .keywords("account remove")

@@ -3,7 +3,9 @@
 //! A long list delivered a page at a time with a "Load more" link, no script.
 //!
 //! **Platform features:**
-//! - Ordinary links to `?page=n`.
+//! - Ordinary links to `?page=n`. The key stays bare: a load-more list has no id, and a page
+//!   holds one. A paged table beside it pages by its own `page.<id>` (see [`crate::table`]),
+//!   so the two no longer move together.
 //! - `view-transition-name` on the list, together with the layout's
 //!   `@view-transition { navigation: auto }` (Chrome 126+, Safari 18.2+) or the enhancement
 //!   script's `startViewTransition`, so the new rows fade in under the old ones. The button
