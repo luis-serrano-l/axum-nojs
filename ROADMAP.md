@@ -708,6 +708,10 @@ script, proven in CI, with server-side flows included.
 - [ ] Launch material: live demo host, a post "shadcn look, zero JavaScript, verified",
   crates.io keywords `no-js`, `progressive-enhancement`, `maud`, `ssr`, `components`.
   Posting to r/rust / This Week in Rust and hosting are outward actions: ask the owner first.
+  Partly done: keywords set (`no-js`, `maud`, `ssr`, `components`, `axum`; the 23-character
+  `progressive-enhancement` exceeds crates.io's 20-character limit, so it is in the
+  description), and the post drafted in `docs/launch-post.md`. Blocked on the owner: hosting
+  the demo and posting (BLOCKED.md, with a suggested plan).
 
 ## M27 · Loco fit (only if the owner picks Loco)
 The owner thinks [Loco](https://loco.rs) (Rails-style, built on Axum) is the best home for

@@ -2,11 +2,11 @@
 name = "axum-nojs"
 version = "0.1.0"
 edition = "2024"
-description = "Interactive HTML components for Axum that work without JavaScript"
+description = "The no-JS UI kit for Rust servers: shadcn-style components for Axum and Maud that work with JavaScript off, by progressive enhancement"
 readme = "../README.md"
 license = "MIT"
 repository = "https://github.com/luis-serrano-l/axum-nojs"
-keywords = ["html", "components", "maud", "axum", "no-js"]
+keywords = ["no-js", "maud", "ssr", "components", "axum"]
 categories = ["web-programming", "template-engine", "gui"]
 
 [features]

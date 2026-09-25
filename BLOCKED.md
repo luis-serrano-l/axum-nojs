@@ -33,6 +33,22 @@ repository and the docs. If Loco becomes the primary target (M27's first box), `
 better, because Axum would no longer be the only host (a `loco` feature beside `axum`); make
 both decisions at once so the crates are renamed at most once, before the first publish.
 
+## Launch: host the demo, post the announcement (M26, last box), open
+
+These are outward actions, so they are yours to take or to approve one by one:
+
+1. **Host the live demo.** Suggested: a small VM or a free-tier container host running
+   `cargo run --release -p demo` behind a reverse proxy with HTTPS. The demo keeps uploads
+   in memory, capped at 3 × 200 KB per visitor for 100 visitors, and sends a strict CSP. Nothing
+   else needs configuring.
+2. **Post the announcement.** The draft is in `docs/launch-post.md`, ready to edit. Suggested
+   order: publish the crate first (M13, on hold above), then r/rust and This Week in Rust's
+   call for submissions, with the demo link filled in.
+
+Done locally: the crates.io keywords are `no-js`, `maud`, `ssr`, `components` and `axum`.
+`progressive-enhancement` is longer than crates.io's 20-character limit, so the phrase is in
+the description instead.
+
 ## Reply to Blitz issue #923
 
 Posted on 2026-09-23 after the owner's approval:
