@@ -190,10 +190,10 @@ pub const CSS: &str = r#"
 }
 .lui-drawer-panel:modal, .lui-drawer-panel:target {
   display: block; position: fixed; inset: 0 auto 0 0; height: 100dvh; max-height: none; width: min(24rem, 75vw); z-index: 10;
-  padding: calc(var(--lui-space) * 3); box-shadow: var(--lui-shadow-lg);
+  padding: calc(var(--lui-space) * 3); box-shadow: var(--lui-shadow-lg), var(--lui-highlight);
   transition: translate 0.3s ease-in-out, display 0.3s allow-discrete, overlay 0.3s allow-discrete;
 }
-.lui-drawer-panel:target { box-shadow: var(--lui-shadow-lg), 0 0 0 100vmax var(--lui-overlay); }
+.lui-drawer-panel:target { box-shadow: var(--lui-shadow-lg), var(--lui-highlight), 0 0 0 100vmax var(--lui-overlay); }
 @starting-style { .lui-drawer-panel:modal { translate: -100% 0; } }
 .lui-drawer-panel::backdrop { background: var(--lui-overlay); }
 .lui-drawer-panel:not(:modal):not(:target)[open] { position: static; width: auto; border: 1px solid var(--lui-line); border-radius: var(--lui-radius); }

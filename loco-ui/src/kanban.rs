@@ -212,7 +212,7 @@ pub const CSS: &str = r#"
 .lui-kanban-cards { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.5rem; }
 .lui-kanban-card {
   display: grid; grid-template-columns: 1fr auto; align-items: start; gap: 0.25rem 0.5rem; padding: 0.625rem 0.75rem;
-  background: var(--lui-card); border: 1px solid var(--lui-line); border-radius: var(--lui-radius); box-shadow: var(--lui-shadow-xs);
+  background: var(--lui-card); border: 1px solid var(--lui-line); border-radius: var(--lui-radius); box-shadow: var(--lui-shadow-sm), var(--lui-highlight);
 }
 .lui-kanban-title { grid-column: 1; margin: 0; font-size: 0.875rem; font-weight: 500; }
 .lui-kanban-note { grid-column: 1; margin: 0; font-size: 0.75rem; color: var(--lui-muted); }

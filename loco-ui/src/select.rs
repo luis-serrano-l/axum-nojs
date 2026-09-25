@@ -326,7 +326,7 @@ pub const CSS: &str = r#"
 @supports (appearance: base-select) { .lui-select select { background-image: none; padding-right: 0.75rem; } }
 .lui-select select::picker(select) {
   border: 1px solid var(--lui-line); border-radius: var(--lui-radius); padding: 0.25rem;
-  background: var(--lui-popover); color: var(--lui-fg); box-shadow: var(--lui-shadow-lg);
+  background: var(--lui-popover); color: var(--lui-fg); box-shadow: var(--lui-shadow-md), var(--lui-highlight);
   max-height: 20rem;
 }
 .lui-select option { padding: 0.375rem 0.5rem; border-radius: var(--lui-radius-sm); font-size: 0.875rem; }

@@ -109,7 +109,7 @@ pub const CSS: &str = r#"
   padding: 1rem; color: var(--lui-fg); background: var(--lui-popover);
   font-size: 0.875rem; line-height: 1.25rem;
   border: 1px solid var(--lui-line); border-radius: var(--lui-radius);
-  box-shadow: var(--lui-shadow-lg);
+  box-shadow: var(--lui-shadow-lg), var(--lui-highlight);
   animation: lui-toast-out 0.4s ease-in 5s forwards;
 }
 .lui-toast::before { content: ""; flex: none; width: 0.5rem; height: 0.5rem; border-radius: 50%; background: var(--lui-toast-tone); }

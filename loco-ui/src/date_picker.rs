@@ -215,5 +215,5 @@ pub const CSS: &str = r#"
 .lui-date-picker-trigger { width: 15rem; justify-content: flex-start; font-weight: 400; }
 .lui-date-picker-empty { color: var(--lui-muted); }
 .lui-date-picker-panel { margin: 0; margin-top: 4px; padding: 0; border: 0; background: none; overflow: visible; }
-.lui-date-picker-panel > .lui-calendar { box-shadow: var(--lui-shadow-lg); }
+.lui-date-picker-panel > .lui-calendar { box-shadow: var(--lui-shadow-md), var(--lui-highlight); }
 "#;

@@ -428,7 +428,7 @@ pub const CSS: &str = r#"
   padding: 0.25rem; min-width: 14rem;
   background: var(--lui-popover); color: var(--lui-fg);
   border: 1px solid var(--lui-line); border-radius: var(--lui-radius);
-  box-shadow: var(--lui-shadow-lg);
+  box-shadow: var(--lui-shadow-md), var(--lui-highlight);
 }
 .lui-popover-anchored > nav, .lui-popover-details > nav, .lui-popover-subnav { margin: 0; }
 .lui-popover-anchored > nav { margin-top: 4px; }

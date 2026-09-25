@@ -238,5 +238,5 @@ impl axum::response::IntoResponse for Streamed {
 /// Styles for this component; included in [`crate::stylesheet`].
 pub const CSS: &str = r#"
 .lui-stream-pending { color: var(--lui-muted); font-style: italic; }
-.lui-stream-section { border: 1px solid var(--lui-line); border-radius: var(--lui-radius-lg); padding: 1.5rem; margin-bottom: calc(var(--lui-space) * 2); background: var(--lui-card); box-shadow: var(--lui-shadow-xs); }
+.lui-stream-section { border: 1px solid var(--lui-line); border-radius: var(--lui-radius-lg); padding: 1.5rem; margin-bottom: calc(var(--lui-space) * 2); background: var(--lui-card); box-shadow: var(--lui-shadow-sm), var(--lui-highlight); }
 "#;

@@ -141,7 +141,7 @@ pub const CSS: &str = r#"
 .lui-card {
   display: flex; flex-direction: column; gap: 1.5rem; padding-block: 1.5rem;
   background: var(--lui-card); color: var(--lui-fg);
-  border: 1px solid var(--lui-line); border-radius: var(--lui-radius-lg); box-shadow: var(--lui-shadow-xs);
+  border: 1px solid var(--lui-line); border-radius: var(--lui-radius-lg); box-shadow: var(--lui-shadow-sm), var(--lui-highlight);
 }
 .lui-card-header { display: grid; grid-template-columns: 1fr auto; row-gap: 0.375rem; column-gap: 1rem; padding-inline: 1.5rem; }
 .lui-card-header > :not(.lui-card-action) { grid-column: 1; }

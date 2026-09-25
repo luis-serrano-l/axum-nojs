@@ -173,7 +173,7 @@ pub const CSS: &str = r#"
 .lui-stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); gap: calc(var(--lui-space) * 2); margin-block: calc(var(--lui-space) * 2); }
 .lui-stat {
   display: block; padding: calc(var(--lui-space) * 3); color: var(--lui-fg); text-decoration: none;
-  background: var(--lui-card); border: 1px solid var(--lui-line); border-radius: var(--lui-radius-lg); box-shadow: var(--lui-shadow-xs);
+  background: var(--lui-card); border: 1px solid var(--lui-line); border-radius: var(--lui-radius-lg); box-shadow: var(--lui-shadow-sm), var(--lui-highlight);
   transition: background-color 0.15s;
 }
 .lui-stat p { margin: 0; max-width: none; }

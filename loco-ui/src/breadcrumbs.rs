@@ -133,7 +133,7 @@ pub const CSS: &str = r#"
 .lui-breadcrumbs-fold ol {
   position: absolute; z-index: 5; top: 100%; left: 0; margin: 0.25rem 0 0; padding: 0.25rem;
   list-style: none; min-width: 10rem; background: var(--lui-popover);
-  border: 1px solid var(--lui-line); border-radius: var(--lui-radius); box-shadow: var(--lui-shadow-lg);
+  border: 1px solid var(--lui-line); border-radius: var(--lui-radius); box-shadow: var(--lui-shadow-md), var(--lui-highlight);
 }
 .lui-breadcrumbs-fold ol a { display: block; padding: 0.375rem 0.5rem; border-radius: var(--lui-radius-sm); color: var(--lui-fg); }
 .lui-breadcrumbs-fold ol a:hover { background: var(--lui-accent); color: var(--lui-on-accent); }

@@ -332,7 +332,7 @@ pub const CSS: &str = r#"
 .lui-dialog dialog {
   background: var(--lui-popover); color: var(--lui-fg);
   border: 1px solid var(--lui-line); border-radius: var(--lui-radius);
-  padding: calc(var(--lui-space) * 3); width: calc(100% - 2rem); box-shadow: var(--lui-shadow-lg);
+  padding: calc(var(--lui-space) * 3); width: calc(100% - 2rem); box-shadow: var(--lui-shadow-lg), var(--lui-highlight);
 }
 /* Server-opened (non-modal) dialogs sit in the flow; positioned so the close control anchors. */
 .lui-dialog dialog:not(:modal):not(:target) { position: relative; }
@@ -360,7 +360,7 @@ pub const CSS: &str = r#"
 /* :target fallback: a dialog that is the URL fragment renders as a fixed overlay. */
 .lui-dialog dialog:target {
   display: block; position: fixed; inset: 0; margin: auto; height: fit-content; z-index: 10;
-  box-shadow: var(--lui-shadow-lg), 0 0 0 100vmax var(--lui-overlay);
+  box-shadow: var(--lui-shadow-lg), var(--lui-highlight), 0 0 0 100vmax var(--lui-overlay);
 }
 "#;
 

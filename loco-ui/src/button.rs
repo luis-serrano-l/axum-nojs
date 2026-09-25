@@ -500,9 +500,17 @@ button, .lui-button {
 }
 .lui-button { color: var(--lui-fg); text-decoration: none; box-sizing: border-box; }
 button:hover, .lui-button:hover { background: var(--lui-accent); color: var(--lui-on-accent); }
-button.lui-primary, .lui-button.lui-button-primary { background: var(--lui-primary); color: var(--lui-on-primary); border-color: transparent; }
-button.lui-primary:hover, .lui-button.lui-button-primary:hover { background: color-mix(in srgb, var(--lui-primary) 90%, transparent); color: var(--lui-on-primary); }
-button.lui-danger, .lui-button.lui-button-danger { background: var(--lui-danger); color: var(--lui-on-danger); border-color: transparent; }
+/* Primary: the brand gradient over the flat fill (Chrome before 111 keeps the fill), lit from
+   above; hover lays a veil of the text colour over both so it still visibly changes. */
+button.lui-primary, .lui-button.lui-button-primary {
+  background-color: var(--lui-primary); background-image: var(--lui-gradient-primary); color: var(--lui-on-primary);
+  border-color: transparent; box-shadow: var(--lui-shadow-xs), var(--lui-highlight);
+}
+button.lui-primary:hover, .lui-button.lui-button-primary:hover {
+  background-color: color-mix(in srgb, var(--lui-primary) 90%, transparent); color: var(--lui-on-primary);
+  background-image: linear-gradient(color-mix(in srgb, var(--lui-on-primary) 12%, transparent), color-mix(in srgb, var(--lui-on-primary) 12%, transparent)), var(--lui-gradient-primary);
+}
+button.lui-danger, .lui-button.lui-button-danger { background: var(--lui-danger); color: var(--lui-on-danger); border-color: transparent; box-shadow: var(--lui-shadow-xs), var(--lui-highlight); }
 button.lui-danger:hover, .lui-button.lui-button-danger:hover { background: color-mix(in srgb, var(--lui-danger) 90%, transparent); color: var(--lui-on-danger); }
 .lui-button.lui-button-ghost { background: transparent; border-color: transparent; box-shadow: none; }
 .lui-button.lui-button-ghost:hover { background: var(--lui-accent); }
@@ -510,6 +518,18 @@ button.lui-danger:hover, .lui-button.lui-button-danger:hover { background: color
 .lui-button.lui-button-icon { width: 2.25rem; min-width: 2.25rem; padding: 0; }
 .lui-button.lui-button-icon.lui-button-small { width: 2rem; min-width: 2rem; }
 button:focus-visible, .lui-button:focus-visible { border-color: var(--lui-ring); }
+/* Where gradients take oklch, a focused outline button draws its border in the ring gradient
+   (a padding-box fill over a border-box gradient: same width, no shift) inside the solid ring.
+   :where keeps it at two classes, so a component that paints its own buttons still wins. */
+@supports (background-image: linear-gradient(in oklch, currentColor, transparent)) {
+  .lui-button:where(:not(.lui-button-primary, .lui-button-danger, .lui-button-ghost)):focus-visible {
+    border-color: transparent;
+    background: linear-gradient(var(--lui-bg), var(--lui-bg)) padding-box, var(--lui-gradient-ring) border-box;
+  }
+  .lui-button:where(:not(.lui-button-primary, .lui-button-danger, .lui-button-ghost)):focus-visible:hover {
+    background: linear-gradient(var(--lui-accent), var(--lui-accent)) padding-box, var(--lui-gradient-ring) border-box;
+  }
+}
 button:disabled { opacity: 0.5; cursor: not-allowed; }
 .lui-button[aria-disabled=true] { opacity: 0.5; cursor: not-allowed; pointer-events: none; }
 .lui-button[aria-busy=true] { cursor: progress; }

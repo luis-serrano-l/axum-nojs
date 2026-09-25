@@ -293,7 +293,7 @@ pub const CSS: &str = r#"
 .lui-combobox-status { margin: 0 0 var(--lui-space); font-size: 0.875rem; color: var(--lui-muted); }
 .lui-combobox-list {
   list-style: none; margin: 0; padding: 0.25rem; background: var(--lui-popover);
-  border: 1px solid var(--lui-line); border-radius: var(--lui-radius); box-shadow: var(--lui-shadow-xs);
+  border: 1px solid var(--lui-line); border-radius: var(--lui-radius); box-shadow: var(--lui-shadow-md), var(--lui-highlight);
 }
 .lui-combobox-list > li { max-width: none; font-size: 0.875rem; }
 .lui-combobox-list a { display: block; padding: 0.375rem 0.5rem; border-radius: var(--lui-radius-sm); text-decoration: none; color: inherit; }

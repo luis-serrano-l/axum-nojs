@@ -299,7 +299,7 @@ pub const CSS: &str = r#"
 .lui-palette-panel {
   box-sizing: border-box; width: min(32rem, calc(100vw - 2rem)); padding: 0.25rem;
   color: var(--lui-fg); background: var(--lui-popover); border: 1px solid var(--lui-line); border-radius: var(--lui-radius);
-  box-shadow: var(--lui-shadow-lg);
+  box-shadow: var(--lui-shadow-lg), var(--lui-highlight);
 }
 .lui-palette-panel[popover] { margin: 12vh auto auto; max-height: 70vh; overflow: auto; }
 .lui-palette-panel[popover]::backdrop { background: var(--lui-overlay); }
