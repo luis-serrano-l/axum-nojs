@@ -812,5 +812,11 @@ loco-rs source (fetch it into `~/.cargo/registry` with a scratch crate) before r
   script, the enhancement one, and renders in Blitz to `tests/shots/loco-*.png`; update and
   delete redirect. Blitz leaves the textarea and date value blank (FINDINGS; the HTML is
   asserted).
-- [ ] `docs/loco.md` and a README section: install, the initializer line, a controller, a
+- [x] `docs/loco.md` and a README section: install, the initializer line, a controller, a
   form with validation, the generator.
+  Done: `docs/loco.md` now covers install (git dependency plus `maud`), the initializer line,
+  a controller (`Result<Page>`/`Result<Redirect>`, PRG, flash), a form with validation
+  (`FieldErrors` and `Submitted`), sign-in without script (JWT from a cookie), the generator
+  (what it writes and needs, field kinds) and the Loco settings that affect pages
+  (`secure_headers` presets, `csp`). README has a "Use with Loco" section linking both the
+  doc and `examples/loco-app`.
