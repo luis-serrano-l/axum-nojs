@@ -241,9 +241,10 @@ there is no second request for CSS, and no script is required.
 
 For comparison, `maud-ui` 0.20.3 (the same stack and look) ships 313 KB of CSS (44 KB gzipped)
 and needs an 89 KB script (24 KB gzipped) plus htmx. Two tests keep these numbers honest: the
-stylesheet stays under 72 KB, and every demo page under 104 KB (152 KB for the shadow-DOM
+stylesheet stays under 88 KB, and every demo page under 120 KB (168 KB for the shadow-DOM
 stream) in `cargo test`. (Before M29 added the blocks, the chart and six more components, the
-same limits were 64, 96 and 128 KB.)
+same limits were 64, 96 and 128 KB; M30's colour scales, depth tokens and motion raised them
+from 72, 104 and 152 KB.)
 
 ### How fast an update lands
 

@@ -912,9 +912,10 @@ mod tests {
     /// 10.3 KB gzipped at M26; README "What a page weighs").
     #[test]
     fn stylesheet_stays_under_its_budget() {
-        // 64 KB until M29 added blocks, a chart and six components (README: "What a page weighs").
+        // 64 KB until M29 added blocks, a chart and six components, 72 KB until M30's colour
+        // scales, depth tokens and motion (README: "What a page weighs").
         assert!(
-            stylesheet().len() < 72 * 1024,
+            stylesheet().len() < 88 * 1024,
             "stylesheet() is {} bytes",
             stylesheet().len()
         );

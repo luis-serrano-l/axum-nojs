@@ -52,7 +52,10 @@ every surface in both schemes clears 4.5:1.
 | `--lui-radius` | `0.5rem` | Corners of cards, dialogs and popovers. |
 | `--lui-radius-sm` | radius − 2px | Not a `Tokens` field, derived: corners of buttons, inputs, chips, `<code>`. |
 | `--lui-radius-lg` | radius + 4px | Not a `Tokens` field, derived: corners of cards, sheets and large panels. |
-| `--lui-shadow-xs`, `--lui-shadow-lg` | shadcn's | Not `Tokens` fields: the shadow under controls and under floating layers (dialogs, popovers, menus, toasts). Same in both schemes. |
+| `--lui-shadow-xs` … `-lg` | stacked | Not `Tokens` fields, per scheme (`layout::DEPTH_LIGHT`, `DEPTH_DARK`): a tight contact shadow over soft ambient ones. `xs` under controls, `sm` under cards, `md` under popovers and menus, `lg` under dialogs, sheets and toasts. Dark ones are deeper, since a soft shadow barely shows on a near-black page. |
+| `--lui-highlight` | inset top edge | Not a `Tokens` field: `inset 0 1px 0` white at 60% (light) or 7% (dark), added to a raised surface's `box-shadow` so it reads as lit from above. |
+| `--lui-gradient-primary` | brand 9 → 11 / 9 → 8 | Not a `Tokens` field: an oklch gradient for primary fills. Use it as `background-image` over `background-color: var(--lui-primary)`, so Chrome before 111 (no `in oklch`) keeps the flat fill. White text clears 4.5:1 over both stops (tested). |
+| `--lui-gradient-ring` | brand 11 → 8 | Not a `Tokens` field: the gradient of focus rings and gradient borders. |
 | `--lui-space` | `8px` | The unit every gap, margin and padding is a multiple of (`calc(var(--lui-space) * 3)`). |
 | `--lui-space-1` … `-8` | 4px steps | Not `Tokens` fields, derived from `--lui-space`: steps 1, 2, 3, 4, 6 and 8 are that many halves of it (4, 8, 12, 16, 24, 32px by default). The gaps of `ui.stack`, `ui.cluster`, `ui.grid` and `ui.split` (`.gap(n)`). |
 | `--lui-busy` | `0.6` | Not a `Tokens` field: the opacity of a swap root or form while the enhancement script has a request in flight (`[data-lui-busy]`). Set it to `1` on `:root` or on one root to turn the fade off. |

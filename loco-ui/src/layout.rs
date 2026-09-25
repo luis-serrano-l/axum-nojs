@@ -204,6 +204,36 @@ impl Scale {
     }
 }
 
+/// Depth and gradients for the light scheme, emitted after its colours. Each shadow stacks a
+/// tight contact shadow over softer ambient ones, as Linear and Radix Themes do:
+/// `--lui-shadow-xs` under controls, `-sm` under cards, `-md` under popovers and menus, `-lg`
+/// under dialogs, sheets and toasts. `--lui-highlight` is an inset top edge for raised
+/// surfaces (add it to their `box-shadow`). The gradients run between brand steps, in oklch:
+/// `--lui-gradient-primary` fills primary buttons (put it in `background-image` over a
+/// `background-color: var(--lui-primary)`, so a browser without `in oklch`, Chrome before 111,
+/// keeps the flat fill), `--lui-gradient-ring` draws focus rings and gradient borders.
+pub const DEPTH_LIGHT: &str = "  --lui-shadow-xs: 0 1px 1px rgb(0 0 0 / 0.04), 0 1px 2px rgb(0 0 0 / 0.06);
+  --lui-shadow-sm: 0 1px 2px rgb(0 0 0 / 0.06), 0 2px 6px -1px rgb(0 0 0 / 0.06);
+  --lui-shadow-md: 0 1px 2px rgb(0 0 0 / 0.05), 0 4px 8px -2px rgb(0 0 0 / 0.08), 0 12px 20px -6px rgb(0 0 0 / 0.08);
+  --lui-shadow-lg: 0 1px 3px rgb(0 0 0 / 0.06), 0 8px 16px -4px rgb(0 0 0 / 0.1), 0 24px 48px -12px rgb(0 0 0 / 0.18);
+  --lui-highlight: inset 0 1px 0 rgb(255 255 255 / 0.6);
+  --lui-gradient-primary: linear-gradient(in oklch to bottom, var(--lui-brand-9), var(--lui-brand-11));
+  --lui-gradient-ring: linear-gradient(in oklch 135deg, var(--lui-brand-11), var(--lui-brand-8));
+";
+
+/// [`DEPTH_LIGHT`] for the dark scheme: deeper ambient shadows (a soft black shadow barely
+/// shows on a near-black page), a fainter highlight that reads as a lit top edge, and the
+/// primary gradient running from step 9 down to the darker step 8, so white text holds 4.5:1
+/// over all of it.
+pub const DEPTH_DARK: &str = "  --lui-shadow-xs: 0 1px 1px rgb(0 0 0 / 0.3), 0 1px 2px rgb(0 0 0 / 0.4);
+  --lui-shadow-sm: 0 1px 2px rgb(0 0 0 / 0.4), 0 2px 8px -1px rgb(0 0 0 / 0.4);
+  --lui-shadow-md: 0 1px 2px rgb(0 0 0 / 0.4), 0 6px 12px -3px rgb(0 0 0 / 0.5), 0 16px 28px -8px rgb(0 0 0 / 0.5);
+  --lui-shadow-lg: 0 2px 4px rgb(0 0 0 / 0.4), 0 12px 24px -6px rgb(0 0 0 / 0.6), 0 32px 64px -16px rgb(0 0 0 / 0.7);
+  --lui-highlight: inset 0 1px 0 rgb(255 255 255 / 0.07);
+  --lui-gradient-primary: linear-gradient(in oklch to bottom, var(--lui-brand-9), var(--lui-brand-8));
+  --lui-gradient-ring: linear-gradient(in oklch 135deg, var(--lui-brand-11), var(--lui-brand-8));
+";
+
 /// Every `--lui-*` token: the two scales, a light and a dark palette of roles over them, and
 /// the two shape tokens. `Default` is a Linear-like theme: Radix slate for the grays and
 /// indigo for the brand, with status colours from Radix Colors step 11 (the step made for
@@ -220,9 +250,8 @@ pub struct Tokens {
     /// Colours for `prefers-color-scheme: dark` and for `data-theme="dark"`.
     pub dark: Palette,
     /// Corner radius of dialogs and popovers (`--lui-radius`); controls use
-    /// `--lui-radius-sm` (2px less) and cards `--lui-radius-lg` (4px more). The two
-    /// shadows, `--lui-shadow-xs` (controls) and `--lui-shadow-lg` (floating layers), are
-    /// emitted beside them and are the same in both schemes, as in shadcn/ui.
+    /// `--lui-radius-sm` (2px less) and cards `--lui-radius-lg` (4px more). The depth tokens
+    /// are emitted per scheme beside the colours: see [`DEPTH_LIGHT`].
     pub radius: &'static str,
     /// The spacing unit every gap and padding is a multiple of (`--lui-space`). The scale
     /// `--lui-space-{1,2,3,4,6,8}` is derived from it: step n is n/2 units (4px each by
@@ -293,10 +322,11 @@ impl Tokens {
             Scale::declarations(&pick(&self.gray), "gray")
                 + &Scale::declarations(&pick(&self.brand), "brand")
                 + &p.declarations()
+                + if dark { DEPTH_DARK } else { DEPTH_LIGHT }
         };
         let (light, dark) = (scheme(&self.light, false), scheme(&self.dark, true));
         format!(
-            ":root {{\n  color-scheme: light dark;\n{light}  --lui-radius: {}; --lui-space: {};\n  --lui-space-1: calc(var(--lui-space) * 0.5); --lui-space-2: var(--lui-space); --lui-space-3: calc(var(--lui-space) * 1.5);\n  --lui-space-4: calc(var(--lui-space) * 2); --lui-space-6: calc(var(--lui-space) * 3); --lui-space-8: calc(var(--lui-space) * 4);\n  --lui-radius-sm: max(0px, var(--lui-radius) - 2px); --lui-radius-lg: calc(var(--lui-radius) + 4px);\n  --lui-shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.05);\n  --lui-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);\n  --lui-overlay: rgb(0 0 0 / 0.5);\n}}\n\
+            ":root {{\n  color-scheme: light dark;\n{light}  --lui-radius: {}; --lui-space: {};\n  --lui-space-1: calc(var(--lui-space) * 0.5); --lui-space-2: var(--lui-space); --lui-space-3: calc(var(--lui-space) * 1.5);\n  --lui-space-4: calc(var(--lui-space) * 2); --lui-space-6: calc(var(--lui-space) * 3); --lui-space-8: calc(var(--lui-space) * 4);\n  --lui-radius-sm: max(0px, var(--lui-radius) - 2px); --lui-radius-lg: calc(var(--lui-radius) + 4px);\n  --lui-overlay: rgb(0 0 0 / 0.5);\n}}\n\
              @media (prefers-color-scheme: dark) {{\n  :root:not([data-theme=\"light\"]) {{\n{dark}  }}\n}}\n\
              :root[data-theme=\"dark\"] {{\n  color-scheme: dark;\n{dark}}}\n\
              :root[data-theme=\"light\"] {{ color-scheme: light; }}\n",
@@ -638,6 +668,32 @@ mod tests {
             }
         }
         assert!(failed.is_empty(), "{failed:#?}");
+    }
+
+    /// White text stays readable over every stop of the primary gradient, in both schemes.
+    #[test]
+    fn on_primary_clears_4_5_to_1_over_the_gradient() {
+        let t = Tokens::default();
+        for (dark, depth, p) in [(false, DEPTH_LIGHT, &t.light), (true, DEPTH_DARK, &t.dark)] {
+            let line = depth
+                .lines()
+                .find(|l| l.contains("--lui-gradient-primary"))
+                .unwrap();
+            let stops: Vec<&str> = line
+                .split("var(")
+                .skip(1)
+                .map(|v| v.split(')').next().unwrap())
+                .collect();
+            assert_eq!(stops.len(), 2, "{line}");
+            for stop in stops {
+                let bg = t.color(dark, &format!("var({stop})")).unwrap();
+                let r = contrast(&t.color(dark, p.on_primary).unwrap(), &bg);
+                assert!(
+                    r >= 4.5,
+                    "on_primary over {stop} is {r:.2}:1 (dark: {dark})"
+                );
+            }
+        }
     }
 
     #[test]

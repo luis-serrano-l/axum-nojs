@@ -1239,7 +1239,7 @@ shadows and motion chosen. The no-script rules are unchanged:
   become aliases onto the steps, so components and `--lui-*` names do not change. Colours are
   written in oklch, and every text/background pair must still clear 4.5:1 (the existing
   contrast test).
-- [ ] Depth and gradient tokens:
+- [x] Depth and gradient tokens:
   - `--lui-shadow-{xs,sm,md,lg}` become stacked shadows (a tight contact shadow plus a soft
     ambient one).
   - New `--lui-highlight` is an inset top highlight for raised surfaces.

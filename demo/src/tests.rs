@@ -75,11 +75,13 @@ async fn pages_ship_only_the_enhancement_script() {
             // A streamed page with declarative shadow DOM carries the stylesheet twice
             // (styles do not cross into the shadow root), so it gets its own budget. Both were
             // raised in M29 (from 128 and 96 KB) as blocks, a chart and six components joined
-            // the one stylesheet (README: "What a page weighs").
+            // the one stylesheet (README: "What a page weighs"), and again in M30 (from 152
+            // and 104 KB) for the colour scales, depth tokens and motion; M30's budget box
+            // holds that growth under 15 KB gzipped.
             let budget = if html.contains("shadowrootmode") {
-                152
+                168
             } else {
-                104
+                120
             } * 1024;
             assert!(
                 html.len() < budget,
