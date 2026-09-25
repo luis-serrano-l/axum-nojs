@@ -7,7 +7,7 @@ use axum::{
     http::HeaderMap,
     routing::{get, post},
 };
-use loco_ui::layout::{Palette, Tokens};
+use loco_ui::layout::{Palette, Scale, Tokens};
 use loco_ui::prelude::*;
 use serde::Deserialize;
 
@@ -373,6 +373,8 @@ pub(crate) const LAYERS: [(&str, &str, &[&str]); 6] = [
 
 /// The second palette from `docs/theming.md`: warm paper, copper primary, amber in the dark.
 const LINEN: Tokens = Tokens {
+    gray: Scale::SLATE,
+    brand: Scale::INDIGO,
     light: Palette {
         bg: "#f4efe6",
         fg: "#1d1a17",
@@ -388,7 +390,9 @@ const LINEN: Tokens = Tokens {
         on_primary: "#ffffff",
         input: "#d6cdbf",
         ring: "#b5764f",
+        link: "#8a3b12",
         danger: "#a0261c",
+        on_danger: "#ffffff",
         ok: "#2f6b3a",
         warn: "#7a5500",
     },
@@ -407,7 +411,9 @@ const LINEN: Tokens = Tokens {
         on_primary: "#1a0f06",
         input: "#4a4038",
         ring: "#a8683a",
+        link: "#e8965a",
         danger: "#ff8f85",
+        on_danger: "#1a0f06",
         ok: "#8fd39a",
         warn: "#f0c060",
     },

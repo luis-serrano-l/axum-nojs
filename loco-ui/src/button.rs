@@ -502,8 +502,8 @@ button, .lui-button {
 button:hover, .lui-button:hover { background: var(--lui-accent); color: var(--lui-on-accent); }
 button.lui-primary, .lui-button.lui-button-primary { background: var(--lui-primary); color: var(--lui-on-primary); border-color: transparent; }
 button.lui-primary:hover, .lui-button.lui-button-primary:hover { background: color-mix(in srgb, var(--lui-primary) 90%, transparent); color: var(--lui-on-primary); }
-button.lui-danger, .lui-button.lui-button-danger { background: var(--lui-danger); color: var(--lui-on-primary); border-color: transparent; }
-button.lui-danger:hover, .lui-button.lui-button-danger:hover { background: color-mix(in srgb, var(--lui-danger) 90%, transparent); color: var(--lui-on-primary); }
+button.lui-danger, .lui-button.lui-button-danger { background: var(--lui-danger); color: var(--lui-on-danger); border-color: transparent; }
+button.lui-danger:hover, .lui-button.lui-button-danger:hover { background: color-mix(in srgb, var(--lui-danger) 90%, transparent); color: var(--lui-on-danger); }
 .lui-button.lui-button-ghost { background: transparent; border-color: transparent; box-shadow: none; }
 .lui-button.lui-button-ghost:hover { background: var(--lui-accent); }
 .lui-button.lui-button-small { min-height: 2rem; padding: 0.25rem 0.75rem; gap: 0.375rem; }

@@ -2,7 +2,7 @@
 
 Every colour, corner and gap in `loco-ui` is a `--lui-*` custom property. The components never
 name a colour of their own (a test in `loco-ui/src/lib.rs` fails if one does), so a theme is
-nineteen values, not a stylesheet. `layout::Tokens` holds them; `ui.page(..).tokens(&t)` emits them once
+two colour scales and a handful of values, not a stylesheet. `layout::Tokens` holds them; `ui.page(..).tokens(&t)` emits them once
 per page.
 
 To pick them by eye, the demo's theme builder (`/theme`, `cargo run -p demo`) has a colour input
@@ -13,28 +13,42 @@ no script: the form sends the colours in the URL, so a theme can be shared as a 
 
 ## The tokens
 
-The roles are shadcn/ui's, under `--lui-*` names. The default is shadcn's neutral (zinc)
-theme; the status colours are Radix Colors step 11, the step made for text.
+Colour starts from two 12-step scales after Radix Colors, `Tokens::gray` and
+`Tokens::brand` (`layout::Scale`), written in oklch and emitted as hex (Chrome 109 has no
+`oklch()`). Each step has one job: 1–2 backgrounds, 3–5 component surfaces (normal, hover,
+pressed), 6–8 borders and the focus ring, 9–10 solid fills, 11–12 text. The default is a
+Linear-like theme: Radix slate for the grays (`Scale::SLATE`) and indigo for the brand
+(`Scale::INDIGO`). Swap a scale and every role built on it follows:
+`Tokens { brand: my_scale, ..Default::default() }`.
+
+The roles are shadcn/ui's, under `--lui-*` names, and by default each is an alias onto a step
+(`--lui-bg: var(--lui-gray-1)`). The status colours are Radix Colors step 11, the step made for
+text (light green and amber a shade darker). A test in `layout.rs` checks every text role on
+every surface in both schemes clears 4.5:1.
 
 | Token | Default light / dark | What it affects |
 |---|---|---|
-| `--lui-bg` | `#ffffff` / `#09090b` | The page background. The sticky table header and the popover fallback paint it too, so they cover rows that scroll under them. |
-| `--lui-fg` | `#09090b` / `#fafafa` | Body text, headings, tab titles, sorted column header, the dialog and flash text, the wordmark. |
-| `--lui-muted` | `#71717a` / `#a1a1aa` | Secondary text: notes, table headers, the wizard's step list and legends, streamed placeholders, the "built on" line, the tagline. |
-| `--lui-line` | `#e4e4e7` / `#27272a` | Every 1px rule: dialogs, popovers, cards, accordion and wizard fieldsets, table rules, the pager list. |
-| `--lui-surface` | `#fafafa` / `#18181b` | Quiet raised areas: `<code>`, the demo stage, open accordion panels, streamed slots. |
-| `--lui-card` | `#ffffff` / `#18181b` | Cards and stat tiles. |
-| `--lui-popover` | `#ffffff` / `#18181b` | Floating layers: dialogs, drawers, popovers, menus, the command palette, toasts. |
-| `--lui-secondary` | `#f4f4f5` / `#27272a` | Secondary buttons, the tab list, chips and badges, skeleton blocks. |
-| `--lui-accent` | `#f4f4f5` / `#27272a` | The hover and highlighted surface: menu items, ghost buttons, table rows, the active palette entry. |
-| `--lui-on-accent` | `#18181b` / `#fafafa` | Text on the accent surface. |
-| `--lui-primary` | `#18181b` / `#e4e4e7` | Links, primary buttons, the current page, the current wizard step, the range slider. |
-| `--lui-on-primary` | `#fafafa` / `#18181b` | Text on the primary colour and on danger buttons. |
-| `--lui-input` | `#e4e4e7` / `#3f3f46` | Borders of inputs, selects, textareas, checkboxes and outline buttons. |
-| `--lui-ring` | `#a1a1aa` / `#71717a` | The focus ring: 3px at 50% opacity, plus the focused control's border at full strength. |
+| `--lui-gray-1` … `-12` | slate | The neutral scale the roles below alias. |
+| `--lui-brand-1` … `-12` | indigo | The brand scale: `primary` is step 9, `ring` step 8, `link` step 11. |
+| `--lui-bg` | gray 1: `#fcfcfd` / `#111113` | The page background. The sticky table header and the popover fallback paint it too, so they cover rows that scroll under them. |
+| `--lui-fg` | gray 12: `#1c2024` / `#edeef0` | Body text, headings, tab titles, sorted column header, the dialog and flash text, the wordmark. |
+| `--lui-muted` | gray 11: `#60646c` / `#b0b4ba` | Secondary text: notes, table headers, the wizard's step list and legends, streamed placeholders, the "built on" line, the tagline. |
+| `--lui-line` | gray 6: `#d9d9e0` / `#363a3f` | Every 1px rule: dialogs, popovers, cards, accordion and wizard fieldsets, table rules, the pager list. |
+| `--lui-surface` | gray 2: `#f9f9fb` / `#18191b` | Quiet raised areas: `<code>`, the demo stage, open accordion panels, streamed slots. |
+| `--lui-card` | gray 1 / gray 2 | Cards and stat tiles. |
+| `--lui-popover` | gray 1 / gray 2 | Floating layers: dialogs, drawers, popovers, menus, the command palette, toasts. |
+| `--lui-secondary` | gray 3: `#f0f0f3` / `#212225` | Secondary buttons, the tab list, chips and badges, skeleton blocks. |
+| `--lui-accent` | gray 3 / gray 4 (`#272a2d`) | The hover and highlighted surface: menu items, ghost buttons, table rows, the active palette entry. |
+| `--lui-on-accent` | gray 12 | Text on the accent surface. |
+| `--lui-primary` | brand 9: `#3e63dd` | Primary buttons, the current page, the current wizard step, the range slider, checked controls. |
+| `--lui-on-primary` | `#ffffff` | Text on the primary colour. |
+| `--lui-link` | brand 11: `#3a5bc7` / `#9eb1ff` | Link text: the brand's text step, since the solid step 9 is too dark to read on the dark background. |
+| `--lui-input` | gray 7: `#cdced6` / `#43484e` | Borders of inputs, selects, textareas, checkboxes and outline buttons. |
+| `--lui-ring` | brand 8: `#8da4ef` / `#435db1` | The focus ring: 3px at 50% opacity, plus the focused control's border at full strength. |
 | `--lui-danger` | `#ce2c31` / `#ff9592` | Form validation messages and `aria-invalid` / `:user-invalid` rings, danger buttons, the "no" cells on `/caps`, danger flashes. |
-| `--lui-ok` | `#218358` / `#3dd68c` | The "yes" cells on `/caps`, ok flashes; free for your own success states. |
-| `--lui-warn` | `#ab6400` / `#ffca16` | Warning flashes. |
+| `--lui-on-danger` | gray 1 | Text on danger buttons and badges. |
+| `--lui-ok` | `#1f7d53` / `#3dd68c` | The "yes" cells on `/caps`, ok flashes; free for your own success states. |
+| `--lui-warn` | `#9c5b00` / `#ffca16` | Warning flashes. |
 | `--lui-radius` | `0.5rem` | Corners of cards, dialogs and popovers. |
 | `--lui-radius-sm` | radius − 2px | Not a `Tokens` field, derived: corners of buttons, inputs, chips, `<code>`. |
 | `--lui-radius-lg` | radius + 4px | Not a `Tokens` field, derived: corners of cards, sheets and large panels. |
@@ -87,20 +101,24 @@ copper": warm paper, near-black text, a copper primary that turns to amber in th
 
 ```rust
 use loco_ui::prelude::*;
-use loco_ui::layout::{Palette, Tokens};
+use loco_ui::layout::{Palette, Scale, Tokens};
 
 const LINEN: Tokens = Tokens {
+    gray: Scale::SLATE,
+    brand: Scale::INDIGO,
     light: Palette {
         bg: "#f4efe6", fg: "#1d1a17", muted: "#5d574f", line: "#d6cdbf", surface: "#fffdf9",
         card: "#fffdf9", popover: "#fffdf9", secondary: "#ebe3d6", accent: "#ebe3d6",
         on_accent: "#1d1a17", primary: "#8a3b12", on_primary: "#ffffff", input: "#d6cdbf",
-        ring: "#b5764f", danger: "#a0261c", ok: "#2f6b3a", warn: "#7a5500",
+        ring: "#b5764f", link: "#8a3b12", danger: "#a0261c", on_danger: "#ffffff",
+        ok: "#2f6b3a", warn: "#7a5500",
     },
     dark: Palette {
         bg: "#161311", fg: "#ece6dc", muted: "#a59c90", line: "#3a332c", surface: "#1f1b18",
         card: "#1f1b18", popover: "#1f1b18", secondary: "#2b2521", accent: "#2b2521",
         on_accent: "#ece6dc", primary: "#e8965a", on_primary: "#1a0f06", input: "#4a4038",
-        ring: "#a8683a", danger: "#ff8f85", ok: "#8fd39a", warn: "#f0c060",
+        ring: "#a8683a", link: "#e8965a", danger: "#ff8f85", on_danger: "#1a0f06",
+        ok: "#8fd39a", warn: "#f0c060",
     },
     radius: "3px",
     space: "8px",

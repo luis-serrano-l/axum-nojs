@@ -10,7 +10,7 @@ use axum::{
     response::{IntoResponse, Response},
     routing::get,
 };
-use loco_ui::layout::{Palette, Tokens};
+use loco_ui::layout::Tokens;
 use loco_ui::prelude::*;
 
 pub(crate) fn routes() -> Router {
@@ -32,9 +32,11 @@ const ROLES: [(&str, &str); 9] = [
     ("danger", "Danger"),
 ];
 
-/// The default value of `role` in the built-in palette.
-fn default(p: &Palette, role: &str) -> &'static str {
-    match role {
+/// The default value of `role` in the built-in palette, as `#rrggbb` (the defaults are
+/// aliases onto the scales; a colour input needs the colour).
+fn default(t: &Tokens, dark: bool, role: &str) -> String {
+    let p = if dark { &t.dark } else { &t.light };
+    let v = match role {
         "bg" => p.bg,
         "fg" => p.fg,
         "muted" => p.muted,
@@ -44,7 +46,8 @@ fn default(p: &Palette, role: &str) -> &'static str {
         "accent" => p.accent,
         "on_accent" => p.on_accent,
         _ => p.danger,
-    }
+    };
+    t.color(dark, v).unwrap_or_default()
 }
 
 /// The chosen theme, read from the query; anything not a `#rrggbb` colour is the default.
@@ -59,21 +62,21 @@ fn chosen(ui: &Ui) -> Chosen {
     let hex = |v: &str| {
         v.len() == 7 && v.starts_with('#') && v[1..].chars().all(|c| c.is_ascii_hexdigit())
     };
-    let read = |scheme: &str, p: &Palette| {
+    let read = |scheme: &str, dark: bool| {
         ROLES
             .iter()
             .map(|(role, _)| {
                 let v = ui.param(&format!("{scheme}.{role}")).filter(|v| hex(v));
                 (
                     *role,
-                    v.map_or_else(|| default(p, role).to_string(), str::to_lowercase),
+                    v.map_or_else(|| default(&t, dark, role), str::to_lowercase),
                 )
             })
             .collect()
     };
     Chosen {
-        light: read("light", &t.light),
-        dark: read("dark", &t.dark),
+        light: read("light", false),
+        dark: read("dark", true),
         radius: ui
             .param("radius")
             .and_then(|r| r.parse().ok())
@@ -101,6 +104,8 @@ fn declarations(roles: &[(&str, String)]) -> String {
         ("secondary", "accent"),
         ("input", "line"),
         ("ring", "muted"),
+        ("link", "primary"),
+        ("on_danger", "bg"),
     ] {
         out.push(format!("--lui-{derived}: {};", get(from)));
     }
@@ -213,7 +218,7 @@ mod tests {
         let out = css(&c);
         assert!(out.contains("--lui-primary: #2f5bea;"), "{out}");
         assert!(
-            out.contains("--lui-bg: #ffffff;") && !out.contains("red;x"),
+            out.contains("--lui-bg: #fcfcfd;") && !out.contains("red;x"),
             "{out}"
         );
         assert!(out.contains("--lui-radius: 24px;"), "{out}");

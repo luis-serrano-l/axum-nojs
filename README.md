@@ -211,9 +211,12 @@ component gives the HTML to another template engine.
   (`Caps::from_cookie_header`, `Caps::from_query`, `caps::beacon_cookie`); Axum only wraps them.
 - Output HTML is semantic with one `lui-<component>` class per root. `curl` any page and read it.
 - CSS lives beside its component as `const CSS`. Theming is via `--lui-*` custom properties only
-  (shadcn/ui's roles: `bg`, `fg`, `muted`, `line`, `surface`, `card`, `popover`, `secondary`,
-  `accent`, `on-accent`, `primary`, `on-primary`, `input`, `ring`, `danger`, `ok`, `warn`, `radius`, `space`;
-  the default is shadcn's neutral zinc theme, with system fonts and Radix step-11 status colours).
+  (two 12-step scales after Radix Colors, `--lui-gray-1…12` and `--lui-brand-1…12`, written in
+  oklch and emitted as hex; shadcn/ui's roles alias their steps: `bg`, `fg`, `muted`, `line`,
+  `surface`, `card`, `popover`, `secondary`, `accent`, `on-accent`, `primary`, `on-primary`,
+  `input`, `ring`, `link`, `danger`, `on-danger`, `ok`, `warn`, plus `radius` and `space`; the
+  default is Radix slate and indigo, with system fonts and Radix step-11 status colours, and a
+  test holds every text role to 4.5:1 on every surface in both schemes).
   `Tokens::css()` also derives `--lui-radius-sm`/`-lg`, `--lui-shadow-xs`/`-lg` and
   `--lui-overlay` from them; `--lui-font-sans` and `--lui-font-mono` can be overridden on `:root`.
   `layout::Tokens` holds them for light and dark, `ui.page(..).tokens(&t)` applies another set

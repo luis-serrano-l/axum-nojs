@@ -31,7 +31,10 @@ use maud::{DOCTYPE, Markup, PreEscaped, Render, html};
 use crate::{Caps, Theme, caps, enhance, stylesheet};
 
 /// One colour scheme's worth of tokens, as CSS colour values. The roles follow shadcn/ui:
-/// `primary` is the brand colour, `accent` is the quiet surface under a hovered item.
+/// `primary` is the brand colour, `accent` is the quiet surface under a hovered item. By
+/// default each role is an alias onto a step of [`Tokens::gray`] or [`Tokens::brand`]
+/// (`var(--lui-gray-1)`), so changing a scale changes every role built on it; any CSS colour
+/// works in its place.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Palette {
     /// Page background (`--lui-bg`).
@@ -54,7 +57,7 @@ pub struct Palette {
     pub accent: &'static str,
     /// Text on the accent surface (`--lui-on-accent`).
     pub on_accent: &'static str,
-    /// Links, primary buttons, the current page and step (`--lui-primary`).
+    /// Primary buttons, checked controls, the current page and step (`--lui-primary`).
     pub primary: &'static str,
     /// Text on the primary colour (`--lui-on-primary`).
     pub on_primary: &'static str,
@@ -62,8 +65,13 @@ pub struct Palette {
     pub input: &'static str,
     /// The focus ring, drawn at 50% opacity (`--lui-ring`).
     pub ring: &'static str,
+    /// Link text (`--lui-link`): the brand's text step, which clears 4.5:1 on the background
+    /// where the solid `primary` may not (in the dark scheme it does not).
+    pub link: &'static str,
     /// Errors and "no" (`--lui-danger`).
     pub danger: &'static str,
+    /// Text on a danger fill: danger buttons and badges (`--lui-on-danger`).
+    pub on_danger: &'static str,
     /// Success and "yes" (`--lui-ok`).
     pub ok: &'static str,
     /// Warnings: worked, but look (`--lui-warn`).
@@ -74,7 +82,7 @@ impl Palette {
     /// The custom property declarations for this palette, one per line.
     fn declarations(&self) -> String {
         format!(
-            "  --lui-bg: {}; --lui-fg: {}; --lui-muted: {}; --lui-line: {};\n  --lui-surface: {}; --lui-card: {}; --lui-popover: {}; --lui-secondary: {};\n  --lui-accent: {}; --lui-on-accent: {}; --lui-primary: {}; --lui-on-primary: {};\n  --lui-input: {}; --lui-ring: {};\n  --lui-danger: {}; --lui-ok: {}; --lui-warn: {};\n",
+            "  --lui-bg: {}; --lui-fg: {}; --lui-muted: {}; --lui-line: {};\n  --lui-surface: {}; --lui-card: {}; --lui-popover: {}; --lui-secondary: {};\n  --lui-accent: {}; --lui-on-accent: {}; --lui-primary: {}; --lui-on-primary: {};\n  --lui-input: {}; --lui-ring: {}; --lui-link: {};\n  --lui-danger: {}; --lui-on-danger: {}; --lui-ok: {}; --lui-warn: {};\n",
             self.bg,
             self.fg,
             self.muted,
@@ -89,19 +97,124 @@ impl Palette {
             self.on_primary,
             self.input,
             self.ring,
+            self.link,
             self.danger,
+            self.on_danger,
             self.ok,
             self.warn
         )
     }
 }
 
-/// Every `--lui-*` token: a light and a dark palette plus the two shape tokens.
-/// `Default` is shadcn/ui's neutral (zinc) theme: white and zinc-950, a near-black primary
-/// that turns near-white in the dark scheme, with status colours from Radix Colors step 11
-/// (the step made for text, so each clears 4.5:1 on the background).
+/// A 12-step colour scale after Radix Colors, one array per scheme, each step written as a
+/// CSS colour (`oklch(L C H)` or `#rrggbb`). Each step has one job:
+///
+/// | Steps | Job |
+/// |-------|-----|
+/// | 1–2 | App and subtle backgrounds (page, cards, code) |
+/// | 3–5 | Component surfaces: normal, hover, pressed |
+/// | 6–8 | Borders: rules, inputs, the focus ring |
+/// | 9–10 | Solid fills and their hover |
+/// | 11–12 | Muted and full-contrast text |
+///
+/// Emitted as `--lui-<name>-1` … `--lui-<name>-12`. oklch steps are converted to hex on the
+/// way out, since Chrome 109 has no `oklch()`; anything else is emitted as written.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Scale {
+    /// Steps 1–12 for the light scheme.
+    pub light: [&'static str; 12],
+    /// Steps 1–12 for the dark scheme.
+    pub dark: [&'static str; 12],
+}
+
+impl Scale {
+    /// Radix slate: a gray with a little blue in it, as Linear's.
+    pub const SLATE: Scale = Scale {
+        light: [
+            "oklch(0.991 0.001 286.4)",
+            "oklch(0.983 0.003 286.4)",
+            "oklch(0.956 0.004 286.3)",
+            "oklch(0.932 0.005 286.3)",
+            "oklch(0.910 0.007 277.2)",
+            "oklch(0.887 0.010 286.2)",
+            "oklch(0.853 0.011 280.4)",
+            "oklch(0.794 0.016 277.8)",
+            "oklch(0.645 0.016 277.7)",
+            "oklch(0.611 0.015 272.6)",
+            "oklch(0.502 0.014 264.4)",
+            "oklch(0.241 0.010 248.2)",
+        ],
+        dark: [
+            "oklch(0.179 0.004 286.0)",
+            "oklch(0.213 0.004 264.5)",
+            "oklch(0.252 0.006 271.2)",
+            "oklch(0.283 0.007 248.1)",
+            "oklch(0.312 0.008 255.6)",
+            "oklch(0.347 0.010 254.0)",
+            "oklch(0.399 0.012 252.9)",
+            "oklch(0.489 0.016 251.7)",
+            "oklch(0.537 0.015 262.3)",
+            "oklch(0.583 0.015 266.6)",
+            "oklch(0.769 0.010 258.3)",
+            "oklch(0.949 0.003 264.5)",
+        ],
+    };
+
+    /// Radix indigo: the brand scale by default, close to Linear's blue-violet.
+    pub const INDIGO: Scale = Scale {
+        light: [
+            "oklch(0.994 0.001 286.4)",
+            "oklch(0.982 0.008 271.3)",
+            "oklch(0.961 0.017 267.8)",
+            "oklch(0.935 0.031 269.8)",
+            "oklch(0.902 0.047 269.6)",
+            "oklch(0.862 0.068 271.1)",
+            "oklch(0.806 0.088 271.4)",
+            "oklch(0.731 0.112 270.4)",
+            "oklch(0.544 0.191 267.0)",
+            "oklch(0.511 0.195 266.6)",
+            "oklch(0.509 0.172 267.2)",
+            "oklch(0.313 0.086 268.6)",
+        ],
+        dark: [
+            "oklch(0.191 0.025 276.5)",
+            "oklch(0.209 0.030 274.8)",
+            "oklch(0.272 0.071 268.0)",
+            "oklch(0.318 0.095 267.2)",
+            "oklch(0.362 0.104 267.0)",
+            "oklch(0.403 0.111 268.8)",
+            "oklch(0.449 0.120 268.9)",
+            "oklch(0.502 0.137 268.3)",
+            "oklch(0.544 0.191 267.0)",
+            "oklch(0.589 0.176 269.3)",
+            "oklch(0.776 0.114 273.0)",
+            "oklch(0.911 0.043 269.6)",
+        ],
+    };
+
+    /// `--lui-<name>-n: <colour>;` for one scheme's steps.
+    fn declarations(steps: &[&str; 12], name: &str) -> String {
+        let mut out = String::from("  ");
+        for (i, v) in steps.iter().enumerate() {
+            let v = crate::oklch::hex(v).unwrap_or_else(|| (*v).to_string());
+            out.push_str(&format!("--lui-{name}-{}: {v}; ", i + 1));
+        }
+        out.push('\n');
+        out
+    }
+}
+
+/// Every `--lui-*` token: the two scales, a light and a dark palette of roles over them, and
+/// the two shape tokens. `Default` is a Linear-like theme: Radix slate for the grays and
+/// indigo for the brand, with status colours from Radix Colors step 11 (the step made for
+/// text; the light green and amber a shade darker so they clear 4.5:1 on the subtle
+/// background too). A test checks every text role on every surface in both schemes.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Tokens {
+    /// The neutral scale (`--lui-gray-1` … `-12`): backgrounds, surfaces, lines and text.
+    pub gray: Scale,
+    /// The brand scale (`--lui-brand-1` … `-12`): primary fills, links and the focus ring.
+    pub brand: Scale,
     /// Colours for the light scheme and for `data-theme="light"`.
     pub light: Palette,
     /// Colours for `prefers-color-scheme: dark` and for `data-theme="dark"`.
@@ -120,41 +233,47 @@ pub struct Tokens {
 impl Default for Tokens {
     fn default() -> Self {
         Tokens {
+            gray: Scale::SLATE,
+            brand: Scale::INDIGO,
             light: Palette {
-                bg: "#ffffff",
-                fg: "#09090b",
-                muted: "#71717a",
-                line: "#e4e4e7",
-                surface: "#fafafa",
-                card: "#ffffff",
-                popover: "#ffffff",
-                secondary: "#f4f4f5",
-                accent: "#f4f4f5",
-                on_accent: "#18181b",
-                primary: "#18181b",
-                on_primary: "#fafafa",
-                input: "#e4e4e7",
-                ring: "#a1a1aa",
+                bg: "var(--lui-gray-1)",
+                fg: "var(--lui-gray-12)",
+                muted: "var(--lui-gray-11)",
+                line: "var(--lui-gray-6)",
+                surface: "var(--lui-gray-2)",
+                card: "var(--lui-gray-1)",
+                popover: "var(--lui-gray-1)",
+                secondary: "var(--lui-gray-3)",
+                accent: "var(--lui-gray-3)",
+                on_accent: "var(--lui-gray-12)",
+                primary: "var(--lui-brand-9)",
+                on_primary: "#ffffff",
+                input: "var(--lui-gray-7)",
+                ring: "var(--lui-brand-8)",
+                link: "var(--lui-brand-11)",
                 danger: "#ce2c31",
-                ok: "#218358",
-                warn: "#ab6400",
+                on_danger: "var(--lui-gray-1)",
+                ok: "#1f7d53",
+                warn: "#9c5b00",
             },
             dark: Palette {
-                bg: "#09090b",
-                fg: "#fafafa",
-                muted: "#a1a1aa",
-                line: "#27272a",
-                surface: "#18181b",
-                card: "#18181b",
-                popover: "#18181b",
-                secondary: "#27272a",
-                accent: "#27272a",
-                on_accent: "#fafafa",
-                primary: "#e4e4e7",
-                on_primary: "#18181b",
-                input: "#3f3f46",
-                ring: "#71717a",
+                bg: "var(--lui-gray-1)",
+                fg: "var(--lui-gray-12)",
+                muted: "var(--lui-gray-11)",
+                line: "var(--lui-gray-6)",
+                surface: "var(--lui-gray-2)",
+                card: "var(--lui-gray-2)",
+                popover: "var(--lui-gray-2)",
+                secondary: "var(--lui-gray-3)",
+                accent: "var(--lui-gray-4)",
+                on_accent: "var(--lui-gray-12)",
+                primary: "var(--lui-brand-9)",
+                on_primary: "#ffffff",
+                input: "var(--lui-gray-7)",
+                ring: "var(--lui-brand-8)",
+                link: "var(--lui-brand-11)",
                 danger: "#ff9592",
+                on_danger: "var(--lui-gray-1)",
                 ok: "#3dd68c",
                 warn: "#ffca16",
             },
@@ -169,7 +288,13 @@ impl Tokens {
     /// `prefers-color-scheme: dark` unless `data-theme="light"`, and again under
     /// `data-theme="dark"`. [`crate::stylesheet`] starts with `Tokens::default().css()`.
     pub fn css(&self) -> String {
-        let (light, dark) = (self.light.declarations(), self.dark.declarations());
+        let scheme = |p: &Palette, dark: bool| {
+            let pick = |s: &Scale| if dark { s.dark } else { s.light };
+            Scale::declarations(&pick(&self.gray), "gray")
+                + &Scale::declarations(&pick(&self.brand), "brand")
+                + &p.declarations()
+        };
+        let (light, dark) = (scheme(&self.light, false), scheme(&self.dark, true));
         format!(
             ":root {{\n  color-scheme: light dark;\n{light}  --lui-radius: {}; --lui-space: {};\n  --lui-space-1: calc(var(--lui-space) * 0.5); --lui-space-2: var(--lui-space); --lui-space-3: calc(var(--lui-space) * 1.5);\n  --lui-space-4: calc(var(--lui-space) * 2); --lui-space-6: calc(var(--lui-space) * 3); --lui-space-8: calc(var(--lui-space) * 4);\n  --lui-radius-sm: max(0px, var(--lui-radius) - 2px); --lui-radius-lg: calc(var(--lui-radius) + 4px);\n  --lui-shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.05);\n  --lui-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);\n  --lui-overlay: rgb(0 0 0 / 0.5);\n}}\n\
              @media (prefers-color-scheme: dark) {{\n  :root:not([data-theme=\"light\"]) {{\n{dark}  }}\n}}\n\
@@ -177,6 +302,25 @@ impl Tokens {
              :root[data-theme=\"light\"] {{ color-scheme: light; }}\n",
             self.radius, self.space
         )
+    }
+
+    /// `value` as `#rrggbb` in the light or dark scheme: a hex or `oklch()` colour, or a
+    /// `var(--lui-gray-n)` / `var(--lui-brand-n)` alias resolved through the scales. `None`
+    /// for anything else. The theme builder fills its colour inputs with it.
+    pub fn color(&self, dark: bool, value: &str) -> Option<String> {
+        let step = |name: &str| {
+            let rest = value.trim().strip_prefix("var(--lui-")?.strip_suffix(')')?;
+            let n: usize = rest.strip_prefix(name)?.strip_prefix('-')?.parse().ok()?;
+            let s = if name == "gray" {
+                &self.gray
+            } else {
+                &self.brand
+            };
+            let steps = if dark { s.dark } else { s.light };
+            steps.get(n.checked_sub(1)?).copied()
+        };
+        let v = step("gray").or_else(|| step("brand")).unwrap_or(value);
+        crate::oklch::hex(v)
     }
 }
 
@@ -316,7 +460,7 @@ h1 { font-size: 2.25rem; line-height: 2.5rem; letter-spacing: -0.025em; font-wei
 h2 { font-size: 1.5rem; line-height: 2rem; letter-spacing: -0.0125em; font-weight: 600; margin: 2rem 0 0.5rem; }
 h3 { font-size: 1.125rem; line-height: 1.75rem; font-weight: 600; }
 p { margin: 0 0 1rem; }
-a { color: var(--lui-primary); text-underline-offset: 0.15em; text-decoration-thickness: 1px; }
+a { color: var(--lui-link); text-underline-offset: 0.15em; text-decoration-thickness: 1px; }
 code {
   font-family: var(--lui-font-mono); font-size: 0.875em;
   background: var(--lui-surface); border: 1px solid var(--lui-line); border-radius: var(--lui-radius-sm); padding: 0.05em 0.35em;
@@ -444,3 +588,70 @@ tbody tr:hover { background: color-mix(in srgb, var(--lui-accent) 50%, transpare
   ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; }
 }
 "#;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::oklch::contrast;
+
+    /// Every text colour clears WCAG AA (4.5:1) on each surface it is drawn on, in both
+    /// schemes, for the default tokens: the roles resolve through the scales first.
+    #[test]
+    fn default_text_clears_4_5_to_1() {
+        let (t, mut failed) = (Tokens::default(), Vec::new());
+        for (dark, p) in [(false, &t.light), (true, &t.dark)] {
+            let c = |v: &str| {
+                t.color(dark, v)
+                    .unwrap_or_else(|| panic!("{v} is not a colour"))
+            };
+            let mut pairs = vec![
+                ("on_accent", p.on_accent, "accent", p.accent),
+                ("on_primary", p.on_primary, "primary", p.primary),
+                ("on_danger", p.on_danger, "danger", p.danger),
+            ];
+            // Status colours are text on the page's surfaces; chips and badges tint their own.
+            for (bn, bv) in [
+                ("bg", p.bg),
+                ("surface", p.surface),
+                ("card", p.card),
+                ("popover", p.popover),
+                ("secondary", p.secondary),
+            ] {
+                for (fname, fv) in [
+                    ("fg", p.fg),
+                    ("muted", p.muted),
+                    ("link", p.link),
+                    ("danger", p.danger),
+                    ("ok", p.ok),
+                    ("warn", p.warn),
+                ] {
+                    if bn != "secondary" || matches!(fname, "fg" | "muted" | "link") {
+                        pairs.push((fname, fv, bn, bv));
+                    }
+                }
+            }
+            for (fname, fv, bn, bv) in pairs {
+                let r = contrast(&c(fv), &c(bv));
+                if r < 4.5 {
+                    failed.push(format!("{fname} on {bn} is {r:.2}:1 (dark: {dark})"));
+                }
+            }
+        }
+        assert!(failed.is_empty(), "{failed:#?}");
+    }
+
+    #[test]
+    fn scales_are_emitted_as_hex_and_roles_alias_them() {
+        let css = Tokens::default().css();
+        assert!(css.contains("--lui-gray-12: #1c2024;"), "{css}");
+        assert!(css.contains("--lui-brand-9: #3e63dd;"));
+        assert!(css.contains("--lui-bg: var(--lui-gray-1);"));
+        assert!(!css.contains("oklch("));
+        assert_eq!(
+            Tokens::default()
+                .color(true, "var(--lui-gray-1)")
+                .as_deref(),
+            Some("#111113")
+        );
+    }
+}

@@ -133,7 +133,7 @@ pub const CSS: &str = r#"
 }
 a.lui-badge:hover { background: color-mix(in srgb, var(--lui-primary) 90%, transparent); }
 .lui-badge.lui-badge-secondary { background: var(--lui-secondary); color: var(--lui-fg); }
-.lui-badge.lui-badge-danger { background: var(--lui-danger); color: var(--lui-on-primary); }
+.lui-badge.lui-badge-danger { background: var(--lui-danger); color: var(--lui-on-danger); }
 .lui-badge.lui-badge-outline { background: transparent; color: var(--lui-fg); border-color: var(--lui-line); }
 a.lui-badge:is(.lui-badge-secondary, .lui-badge-outline):hover { background: var(--lui-accent); }
 /* The tone mixed with the text colour: darker on light, lighter on dark, AA on its tint. */

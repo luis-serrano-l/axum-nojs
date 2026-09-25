@@ -85,6 +85,7 @@ pub mod layout;
 pub mod loco;
 pub mod meter;
 pub mod nav_menu;
+mod oklch;
 pub mod paged_table;
 pub mod pager;
 pub mod palette;

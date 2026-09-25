@@ -377,7 +377,7 @@ pub const CSS: &str = r#"
 .lui-wizard-current { color: var(--lui-on-primary) !important; background: var(--lui-primary); border-color: transparent !important; }
 .lui-wizard-steps .lui-wizard-error { border-color: var(--lui-danger) !important; }
 .lui-wizard-steps .lui-wizard-error::before { content: "! " counter(lui-step) ". "; color: var(--lui-danger); font-weight: 600; }
-.lui-wizard-steps .lui-wizard-current.lui-wizard-error { background: var(--lui-danger); }
+.lui-wizard-steps .lui-wizard-current.lui-wizard-error { background: var(--lui-danger); color: var(--lui-on-danger) !important; }
 .lui-wizard-steps .lui-wizard-current.lui-wizard-error::before { color: inherit; }
 .lui-wizard-progress { display: block; width: 100%; max-width: 32rem; height: 0.5rem; border-radius: 1rem; margin: 0 0 calc(var(--lui-space) * 2); accent-color: var(--lui-primary); }
 .lui-wizard-resume { padding: 0.75rem 1rem; font-size: 0.875rem; border: 1px solid var(--lui-line); border-radius: var(--lui-radius); background: var(--lui-card); max-width: none; }

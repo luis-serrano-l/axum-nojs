@@ -1227,7 +1227,7 @@ shadows and motion chosen. The no-script rules are unchanged:
 - Paid kits are still not copied. Magic UI (MIT) and Radix Colors (MIT) may be read for
   technique.
 
-- [ ] Tokens: replace the shadcn zinc palette with 12-step gray and accent scales in
+- [x] Tokens: replace the shadcn zinc palette with 12-step gray and accent scales in
   `layout.rs`, one set for light and one for dark. Each step has one job:
   - 1–2 backgrounds
   - 3–5 component surfaces (normal, hover, pressed)
