@@ -1208,3 +1208,79 @@ every Loco API named below against loco-rs 1.2 before relying on it, as M27 did.
 - [ ] Ask to be linked from Loco's docs or discussions once the crate is published. Outward
   action: owner only (BLOCKED.md).
   Blocked on the owner: in BLOCKED.md with a suggested message; waits for the publish.
+
+## M30 · The Linear / Magic UI look
+The owner found the shadcn look (M20) simple and useful, but wanted something more modern and
+attractive. The direction was picked through questions on 2026-09-25:
+- Linear / Magic UI as the reference.
+- Layered shadows rather than hairlines.
+- Radix-style 12-step colour scales with gradient accents.
+- System fonts kept (no web font).
+- Showpiece motion, CSS only.
+- Every showpiece effect is an opt-in setter, so the defaults stay restrained.
+
+Geist (flat hairlines, calm motion) was considered and dropped because it clashes with the
+shadows and motion chosen. The no-script rules are unchanged:
+- Every effect is CSS.
+- Every effect honours `prefers-reduced-motion`.
+- Every page still works in Blitz and old Chrome 109.
+- Paid kits are still not copied. Magic UI (MIT) and Radix Colors (MIT) may be read for
+  technique.
+
+- [ ] Tokens: replace the shadcn zinc palette with 12-step gray and accent scales in
+  `layout.rs`, one set for light and one for dark. Each step has one job:
+  - 1–2 backgrounds
+  - 3–5 component surfaces (normal, hover, pressed)
+  - 6–8 borders and the focus ring
+  - 9–10 solid fills
+  - 11–12 text
+
+  The existing `Palette` roles (`card`, `popover`, `accent`, `primary`, `input`, `ring`, …)
+  become aliases onto the steps, so components and `--lui-*` names do not change. Colours are
+  written in oklch, and every text/background pair must still clear 4.5:1 (the existing
+  contrast test).
+- [ ] Depth and gradient tokens:
+  - `--lui-shadow-{xs,sm,md,lg}` become stacked shadows (a tight contact shadow plus a soft
+    ambient one).
+  - New `--lui-highlight` is an inset top highlight for raised surfaces.
+  - New `--lui-gradient-primary` and `--lui-gradient-ring` are oklch gradients built from the
+    accent scale.
+  - Dark mode gets its own shadows and highlight (lighter edge, deeper ambient), not the light
+    values reused.
+- [ ] Theme builder (`/theme`) and `docs/theming.md`: pick one accent and one gray, and derive
+  all 12 steps from them, rather than editing nine separate colours. The preview shows the
+  shadows and the gradient in both schemes, and `theme.css` still downloads as a link.
+- [ ] Surfaces:
+  - Buttons, inputs, cards, stat tiles, dialogs, popovers, menus, sheets and toasts use the
+    new shadows and highlight.
+  - Primary buttons and the focus ring use the gradient.
+  - Ghost and secondary buttons stay flat.
+  - `scripts/look.sh` shots are compared against linear.app and magicui.design, not the
+    shadcn docs.
+- [ ] Motion, on by default but restrained:
+  - Dialog, popover, sheet, drawer, menu and toast animate in and out with `@starting-style`
+    and `transition-behavior: allow-discrete`.
+  - Springs use `linear()` easing, from a `--lui-ease-spring` token.
+  - Tabs and page navigation use view transitions, gated on `Cap::ViewTransitions`.
+  - Under `prefers-reduced-motion: reduce`, every duration is 0.
+  - A Blitz test checks that the final layout is unchanged.
+- [ ] Showpiece setters, all opt-in. Each one gets an entry in `PROPS`, a playground control, a
+  demo snippet and a `lui!` doctest:
+  - `.shimmer()`: a light sweep across buttons and badges.
+  - `.beam()`: a border beam on cards, drawn with a conic gradient and `@property` angle.
+  - `.glow()`: a spotlight on cards, CSS only. The light sits at a fixed spot and brightens
+    and grows on hover. It does not follow the pointer: the owner chose this over adding
+    pointer tracking to `enhance.rs` and over a CSS grid of hover cells, which puts 64 spans
+    on every card. Both alternatives were asked and answered on 2026-09-25.
+  - `.gradient_border()`: a gradient border on cards and inputs.
+  - `ui.marquee(..)`: a new component, a CSS-only looping row with pause on hover and focus.
+  - `.reveal()`: fade and rise as the element scrolls into view, using scroll-driven
+    `animation-timeline: view()`; browsers without it show the element at rest.
+
+  Each effect has a `@supports` fallback that shows the element at rest, and Blitz shots prove
+  it.
+- [ ] Budget: measure the stylesheet size before and after, keep the growth under 15 KB
+  gzipped, and put the figure in README. Also run `cargo bench -p loco-ui` for the stylesheet.
+- [ ] README feature matrix, findings and `docs/comparison.md` say "Linear / Magic UI look"
+  instead of "shadcn look". FINDINGS gets the Blitz gaps for `@starting-style`, `@property`
+  and `animation-timeline`, each with an issue link.
