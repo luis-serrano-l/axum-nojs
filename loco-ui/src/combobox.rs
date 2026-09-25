@@ -13,7 +13,7 @@
 //!   (a `listbox` of options cannot hold links, and without script it could not be operated
 //!   as one), named "Results", with `aria-live="polite"` so a swapped list is announced.
 //! - Submitting the form (Enter or the button) re-renders with the server's results. Every
-//!   result is a link that adds it to the selection (or replaces it, unless `multi`), every
+//!   result is a link that adds it to the selection (or replaces it, unless `multiple`), every
 //!   chip has a link that removes it, and the "create" row is a plain post form.
 //!
 //! **Accessibility:** a `<search>` form: a labelled search input with a datalist, results a
@@ -38,7 +38,7 @@
 //! let m = ui.combobox("q", "/langs")
 //!     .group("Systems", ["Rust", "Zig"])
 //!     .options(["Ruby"])
-//!     .multi()
+//!     .multiple()
 //!     .create("/langs/new")
 //!     .label("Language")
 //!     .placeholder("Type a language");
@@ -49,7 +49,7 @@
 //! assert!(html.contains("href=\"/langs?q=ru\" aria-label=\"Remove Zig\""), "a chip removes itself");
 //! // The same in `lui!`:
 //! let same = lui! { Combobox("q", "/langs") group=("Systems", ["Rust", "Zig"])
-//!     options=(["Ruby"]) multi create="/langs/new" label="Language"
+//!     options=(["Ruby"]) multiple create="/langs/new" label="Language"
 //!     placeholder="Type a language"; };
 //! assert_eq!(same.into_string(), html);
 //! ```
@@ -65,7 +65,7 @@ use crate::{Icon, Ui, state::encode};
 /// [`Ui::combobox`]. Single choice, labelled "Search", unless told otherwise.
 ///
 /// **Setters.** Values and items: `.options(..)`, `.group(..)`, `.results(..)`, `.create(..)`,
-/// `.label(..)`, `.placeholder(..)`; switches: `.multi()`.
+/// `.label(..)`, `.placeholder(..)`; switches: `.multiple()`.
 #[derive(Clone, Debug)]
 pub struct Combobox<'a> {
     ui: &'a Ui,
@@ -101,7 +101,7 @@ impl Combobox<'_> {
             "results: impl IntoIterator<Item = &'a str>",
         )
         .doc("The server's own results for the query."),
-        Prop::new("multi", PropKind::Switch, "")
+        Prop::new("multiple", PropKind::Switch, "")
             .doc("Results add to the selection instead of replacing it."),
         Prop::new("create", PropKind::Value, "action: &'a str")
             .doc("A \"Create\" row posting to `action` when the query matches nothing."),
@@ -155,9 +155,15 @@ impl<'a> Combobox<'a> {
     }
 
     /// Results add to the selection instead of replacing it.
-    pub fn multi(mut self) -> Self {
+    pub fn multiple(mut self) -> Self {
         self.multi = true;
         self
+    }
+
+    /// The old name of [`Self::multiple`], kept for one release.
+    #[deprecated(note = "use .multiple()")]
+    pub fn multi(self) -> Self {
+        self.multiple()
     }
 
     /// A "Create" row posting to `action` when the query matches nothing; it receives the
@@ -266,7 +272,7 @@ impl Render for Combobox<'_> {
                             form method="post" action=(to) class="lui-combobox-create" {
                                 @for v in &selected { input type="hidden" name="sel" value=(v); }
                                 input type="hidden" name="name" value=(query);
-                                (ui.button(ui.text(Text::Create)).content(html! { (Icon::Plus) (ui.fill(Text::CreateValue, &[&query])) }))
+                                (ui.button(ui.text(Text::Create)).body(html! { (Icon::Plus) (ui.fill(Text::CreateValue, &[&query])) }))
                             }
                         }
                     }

@@ -401,7 +401,7 @@ for (lane, title) in LANES {
     }
     for (key, _) in board.0.iter().filter(|(_, l)| l == lane) {
         if let Some((key, text, note)) = CARDS.iter().find(|c| c.0 == key) {
-            k = k.card(key, text).note(note);
+            k = k.card(key, text).description(note);
         }
     }
 }
@@ -412,7 +412,7 @@ let k = lui! {
             column (lane) (title) limit=[(lane == "doing").then_some(2)] {
                 @for (key, _) in board.0.iter().filter(|(_, l)| l == lane) {
                     @if let Some((key, text, note)) = CARDS.iter().find(|c| c.0 == key) {
-                        card (key) (text) note=(note);
+                        card (key) (text) description=(note);
                     }
                 }
             }

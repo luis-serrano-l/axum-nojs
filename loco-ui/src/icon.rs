@@ -272,6 +272,57 @@ impl Render for Icon {
     }
 }
 
+/// What every `.icon(..)` setter takes: one of the [`Icon`] set, or a glyph or emoji written
+/// as text (`"\u{1F4E6}"`). Either way it is decorative, hidden from assistive technology;
+/// callers pass an `Icon` or a `&str` and never name this type.
+///
+/// ```rust
+/// use loco_ui::{icon::Glyph, prelude::*};
+/// assert_eq!(Glyph::from(Icon::Mail), Glyph::Icon(Icon::Mail));
+/// assert_eq!(Glyph::from("\u{1F4E6}"), Glyph::Text("\u{1F4E6}"));
+/// ```
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Glyph<'a> {
+    /// An inline SVG icon.
+    Icon(Icon),
+    /// A glyph or emoji.
+    Text(&'a str),
+}
+
+impl From<Icon> for Glyph<'_> {
+    fn from(icon: Icon) -> Self {
+        Glyph::Icon(icon)
+    }
+}
+
+impl<'a> From<&'a str> for Glyph<'a> {
+    fn from(text: &'a str) -> Self {
+        Glyph::Text(text)
+    }
+}
+
+impl Glyph<'_> {
+    /// The glyph where nothing around it hides it: text goes in an `aria-hidden` span with the
+    /// icon's class, so it sits where an icon would.
+    pub(crate) fn hidden(&self) -> Markup {
+        match self {
+            Glyph::Icon(icon) => icon.render(),
+            Glyph::Text(text) => html! { span class="lui-icon" aria-hidden="true" { (text) } },
+        }
+    }
+}
+
+/// The icon's SVG or the text as it is, for a component that wraps it in its own
+/// `aria-hidden` span.
+impl Render for Glyph<'_> {
+    fn render(&self) -> Markup {
+        match self {
+            Glyph::Icon(icon) => icon.render(),
+            Glyph::Text(text) => html! { (text) },
+        }
+    }
+}
+
 /// Styles for this component; included in [`crate::stylesheet`]. shadcn's size-4.
 pub const CSS: &str = r#"
 .lui-icon { width: 1rem; height: 1rem; flex: none; vertical-align: -0.125em; pointer-events: none; }

@@ -160,18 +160,18 @@ impl Render for Drawer<'_> {
             div class={ "lui-drawer" @if sidebar { " lui-drawer-sidebar" } } {
                 @let menu = html! { (Icon::Menu) (label) };
                 @if invokers {
-                    (ui.button(label).class("lui-drawer-open").content(menu).command("show-modal", id).aria_haspopup("dialog"))
+                    (ui.button(label).class("lui-drawer-open").body(menu).command("show-modal", id).aria_haspopup("dialog"))
                 } @else {
-                    (ui.link_button(label, &open_href).class("lui-drawer-open").content(menu).role("button"))
+                    (ui.link_button(label, &open_href).class("lui-drawer-open").body(menu).role("button"))
                 }
                 dialog id=(id) class="lui-drawer-panel" closedby="any" aria-labelledby=(title_id) open[open] {
                     div class="lui-drawer-head" {
                         p id=(title_id) class="lui-drawer-title" { (title) }
                         @let x = html! { (Icon::X) };
                         @if invokers {
-                            (ui.button("").ghost().small().icon().class("lui-drawer-close").label(ui.text(Text::Close)).content(x).command("close", id))
+                            (ui.button("").ghost().small().icon_only().class("lui-drawer-close").aria_label(ui.text(Text::Close)).body(x).command("close", id))
                         } @else {
-                            (ui.link_button("", "#").ghost().small().icon().class("lui-drawer-close").label(ui.text(Text::Close)).content(x))
+                            (ui.link_button("", "#").ghost().small().icon_only().class("lui-drawer-close").aria_label(ui.text(Text::Close)).body(x))
                         }
                     }
                     nav aria-labelledby=(title_id) { (nav) }

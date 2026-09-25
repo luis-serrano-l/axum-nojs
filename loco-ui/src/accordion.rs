@@ -1,7 +1,7 @@
 //! # Accordion
 //!
 //! Stacked disclosure sections, no script. Exclusive by default (one open at a time), or
-//! `multi` so several stay open, with "Expand all" and "Collapse all" links. An item can
+//! `multiple` so several stay open, with "Expand all" and "Collapse all" links. An item can
 //! carry a summary line under its title and an icon before it, and a body can hold another
 //! accordion.
 //!
@@ -32,20 +32,20 @@
 //! use loco_ui::prelude::*;
 //! // Items 0 and 2 of "faq" were left open, as the URL records it.
 //! let ui = Ui::from_request("/help", "open.faq=0,2", "");
-//! // `icon` and `summary` apply to the item added last.
+//! // `icon` and `description` apply to the item added last.
 //! let m = ui.accordion("faq")
-//!     .item("Install", html! { p { "cargo add" } }).icon("\u{1F4E6}").summary("One line.")
+//!     .item("Install", html! { p { "cargo add" } }).icon("\u{1F4E6}").description("One line.")
 //!     .item("Use", html! { p { "html!" } })
 //!     .item("More", html! { (ui.accordion("faq-more").item("Nested", html! { p { "Own group." } })) })
-//!     .multi()
+//!     .multiple()
 //!     .controls();
 //! let html = m.render().into_string();
 //! assert!(html.contains("href=\"/help?open.faq=2\">Install"), "open item's link removes itself from the list");
 //! assert!(html.contains("href=\"/help?open.faq=0%2C1%2C2\">Expand all"));
 //! assert!(html.contains("class=\"lui-accordion-summary\">One line."));
 //! // The same in `lui!`:
-//! let same = lui! { Accordion("faq") multi controls {
-//!     item "Install" icon="\u{1F4E6}" summary="One line." { p { "cargo add" } }
+//! let same = lui! { Accordion("faq") multiple controls {
+//!     item "Install" icon="\u{1F4E6}" description="One line." { p { "cargo add" } }
 //!     item "Use" { p { "html!" } }
 //!     item "More" { (lui! { Accordion("faq-more") { item "Nested" { p { "Own group." } } } }) }
 //! } };
@@ -56,6 +56,7 @@ use maud::{Markup, Render, html};
 
 use crate::Ui;
 use crate::i18n::Text;
+use crate::icon::Glyph;
 use crate::props::{Prop, PropKind};
 
 /// One section: a title, a body, an optional icon before the title and summary line under it.
@@ -63,16 +64,16 @@ use crate::props::{Prop, PropKind};
 struct Item<'a> {
     title: &'a str,
     body: Markup,
-    icon: Option<&'a str>,
+    icon: Option<Glyph<'a>>,
     summary: Option<&'a str>,
 }
 
 /// Stacked sections, made by [`Ui::accordion`]: the open ones are `?open.<group>=` (or the
 /// cookie's memory of it), and each title links to toggle its own. One open at a time unless
-/// [`Accordion::multi`].
+/// [`Accordion::multiple`].
 ///
-/// **Setters.** Values and items: `.item(..)`, `.icon(..)`, `.summary(..)`; switches:
-/// `.multi()`, `.controls()`.
+/// **Setters.** Values and items: `.item(..)`, `.icon(..)`, `.description(..)`; switches:
+/// `.multiple()`, `.controls()`.
 #[derive(Clone, Debug)]
 pub struct Accordion<'a> {
     ui: &'a Ui,
@@ -88,14 +89,14 @@ impl Accordion<'_> {
     pub const PROPS: &'static [Prop] = &[
         Prop::new("item", PropKind::Item, "title: &'a str, body: Markup")
             .doc("A section titled `title` with its body."),
-        Prop::new("icon", PropKind::Modifier, "icon: &'a str")
-            .doc("Text (an emoji or a glyph) before the title of the section added last, hidden from assistive tech."),
-        Prop::new("summary", PropKind::Modifier, "summary: &'a str")
+        Prop::new("icon", PropKind::Modifier, "icon: impl Into<Glyph<'a>>")
+            .doc("An icon, or a glyph or emoji, before the title of the section added last, hidden from assistive tech."),
+        Prop::new("description", PropKind::Modifier, "summary: &'a str")
             .doc("A muted line under the title of the section added last, visible while it is closed."),
-        Prop::new("multi", PropKind::Switch, "")
+        Prop::new("multiple", PropKind::Switch, "")
             .doc("Several sections may be open at once (`?open.<group>=0,2`)."),
         Prop::new("controls", PropKind::Switch, "")
-            .doc("\"Expand all\" and \"Collapse all\" links above the sections (with `multi`)."),
+            .doc("\"Expand all\" and \"Collapse all\" links above the sections (with `multiple`)."),
     ];
 }
 
@@ -125,30 +126,42 @@ impl<'a> Accordion<'a> {
         self
     }
 
-    /// Text (an emoji or a glyph) before the title of the section added last, hidden from
+    /// An icon, or a glyph or emoji, before the title of the section added last, hidden from
     /// assistive tech.
-    pub fn icon(mut self, icon: &'a str) -> Self {
+    pub fn icon(mut self, icon: impl Into<Glyph<'a>>) -> Self {
         if let Some(it) = self.items.last_mut() {
-            it.icon = Some(icon);
+            it.icon = Some(icon.into());
         }
         self
     }
 
     /// A muted line under the title of the section added last, visible while it is closed.
-    pub fn summary(mut self, summary: &'a str) -> Self {
+    pub fn description(mut self, summary: &'a str) -> Self {
         if let Some(it) = self.items.last_mut() {
             it.summary = Some(summary);
         }
         self
     }
 
+    /// The old name of [`Self::description`], kept for one release.
+    #[deprecated(note = "use .description()")]
+    pub fn summary(self, summary: &'a str) -> Self {
+        self.description(summary)
+    }
+
     /// Several sections may be open at once (`?open.<group>=0,2`).
-    pub fn multi(mut self) -> Self {
+    pub fn multiple(mut self) -> Self {
         self.multi = true;
         self
     }
 
-    /// "Expand all" and "Collapse all" links above the sections (with `multi`).
+    /// The old name of [`Self::multiple`], kept for one release.
+    #[deprecated(note = "use .multiple()")]
+    pub fn multi(self) -> Self {
+        self.multiple()
+    }
+
+    /// "Expand all" and "Collapse all" links above the sections (with `multiple`).
     pub fn controls(mut self) -> Self {
         self.controls = true;
         self

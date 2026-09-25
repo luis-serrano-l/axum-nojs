@@ -48,7 +48,7 @@ use crate::{Cap, Icon, Ui};
 
 /// A date field, made by [`Ui::date_picker`].
 ///
-/// **Setters.** Values and items: `.disabled(..)`, `.value(..)`, `.min(..)`, `.max(..)`;
+/// **Setters.** Values and items: `.disabled_dates(..)`, `.value(..)`, `.min(..)`, `.max(..)`;
 /// switches: `.required()`, `.native()`.
 #[derive(Clone, Debug)]
 pub struct DatePicker<'a> {
@@ -76,7 +76,7 @@ impl DatePicker<'_> {
         Prop::new("max", PropKind::Value, "date: &'a str")
             .attr("max")
             .doc("The last day that can be picked, `YYYY-MM-DD`."),
-        Prop::new("disabled", PropKind::Value, "off: fn(Date) -> bool").doc(
+        Prop::new("disabled_dates", PropKind::Value, "off: fn(Date) -> bool").doc(
             "Days for which `off` returns true cannot be picked (the native control ignores this).",
         ),
         Prop::new("required", PropKind::Switch, "")
@@ -125,9 +125,15 @@ impl<'a> DatePicker<'a> {
     }
 
     /// Days for which `off` returns true cannot be picked (the native control ignores this).
-    pub fn disabled(mut self, off: fn(Date) -> bool) -> Self {
+    pub fn disabled_dates(mut self, off: fn(Date) -> bool) -> Self {
         self.disabled = Some(off);
         self
+    }
+
+    /// The old name of [`Self::disabled_dates`], kept for one release.
+    #[deprecated(note = "use .disabled_dates()")]
+    pub fn disabled(self, off: fn(Date) -> bool) -> Self {
+        self.disabled_dates(off)
     }
 
     /// A day must be picked before the form submits.
@@ -166,7 +172,7 @@ impl Render for DatePicker<'_> {
             calendar = calendar.max(m);
         }
         if let Some(off) = self.disabled {
-            calendar = calendar.disabled(off);
+            calendar = calendar.disabled_dates(off);
         }
         if self.required {
             calendar = calendar.required();
@@ -192,7 +198,7 @@ impl Render for DatePicker<'_> {
                 @if popover {
                     label for=(id) { (text) }
                     div class="lui-date-picker-anchor" style=[anchor.then(|| format!("anchor-name: --{panel}"))] {
-                        (Button::new(ui.caps, self.label).id(&id).class("lui-date-picker-trigger").popovertarget(&panel).aria_haspopup("dialog").content(face))
+                        (Button::new(ui.caps, self.label).id(&id).class("lui-date-picker-trigger").popovertarget(&panel).aria_haspopup("dialog").body(face))
                         div id=(panel) popover class="lui-date-picker-panel"
                             style=[anchor.then(|| format!("position-anchor: --{panel}; position-area: bottom span-right"))] {
                             (calendar)

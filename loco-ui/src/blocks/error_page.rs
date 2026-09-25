@@ -33,7 +33,7 @@ use crate::{Page, Ui};
 
 /// A 404 or 500 page, made by [`Ui::error_page`].
 ///
-/// **Setters.** Values and items: `.title(..)`, `.message(..)`, `.home(..)`.
+/// **Setters.** Values and items: `.title(..)`, `.description(..)`, `.home(..)`.
 #[derive(Clone, Debug)]
 pub struct ErrorPage<'a> {
     ui: &'a Ui,
@@ -49,7 +49,7 @@ impl ErrorPage<'_> {
         Prop::new("title", PropKind::Value, "text: &'a str")
             .default("Page not found / Something went wrong")
             .doc("The heading."),
-        Prop::new("message", PropKind::Value, "text: &'a str").doc("The sentence under it."),
+        Prop::new("description", PropKind::Value, "text: &'a str").doc("The sentence under it."),
         Prop::new("home", PropKind::Value, "href: &'a str")
             .default("/")
             .attr("href")
@@ -84,9 +84,15 @@ impl<'a> ErrorPage<'a> {
     }
 
     /// The sentence under it.
-    pub fn message(mut self, text: &'a str) -> Self {
+    pub fn description(mut self, text: &'a str) -> Self {
         self.message = text;
         self
+    }
+
+    /// The old name of [`Self::description`], kept for one release.
+    #[deprecated(note = "use .description()")]
+    pub fn message(self, text: &'a str) -> Self {
+        self.description(text)
     }
 
     /// Where the button goes.

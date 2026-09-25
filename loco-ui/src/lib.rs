@@ -399,7 +399,7 @@ mod tests {
     }
 
     /// Theming is tokens only: every colour in component CSS is a `var(--lui-*)`, so a palette
-    /// passed to `layout_with` reaches everything. Literals live in `layout::Tokens` alone.
+    /// passed to `Page::tokens` reaches everything. Literals live in `layout::Tokens` alone.
     #[test]
     fn no_colour_literal_outside_tokens() {
         for css in COMPONENT_CSS {
@@ -518,6 +518,7 @@ mod tests {
                     continue;
                 }
                 let skip = t.starts_with("//")
+                    || t.starts_with("#[deprecated")
                     || t.starts_with("Prop::new")
                     || t.starts_with(".doc(")
                     || t.starts_with(".default(")
@@ -1061,19 +1062,10 @@ mod tests {
             "link",
             "EmptyState holds one link, the list builders add one per call",
         ),
-        // Renamed in M32 (the next commit).
         (
-            "icon",
-            "M32: Button's switch becomes `icon_only`, the others take any icon",
+            "action",
+            "EmptyState holds one action, the menus add one per call",
         ),
-        (
-            "disabled",
-            "M32: the calendars' predicate becomes `disabled_dates`",
-        ),
-        ("heading", "M32: Menu's heading becomes `group`"),
-        ("key", "M32: Palette's key becomes `accesskey`"),
-        ("badge", "M32: both badges take `impl Display`"),
-        ("command", "M32: Palette's command becomes `link`"),
     ];
 
     /// Setters that take a whole list in one call instead of an adder per item, each with the
@@ -1123,8 +1115,8 @@ mod tests {
             "a navigation panel is given whole, as an item of the bar",
         ),
         (
-            "commands",
-            "M32: renamed `links`, a palette's destinations from data",
+            "links",
+            "a palette's destinations from data (every page of an app)",
         ),
         ("items", "M32: ContextMenu gets Menu's adders"),
     ];
@@ -1144,8 +1136,8 @@ mod tests {
             "groups from data beside `.group(..)` for one",
         ),
         (
-            "Palette::commands",
-            "M32: renamed `links`, beside `.link(..)`",
+            "Palette::links",
+            "destinations from data beside `.link(..)` for one",
         ),
     ];
 
@@ -1172,10 +1164,9 @@ mod tests {
             "the switch is named after the `type` it sets",
         ),
         (
-            "ToggleGroup::multi",
-            "M32: renamed `multiple`; checkboxes instead of radios",
+            "ToggleGroup::multiple",
+            "checkboxes instead of radios: the inputs' `type`",
         ),
-        ("Button::label", "M32: renamed `aria_label`"),
         (
             "Button::pressed",
             "`.pressed(on)` for a toggle, as `aria-pressed` says",
@@ -1200,7 +1191,7 @@ mod tests {
         ("RecordPage::back", "the back link's `href`"),
         ("RecordPage::delete", "the delete form's `action`"),
         (
-            "ToggleGroup::item",
+            "ToggleGroup::option",
             "an adder: the option's `value` and text",
         ),
         (
@@ -1251,16 +1242,10 @@ mod tests {
     ];
 
     /// Public `_with` functions that are not twins of a plainer one, each with the reason.
-    const WITH_NAMES: &[(&str, &str)] = &[
-        (
-            "link_with",
-            "this page's URL with one parameter set, the pair of `link_without`",
-        ),
-        (
-            "layout_with",
-            "M32: deprecated for `ui.page(..).tokens(..)`",
-        ),
-    ];
+    const WITH_NAMES: &[(&str, &str)] = &[(
+        "link_with",
+        "this page's URL with one parameter set, the pair of `link_without`",
+    )];
 
     /// Every attribute a `PROPS` entry may name.
     const ATTRIBUTES: &[&str] = &[

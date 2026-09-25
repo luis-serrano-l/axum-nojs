@@ -190,7 +190,7 @@ impl UiState {
     }
 
     /// Every open section index for the accordion `group`: `open.<group>` is a comma list
-    /// (`0,2`), so a `multi` accordion can keep several sections open. Empty when unknown.
+    /// (`0,2`), so a `multiple` accordion can keep several sections open. Empty when unknown.
     pub fn opens(&self, group: &str) -> Vec<usize> {
         self.get(&format!("open.{group}"))
             .map(|v| v.split(',').filter_map(|i| i.trim().parse().ok()).collect())

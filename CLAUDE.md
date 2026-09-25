@@ -95,11 +95,11 @@ only when the change is intended (otherwise `git checkout -- tests/shots`).
    `.id()` override. Components read their own input from `ui` (`ui.param`, `ui.params`,
    `ui.state`) instead of taking it as an argument. For lists (fields, menu items, tabs,
    columns, commands), an adder per item (`.text(..)`, `.link(..)`, `.tab(..)`) and
-   modifiers that apply to the item added last (`.required()`, `.icon()`, `.badge()`). No
+   modifiers that apply to the item added last (`.required()`, `.icon(..)`, `.badge(..)`). No
    `_with` twins and no `XOptions` structs. The doc header shows the common call first, then
    one with the setters. Setter names follow the HTML attribute or element they set
    (`.maxlength()`, `.placeholder()`, `.closedby()`). A setter with no argument switches
-   something on (`.required()`, `.danger()`, `.multi()`); one that takes a `bool` is one a
+   something on (`.required()`, `.danger()`, `.multiple()`); one that takes a `bool` is one a
    route sets from a condition (`.open(..)`, `.loading(..)`). Branch on `caps.has(Cap::X)` and
    emit only one variant, never both.
    A root that should update in place gets `id=(enhance::swap_id(prefix, key))` and

@@ -11,13 +11,13 @@ fn shot(page: &mut Page, name: &str) {
 }
 
 /// The same index under the second palette from `docs/theming.md`: `index-alt.png` next to
-/// `index-modern.png` is the proof that a theme is a value passed to `layout_with`.
+/// `index-modern.png` is the proof that a theme is a value passed to `Page::tokens`.
 #[tokio::test]
 async fn index_under_another_palette() {
     let mut page = Page::render(demo::router(), "/?palette=linen", MODERN).await;
     assert!(
         page.exists("style.lui-tokens"),
-        "layout_with emits the token overrides"
+        "Page::tokens emits the token overrides"
     );
     assert!(page.is_visible("h1"));
     shot(&mut page, "index-alt");

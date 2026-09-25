@@ -27,13 +27,13 @@
 //! let m = ui.stat("Error rate", "0.4%")
 //!     .delta("-0.2 pt")
 //!     .down_is_good()
-//!     .note("last 7 days")
+//!     .description("last 7 days")
 //!     .href("/errors");
 //! let m = m.render().into_string();
 //! assert!(m.contains("lui-stat-good") && m.contains("down") && m.contains(r#"href="/errors""#));
 //! // The same in `lui!`:
 //! let same = lui! {
-//!     Stat("Error rate", "0.4%") delta="-0.2 pt" down_is_good note="last 7 days" href="/errors";
+//!     Stat("Error rate", "0.4%") delta="-0.2 pt" down_is_good description="last 7 days" href="/errors";
 //! };
 //! assert_eq!(same.into_string(), m);
 //! // Opt-in motion: it fades in as it scrolls into view.
@@ -61,7 +61,7 @@ pub enum Trend {
 
 /// A stat card, `label` above `value`, made by [`Ui::stat`].
 ///
-/// **Setters.** Values and items: `.delta(..)`, `.trend(..)`, `.note(..)`, `.href(..)`;
+/// **Setters.** Values and items: `.delta(..)`, `.trend(..)`, `.description(..)`, `.href(..)`;
 /// switches: `.down_is_good()`, `.reveal()`.
 #[derive(Clone, Debug, Default)]
 pub struct Stat<'a> {
@@ -84,7 +84,8 @@ impl Stat<'_> {
             .doc("Override the direction read from the delta's sign."),
         Prop::new("down_is_good", PropKind::Switch, "")
             .doc("A fall is good news (error rates, latency)."),
-        Prop::new("note", PropKind::Value, "note: &'a str").doc("Small print under the value."),
+        Prop::new("description", PropKind::Value, "note: &'a str")
+            .doc("Small print under the value."),
         Prop::new("href", PropKind::Value, "href: &'a str")
             .attr("href")
             .doc("Make the whole card a link to the details."),
@@ -123,9 +124,15 @@ impl<'a> Stat<'a> {
     }
 
     /// Small print under the value: the period, the source.
-    pub fn note(mut self, note: &'a str) -> Self {
+    pub fn description(mut self, note: &'a str) -> Self {
         self.note = Some(note);
         self
+    }
+
+    /// The old name of [`Self::description`], kept for one release.
+    #[deprecated(note = "use .description()")]
+    pub fn note(self, note: &'a str) -> Self {
+        self.description(note)
     }
 
     /// Make the whole card a link to the details.

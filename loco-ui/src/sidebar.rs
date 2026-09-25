@@ -43,18 +43,21 @@
 //! assert_eq!(same.into_string(), html);
 //! ```
 
+use std::fmt::Display;
+
 use maud::{Markup, Render, html};
 
+use crate::icon::Glyph;
 use crate::props::{Prop, PropKind};
-use crate::{Icon, Ui, slug};
+use crate::{Ui, slug};
 
 /// One link: its text, where it goes, an icon and a count.
 #[derive(Clone, Debug)]
 struct Link<'a> {
     text: &'a str,
     href: &'a str,
-    icon: Option<Icon>,
-    badge: Option<&'a str>,
+    icon: Option<Glyph<'a>>,
+    badge: Option<String>,
 }
 
 /// A navigation column, made by [`Ui::sidebar`].
@@ -76,9 +79,9 @@ impl Sidebar<'_> {
         Prop::new("link", PropKind::Item, "text: &'a str, href: &'a str")
             .attr("href")
             .doc("A link; the one to the current path is marked current."),
-        Prop::new("icon", PropKind::Modifier, "icon: Icon")
+        Prop::new("icon", PropKind::Modifier, "icon: impl Into<Glyph<'a>>")
             .doc("An icon before the link added last."),
-        Prop::new("badge", PropKind::Modifier, "text: &'a str")
+        Prop::new("badge", PropKind::Modifier, "text: impl Display")
             .doc("A count after the link added last."),
     ];
 }
@@ -115,17 +118,17 @@ impl<'a> Sidebar<'a> {
     }
 
     /// An icon before the link added last.
-    pub fn icon(mut self, icon: Icon) -> Self {
+    pub fn icon(mut self, icon: impl Into<Glyph<'a>>) -> Self {
         if let Some(l) = self.groups.last_mut().and_then(|g| g.1.last_mut()) {
-            l.icon = Some(icon);
+            l.icon = Some(icon.into());
         }
         self
     }
 
     /// A count after the link added last.
-    pub fn badge(mut self, text: &'a str) -> Self {
+    pub fn badge(mut self, text: impl Display) -> Self {
         if let Some(l) = self.groups.last_mut().and_then(|g| g.1.last_mut()) {
-            l.badge = Some(text);
+            l.badge = Some(text.to_string());
         }
         self
     }
@@ -144,9 +147,9 @@ impl Render for Sidebar<'_> {
                             @for l in links {
                                 li {
                                     a href=(l.href) aria-current=[(l.href == self.here).then_some("page")] {
-                                        @if let Some(icon) = l.icon { (icon) }
+                                        @if let Some(icon) = l.icon { (icon.hidden()) }
                                         span class="lui-sidebar-text" { (l.text) }
-                                        @if let Some(b) = l.badge { span class="lui-sidebar-badge" { (b) } }
+                                        @if let Some(b) = &l.badge { span class="lui-sidebar-badge" { (b) } }
                                     }
                                 }
                             }

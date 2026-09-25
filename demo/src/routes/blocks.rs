@@ -89,7 +89,7 @@ fn dashboard(ui: &Ui) -> Markup {
     lui! {
         // code: /blocks/dashboard
         DashboardPage("Overview") description="The last 30 days." {
-            stat (ui.stat("Revenue", "$48,210").delta("+12%").note("vs last month"));
+            stat (ui.stat("Revenue", "$48,210").delta("+12%").description("vs last month"));
             stat (ui.stat("Orders", "1,284").delta("+4%"));
             stat (ui.stat("Refunds", "18").delta("-3").down_is_good());
             body (html! { p class="lui-note" { "A table or a chart goes here." } });

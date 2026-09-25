@@ -48,17 +48,17 @@ async fn tabs_page(ui: Ui) -> Page {
 fn accordion(ui: &Ui) -> Markup {
     lui! {
             // code: /accordion
-            Accordion("faq") multi controls {
+            Accordion("faq") multiple controls {
                 item "Does this need JavaScript?" icon="\u{1F50D}"
-                    summary="Every open and close is a link the server answers." {
+                    description="Every open and close is a link the server answers." {
                     p { "No. Turn it off and reload: every control still works through links and form posts. The one script on the page only swaps the answer in place instead of reloading." }
                 }
                 item "Does it animate?" icon="\u{1F3AC}"
-                    summary="Height animates to auto in Chrome; elsewhere it snaps." {
+                    description="Height animates to auto in Chrome; elsewhere it snaps." {
                     p { "Yes, via ::details-content transitions where supported." }
                 }
                 item "Can several be open?" icon="\u{1F4DA}"
-                    summary="Lists, links and a nested accordion." {
+                    description="Lists, links and a nested accordion." {
                     p { "Yes: this group is " code { "multi" } ", so " code { "?open.faq=0,2" } " keeps two open. A body can hold another group:" }
                     Accordion("faq-more") {
                         item "Nested" { p { "Its own key, " code { "open.faq-more" } "." } }

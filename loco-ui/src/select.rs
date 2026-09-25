@@ -39,7 +39,7 @@
 //! assert!(m.contains("<selectedcontent>") && m.contains(r#"<label for="size">Size</label>"#));
 //!
 //! let m = ui.select("food", "leek")
-//!     .group("Fruit", [SelectOption::new("apple", "Apple"), SelectOption::new("kiwi", "Kiwi").content(html! { b { "Kiwi" } })])
+//!     .group("Fruit", [SelectOption::new("apple", "Apple"), SelectOption::new("kiwi", "Kiwi").body(html! { b { "Kiwi" } })])
 //!     .group("Vegetables", [("leek", "Leek")])
 //!     .search("/shop")
 //!     .search_over(2);
@@ -51,7 +51,7 @@
 //! let same = lui! { Select("food", "leek") search="/shop" search_over=2 {
 //!     group "Fruit" ([
 //!         SelectOption::new("apple", "Apple"),
-//!         SelectOption::new("kiwi", "Kiwi").content(html! { b { "Kiwi" } }),
+//!         SelectOption::new("kiwi", "Kiwi").body(html! { b { "Kiwi" } }),
 //!     ]);
 //!     group "Vegetables" ([("leek", "Leek")]);
 //! } };
@@ -61,6 +61,7 @@
 use maud::{Markup, Render, html};
 
 use crate::i18n::Text;
+use crate::icon::Glyph;
 use crate::input::Input;
 use crate::props::{Prop, PropKind};
 use crate::{Cap, Ui};
@@ -68,15 +69,15 @@ use crate::{Cap, Ui};
 /// One option: its value, its text (what the filter matches), an optional icon and optional
 /// rich content shown instead of the text.
 ///
-/// **Setters.** Values and items: `.icon(..)`, `.content(..)`.
+/// **Setters.** Values and items: `.icon(..)`, `.body(..)`.
 #[derive(Clone, Debug)]
 pub struct SelectOption<'a> {
     /// Posted value.
     pub value: &'a str,
     /// Plain label; matched by the filter.
     pub text: &'a str,
-    /// A short icon (an emoji or a glyph) before the label, hidden from assistive tech.
-    pub icon: Option<&'a str>,
+    /// An icon, or a glyph or emoji, before the label, hidden from assistive tech.
+    pub icon: Option<Glyph<'a>>,
     /// Markup shown instead of `text` when the select is rich.
     pub content: Option<Markup>,
 }
@@ -85,8 +86,9 @@ impl SelectOption<'_> {
     /// Every setter with its kind, arguments, default and the HTML attribute it sets; listed by
     /// [`crate::props()`] and kept in step with the setters by a test.
     pub const PROPS: &'static [Prop] = &[
-        Prop::new("icon", PropKind::Value, "icon: &'a str").doc("An icon before the label."),
-        Prop::new("content", PropKind::Value, "content: Markup")
+        Prop::new("icon", PropKind::Value, "icon: impl Into<Glyph<'a>>")
+            .doc("An icon before the label."),
+        Prop::new("body", PropKind::Value, "content: Markup")
             .doc("Rich markup instead of the text (with `Caps::BaseSelect` only)."),
     ];
 }
@@ -101,15 +103,21 @@ impl<'a> SelectOption<'a> {
             content: None,
         }
     }
-    /// An icon before the label.
-    pub const fn icon(mut self, icon: &'a str) -> Self {
-        self.icon = Some(icon);
+    /// An icon before the label; a plain `<select>` shows only a text glyph.
+    pub fn icon(mut self, icon: impl Into<Glyph<'a>>) -> Self {
+        self.icon = Some(icon.into());
         self
     }
     /// Rich markup instead of the text (with `Caps::BaseSelect` only).
-    pub fn content(mut self, content: Markup) -> Self {
+    pub fn body(mut self, content: Markup) -> Self {
         self.content = Some(content);
         self
+    }
+
+    /// The old name of [`Self::body`], kept for one release.
+    #[deprecated(note = "use .body()")]
+    pub fn content(self, content: Markup) -> Self {
+        self.body(content)
     }
 }
 
@@ -282,7 +290,7 @@ impl Render for Select<'_> {
         let option = |o: &SelectOption| {
             html! {
                 option value=(o.value) selected[o.value == selected] {
-                    @if let Some(i) = o.icon { span class="lui-select-icon" aria-hidden="true" { (i) } " " }
+                    @if let Some(i) = o.icon.filter(|i| rich || matches!(i, Glyph::Text(_))) { span class="lui-select-icon" aria-hidden="true" { (i) } " " }
                     @match (&o.content, rich) { (Some(c), true) => (c), _ => (o.text) }
                 }
             }

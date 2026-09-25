@@ -21,20 +21,20 @@
 //! ```rust
 //! use loco_ui::prelude::*;
 //! let ui = Ui::from_request("/editor", "align=center", "");
-//! let m = ui.toggle_group("align", "Alignment").item("left", "Left").item("center", "Center");
+//! let m = ui.toggle_group("align", "Alignment").option("left", "Left").option("center", "Center");
 //! let html = m.render().into_string();
 //! assert!(html.contains(r#"type="radio" name="align" value="center" checked"#));
 //!
-//! let m = ui.toggle_group("style", "Text style").multi()
-//!     .item("bold", "Bold").icon(Icon::Bold)
-//!     .item("italic", "Italic").icon(Icon::Italic)
+//! let m = ui.toggle_group("style", "Text style").multiple()
+//!     .option("bold", "Bold").icon(Icon::Bold)
+//!     .option("italic", "Italic").icon(Icon::Italic)
 //!     .value("bold");
 //! let html = m.render().into_string();
 //! assert!(html.contains(r#"type="checkbox" name="style" value="bold" checked"#));
 //! // The same in `lui!`:
-//! let same = lui! { ToggleGroup("style", "Text style") multi {
-//!     item "bold" "Bold" icon=(Icon::Bold);
-//!     item "italic" "Italic" icon=(Icon::Italic);
+//! let same = lui! { ToggleGroup("style", "Text style") multiple {
+//!     option "bold" "Bold" icon=(Icon::Bold);
+//!     option "italic" "Italic" icon=(Icon::Italic);
 //!     value "bold";
 //! } };
 //! assert_eq!(same.into_string(), html);
@@ -42,17 +42,18 @@
 
 use maud::{Markup, Render, html};
 
+use crate::Ui;
+use crate::icon::Glyph;
 use crate::props::{Prop, PropKind};
-use crate::{Icon, Ui};
 
 /// Pressable options, made by [`Ui::toggle_group`].
 ///
-/// **Setters.** Values and items: `.item(..)`, `.icon(..)`, `.value(..)`; switches: `.multi()`.
+/// **Setters.** Values and items: `.option(..)`, `.icon(..)`, `.value(..)`; switches: `.multiple()`.
 #[derive(Clone, Debug)]
 pub struct ToggleGroup<'a> {
     name: &'a str,
     label: &'a str,
-    items: Vec<(&'a str, &'a str, Option<Icon>)>,
+    items: Vec<(&'a str, &'a str, Option<Glyph<'a>>)>,
     picked: Vec<String>,
     multi: bool,
 }
@@ -61,15 +62,15 @@ impl ToggleGroup<'_> {
     /// Every setter with its kind, arguments, default and the HTML attribute it sets; listed by
     /// [`crate::props()`] and kept in step with the setters by a test.
     pub const PROPS: &'static [Prop] = &[
-        Prop::new("item", PropKind::Item, "value: &'a str, text: &'a str")
+        Prop::new("option", PropKind::Item, "value: &'a str, text: &'a str")
             .attr("value")
             .doc("An option posting `value`, shown as `text`."),
-        Prop::new("icon", PropKind::Modifier, "icon: Icon")
+        Prop::new("icon", PropKind::Modifier, "icon: impl Into<Glyph<'a>>")
             .doc("The option added last shows this icon, its text becoming a hidden label."),
         Prop::new("value", PropKind::Value, "value: &'a str")
             .attr("checked")
-            .doc("Press this option (again for more with `.multi()`); the query's own values by default."),
-        Prop::new("multi", PropKind::Switch, "")
+            .doc("Press this option (again for more with `.multiple()`); the query's own values by default."),
+        Prop::new("multiple", PropKind::Switch, "")
             .attr("type")
             .doc("Several options may be pressed (checkboxes, not radios)."),
     ];
@@ -91,20 +92,26 @@ impl Ui {
 
 impl<'a> ToggleGroup<'a> {
     /// An option posting `value`, shown as `text`.
-    pub fn item(mut self, value: &'a str, text: &'a str) -> Self {
+    pub fn option(mut self, value: &'a str, text: &'a str) -> Self {
         self.items.push((value, text, None));
         self
     }
 
+    /// The old name of [`Self::option`], kept for one release.
+    #[deprecated(note = "use .option()")]
+    pub fn item(self, value: &'a str, text: &'a str) -> Self {
+        self.option(value, text)
+    }
+
     /// The option added last shows this icon, its text becoming a hidden label.
-    pub fn icon(mut self, icon: Icon) -> Self {
+    pub fn icon(mut self, icon: impl Into<Glyph<'a>>) -> Self {
         if let Some(last) = self.items.last_mut() {
-            last.2 = Some(icon);
+            last.2 = Some(icon.into());
         }
         self
     }
 
-    /// Press this option (again for more with `.multi()`); the query's own values by default.
+    /// Press this option (again for more with `.multiple()`); the query's own values by default.
     pub fn value(mut self, value: &'a str) -> Self {
         if !self.multi {
             self.picked.clear();
@@ -114,9 +121,15 @@ impl<'a> ToggleGroup<'a> {
     }
 
     /// Several options may be pressed (checkboxes, not radios).
-    pub fn multi(mut self) -> Self {
+    pub fn multiple(mut self) -> Self {
         self.multi = true;
         self
+    }
+
+    /// The old name of [`Self::multiple`], kept for one release.
+    #[deprecated(note = "use .multiple()")]
+    pub fn multi(self) -> Self {
+        self.multiple()
     }
 }
 
@@ -131,7 +144,7 @@ impl Render for ToggleGroup<'_> {
                         input class="lui-toggle-group-input" type=(kind) name=(self.name) value=(value)
                             checked[self.picked.iter().any(|p| p == value)];
                         span class="lui-toggle-group-face" {
-                            @if let Some(i) = icon { (i) span class="lui-sr" { (text) } } @else { (text) }
+                            @if let Some(i) = icon { (i.hidden()) span class="lui-sr" { (text) } } @else { (text) }
                         }
                     }
                 }

@@ -38,7 +38,7 @@ fn combobox(ui: &Ui) -> Markup {
             // One swap root around the form and its results: the script searches as you type.
             div id="langs" data-lui="swap" {
                 // code: /combobox
-                Combobox("q", "/combobox") multi create="/combobox/new"
+                Combobox("q", "/combobox") multiple create="/combobox/new"
                     label="Language" placeholder="Type a language" {
                     group "Systems" (["Rust", "Zig", "Swift"]);
                     group "Scripting" (["Ruby", "Python", "Racket"]);
@@ -420,9 +420,9 @@ fn toggle_group(ui: &Ui) -> Markup {
         form method="get" action="/toggle-group" {
             Stack(lui! {
                 // code: /toggle-group
-                ToggleGroup("align", "Alignment") { item "left" "Left"; item "center" "Center"; item "right" "Right"; }
-                ToggleGroup("style", "Text style") multi {
-                    item "bold" "Bold" icon=(Icon::Bold); item "italic" "Italic" icon=(Icon::Italic);
+                ToggleGroup("align", "Alignment") { option "left" "Left"; option "center" "Center"; option "right" "Right"; }
+                ToggleGroup("style", "Text style") multiple {
+                    option "bold" "Bold" icon=(Icon::Bold); option "italic" "Italic" icon=(Icon::Italic);
                 }
                 // end code
                 Button("Apply") primary;

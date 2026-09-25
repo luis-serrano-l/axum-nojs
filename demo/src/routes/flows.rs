@@ -107,7 +107,7 @@ async fn notes_page(ui: Ui, Saved(session): Saved<Session>, Saved(saved): Saved<
             html! {
                 (ui.flash())
                 (ui.empty_state("Sign in to see your notes")
-                    .text(html! { "Your notes are kept in a cookie for this browser." })
+                    .body(html! { "Your notes are kept in a cookie for this browser." })
                     .link("Sign in", "/app/signin"))
             },
         );

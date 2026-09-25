@@ -71,7 +71,7 @@ fn calendar(ui: &Ui) -> Markup {
     let (invoice, release) = (soon(6), soon(21));
     lui! {
             // code: /calendar
-            Calendar("day") disabled=(|d| d.weekday() >= 5)
+            Calendar("day") disabled_dates=(|d| d.weekday() >= 5)
                 event=(&invoice, "Invoice due") event=(&release, "Release");
             // end code
     }
@@ -90,7 +90,7 @@ async fn calendar_page(ui: Ui) -> Page {
             h2 { "In a form" }
             form class="lui-stack" method="get" action="/calendar" {
                 // code: /calendar
-                DatePicker("due", "Due date") required disabled=(|d| d.weekday() >= 5);
+                DatePicker("due", "Due date") required disabled_dates=(|d| d.weekday() >= 5);
                 DatePicker("born", "Born") native max="2026-12-31";
                 Button("Save") primary;
                 // end code
@@ -149,7 +149,7 @@ fn upload(ui: &Ui, files: &[Held]) -> Markup {
     // code: /upload
     let up = lui! {
         Upload("/upload", "file") accept="image/*,.txt,.pdf" multiple
-            hint="Images, text or PDF, up to 200 KB each. The last three are kept." {
+            help="Images, text or PDF, up to 200 KB each. The last three are kept." {
             @for ((name, bytes), href) in files.iter().zip(&links) {
                 // An image gets a thumbnail; anything else just its link.
                 file (name) (bytes.len() as u64) href=(href) preview=[upload_type(name).map(|_| href)];
@@ -285,7 +285,7 @@ fn kanban(ui: &Ui, board: &Board) -> Markup {
                 column (lane) (title) limit=[(lane == "doing").then_some(2)] {
                     @for (key, _) in board.0.iter().filter(|(_, l)| l == lane) {
                         @if let Some((key, text, note)) = CARDS.iter().find(|c| c.0 == key) {
-                            card (key) (text) note=(note);
+                            card (key) (text) description=(note);
                         }
                     }
                 }

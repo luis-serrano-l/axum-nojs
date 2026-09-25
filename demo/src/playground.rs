@@ -193,14 +193,14 @@ pub(crate) const ENTRIES: &[Entry] = &[
     Entry {
         builder: "Stat",
         call: "Stat(\"Revenue\", \"$48,210\")",
-        props: &["delta", "note", "down_is_good", "reveal"],
+        props: &["delta", "description", "down_is_good", "reveal"],
         rest: ";",
         build: |t| {
             let b = with(t.ui.stat("Revenue", "$48,210"), t.text("delta"), |b, v| {
                 b.delta(v)
             });
             let b = switch(b, t.on("reveal"), |b| b.reveal());
-            let b = with(b, t.text("note"), |b, v| b.note(v));
+            let b = with(b, t.text("description"), |b, v| b.description(v));
             switch(b, t.on("down_is_good"), |b| b.down_is_good()).render()
         },
     },
@@ -302,11 +302,11 @@ pub(crate) const ENTRIES: &[Entry] = &[
     Entry {
         builder: "ErrorPage",
         call: "ErrorPage(404)",
-        props: &["title", "message", "home"],
+        props: &["title", "description", "home"],
         rest: ";",
         build: |t| {
             let b = with(t.ui.error_page(404), t.text("title"), |b, v| b.title(v));
-            let b = with(b, t.text("message"), |b, v| b.message(v));
+            let b = with(b, t.text("description"), |b, v| b.description(v));
             with(b, t.text("home"), |b, v| b.home(v)).render()
         },
     },

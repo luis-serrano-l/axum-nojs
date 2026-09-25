@@ -1,13 +1,13 @@
 error[E0308]: mismatched types
- --> tests/ui/wrong_type.rs:5:51
+ --> tests/ui/wrong_type.rs:5:48
   |
-5 |     let _ = lui! { Tabs("demo") { tab "One" badge="three" { "1" } } };
-  |                                             ----- ^^^^^^^ expected `usize`, found `&str`
-  |                                             |
-  |                                             arguments to this method are incorrect
+5 |     let _ = lui! { Counter("/counter", 3) step="two"; };
+  |                                           ---- ^^^^^ expected `i64`, found `&str`
+  |                                           |
+  |                                           arguments to this method are incorrect
   |
 note: method defined here
- --> $WORKSPACE/loco-ui/src/tabs.rs
+ --> $WORKSPACE/loco-ui/src/counter.rs
   |
-  |     pub fn badge(mut self, count: usize) -> Self {
-  |            ^^^^^
+  |     pub fn step(mut self, step: i64) -> Self {
+  |            ^^^^

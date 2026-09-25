@@ -31,8 +31,8 @@
 //! let ui = Ui::from_request("/search", "q=new", "");
 //! let palette = ui.palette("/search")
 //!     .group("Go to")
-//!     .command("Open settings", "/settings")
-//!     .command("New invoice", "/invoices/new").keywords("bill create");
+//!     .link("Open settings", "/settings")
+//!     .link("New invoice", "/invoices/new").keywords("bill create");
 //! assert_eq!(palette.exact(), None, "an exact name would redirect");
 //! let m = palette.render().into_string();
 //! assert!(m.contains(r#"popovertarget="palette""#) && m.contains(r#"list="palette-list""#));
@@ -40,12 +40,12 @@
 //! // The same in `lui!`:
 //! let same = lui! { Palette("/search") {
 //!     group "Go to";
-//!     command "Open settings" "/settings";
-//!     command "New invoice" "/invoices/new" keywords="bill create";
+//!     link "Open settings" "/settings";
+//!     link "New invoice" "/invoices/new" keywords="bill create";
 //! } };
 //! assert_eq!(same.into_string(), m);
 //! let ui = Ui::from_request("/search", "q=open+settings", "");
-//! assert_eq!(ui.palette("/search").command("Open settings", "/settings").exact(), Some("/settings"));
+//! assert_eq!(ui.palette("/search").link("Open settings", "/settings").exact(), Some("/settings"));
 //! ```
 
 use maud::{Markup, Render, html};
@@ -88,8 +88,8 @@ fn matches<'c, 'a>(commands: &'c [Command<'a>], query: &str) -> Vec<&'c Command<
 /// A command palette submitting `q` to its action with GET, made by [`Ui::palette`]. The
 /// request's `?q=` is the search; its results show below the opener.
 ///
-/// **Setters.** Values and items: `.commands(..)`, `.command(..)`, `.keywords(..)`,
-/// `.group(..)`, `.label(..)`, `.key(..)`, `.id(..)`.
+/// **Setters.** Values and items: `.links(..)`, `.link(..)`, `.keywords(..)`,
+/// `.group(..)`, `.label(..)`, `.accesskey(..)`, `.id(..)`.
 #[derive(Clone, Debug)]
 pub struct Palette<'a> {
     ui: &'a Ui,
@@ -98,18 +98,18 @@ pub struct Palette<'a> {
     commands: Vec<Command<'a>>,
     group: &'a str,
     label: &'a str,
-    key: char,
+    accesskey: String,
 }
 
 impl Palette<'_> {
     /// Every setter with its kind, arguments, default and the HTML attribute it sets; listed by
     /// [`crate::props()`] and kept in step with the setters by a test.
     pub const PROPS: &'static [Prop] = &[
-        Prop::new("command", PropKind::Item, "label: &'a str, href: &'a str").doc("A destination."),
+        Prop::new("link", PropKind::Item, "label: &'a str, href: &'a str").doc("A destination."),
         Prop::new(
-            "commands",
+            "links",
             PropKind::Value,
-            "commands: impl IntoIterator<Item = (&'a str, &'a str)>",
+            "links: impl IntoIterator<Item = (&'a str, &'a str)>",
         )
         .doc("Several `(label, href)` destinations at once."),
         Prop::new("keywords", PropKind::Modifier, "keywords: &'a str")
@@ -119,7 +119,10 @@ impl Palette<'_> {
         Prop::new("label", PropKind::Value, "label: &'a str")
             .default("Search")
             .doc("The opener's label (default \"Search\")."),
-        Prop::new("key", PropKind::Value, "key: char").doc("The access key (default `k`)."),
+        Prop::new("accesskey", PropKind::Value, "key: &'a str")
+            .default("k")
+            .attr("accesskey")
+            .doc("The opener's access key (default `k`)."),
         Prop::new("id", PropKind::Value, "id: &'a str")
             .default("palette")
             .attr("id")
@@ -138,14 +141,14 @@ impl Ui {
             commands: Vec::new(),
             group: "",
             label: self.text(Text::Search),
-            key: 'k',
+            accesskey: "k".to_string(),
         }
     }
 }
 
 impl<'a> Palette<'a> {
     /// A destination: what the visitor types or picks, and where it goes.
-    pub fn command(mut self, label: &'a str, href: &'a str) -> Self {
+    pub fn link(mut self, label: &'a str, href: &'a str) -> Self {
         self.commands.push(Command {
             label,
             href,
@@ -155,11 +158,23 @@ impl<'a> Palette<'a> {
         self
     }
 
+    /// The old name of [`Self::link`], kept for one release.
+    #[deprecated(note = "use .link()")]
+    pub fn command(self, label: &'a str, href: &'a str) -> Self {
+        self.link(label, href)
+    }
+
     /// Several `(label, href)` destinations at once.
-    pub fn commands(self, commands: impl IntoIterator<Item = (&'a str, &'a str)>) -> Self {
-        commands
+    pub fn links(self, links: impl IntoIterator<Item = (&'a str, &'a str)>) -> Self {
+        links
             .into_iter()
-            .fold(self, |p, (label, href)| p.command(label, href))
+            .fold(self, |p, (label, href)| p.link(label, href))
+    }
+
+    /// The old name of [`Self::links`], kept for one release.
+    #[deprecated(note = "use .links()")]
+    pub fn commands(self, commands: impl IntoIterator<Item = (&'a str, &'a str)>) -> Self {
+        self.links(commands)
     }
 
     /// Extra words that find the command added last, space-separated; never shown.
@@ -182,9 +197,16 @@ impl<'a> Palette<'a> {
         self
     }
 
-    /// The access key (default `k`).
+    /// The opener's access key (default `k`), shown as its shortcut.
+    pub fn accesskey(mut self, key: &'a str) -> Self {
+        self.accesskey = key.to_string();
+        self
+    }
+
+    /// The old name of [`Self::accesskey`], kept for one release.
+    #[deprecated(note = "use .accesskey()")]
     pub fn key(mut self, key: char) -> Self {
-        self.key = key;
+        self.accesskey = key.to_string();
         self
     }
 
@@ -209,14 +231,14 @@ impl Render for Palette<'_> {
             action,
             ref commands,
             label,
-            key,
+            ref accesskey,
             ..
         } = *self;
         let query = ui.param("q").filter(|q| !q.trim().is_empty());
         let list_id = format!("{id}-list");
         let input_id = format!("{id}-q");
-        let shortcut = format!("Alt+Shift+{}", key.to_ascii_uppercase());
-        let key = key.to_string();
+        let shortcut = format!("Alt+Shift+{}", accesskey.to_uppercase());
+        let key = accesskey;
         let hint = html! { kbd class="lui-palette-kbd" { (shortcut) } };
         let popover = ui.has(Cap::Popover);
         let results = query.map(|q| {
@@ -241,7 +263,7 @@ impl Render for Palette<'_> {
         html! {
             div class="lui-palette" {
                 @if popover {
-                    (ui.button(label).class("lui-palette-open").popovertarget(id).accesskey(&key).aria_keyshortcuts(&shortcut).content(html! { (Icon::Search) span { (label) } (hint) }))
+                    (ui.button(label).class("lui-palette-open").popovertarget(id).accesskey(key).aria_keyshortcuts(&shortcut).body(html! { (Icon::Search) span { (label) } (hint) }))
                     div id=(id) class="lui-palette-panel" popover { (form) (grouped(commands.iter().collect())) }
                     // A popover cannot arrive open, so the results of a search sit in the page.
                     @if let Some(r) = results { (r) }

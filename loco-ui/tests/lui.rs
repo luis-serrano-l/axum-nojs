@@ -97,7 +97,7 @@ fn items_are_adders_with_their_modifiers() {
             }
             Kanban("/move") {
                 column "todo" "To do" limit=3 {
-                    card "a" "Write" note="Draft first";
+                    card "a" "Write" description="Draft first";
                     card "b" "Test";
                 }
                 column "done" "Done";
@@ -112,7 +112,7 @@ fn items_are_adders_with_their_modifiers() {
             (ui.menu("More").link("Docs", "/docs").separator().action("Delete", "/delete").danger())
             (ui.kanban("/move")
                 .column("todo", "To do").limit(3)
-                .card("a", "Write").note("Draft first")
+                .card("a", "Write").description("Draft first")
                 .card("b", "Test")
                 .column("done", "Done"))
         },

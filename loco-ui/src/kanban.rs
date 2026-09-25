@@ -25,7 +25,7 @@
 //! let ui = Ui::from(Caps::all());
 //! let board = ui.kanban("/board/move")
 //!     .column("todo", "To do").card("c1", "Write the docs")
-//!     .column("doing", "Doing").limit(2).card("c2", "Calendar").note("M23").card("c3", "Upload")
+//!     .column("doing", "Doing").limit(2).card("c2", "Calendar").description("M23").card("c3", "Upload")
 //!     .column("done", "Done");
 //! let m = board.render().into_string();
 //! assert!(m.contains(r#"name="card" value="c1""#) && m.contains(r#"name="to" value="doing""#));
@@ -35,7 +35,7 @@
 //! let same = lui! { Kanban("/board/move") {
 //!     column "todo" "To do" { card "c1" "Write the docs"; }
 //!     column "doing" "Doing" limit=2 {
-//!         card "c2" "Calendar" note="M23";
+//!         card "c2" "Calendar" description="M23";
 //!         card "c3" "Upload";
 //!     }
 //!     column "done" "Done";
@@ -70,7 +70,7 @@ struct Column<'a> {
 /// A board, made by [`Ui::kanban`]. Add columns with [`Kanban::column`] and cards, into the
 /// column added last, with [`Kanban::card`].
 ///
-/// **Setters.** Values and items: `.column(..)`, `.limit(..)`, `.card(..)`, `.note(..)`.
+/// **Setters.** Values and items: `.column(..)`, `.limit(..)`, `.card(..)`, `.description(..)`.
 #[derive(Clone, Debug)]
 pub struct Kanban<'a> {
     ui: &'a Ui,
@@ -87,7 +87,7 @@ impl Kanban<'_> {
             .doc("A work-in-progress limit for the column added last."),
         Prop::new("card", PropKind::Modifier, "key: &'a str, title: &'a str")
             .doc("A card in the column added last."),
-        Prop::new("note", PropKind::Modifier, "text: &'a str")
+        Prop::new("description", PropKind::Modifier, "text: &'a str")
             .doc("Small print under the card added last."),
     ];
 }
@@ -137,11 +137,17 @@ impl<'a> Kanban<'a> {
     }
 
     /// Small print under the card added last: an owner, a due date, a tag.
-    pub fn note(mut self, text: &'a str) -> Self {
+    pub fn description(mut self, text: &'a str) -> Self {
         if let Some(card) = self.columns.last_mut().and_then(|c| c.cards.last_mut()) {
             card.note = Some(text);
         }
         self
+    }
+
+    /// The old name of [`Self::description`], kept for one release.
+    #[deprecated(note = "use .description()")]
+    pub fn note(self, text: &'a str) -> Self {
+        self.description(text)
     }
 }
 
@@ -176,11 +182,11 @@ impl Render for Kanban<'_> {
                                             input type="hidden" name="card" value=(card.key);
                                             @if let Some(prev) = i.checked_sub(1).and_then(|p| cols.get(p)) {
                                                 @let label = self.ui.fill(Text::MoveTo, &[&card.title, &prev.title]);
-                                                (Button::new(caps, "").ghost().small().icon().name("to").value(prev.key).label(&label).content(html! { (Icon::ArrowLeft) }))
+                                                (Button::new(caps, "").ghost().small().icon_only().name("to").value(prev.key).aria_label(&label).body(html! { (Icon::ArrowLeft) }))
                                             }
                                             @if let Some(next) = cols.get(i + 1) {
                                                 @let label = self.ui.fill(Text::MoveTo, &[&card.title, &next.title]);
-                                                (Button::new(caps, "").ghost().small().icon().name("to").value(next.key).label(&label).content(html! { (Icon::ArrowRight) }))
+                                                (Button::new(caps, "").ghost().small().icon_only().name("to").value(next.key).aria_label(&label).body(html! { (Icon::ArrowRight) }))
                                             }
                                         }
                                     }

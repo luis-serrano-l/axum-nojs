@@ -167,13 +167,13 @@ impl Render for Counter<'_> {
         };
         html! {
             form id=(enhance::swap_id("lui-counter", action)) data-lui="swap" class="lui-counter" method="post" action=(action) {
-                (op("dec", at_min).icon().label(self.strings.get(Text::Decrement)).content(html! { (Icon::Minus) }))
+                (op("dec", at_min).icon_only().aria_label(self.strings.get(Text::Decrement)).body(html! { (Icon::Minus) }))
                 output style=[vt] { (value) }
-                (op("inc", at_max).icon().label(self.strings.get(Text::Increment)).content(html! { (Icon::Plus) }))
-                (op("reset", false).ghost().content(html! { (self.strings.get(Text::Reset)) }))
+                (op("inc", at_max).icon_only().aria_label(self.strings.get(Text::Increment)).body(html! { (Icon::Plus) }))
+                (op("reset", false).ghost().body(html! { (self.strings.get(Text::Reset)) }))
                 @if typed {
                     (Input::number_within("value", self.strings.get(Text::Value), min, max).hide_label().class("lui-counter-input").step(step).inputmode("numeric").id(&typed_id).value(&value_text))
-                    (op("set", false).content(html! { (self.strings.get(Text::Set)) }))
+                    (op("set", false).body(html! { (self.strings.get(Text::Set)) }))
                 }
                 @if min.is_some() || max.is_some() {
                     small class="lui-counter-bounds" {

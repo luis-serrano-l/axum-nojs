@@ -2,7 +2,7 @@
 //!
 //! A month grid drawn on the server: previous and next month are links, each day is a link
 //! (pick a day and the page comes back with it) or a radio button (the day is a form field,
-//! for a date picker). Days before `.min()`, after `.max()` or ruled out by `.disabled(..)`
+//! for a date picker). Days before `.min()`, after `.max()` or ruled out by `.disabled_dates(..)`
 //! cannot be picked; `.event(..)` puts a dot under a day.
 //!
 //! **Platform features:** a `<table>` of links or `<input type="radio">` inside `<label>`s,
@@ -33,7 +33,7 @@
 //! // Radios for a form, a window of days, weekends off, a deadline marked, Sunday first.
 //! let m = ui.calendar("due").radio().required()
 //!     .min("2026-09-10").max("2026-10-31")
-//!     .disabled(|d| d.weekday() >= 5)
+//!     .disabled_dates(|d| d.weekday() >= 5)
 //!     .event("2026-09-30", "Invoice due")
 //!     .sunday_first();
 //! let m = m.render().into_string();
@@ -41,7 +41,7 @@
 //! assert!(m.contains(r#"value="2026-09-12" disabled"#) && m.contains("Invoice due"));
 //! // The same in `lui!`:
 //! let same = lui! { Calendar("due") radio required min="2026-09-10" max="2026-10-31"
-//!     disabled=(|d| d.weekday() >= 5) event=("2026-09-30", "Invoice due") sunday_first; };
+//!     disabled_dates=(|d| d.weekday() >= 5) event=("2026-09-30", "Invoice due") sunday_first; };
 //! assert_eq!(same.into_string(), m);
 //! ```
 
@@ -173,7 +173,7 @@ fn parse_month(s: &str) -> Option<Date> {
 
 /// A month grid, made by [`Ui::calendar`].
 ///
-/// **Setters.** Values and items: `.disabled(..)`, `.today(..)`, `.min(..)`, `.max(..)`,
+/// **Setters.** Values and items: `.disabled_dates(..)`, `.today(..)`, `.min(..)`, `.max(..)`,
 /// `.event(..)`, `.value(..)`; switches: `.sunday_first()`, `.radio()`, `.required()`.
 #[derive(Clone, Debug)]
 pub struct Calendar<'a> {
@@ -200,7 +200,7 @@ impl Calendar<'_> {
             .doc("The first day that can be picked (`YYYY-MM-DD`)."),
         Prop::new("max", PropKind::Value, "date: &str")
             .doc("The last day that can be picked (`YYYY-MM-DD`)."),
-        Prop::new("disabled", PropKind::Value, "off: fn(Date) -> bool")
+        Prop::new("disabled_dates", PropKind::Value, "off: fn(Date) -> bool")
             .doc("Days for which `off` returns true cannot be picked."),
         Prop::new("event", PropKind::Item, "date: &str, text: &'a str")
             .doc("A dot under the day `date` (`YYYY-MM-DD`), with `text` for screen readers and as the day's tooltip."),
@@ -256,9 +256,15 @@ impl<'a> Calendar<'a> {
     }
 
     /// Days for which `off` returns true cannot be picked: weekends, holidays, full days.
-    pub fn disabled(mut self, off: fn(Date) -> bool) -> Self {
+    pub fn disabled_dates(mut self, off: fn(Date) -> bool) -> Self {
         self.disabled = Some(off);
         self
+    }
+
+    /// The old name of [`Self::disabled_dates`], kept for one release.
+    #[deprecated(note = "use .disabled_dates()")]
+    pub fn disabled(self, off: fn(Date) -> bool) -> Self {
+        self.disabled_dates(off)
     }
 
     /// A dot under the day `date` (`YYYY-MM-DD`), with `text` for screen readers and as the
@@ -340,9 +346,9 @@ impl Render for Calendar<'_> {
             let b = Button::link(ui.caps, "", href)
                 .ghost()
                 .small()
-                .icon()
-                .label(label)
-                .content(html! { (icon) });
+                .icon_only()
+                .aria_label(label)
+                .body(html! { (icon) });
             if on {
                 b.render()
             } else {

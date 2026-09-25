@@ -241,20 +241,20 @@ pub(crate) fn paged_table_with(
                     @if page > 1 {
                         @let (first, prev) = (link(1).to_string(), link(page - 1).to_string());
                         li { (page_button(caps, &first, t(Text::First), false).class("lui-paged-table-end")) }
-                        li { (page_button(caps, &prev, t(Text::Previous), false).rel("prev").content(html! { (Icon::ChevronLeft) (t(Text::Previous)) })) }
+                        li { (page_button(caps, &prev, t(Text::Previous), false).rel("prev").body(html! { (Icon::ChevronLeft) (t(Text::Previous)) })) }
                     }
                     @for slot in window(page, pages) {
                         @match slot {
                             Some(n) => li {
                                 @let h = link(n).to_string();
-                                (page_button(caps, &h, "", n == page).current(n == page).content(html! { (Thousands(n)) }))
+                                (page_button(caps, &h, "", n == page).current(n == page).body(html! { (Thousands(n)) }))
                             },
                             None => li class="lui-paged-table-gap" aria-hidden="true" { "…" },
                         }
                     }
                     @if page < pages {
                         @let (next, last) = (link(page + 1).to_string(), link(pages).to_string());
-                        li { (page_button(caps, &next, t(Text::Next), false).rel("next").content(html! { (t(Text::Next)) (Icon::ChevronRight) })) }
+                        li { (page_button(caps, &next, t(Text::Next), false).rel("next").body(html! { (t(Text::Next)) (Icon::ChevronRight) })) }
                         li { (page_button(caps, &last, t(Text::Last), false).class("lui-paged-table-end")) }
                     }
                 }

@@ -202,7 +202,7 @@ component gives the HTML to another template engine.
 - One import, `use loco_ui::prelude::*`. Every component is a method on `Ui` returning a
   builder: required arguments in the call, everything else a chained setter named after what
   it changes (`ui.dialog("Delete account").title("Delete account?").danger()`). Setters such as
-  `.required()`, `.icon()`, `.badge()` apply to the item added last (a field, a menu item, a
+  `.required()`, `.icon(..)`, `.badge(..)` apply to the item added last (a field, a menu item, a
   tab). Ids come from the label; state (`?tab.x=`, `?dialog=`, `?page=`, `?sort=`) is read
   from `ui`, so a route passes only what the page says differently. No macros beyond `html!`.
 - Primitives come first: `ui.button`/`ui.link_button`, `ui.input`/`ui.checkbox`/`ui.switch`/

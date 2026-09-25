@@ -65,6 +65,7 @@
 //! assert_eq!(same.into_string(), html);
 //! ```
 
+use std::fmt::Display;
 use std::rc::Rc;
 
 use maud::{Markup, Render, html};
@@ -78,7 +79,7 @@ use crate::{Cap, Ui};
 struct Tab<'a> {
     title: &'a str,
     body: Body<'a>,
-    badge: Option<usize>,
+    badge: Option<String>,
 }
 
 /// A panel: rendered already, or rendered on demand.
@@ -124,7 +125,7 @@ impl Tabs<'_> {
             "title: &'a str, body: impl Fn() -> Markup + 'a",
         )
         .doc("A tab whose panel is rendered only when it is the open one."),
-        Prop::new("badge", PropKind::Modifier, "count: usize")
+        Prop::new("badge", PropKind::Modifier, "text: impl Display")
             .doc("A count after the title of the tab added last."),
         Prop::new("vertical", PropKind::Switch, "")
             .doc("Titles in a column on the left, the open panel beside them."),
@@ -169,9 +170,9 @@ impl<'a> Tabs<'a> {
     }
 
     /// A count after the title of the tab added last.
-    pub fn badge(mut self, count: usize) -> Self {
+    pub fn badge(mut self, text: impl Display) -> Self {
         if let Some(t) = self.tabs.last_mut() {
-            t.badge = Some(count);
+            t.badge = Some(text.to_string());
         }
         self
     }
@@ -216,7 +217,7 @@ impl Render for Tabs<'_> {
                         @for (k, v) in s.entries() { @if k != key { input type="hidden" name=(k) value=(v); } }
                         select name=(key) aria-label=(ui.text(Text::Tab)) {
                             @for (i, t) in tabs.iter().enumerate() {
-                                option value=(i) selected[i == active] { (t.title) @if let Some(n) = t.badge { " (" (n) ")" } }
+                                option value=(i) selected[i == active] { (t.title) @if let Some(n) = &t.badge { " (" (n) ")" } }
                             }
                         }
                         (ui.button(ui.text(Text::Go)))
@@ -244,7 +245,7 @@ impl Render for Tabs<'_> {
     }
 }
 fn badge(t: &Tab) -> Markup {
-    html! { @if let Some(n) = t.badge { " " span class="lui-tabs-badge" { (n) } } }
+    html! { @if let Some(n) = &t.badge { " " span class="lui-tabs-badge" { (n) } } }
 }
 
 /// Styles for this component; included in [`crate::stylesheet`].

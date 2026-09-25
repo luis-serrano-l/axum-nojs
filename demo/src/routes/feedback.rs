@@ -34,7 +34,7 @@ fn feedback(ui: &Ui) -> Markup {
                 Progress(0, 0) label="Waiting for the server";
                 Meter(83, 0, 100) label="Disk used" low=60 high=80 optimum=0;
                 Cluster(lui! {
-                    Tooltip("Copy the link", lui! { Button("") icon label="Copy" content=(html! { (Icon::Copy) }); });
+                    Tooltip("Copy the link", lui! { Button("") icon_only aria_label="Copy" body=(html! { (Icon::Copy) }); });
                     Separator vertical;
                     Tooltip("Opens in a new tab", lui! { LinkButton("Docs", "/"); }) below;
                 });
@@ -112,7 +112,7 @@ fn stats(ui: &Ui) -> Markup {
     lui! {
             div class="lui-stat-grid" {
                 // code: /dashboard
-                Stat("Visitors", "12,480") delta="+8.2%" note="last 7 days" reveal;
+                Stat("Visitors", "12,480") delta="+8.2%" description="last 7 days" reveal;
                 Stat("Orders", if none { "0" } else { "3" }) delta=(if none { "-3" } else { "0" });
                 Stat("Error rate", "0.4%") delta="-0.2 pt" down_is_good href="/table";
                 Stat("p95 latency", "38 ms") delta="+6 ms" down_is_good;
@@ -133,7 +133,7 @@ async fn dashboard_page(ui: Ui) -> Page {
             @if none {
                 // code: /dashboard
                 EmptyState("No orders yet") icon="\u{1f4e6}" {
-                    text() { "Orders show up here as soon as a customer checks out." }
+                    body() { "Orders show up here as soon as a customer checks out." }
                     link "Show sample orders" "/dashboard";
                 }
                 // end code

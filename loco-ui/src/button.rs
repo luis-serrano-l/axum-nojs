@@ -40,7 +40,7 @@
 //! let same = lui! { Button("Save") primary; };
 //! assert_eq!(same.into_string(), save);
 //! // A small ghost icon button that toggles a popover, and a link that looks like a button.
-//! let more = ui.button("\u{22ef}").ghost().small().icon().label("More").command("toggle-popover", "menu");
+//! let more = ui.button("\u{22ef}").ghost().small().icon_only().aria_label("More").command("toggle-popover", "menu");
 //! let more = more.render().into_string();
 //! assert!(more.contains(r#"commandfor="menu""#) && more.contains(r#"aria-label="More""#));
 //! let docs = ui.link_button("Read the docs", "/docs").render().into_string();
@@ -73,10 +73,10 @@ enum Tone {
 /// A `<button>` or a link that looks like one, made by [`Ui::button`] or [`Ui::link_button`].
 ///
 /// **Setters.** Values and items: `.command(..)`, `.popovertarget(..)`, `.form(..)`,
-/// `.name(..)`, `.value(..)`, `.label(..)`, `.class(..)`, `.content(..)`, `.id(..)`,
+/// `.name(..)`, `.value(..)`, `.aria_label(..)`, `.class(..)`, `.body(..)`, `.id(..)`,
 /// `.role(..)`, `.title(..)`, `.style(..)`, `.aria_haspopup(..)`, `.accesskey(..)`,
 /// `.aria_keyshortcuts(..)`, `.formmethod(..)`, `.formaction(..)`, `.rel(..)`; switches:
-/// `.primary()`, `.danger()`, `.ghost()`, `.small()`, `.icon()`, `.submit()`, `.reset()`,
+/// `.primary()`, `.danger()`, `.ghost()`, `.small()`, `.icon_only()`, `.submit()`, `.reset()`,
 /// `.disabled()`, `.formnovalidate()`, `.shimmer()`; from a condition: `.loading(bool)`, `.pressed(bool)`,
 /// `.current(bool)`.
 #[derive(Clone, Debug)]
@@ -114,7 +114,7 @@ impl Button<'_> {
             .doc("No border or fill until hovered."),
         Prop::new("small", PropKind::Switch, "")
             .doc("2rem tall instead of 2.25rem."),
-        Prop::new("icon", PropKind::Switch, "")
+        Prop::new("icon_only", PropKind::Switch, "")
             .doc("Square, for a glyph or an icon."),
         Prop::new("submit", PropKind::Switch, "")
             .attr("type")
@@ -132,7 +132,7 @@ impl Button<'_> {
             .doc("Sent as `name=value` with the form when this button submits it."),
         Prop::new("value", PropKind::Value, "value: &'a str").attr("value")
             .doc("The submitted `value` that goes with `name`."),
-        Prop::new("label", PropKind::Value, "label: &'a str")
+        Prop::new("aria_label", PropKind::Value, "label: &'a str")
             .attr("aria-label")
             .doc("`aria-label`."),
         Prop::new("class", PropKind::Value, "class: &'a str").attr("class")
@@ -141,7 +141,7 @@ impl Button<'_> {
             .doc("Greyed out and not clickable."),
         Prop::new("loading", PropKind::Condition, "on: bool")
             .doc("A spinner before the text, `disabled` and `aria-busy`, while `on`."),
-        Prop::new("content", PropKind::Value, "markup: Markup")
+        Prop::new("body", PropKind::Value, "markup: Markup")
             .doc("Markup to show instead of the text."),
         Prop::new("id", PropKind::Value, "id: &'a str").attr("id")
             .doc("The element's `id`."),
@@ -269,10 +269,16 @@ impl<'a> Button<'a> {
         self
     }
 
-    /// Square, for a glyph or an icon; give it a `.label()` for screen readers.
-    pub fn icon(mut self) -> Self {
+    /// Square, for a glyph or an icon; give it a `.aria_label()` for screen readers.
+    pub fn icon_only(mut self) -> Self {
         self.icon = true;
         self
+    }
+
+    /// The old name of [`Self::icon_only`], kept for one release.
+    #[deprecated(note = "use .icon_only()")]
+    pub fn icon(self) -> Self {
+        self.icon_only()
     }
 
     /// `type="submit"`, the default unless a command or popover target is set.
@@ -319,9 +325,15 @@ impl<'a> Button<'a> {
     }
 
     /// `aria-label`: what an icon button does, for screen readers.
-    pub fn label(mut self, label: &'a str) -> Self {
+    pub fn aria_label(mut self, label: &'a str) -> Self {
         self.label = Some(label);
         self
+    }
+
+    /// The old name of [`Self::aria_label`], kept for one release.
+    #[deprecated(note = "use .aria_label()")]
+    pub fn label(self, label: &'a str) -> Self {
+        self.aria_label(label)
     }
 
     /// One more class after the button's own, for a component's part name.
@@ -343,9 +355,15 @@ impl<'a> Button<'a> {
     }
 
     /// Markup to show instead of the text: an icon beside it, a count, a formatted string.
-    pub fn content(mut self, markup: Markup) -> Self {
+    pub fn body(mut self, markup: Markup) -> Self {
         self.content = Some(markup);
         self
+    }
+
+    /// The old name of [`Self::body`], kept for one release.
+    #[deprecated(note = "use .body()")]
+    pub fn content(self, markup: Markup) -> Self {
+        self.body(markup)
     }
 
     /// The element's `id`.

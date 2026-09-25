@@ -318,9 +318,9 @@ impl Render for Dialog<'_> {
                     @if title.is_some() {
                         @let x = html! { (Icon::X) };
                         @if invokers {
-                            (ui.button("").ghost().small().icon().class("lui-dialog-close").label(ui.text(Text::Close)).content(x).command("close", id))
+                            (ui.button("").ghost().small().icon_only().class("lui-dialog-close").aria_label(ui.text(Text::Close)).body(x).command("close", id))
                         } @else {
-                            (ui.link_button("", "#").ghost().small().icon().class("lui-dialog-close").label(ui.text(Text::Close)).content(x))
+                            (ui.link_button("", "#").ghost().small().icon_only().class("lui-dialog-close").aria_label(ui.text(Text::Close)).body(x))
                         }
                     }
                 }

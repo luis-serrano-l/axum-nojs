@@ -30,13 +30,13 @@ fn palette(ui: &Ui) -> loco_ui::palette::Palette<'_> {
     ui.palette("/palette")
         .id("cmd")
         .group("Components")
-        .commands(COMPONENTS.iter().map(|c| (c.1, c.0)))
+        .links(COMPONENTS.iter().map(|c| (c.1, c.0)))
         .group("Shortcuts")
-        .command("Notification settings", "/settings?tab.settings=1")
+        .link("Notification settings", "/settings?tab.settings=1")
         .keywords("email releases")
-        .command("Largest files", "/table?sort=size&dir=desc")
+        .link("Largest files", "/table?sort=size&dir=desc")
         .keywords("sort size big")
-        .command("Open the delete dialog", "/dialog?dialog=confirm")
+        .link("Open the delete dialog", "/dialog?dialog=confirm")
         .keywords("account remove")
     // end code
 }

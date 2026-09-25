@@ -31,7 +31,7 @@ fn buttons(ui: &Ui) -> Markup {
                     Button("Delete") danger;
                     Button("Skip") ghost;
                     Button("Small") small;
-                    Button("\u{2026}") icon ghost label="More";
+                    Button("\u{2026}") icon_only ghost aria_label="More";
                     LinkButton("Read the docs", "/");
                 });
                 Cluster(lui! {

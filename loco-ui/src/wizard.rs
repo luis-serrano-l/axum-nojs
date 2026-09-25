@@ -103,7 +103,7 @@ struct Step<'a> {
 /// unless told otherwise.
 ///
 /// **Setters.** Values and items: `.values(..)`, `.errors(..)`, `.step(..)`, `.review(..)`,
-/// `.at(..)`, `.finish(..)`; switches: `.optional()`; from a condition: `.progress(bool)`.
+/// `.at(..)`, `.finish(..)`; switches: `.optional()`, `.hide_progress()`.
 #[derive(Clone, Debug)]
 pub struct Wizard<'a> {
     ui: &'a Ui,
@@ -135,8 +135,8 @@ impl Wizard<'_> {
             .doc("Server messages `(field name, message)` for the posted step."),
         Prop::new("finish", PropKind::Value, "label: &'a str").default("Finish")
             .doc("Label of the last step's submit button."),
-        Prop::new("progress", PropKind::Condition, "progress: bool")
-            .doc("Show the `<progress>` bar (on by default)."),
+        Prop::new("hide_progress", PropKind::Switch, "")
+            .doc("No `<progress>` bar above the steps."),
     ];
 }
 
@@ -236,7 +236,14 @@ impl<'a> Wizard<'a> {
         self
     }
 
-    /// Show the `<progress>` bar (on by default).
+    /// No `<progress>` bar above the steps.
+    pub fn hide_progress(mut self) -> Self {
+        self.progress = false;
+        self
+    }
+
+    /// The old form of [`Self::hide_progress`], kept for one release: `false` hides the bar.
+    #[deprecated(note = "use .hide_progress()")]
     pub fn progress(mut self, progress: bool) -> Self {
         self.progress = progress;
         self
@@ -449,7 +456,7 @@ mod tests {
         );
         assert!(
             !three(&ui)
-                .progress(false)
+                .hide_progress()
                 .render()
                 .into_string()
                 .contains("<progress")

@@ -28,7 +28,7 @@
 //! assert!(m.contains(r#"enctype="multipart/form-data""#) && m.contains(r#"type="file""#));
 //! // Images only, several at once, and what the server already has.
 //! let m = ui.upload("/files", "file")
-//!     .accept("image/*").multiple().hint("PNG or JPEG, up to 200 KB.")
+//!     .accept("image/*").multiple().help("PNG or JPEG, up to 200 KB.")
 //!     .file("cat.png", 48_213).preview("/files/cat.png")
 //!     .file("notes.txt", 1_024).href("/files/notes.txt")
 //!     .remove("/files/remove");
@@ -38,7 +38,7 @@
 //!
 //! // The same in `lui!`:
 //! let same = lui! { Upload("/files", "file")
-//!     accept="image/*" multiple hint="PNG or JPEG, up to 200 KB." {
+//!     accept="image/*" multiple help="PNG or JPEG, up to 200 KB." {
 //!     file "cat.png" 48_213 preview="/files/cat.png";
 //!     file "notes.txt" 1_024 href="/files/notes.txt";
 //!     remove "/files/remove";
@@ -64,7 +64,7 @@ struct Held<'a> {
 
 /// An upload form and its list of files, made by [`Ui::upload`].
 ///
-/// **Setters.** Values and items: `.accept(..)`, `.hint(..)`, `.file(..)`, `.preview(..)`,
+/// **Setters.** Values and items: `.accept(..)`, `.help(..)`, `.file(..)`, `.preview(..)`,
 /// `.href(..)`, `.remove(..)`; switches: `.multiple()`.
 #[derive(Clone, Debug)]
 pub struct Upload<'a> {
@@ -88,7 +88,7 @@ impl Upload<'_> {
         Prop::new("multiple", PropKind::Switch, "")
             .attr("multiple")
             .doc("Several files at once."),
-        Prop::new("hint", PropKind::Value, "text: &'a str").doc("Small print in the drop zone."),
+        Prop::new("help", PropKind::Value, "text: &'a str").doc("Small print in the drop zone."),
         Prop::new("file", PropKind::Item, "name: &'a str, size: u64")
             .doc("A file the server already holds, `size` in bytes."),
         Prop::new("preview", PropKind::Modifier, "src: &'a str")
@@ -131,9 +131,15 @@ impl<'a> Upload<'a> {
     }
 
     /// Small print in the drop zone: the types and sizes the server takes.
-    pub fn hint(mut self, text: &'a str) -> Self {
+    pub fn help(mut self, text: &'a str) -> Self {
         self.hint = Some(text);
         self
+    }
+
+    /// The old name of [`Self::help`], kept for one release.
+    #[deprecated(note = "use .help()")]
+    pub fn hint(self, text: &'a str) -> Self {
+        self.help(text)
     }
 
     /// A file the server already holds, `size` in bytes.
@@ -213,7 +219,7 @@ impl Render for Upload<'_> {
                                 @if let Some(action) = self.remove {
                                     form method="post" action=(action) {
                                         @let label = self.ui.fill(Text::RemoveValue, &[&f.name]);
-                                        (Button::new(caps, "").ghost().small().icon().label(&label).name(self.name).value(f.name).content(html! { (Icon::Trash) }))
+                                        (Button::new(caps, "").ghost().small().icon_only().aria_label(&label).name(self.name).value(f.name).body(html! { (Icon::Trash) }))
                                     }
                                 }
                             }

@@ -29,6 +29,7 @@
 
 use maud::{Markup, Render, html};
 
+use crate::icon::Glyph;
 use crate::props::{Prop, PropKind};
 use crate::{Icon, Ui};
 
@@ -42,7 +43,7 @@ pub struct Alert<'a> {
     description: Option<&'a str>,
     body: Option<Markup>,
     tone: Option<&'static str>,
-    icon: Option<Icon>,
+    icon: Option<Glyph<'a>>,
 }
 
 impl Alert<'_> {
@@ -53,7 +54,8 @@ impl Alert<'_> {
             .doc("A line of text under the title."),
         Prop::new("body", PropKind::Value, "markup: Markup")
             .doc("Markup under the title (a list, a link), after the description."),
-        Prop::new("icon", PropKind::Value, "icon: Icon").doc("Another icon than the tone's own."),
+        Prop::new("icon", PropKind::Value, "icon: impl Into<Glyph<'a>>")
+            .doc("Another icon than the tone's own."),
         Prop::new("danger", PropKind::Switch, "").doc("Something went wrong."),
         Prop::new("warn", PropKind::Switch, "").doc("Something to watch."),
         Prop::new("ok", PropKind::Switch, "").doc("Something worked."),
@@ -87,8 +89,8 @@ impl<'a> Alert<'a> {
     }
 
     /// Another icon than the tone's own.
-    pub fn icon(mut self, icon: Icon) -> Self {
-        self.icon = Some(icon);
+    pub fn icon(mut self, icon: impl Into<Glyph<'a>>) -> Self {
+        self.icon = Some(icon.into());
         self
     }
 
@@ -113,15 +115,15 @@ impl<'a> Alert<'a> {
 
 impl Render for Alert<'_> {
     fn render(&self) -> Markup {
-        let icon = self.icon.unwrap_or(match self.tone {
+        let icon = self.icon.unwrap_or(Glyph::Icon(match self.tone {
             Some("danger") | Some("warn") => Icon::TriangleAlert,
             Some("ok") => Icon::CircleCheck,
             _ => Icon::Info,
-        });
+        }));
         html! {
             div class={ "lui-alert" @if let Some(t) = self.tone { " lui-alert-" (t) } }
                 role=(if self.tone == Some("danger") { "alert" } else { "status" }) {
-                (icon)
+                (icon.hidden())
                 p class="lui-alert-title" { (self.title) }
                 @if let Some(d) = self.description { p class="lui-alert-description" { (d) } }
                 @if let Some(b) = &self.body { div class="lui-alert-description" { (b) } }

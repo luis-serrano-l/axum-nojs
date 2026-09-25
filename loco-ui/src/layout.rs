@@ -460,6 +460,7 @@ pub fn layout(caps: &Caps, title: &str, theme: Theme, body: Markup) -> Markup {
 
 /// [`layout`] under a different set of [`Tokens`]: the overrides are emitted once, in a
 /// `<style>` right after the stylesheet, so every component on the page picks them up.
+#[deprecated(note = "use ui.page(..).tokens(&tokens)")]
 pub fn layout_with(
     caps: &Caps,
     title: &str,

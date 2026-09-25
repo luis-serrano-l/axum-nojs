@@ -40,7 +40,7 @@
 //! assert!(m.render().into_string().contains(r#"id="account""#));
 //! // `icon`, `shortcut`, `disabled` and `danger` apply to the item just added.
 //! let m = ui.menu("Account")
-//!     .heading("Signed in as Ada")
+//!     .group("Signed in as Ada")
 //!     .link("Profile", "/profile").icon("@").shortcut("g p")
 //!     .link("Billing", "/billing").disabled()
 //!     .separator()
@@ -53,7 +53,7 @@
 //! assert!(html.contains("position-area: bottom span-left") && html.contains(r#"id="account-theme""#));
 //! // The same in `lui!`:
 //! let same = lui! { Menu("Account") align_end {
-//!     heading "Signed in as Ada";
+//!     group "Signed in as Ada";
 //!     link "Profile" "/profile" icon="@" shortcut="g p";
 //!     link "Billing" "/billing" disabled;
 //!     separator();
@@ -67,6 +67,7 @@
 use maud::{Markup, Render, html};
 
 use crate::button::Button;
+use crate::icon::Glyph;
 use crate::props::{Prop, PropKind};
 use crate::{Cap, Caps, Icon, Ui, slug};
 
@@ -115,7 +116,7 @@ enum Kind<'a> {
 pub struct MenuItem<'a> {
     kind: Kind<'a>,
     text: &'a str,
-    icon: Option<&'a str>,
+    icon: Option<Glyph<'a>>,
     shortcut: Option<&'a str>,
     disabled: bool,
     danger: bool,
@@ -161,7 +162,7 @@ impl<'a> From<(&'a str, &'a str)> for MenuItem<'a> {
 /// `shortcut`, `disabled` and `danger` apply to the item added last. Opens below the button,
 /// start-aligned, unless told otherwise.
 ///
-/// **Setters.** Values and items: `.submenu(..)`, `.link(..)`, `.action(..)`, `.heading(..)`,
+/// **Setters.** Values and items: `.submenu(..)`, `.link(..)`, `.action(..)`, `.group(..)`,
 /// `.icon(..)`, `.shortcut(..)`, `.id(..)`; switches: `.separator()`, `.disabled()`,
 /// `.danger()`, `.align_end()`, `.open_right()`.
 #[derive(Clone, Debug)]
@@ -181,7 +182,7 @@ impl Menu<'_> {
         Prop::new("action", PropKind::Item, "text: &'a str, action: &'a str")
             .attr("action")
             .doc("A `<form method=\"post\">` button posting to `action`."),
-        Prop::new("heading", PropKind::Item, "text: &'a str").doc("A section heading."),
+        Prop::new("group", PropKind::Item, "text: &'a str").doc("A section heading."),
         Prop::new("separator", PropKind::Item, "").doc("A rule between groups."),
         Prop::new(
             "submenu",
@@ -189,8 +190,8 @@ impl Menu<'_> {
             "text: &'a str, items: impl IntoIterator<Item = I>",
         )
         .doc("A nested menu of `items` (`MenuItem`s or `(text, href)` links)."),
-        Prop::new("icon", PropKind::Modifier, "icon: &'a str").doc(
-            "A glyph or emoji before the item's text (decorative, hidden from assistive tech).",
+        Prop::new("icon", PropKind::Modifier, "icon: impl Into<Glyph<'a>>").doc(
+            "An icon, or a glyph or emoji, before the item's text (decorative, hidden from assistive tech).",
         ),
         Prop::new("shortcut", PropKind::Modifier, "keys: &'a str")
             .doc("A shortcut shown after the item's text, as `<kbd>`."),
@@ -245,8 +246,14 @@ impl<'a> Menu<'a> {
     }
 
     /// A section heading.
-    pub fn heading(self, text: &'a str) -> Self {
+    pub fn group(self, text: &'a str) -> Self {
         self.push(MenuItem::new(Kind::Heading, text))
+    }
+
+    /// The old name of [`Self::group`], kept for one release.
+    #[deprecated(note = "use .group()")]
+    pub fn heading(self, text: &'a str) -> Self {
+        self.group(text)
     }
 
     /// A rule between groups.
@@ -267,8 +274,10 @@ impl<'a> Menu<'a> {
         ))
     }
 
-    /// A glyph or emoji before the item's text (decorative, hidden from assistive tech).
-    pub fn icon(self, icon: &'a str) -> Self {
+    /// An icon, or a glyph or emoji, before the item's text (decorative, hidden from
+    /// assistive tech).
+    pub fn icon(self, icon: impl Into<Glyph<'a>>) -> Self {
+        let icon = icon.into();
         self.last(|it| it.icon = Some(icon))
     }
 
@@ -341,9 +350,9 @@ pub(crate) fn menu(
     let trigger = Button::new(*caps, label)
         .popovertarget(id)
         .aria_haspopup("menu")
-        .content(face.clone());
+        .body(face.clone());
     let trigger = if compact {
-        trigger.ghost().small().icon().label(label)
+        trigger.ghost().small().icon_only().aria_label(label)
     } else {
         trigger
     };

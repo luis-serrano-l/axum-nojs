@@ -21,7 +21,7 @@
 //! ```rust
 //! use loco_ui::prelude::*;
 //! let ui = Ui::default();
-//! let m = ui.tooltip("Copy the link", html! { (ui.button("").icon().ghost().label("Copy").content(html! { (Icon::Copy) })) });
+//! let m = ui.tooltip("Copy the link", html! { (ui.button("").icon_only().ghost().aria_label("Copy").body(html! { (Icon::Copy) })) });
 //! let m = m.render().into_string();
 //! assert!(m.contains(r#"role="tooltip""#) && m.contains("Copy the link"));
 //! assert!(m.contains(r#"aria-describedby="lui-tooltip-copy-the-link""#));
@@ -29,7 +29,7 @@
 //! assert!(below.contains("lui-tooltip-below"));
 //! // The same in `lui!`:
 //! let same = lui! { Tooltip("Copy the link", lui! {
-//!     Button("") icon ghost label="Copy" content=(html! { (Icon::Copy) });
+//!     Button("") icon_only ghost aria_label="Copy" body=(html! { (Icon::Copy) });
 //! }); };
 //! assert_eq!(same.into_string(), m);
 //! ```

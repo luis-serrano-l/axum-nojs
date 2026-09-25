@@ -20,17 +20,17 @@
 //! assert!(ui.empty_state("No files yet").render().into_string().contains("No files yet"));
 //! let m = ui.empty_state("No results for \u{201c}zzz\u{201d}")
 //!     .icon("\u{1f50d}")
-//!     .text(html! { "Check the spelling or clear the filter." })
+//!     .body(html! { "Check the spelling or clear the filter." })
 //!     .link("Clear the filter", "/table")
-//!     .post("Create a file", "/files/new");
+//!     .action("Create a file", "/files/new");
 //! let m = m.render().into_string();
 //! assert!(m.contains(r#"href="/table""#) && m.contains(r#"action="/files/new""#));
 //! // The same in `lui!`:
 //! let same = lui! {
 //!     EmptyState("No results for \u{201c}zzz\u{201d}") icon="\u{1f50d}"
-//!         text=(html! { "Check the spelling or clear the filter." }) {
+//!         body=(html! { "Check the spelling or clear the filter." }) {
 //!         link "Clear the filter" "/table";
-//!         post "Create a file" "/files/new";
+//!         action "Create a file" "/files/new";
 //!     }
 //! };
 //! assert_eq!(same.into_string(), m);
@@ -39,16 +39,17 @@
 use maud::{Markup, Render, html};
 
 use crate::button::Button;
+use crate::icon::Glyph;
 use crate::props::{Prop, PropKind};
 use crate::{Caps, Ui};
 
 /// What a list shows when there is nothing in it, made by [`Ui::empty_state`].
 ///
-/// **Setters.** Values and items: `.icon(..)`, `.text(..)`, `.link(..)`, `.post(..)`.
+/// **Setters.** Values and items: `.icon(..)`, `.body(..)`, `.link(..)`, `.action(..)`.
 #[derive(Clone, Debug, Default)]
 pub struct EmptyState<'a> {
     title: &'a str,
-    icon: Option<&'a str>,
+    icon: Option<Glyph<'a>>,
     text: Option<Markup>,
     link: Option<(&'a str, &'a str)>,
     post: Option<(&'a str, &'a str)>,
@@ -58,12 +59,12 @@ impl EmptyState<'_> {
     /// Every setter with its kind, arguments, default and the HTML attribute it sets; listed by
     /// [`crate::props()`] and kept in step with the setters by a test.
     pub const PROPS: &'static [Prop] = &[
-        Prop::new("icon", PropKind::Value, "icon: &'a str")
-            .doc("A glyph or emoji above the title, hidden from screen readers."),
-        Prop::new("text", PropKind::Value, "text: Markup").doc("One or two sentences."),
+        Prop::new("icon", PropKind::Value, "icon: impl Into<Glyph<'a>>")
+            .doc("An icon, or a glyph or emoji, above the title, hidden from screen readers."),
+        Prop::new("body", PropKind::Value, "text: Markup").doc("One or two sentences."),
         Prop::new("link", PropKind::Value, "label: &'a str, href: &'a str")
             .doc("A link to follow."),
-        Prop::new("post", PropKind::Value, "label: &'a str, action: &'a str")
+        Prop::new("action", PropKind::Value, "label: &'a str, action: &'a str")
             .doc("A button posting to `action`."),
     ];
 }
@@ -79,16 +80,22 @@ impl Ui {
 }
 
 impl<'a> EmptyState<'a> {
-    /// A glyph or emoji above the title, hidden from screen readers.
-    pub fn icon(mut self, icon: &'a str) -> Self {
-        self.icon = Some(icon);
+    /// An icon, or a glyph or emoji, above the title, hidden from screen readers.
+    pub fn icon(mut self, icon: impl Into<Glyph<'a>>) -> Self {
+        self.icon = Some(icon.into());
         self
     }
 
     /// One or two sentences: why it is empty.
-    pub fn text(mut self, text: Markup) -> Self {
+    pub fn body(mut self, text: Markup) -> Self {
         self.text = Some(text);
         self
+    }
+
+    /// The old name of [`Self::body`], kept for one release.
+    #[deprecated(note = "use .body()")]
+    pub fn text(self, text: Markup) -> Self {
+        self.body(text)
     }
 
     /// A link to follow: the secondary action.
@@ -98,9 +105,15 @@ impl<'a> EmptyState<'a> {
     }
 
     /// A button posting to `action`: the primary action.
-    pub fn post(mut self, label: &'a str, action: &'a str) -> Self {
+    pub fn action(mut self, label: &'a str, action: &'a str) -> Self {
         self.post = Some((label, action));
         self
+    }
+
+    /// The old name of [`Self::action`], kept for one release.
+    #[deprecated(note = "use .action()")]
+    pub fn post(self, label: &'a str, action: &'a str) -> Self {
+        self.action(label, action)
     }
 }
 

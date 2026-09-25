@@ -73,7 +73,7 @@ fn menus(ui: &Ui) -> Markup {
             div class="lui-popover-row" {
                 // code: /popover
                 Menu("Account") {
-                    heading "Signed in as Ada";
+                    group "Signed in as Ada";
                     link "Profile" "/popover" icon="@" shortcut="g p";
                     link "Settings" "/settings" icon="\u{2699}" shortcut="g s";
                     link "Billing" "/popover" icon="$" disabled;

@@ -11,7 +11,7 @@ query string with a fixed vocabulary:
 | Key | Meaning | Example |
 |---|---|---|
 | `tab.<name>` | index of the open panel in the tab group `<name>` | `?tab.settings=1` |
-| `open.<group>` | open section(s) in the accordion `<group>`, a comma list for `multi`; empty closes all | `?open.faq=2`, `?open.faq=0,2` |
+| `open.<group>` | open section(s) in the accordion `<group>`, a comma list for `multiple`; empty closes all | `?open.faq=2`, `?open.faq=0,2` |
 | `step.<wizard>` | current step (0-based) of the wizard `<wizard>` | `?step.signup=2` |
 | `per.<table>` | rows per page of the paged table `<table>`; the page links still carry it, so a shared URL shows the same rows | `?per.files=25` |
 | `dialog` | id of a dialog rendered open (never remembered in the cookie) | `?dialog=confirm` |

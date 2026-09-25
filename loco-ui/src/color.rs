@@ -145,7 +145,7 @@ impl Render for Color<'_> {
                         span class="lui-color-presets" role="group" aria-label=(self.strings.get(Text::Presets)) {
                             @for p in presets {
                                 @let use_p = self.strings.fill(Text::UseValue, &[p]);
-                                (Button::new(Caps::NONE, "").name(&preset_name).value(p).label(&use_p).pressed(p.eq_ignore_ascii_case(value)).style(format!("--lui-color-value: {p}")))
+                                (Button::new(Caps::NONE, "").name(&preset_name).value(p).aria_label(&use_p).pressed(p.eq_ignore_ascii_case(value)).style(format!("--lui-color-value: {p}")))
                             }
                         }
                     }

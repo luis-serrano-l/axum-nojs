@@ -675,7 +675,7 @@ turns into a call:
 Compiler errors are rustc's own at the written token (pinned by the `trybuild` tests in
 `loco-ui-macros/tests/ui/`): a misspelled attribute gives "no method named `vertcal` …
 there is a method `vertical` with a similar name", a missing argument "this method takes 1
-argument but 0 arguments were supplied" under `Tabs()`, a wrong value "expected `usize`,
+argument but 0 arguments were supplied" under `Tabs()`, a wrong value "expected `i64`,
 found `&str`" under the value. The `.stderr` files follow rustc's wording, so a new stable
 release can require `TRYBUILD=overwrite` once.
 
