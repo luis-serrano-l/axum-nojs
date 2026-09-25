@@ -1151,10 +1151,22 @@ every Loco API named below against loco-rs 1.2 before relying on it, as M27 did.
   weighs" re-measured.
 
 ### Developer experience
-- [ ] Playground per component (Lookbook, phoenix_storybook): each demo page's props table
+- [x] Playground per component (Lookbook, phoenix_storybook): each demo page's props table
   becomes a GET form, generated from `PROPS`, that re-renders the component with the chosen
   props and shows the matching `lui!` snippet. Works with script off; the enhancement script
   swaps it in place.
+  Done: `demo/src/playground.rs`. Rust cannot call a setter by name, so each playable builder
+  has an entry: its `lui!` call, the props it offers (switch, condition, text, number) and a
+  function mapping them to setters; 17 builders (Button, Badge, Alert, Card, Avatar, Progress,
+  Meter, Separator, Skeleton, EmptyState, Stat, Chart, DescriptionList, InputOtp, Input,
+  Range, ErrorPage). Their props table gains a "Try" column (checkboxes and text boxes built
+  from the primitives) inside a GET form (`pg.<Builder>.<prop>`), then the component as chosen
+  and its `lui!` line, all in one swap root; the tried builder's `<details>` opens. Builders
+  fed lists, rows or markup (tabs, table, kanban, …) keep the read-only table: the default,
+  since a form cannot build their data. Tests: every entry's props exist in its `PROPS`, a
+  tried page renders the choice and its line; the browser check ticks a prop and sees the
+  swap in place; axe clean. Blitz counts scoped to the demo stage now that previews repeat
+  components.
 - [ ] Theme builder without script: `/theme` with colour inputs and a radius, posted to the
   server, a live preview of a few components, and a `theme.css` download of the `--lui-*`
   overrides (maud-ui's `/theme`, without its script). `docs/theming.md` links it.

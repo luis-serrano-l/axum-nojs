@@ -405,13 +405,17 @@ tbody tr:hover { background: color-mix(in srgb, var(--lui-accent) 50%, transpare
 .lui-props summary { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.25rem 0.5rem; padding: 0.5rem 0.75rem; cursor: pointer; }
 .lui-props summary span { margin-left: auto; color: var(--lui-muted); font-size: 0.8125rem; }
 .lui-props-scroll { overflow-x: auto; border-top: 1px solid var(--lui-line); }
+.lui-playground > form > p { margin: 0; padding: 0.5rem 0.75rem; border-top: 1px solid var(--lui-line); }
+.lui-playground-preview { padding: 1rem 0.75rem; border-top: 1px solid var(--lui-line); }
+.lui-playground > pre { margin: 0; padding: 0.5rem 0.75rem; border-top: 1px solid var(--lui-line); overflow-x: auto; font-size: 0.8125rem; }
 .lui-props table { width: 100%; border-collapse: collapse; font-size: 0.8125rem; }
 .lui-props th, .lui-props td { text-align: left; vertical-align: top; padding: 0.375rem 0.75rem; border-bottom: 1px solid var(--lui-line); }
 .lui-props th { color: var(--lui-muted); font-weight: 500; white-space: nowrap; }
 .lui-props tbody tr:last-child td { border-bottom: 0; }
 .lui-props td:nth-child(-n+2), .lui-props td:nth-child(4), .lui-props td:nth-child(5) { white-space: nowrap; }
 .lui-props td:nth-child(3) { min-width: 10rem; }
-.lui-props td:last-child { min-width: 16rem; }
+.lui-props td:nth-child(6) { min-width: 16rem; }
+.lui-props td:nth-child(7) { white-space: nowrap; }
 .lui-index { max-width: none; }
 .lui-index h2 { margin: 3rem 0 0.25rem; font-size: 1.5rem; line-height: 2rem; }
 .lui-index-layer { margin: 0 0 1rem; color: var(--lui-muted); font-size: 0.875rem; }

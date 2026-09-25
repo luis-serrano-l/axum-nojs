@@ -338,6 +338,13 @@ try {
   await go("/form?errors=1");
   assert(await js("return document.activeElement.getAttribute('href')") === "#f-email", "error summary: focused on load by autofocus");
 
+  // Playground: tick a prop, press Try, the component and its lui! line change in place.
+  await go("/button?pg.Button.small=true");
+  await js("document.querySelector(\"#pg-button input[name='pg.Button.danger']\").click()");
+  await js("document.querySelector('#pg-button form .lui-button-primary').click()");
+  await until(async () => await js("return !!document.querySelector('#pg-button .lui-playground-preview .lui-button-danger')"), "playground re-rendered");
+  assert(await navigations() === 1 && (await js("return location.search")).includes("pg.Button.danger=true"), "playground: re-rendered in place, the choice in the URL");
+
   // Tooltip: hidden until its trigger has focus (or the pointer), then shown; named by aria-describedby.
   await go("/feedback");
   assert(await js("return getComputedStyle(document.querySelector('.lui-tooltip-text')).visibility") === "hidden", "tooltip: hidden at rest");

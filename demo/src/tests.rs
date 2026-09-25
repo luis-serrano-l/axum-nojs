@@ -652,3 +652,43 @@ async fn unknown_paths_get_the_not_found_block() {
     let html = String::from_utf8(bytes.to_vec()).unwrap();
     assert!(html.contains("<h1>Page not found</h1>") && html.contains("lui-error-page"));
 }
+
+/// A props table the playground knows is a form: ticked switches and typed values re-render
+/// the component and write its `lui!` line; every prop it offers is one of the builder's.
+#[tokio::test]
+async fn the_playground_renders_what_was_chosen() {
+    for e in crate::playground::ENTRIES {
+        let c = loco_ui::props()
+            .iter()
+            .find(|c| c.builder == e.builder)
+            .unwrap_or_else(|| panic!("{}: not in props()", e.builder));
+        for p in e.offered() {
+            assert!(
+                c.props.iter().any(|q| q.name == *p),
+                "{}: no prop {p}",
+                e.builder
+            );
+        }
+    }
+    let req = Request::get("/button?pg.Button.primary=on&pg.Button.small=on")
+        .body(Body::empty())
+        .unwrap();
+    let res = router().oneshot(req).await.unwrap();
+    let bytes = axum::body::to_bytes(res.into_body(), usize::MAX)
+        .await
+        .unwrap();
+    let html = String::from_utf8(bytes.to_vec()).unwrap();
+    let preview = html
+        .split("lui-playground-preview")
+        .nth(1)
+        .expect("a preview");
+    assert!(
+        preview.contains("lui-button lui-button-primary lui-button-small"),
+        "{preview}"
+    );
+    assert!(
+        html.contains("Button(&quot;Save&quot;) primary small;"),
+        "the lui! line"
+    );
+    assert!(html.contains(r#"name="pg.Button.primary" type="checkbox" value="true" checked"#));
+}

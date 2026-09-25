@@ -876,7 +876,7 @@ async fn drawer_is_a_sidebar_when_wide_and_breadcrumbs_fold() {
 #[tokio::test]
 async fn stats_and_empty_state() {
     let page = Page::render(demo::router(), "/dashboard?orders=none", MODERN).await;
-    assert_eq!(page.count(".lui-stat"), 4);
+    assert_eq!(page.count(".lui-stage .lui-stat"), 4);
     let (a, b) = (
         page.bbox(".lui-stat-grid > :nth-child(1)").unwrap(),
         page.bbox(".lui-stat-grid > :nth-child(2)").unwrap(),
@@ -896,7 +896,7 @@ async fn stats_and_empty_state() {
     assert!(page.is_visible(".lui-empty-title"));
     assert!(page.exists(".lui-empty-actions a[href='/dashboard']"));
     let full = Page::render(demo::router(), "/dashboard", MODERN).await;
-    assert!(!full.exists(".lui-empty"));
+    assert!(!full.exists(".lui-stage .lui-empty"));
 }
 
 #[tokio::test]
@@ -990,13 +990,17 @@ async fn buttons_badges_and_icons() {
         page.is_visible("a.lui-button[href='/']"),
         "a link can look like a button"
     );
-    assert_eq!(page.count(".lui-badge"), 6);
+    assert_eq!(page.count(".lui-stage .lui-badge"), 6);
     let svg = page.bbox("svg.lui-icon").unwrap();
     assert!(
         (svg.width - 16.0).abs() < 1.0 && (svg.height - 16.0).abs() < 1.0,
         "icons are 1rem: {svg:?}"
     );
-    assert_eq!(page.count("svg.lui-icon"), 31, "every icon in Icon::ALL");
+    assert_eq!(
+        page.count(".lui-stage svg.lui-icon"),
+        31,
+        "every icon in Icon::ALL"
+    );
 }
 
 #[tokio::test]

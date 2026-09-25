@@ -107,6 +107,13 @@ compile time so the page and the code cannot drift, and highlighted on the serve
 [syntect](https://crates.io/crates/syntect), a dependency of the demo only, coloured with the
 `--lui-*` tokens. To show more of a handler, move its markers.
 
+Under the code, every builder on the page has its props table, generated from its `PROPS`. For
+17 builders (button, badge, alert, card, input, chart, …) the table is a playground: a GET form
+with a control per switch, text or number prop that re-renders the component with the chosen
+props and writes the matching `lui!` line (`demo/src/playground.rs`). It works with script off
+(the choice is in the URL, `?pg.Button.primary=true`), and the enhancement script swaps it in
+place. Builders fed lists, rows or markup keep a read-only table.
+
 `loco-ui-test` renders every route through [Blitz](https://github.com/DioxusLabs/blitz)
 (Stylo + Taffy + vello_cpu, no script engine) and writes a PNG per route and capability level
 to `tests/shots/`, which is also the proof that every route works with no script. What Blitz

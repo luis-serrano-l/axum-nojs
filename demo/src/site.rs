@@ -448,7 +448,7 @@ pub(crate) fn shell(ui: &Ui, title: &str, body: Markup) -> Markup {
             }
         }
         @if let Some((.., builders)) = CODE.iter().find(|h| h.0 == c.0).filter(|h| !h.3.is_empty()) {
-            (props(builders))
+            (props(ui, builders))
         }
     }
 }
@@ -459,30 +459,38 @@ fn inline_code(text: &str) -> Markup {
 }
 
 /// What each builder on the page accepts, from `loco_ui::props()`: one `<details>` per
-/// builder (the first open), its constructors in the summary and a table of its setters inside.
-fn props(builders: &[&loco_ui::props::Component]) -> Markup {
+/// builder (the first open, or the one being tried), its constructors in the summary and a
+/// table of its setters inside. For a builder the playground knows, the table is a form with
+/// a "Try" column, followed by the component as chosen and its `lui!` line.
+fn props(ui: &Ui, builders: &[&loco_ui::props::Component]) -> Markup {
+    let tried = |b: &str| crate::playground::tried(ui, b);
+    let any_tried = builders.iter().any(|b| tried(b.builder));
     html! {
         section class="lui-props" {
             h2 { "Props" }
             @for (i, b) in builders.iter().enumerate() {
-                details open[i == 0] {
+                @let has_try = crate::playground::entry(b.builder).is_some();
+                details open[if any_tried { tried(b.builder) } else { i == 0 }] {
                     summary {
                         code { (b.lui()) }
                         @for call in b.calls { " " code { (call) } }
                         span { (b.props.len()) @if b.props.len() == 1 { " prop" } @else { " props" } }
                     }
                     @if !b.props.is_empty() {
-                        div class="lui-props-scroll" tabindex="0" role="region" aria-label={ (b.builder) " props" } { table {
-                            thead { tr { th { "Prop" } th { "Kind" } th { "Arguments" } th { "Default" } th { "HTML" } th { "What it does" } } }
-                            tbody { @for p in b.props { tr {
-                                td { code { (p.name) } }
-                                td { (p.kind.as_str()) }
-                                td { @if !p.args.is_empty() { code { (p.args) } } }
-                                td { @if !p.default.is_empty() { code { (p.default) } } }
-                                td { @if !p.attr.is_empty() { code { (p.attr) } } }
-                                td { (inline_code(p.doc)) }
-                            } } }
-                        } }
+                        (crate::playground::playground(ui, ui.state.path(), b, |cell| html! {
+                            div class="lui-props-scroll" tabindex="0" role="region" aria-label={ (b.builder) " props" } { table {
+                                thead { tr { th { "Prop" } th { "Kind" } th { "Arguments" } th { "Default" } th { "HTML" } th { "What it does" } @if has_try { th { "Try" } } } }
+                                tbody { @for p in b.props { tr {
+                                    td { code { (p.name) } }
+                                    td { (p.kind.as_str()) }
+                                    td { @if !p.args.is_empty() { code { (p.args) } } }
+                                    td { @if !p.default.is_empty() { code { (p.default) } } }
+                                    td { @if !p.attr.is_empty() { code { (p.attr) } } }
+                                    td { (inline_code(p.doc)) }
+                                    @if has_try { td { (cell(p)) } }
+                                } } }
+                            } }
+                        }))
                     }
                 }
             }

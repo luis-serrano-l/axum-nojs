@@ -1,6 +1,7 @@
 //! Demo server: one route per component. Handlers only parse input and call `loco-ui`.
 //! The binary in `main.rs` serves [`router`]; tests and `loco-ui-test` call it directly.
 
+mod playground;
 pub mod pricing;
 pub mod snapshot;
 pub mod spanish;
