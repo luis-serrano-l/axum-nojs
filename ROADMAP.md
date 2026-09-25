@@ -966,3 +966,85 @@ the attribute form must compile down to the same builder, so both forms stay one
   kanban and dialog before/after and the counts; `docs/comparison.md` gains the `nojs!`
   button, names at the call site, and the listable props.
 
+
+## M29 · Beat maud-ui on Loco
+Evaluation of 2026-09-25 against maud-ui 0.20.3 (84 components, 31 blocks, a `/theme`
+customiser; htmx plus an 89 KB script; its own README lists 21 components that need JS, among
+them Dialog, Popover, Menu, Select, Sheet and Data Table; no Loco integration, no CLI; 6
+stars) and the kits worth copying: shadcn/ui and templUI (a CLI and registry), Phoenix 1.8
+(`phx.gen.auth`, form-bound `<.input>`), Rails ViewComponent + Lookbook + Primer (previews,
+component status, accessibility linting), GOV.UK Frontend (error summary, translatable
+strings), Basecoat and Oat (CSS-first, a list of what needs JS). The opening: according to
+Loco's generators reference, Loco 1.0 removed the `--html`/`--htmx` scaffolds in favour of a
+JSON API plus a React SPA, so server-rendered CRUD on Loco has no first-party answer. axum-nojs
+already beats maud-ui on the guarantee (0 KB required, proven by Blitz, strict CSP) and on Loco
+wiring; it falls behind on install, ready-made pages, i18n and checked accessibility. Check
+every Loco API named below against loco-rs 1.2 before relying on it, as M27 did.
+
+### Loco adoption
+- [ ] Publish: the M13 box. Everything below matters less while install is a git dependency.
+  Owner only.
+- [ ] One-command install: a subcommand (`cargo run -p axum-nojs --features loco -- install`,
+  or a small `cargo-nojs` binary) that writes `.loco-templates/`, adds the initializer line
+  to `app.rs`, a `views/layout.rs` and the `views/mod.rs` entries; idempotent, and a test
+  runs it on a fresh `loco new` copy and then `cargo check`s the result.
+- [ ] Auth generator (Phoenix's `phx.gen.auth` as the model): templates for sign-in, sign-up,
+  forgot and reset password, email verification and magic link, as no-script forms with
+  the JWT in an `HttpOnly` cookie (the `examples/loco-app` pattern); `examples/loco-app` is
+  regenerated from them and its Blitz tests cover every page.
+- [ ] Validation that re-renders: an extractor (`loco::Valid<T>`) that gives the handler
+  `Ok(T)` or `Err((FieldErrors, values))` instead of Loco's `FormValidate` error response,
+  so a create/update handler is one `match`: render the form again or redirect. The scaffold
+  uses it.
+- [ ] Error summary (GOV.UK): `ui.error_summary(&errors)`, a `role="alert"` list at the top
+  of the form linking to each field in error by id, focused on load via `autofocus` on its
+  heading link; `Form` shows it when it has errors. Demo on `/app/signin` and `/form`.
+- [ ] A pager fed straight from Loco: `.paged_from(&PagerMeta)` (or `From<&PageResponse<T>>`)
+  instead of the hand-written `num_items` + `fetch_page`; a doctest against `MockDatabase`.
+- [ ] Scaffold field kinds: `references` fields become a select (or combobox past N rows) of
+  the parent model, `bool`, `date`, `datetime`, `decimal` and enum columns get their own
+  controls; check the templates against Loco 1.x's adaptive scaffold (`--no-auth`, the
+  `frontend/` detection) and note the result in FINDINGS.
+
+### Library quality
+- [ ] i18n: `lang="en"` is hard-coded in `layout.rs` and built-in strings ("Next", "Close",
+  "Load more", "Search", "Loading", "Page", "Cancel") are literals across components. Add
+  `ui.lang()` (from `Accept-Language` or a cookie, set on `<html lang>`) and one string table
+  (`Strings`, English default, overridable per app); a test fails on an English literal a
+  component renders outside the table. Bridge to Loco's `fluent-templates` under `loco`.
+- [ ] Automated accessibility: run axe-core inside `scripts/browser-check.mjs` over every
+  `PATHS` route, both caps variants, light and dark (axe is injected by the test driver only,
+  never served, so the one-script rule holds); CI fails on any violation of serious or
+  critical impact. Each component header gains an **Accessibility** line (roles, keyboard,
+  what was checked), and README's badge line adds "axe-clean".
+- [ ] Blocks, no script: app shell with sidebar, auth pages, settings page, record show/edit
+  page, dashboard of stats, and error pages (404, 500) in Maud usable as Loco's fallback. One
+  file each under `axum-nojs/src/blocks/`, one demo route each, one Blitz test each.
+- [ ] Server-rendered SVG charts (bar, line, sparkline): `ui.chart(..)` writes `<svg>` with
+  `<title>`/`<desc>` and a visually hidden data table as the accessible fallback; theme
+  colours from `--nojs-*` tokens. No JS, which maud-ui and most kits need here.
+- [ ] Missing shadcn components: sidebar, navigation menu, description list, toggle group,
+  context menu (a popover on a secondary button), input OTP (one field with
+  `autocomplete="one-time-code"` and `inputmode="numeric"`). Each by the component
+  conventions, with PROPS, a `nojs!` twin and a demo route.
+
+### Developer experience
+- [ ] Playground per component (Lookbook, phoenix_storybook): each demo page's props table
+  becomes a GET form, generated from `PROPS`, that re-renders the component with the chosen
+  props and shows the matching `nojs!` snippet. Works with script off; the enhancement script
+  swaps it in place.
+- [ ] Theme builder without script: `/theme` with colour inputs and a radius, posted to the
+  server, a live preview of a few components, and a `theme.css` download of the `--nojs-*`
+  overrides (maud-ui's `/theme`, without its script). `docs/theming.md` links it.
+- [ ] Component status (Primer): `stable | beta` in `props::COMPONENTS`, shown on the demo
+  page, the index and the spec JSON; README says what each status promises.
+- [ ] Copy-paste mode (shadcn, templUI), last: `cargo nojs add <component>` vendors a
+  component's file into the app, from the spec JSON as the registry. Components read `ui`, so
+  first decide whether a vendored file keeps `use axum_nojs::…` for `Ui` or copies it; ask
+  the owner before starting.
+
+### Positioning
+- [ ] README and `docs/loco.md` lead with "server-rendered scaffolds for Loco 1.x, zero
+  JavaScript"; `docs/comparison.md` gains the maud-ui numbers above and a Loco column.
+- [ ] Ask to be linked from Loco's docs or discussions once the crate is published. Outward
+  action: owner only (BLOCKED.md).
