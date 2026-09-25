@@ -37,6 +37,8 @@ serde.workspace = true
 axum.workspace = true
 tokio.workspace = true
 tower = { version = "0.5", features = ["util"] }
+# Loco apps derive `Validate` themselves; the `loco` doctests do the same.
+validator = { version = "0.20", features = ["derive"] }
 hyper = { version = "1", features = ["server", "http1", "http2"] }
 hyper-util = { version = "0.1", features = ["tokio", "server-auto", "http1", "http2"] }
 http-body-util = "0.1"

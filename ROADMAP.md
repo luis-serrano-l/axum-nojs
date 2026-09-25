@@ -756,9 +756,16 @@ loco-rs source (fetch it into `~/.cargo/registry` with a scratch crate) before r
   `Result<Page>`/`Result<Redirect>` and uses `?`, or `Result<Response>` with `.into_response()`.
   The `loco` module doc has a controller (`Routes::new().prefix(..).add(..)`) as a doctest, and
   a test checks `Result<Page>` answers 200 with the page and 404 for `Error::NotFound`.
-- [ ] Validation errors: Loco models validate with the `validator` crate; a helper maps
+- [x] Validation errors: Loco models validate with the `validator` crate; a helper maps
   `ValidationErrors` into `Form::errors(..)`/`Input::error(..)` so server errors land on the
   right field.
+  Done: `axum_nojs::loco::FieldErrors`, `From` both `validator::ValidationErrors` and Loco's
+  `ModelValidationErrors`, plus `from_error(&loco_rs::Error)`; `.pairs()` for `Form::errors`,
+  `.get(field)` for `Input::error`. First message per field; a rule without `message` gets a
+  sentence from its code. Doctest: a `create` controller re-rendering the form. Gotchas noted
+  there: Loco's prelude makes `.validate()` ambiguous (call `Validate::validate`), and the
+  pairs borrow, so build the form inside `html!`. Before this, the `loco` doctests were not run
+  (`cargo test <filter>` skipped them); `verify.sh` and CI now run `--doc` explicitly.
 - [ ] Data: SeaORM's paginator feeds `paged_table`/`pager` (`?page=` and page size) without
   loading every row; an example query in the docs.
 - [ ] Flash and PRG: `Redirect` + `ui.flash()` work with Loco's cookie setup (the private

@@ -24,6 +24,7 @@ echo "== tests (unit, doc, only-one-script, Blitz layout + screenshots)"
 cargo test --workspace
 # Nothing in the workspace turns `loco` on, so its tests and doctests run here.
 cargo test -p axum-nojs --features loco loco
+cargo test -p axum-nojs --features loco --doc loco
 
 echo "== rustdoc (deny warnings, all features)"
 RUSTDOCFLAGS="-D warnings" cargo doc --no-deps -p axum-nojs-caps -p axum-nojs --all-features

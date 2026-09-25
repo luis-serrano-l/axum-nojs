@@ -350,6 +350,7 @@ dependencies = [
  "serde_urlencoded",
  "tokio",
  "tower",
+ "validator",
 ]
 
 [[package]]
