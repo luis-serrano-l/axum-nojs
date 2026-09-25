@@ -10,14 +10,14 @@
 //! `loading="lazy"` thumbnails; Post/Redirect/Get after the upload and after each removal.
 //!
 //! **What it does not do without script:** show the upload's progress (the enhancement script
-//! sends the form through `XMLHttpRequest` and fills the `<progress data-nojs-progress>` bar;
+//! sends the form through `XMLHttpRequest` and fills the `<progress data-lui-progress>` bar;
 //! without it the browser shows its own loading indicator), preview a file before it is sent,
 //! or accept a drop anywhere but on the input.
 //!
 //! **Fallback:** none needed: the form is a plain multipart post.
 //!
 //! ```rust
-//! use axum_nojs::prelude::*;
+//! use loco_ui::prelude::*;
 //! let ui = Ui::default();
 //! let m = ui.upload("/files", "file").render().into_string();
 //! assert!(m.contains(r#"enctype="multipart/form-data""#) && m.contains(r#"type="file""#));
@@ -31,8 +31,8 @@
 //! assert!(m.contains(r#"accept="image/*" multiple"#) && m.contains(r#"src="/files/cat.png""#));
 //! assert!(m.contains("47.1 KB") && m.contains(r#"name="file" value="notes.txt""#));
 //!
-//! // The same in `nojs!`:
-//! let same = nojs! { Upload("/files", "file")
+//! // The same in `lui!`:
+//! let same = lui! { Upload("/files", "file")
 //!     accept="image/*" multiple hint="PNG or JPEG, up to 200 KB." {
 //!     file "cat.png" 48_213 preview="/files/cat.png";
 //!     file "notes.txt" 1_024 href="/files/notes.txt";
@@ -175,35 +175,35 @@ fn size(bytes: u64) -> String {
 
 impl Render for Upload<'_> {
     fn render(&self) -> Markup {
-        let root = enhance::swap_id("nojs-upload", self.action);
+        let root = enhance::swap_id("lui-upload", self.action);
         let input_id = format!("{root}-input");
         let caps = self.ui.caps;
         html! {
-            div id=(root) data-nojs="swap" class="nojs-upload" {
-                form method="post" action=(self.action) enctype="multipart/form-data" class="nojs-upload-form" {
-                    label class="nojs-upload-drop" for=(input_id) {
+            div id=(root) data-lui="swap" class="lui-upload" {
+                form method="post" action=(self.action) enctype="multipart/form-data" class="lui-upload-form" {
+                    label class="lui-upload-drop" for=(input_id) {
                         (Icon::Upload)
-                        span class="nojs-upload-title" { @if self.multiple { "Choose files or drop them on the button" } @else { "Choose a file or drop it on the button" } }
-                        @if let Some(h) = self.hint { span class="nojs-upload-hint" { (h) } }
-                        input id=(input_id) class="nojs-upload-input" type="file" name=(self.name)
+                        span class="lui-upload-title" { @if self.multiple { "Choose files or drop them on the button" } @else { "Choose a file or drop it on the button" } }
+                        @if let Some(h) = self.hint { span class="lui-upload-hint" { (h) } }
+                        input id=(input_id) class="lui-upload-input" type="file" name=(self.name)
                             accept=[self.accept] multiple[self.multiple] required;
                     }
-                    progress class="nojs-upload-progress" data-nojs-progress hidden {}
+                    progress class="lui-upload-progress" data-lui-progress hidden {}
                     (Button::new(caps, "Upload").primary())
                 }
                 @if !self.files.is_empty() {
-                    ul class="nojs-upload-files" aria-label="Uploaded files" {
+                    ul class="lui-upload-files" aria-label="Uploaded files" {
                         @for f in &self.files {
-                            li class="nojs-upload-file" {
+                            li class="lui-upload-file" {
                                 @if let Some(src) = f.preview {
-                                    img class="nojs-upload-thumb" src=(src) alt="" loading="lazy";
+                                    img class="lui-upload-thumb" src=(src) alt="" loading="lazy";
                                 } @else {
-                                    span class="nojs-upload-thumb" aria-hidden="true" { (Icon::File) }
+                                    span class="lui-upload-thumb" aria-hidden="true" { (Icon::File) }
                                 }
-                                span class="nojs-upload-name" {
+                                span class="lui-upload-name" {
                                     @if let Some(h) = f.href { a href=(h) { (f.name) } } @else { (f.name) }
                                 }
-                                span class="nojs-upload-size" { (size(f.size)) }
+                                span class="lui-upload-size" { (size(f.size)) }
                                 @if let Some(action) = self.remove {
                                     form method="post" action=(action) {
                                         @let label = format!("Remove {}", f.name);
@@ -221,29 +221,29 @@ impl Render for Upload<'_> {
 
 /// Styles for this component; included in [`crate::stylesheet`].
 pub const CSS: &str = r#"
-.nojs-upload { display: grid; gap: calc(var(--nojs-space) * 2); max-width: 32rem; }
-.nojs-upload-form { display: grid; gap: var(--nojs-space); justify-items: start; }
-.nojs-upload-drop {
+.lui-upload { display: grid; gap: calc(var(--lui-space) * 2); max-width: 32rem; }
+.lui-upload-form { display: grid; gap: var(--lui-space); justify-items: start; }
+.lui-upload-drop {
   display: grid; justify-items: center; gap: 0.5rem; width: 100%; box-sizing: border-box; padding: 1.5rem;
   text-align: center; cursor: pointer; font-weight: 400;
-  border: 1px dashed var(--nojs-input); border-radius: var(--nojs-radius-lg); background: var(--nojs-surface);
+  border: 1px dashed var(--lui-input); border-radius: var(--lui-radius-lg); background: var(--lui-surface);
   transition: border-color 0.15s, background-color 0.15s;
 }
-.nojs-upload-drop:hover, .nojs-upload-drop:has(.nojs-upload-input:focus-visible) { border-color: var(--nojs-ring); }
-.nojs-upload-drop > .nojs-icon { width: 1.5rem; height: 1.5rem; color: var(--nojs-muted); }
-.nojs-upload-title { font-size: 0.875rem; font-weight: 500; }
-.nojs-upload-hint { font-size: 0.75rem; color: var(--nojs-muted); }
-.nojs-upload-input { max-width: 100%; }
-.nojs-upload-progress { width: 100%; height: 0.5rem; accent-color: var(--nojs-primary); }
-.nojs-upload-files { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.5rem; }
-.nojs-upload-file {
+.lui-upload-drop:hover, .lui-upload-drop:has(.lui-upload-input:focus-visible) { border-color: var(--lui-ring); }
+.lui-upload-drop > .lui-icon { width: 1.5rem; height: 1.5rem; color: var(--lui-muted); }
+.lui-upload-title { font-size: 0.875rem; font-weight: 500; }
+.lui-upload-hint { font-size: 0.75rem; color: var(--lui-muted); }
+.lui-upload-input { max-width: 100%; }
+.lui-upload-progress { width: 100%; height: 0.5rem; accent-color: var(--lui-primary); }
+.lui-upload-files { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.5rem; }
+.lui-upload-file {
   display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem 0.75rem; font-size: 0.875rem;
-  border: 1px solid var(--nojs-line); border-radius: var(--nojs-radius); background: var(--nojs-card);
+  border: 1px solid var(--lui-line); border-radius: var(--lui-radius); background: var(--lui-card);
 }
-.nojs-upload-file form { margin: 0 0 0 auto; }
-.nojs-upload-thumb { display: inline-grid; place-items: center; flex: none; width: 2.5rem; height: 2.5rem; object-fit: cover; border-radius: var(--nojs-radius-sm); background: var(--nojs-secondary); color: var(--nojs-muted); }
-.nojs-upload-name { min-width: 0; overflow-wrap: anywhere; font-weight: 500; }
-.nojs-upload-size { color: var(--nojs-muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.lui-upload-file form { margin: 0 0 0 auto; }
+.lui-upload-thumb { display: inline-grid; place-items: center; flex: none; width: 2.5rem; height: 2.5rem; object-fit: cover; border-radius: var(--lui-radius-sm); background: var(--lui-secondary); color: var(--lui-muted); }
+.lui-upload-name { min-width: 0; overflow-wrap: anywhere; font-weight: 500; }
+.lui-upload-size { color: var(--lui-muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
 "#;
 
 #[cfg(test)]

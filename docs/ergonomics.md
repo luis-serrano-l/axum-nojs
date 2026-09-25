@@ -205,7 +205,7 @@ let groups = countries.each_ref().map(|(group, cs)| SelectGroup::new(group, cs))
 
 ## Done: one extractor per page
 
-`axum_nojs::Ui` holds the caps, the theme from its cookie and the `UiState` with the flash. It
+`loco_ui::Ui` holds the caps, the theme from its cookie and the `UiState` with the flash. It
 dereferences to `Caps`, so `&ui` goes wherever a component wants `&Caps`, and returning it
 beside the page writes the state back. `ui.flash()` renders the flash banner and
 `ui.layout(title, body)` wraps a page in the request's theme. Every demo page route now takes it.
@@ -312,18 +312,18 @@ The first example used to build a page from `Caps::all()` and `layout(&caps, "He
 Theme::Auto, …)`, with no route and no server around it. Now it is a whole Axum route:
 `async fn hello(ui: Ui) -> Markup { ui.layout("Hello", html! { (dialog(&ui, …)) }) }`, followed
 by the router with the beacon and script routes. That is five lines a reader can paste, and
-none of them is plumbing. `axum-nojs/examples/axum_server.rs` follows the same shape.
+none of them is plumbing. `loco-ui/examples/axum_server.rs` follows the same shape.
 
 ## M18: every component starts from `ui`
 
 After M17 the owner read the demo and found it still heavy: a 70-name import line,
 `x_with(&ui, …, XOptions::default()…)` on every call, `.state(&ui.state)` repeating `ui`, and
 cookies parsed by hand in half the handlers. M18 makes every component a method on `Ui` that
-returns a builder rendering inside `html!`, with one `use axum_nojs::prelude::*`.
+returns a builder rendering inside `html!`, with one `use loco_ui::prelude::*`.
 
 ```rust
 // before
-use axum_nojs::{Ui, dialog_with, dialog::{DialogOptions, DialogSize}, prg, /* 60 more */};
+use loco_ui::{Ui, dialog_with, dialog::{DialogOptions, DialogSize}, prg, /* 60 more */};
 async fn dialog_page(ui: Ui) -> Markup {
     page(&ui, "Dialog", html! {
         (dialog_with(&ui, "confirm", "Delete account", body, DialogOptions::default()
@@ -332,7 +332,7 @@ async fn dialog_page(ui: Ui) -> Markup {
     })
 }
 // after
-use axum_nojs::prelude::*;
+use loco_ui::prelude::*;
 async fn dialog_page(ui: Ui) -> Page {
     page(&ui, "Dialog", html! {
         (ui.dialog("Delete account").id("confirm").title("Delete account?").small().danger()
@@ -380,14 +380,14 @@ the pager `?page`, the select its filter box, the palette whether `?q` names a c
 | | Before | After |
 |---|---|---|
 | `demo/src/lib.rs` | 1011 lines | 915 lines (the 180 lines of tests unchanged) |
-| Import lines naming `axum_nojs` items | 1 line of about 70 names | `prelude::*` plus 3 lines for types a helper names |
+| Import lines naming `loco_ui` items | 1 line of about 70 names | `prelude::*` plus 3 lines for types a helper names |
 | Hand-parsed cookies (`settings`, `count`, `inputs`, `wizard`, `notes`) | 5 parsers | 0: `Saved<T>` |
 | `(ui, markup)` tuples and `prg::<Body>(..)` calls | 9 and 12 | 0 and 0 |
 
 ## M28: components written like elements
 
 The owner liked how maud-ui's `Props` put a name on every value, and wanted the call to read
-like the Maud around it (`a href=".."`). `nojs!` is `html!` with components as elements; it
+like the Maud around it (`a href=".."`). `lui!` is `html!` with components as elements; it
 expands to the builder chain, so both forms stay one code path and the dot form remains for a
 builder a route keeps in a variable.
 
@@ -406,7 +406,7 @@ for (lane, title) in LANES {
     }
 }
 // after: items from data, inline
-let k = nojs! {
+let k = lui! {
     Kanban("/kanban") {
         @for (lane, title) in LANES {
             column (lane) (title) limit=[(lane == "doing").then_some(2)] {
@@ -435,7 +435,7 @@ Dialog("Delete account") id="confirm" title="Delete account?" small danger
 
 | | Before | After |
 |---|---|---|
-| Demo snippets in `nojs!` | 0 | 41 blocks; the rest keep a builder in a variable |
+| Demo snippets in `lui!` | 0 | 41 blocks; the rest keep a builder in a variable |
 | `let mut` builders mutated in a loop, in snippets | 2 (kanban, upload) | 0 |
 | Route lines (`demo/src/routes/`) | 1791 | 1798: nested blocks take a line more, loops a few less |
-| Where to read a component's options | its **Setters** paragraph | the same, plus `axum_nojs::props()`, `spec/components.json` and a props table on each demo page |
+| Where to read a component's options | its **Setters** paragraph | the same, plus `loco_ui::props()`, `spec/components.json` and a props table on each demo page |

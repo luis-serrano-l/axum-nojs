@@ -1,12 +1,12 @@
 [package]
-name = "axum-nojs-macros"
+name = "loco-ui-macros"
 version = "0.1.0"
 edition = "2024"
-description = "The `nojs!` macro for axum-nojs: Maud markup where components are written like elements"
+description = "The `lui!` macro for loco-ui: Maud markup where components are written like elements"
 readme = "../README.md"
 license = "MIT"
-repository = "https://github.com/luis-serrano-l/axum-nojs"
-keywords = ["no-js", "maud", "ssr", "components", "axum"]
+repository = "https://github.com/luis-serrano-l/loco-ui"
+keywords = ["maud", "ssr", "components", "axum"]
 categories = ["web-programming", "template-engine"]
 
 [lib]
@@ -17,6 +17,6 @@ proc-macro2 = "1"
 quote = "1"
 
 [dev-dependencies]
-axum-nojs = { path = "../axum-nojs" }
+loco-ui = { path = "../loco-ui" }
 maud.workspace = true
 trybuild = "1"

@@ -1,4 +1,4 @@
-//! axum-nojs on raw hyper, no framework: `cargo run -p axum-nojs --example hyper_server --features http`,
+//! loco-ui on raw hyper, no framework: `cargo run -p loco-ui --example hyper_server --features http`,
 //! then open http://127.0.0.1:3002.
 //!
 //! Everything the Axum glue does is wired here by hand, in a few lines each: `Ui` (caps, theme
@@ -16,13 +16,13 @@
 use std::convert::Infallible;
 use std::net::SocketAddr;
 
-use axum_nojs::{Ui, caps, enhance};
 use http_body_util::{BodyExt, Full};
 use hyper::body::{Bytes, Incoming};
 use hyper::service::service_fn;
 use hyper::{Method, Request, Response, StatusCode, header};
 use hyper_util::rt::{TokioExecutor, TokioIo};
 use hyper_util::server::conn::auto;
+use loco_ui::{Ui, caps, enhance};
 use maud::html;
 use tokio::net::TcpListener;
 
@@ -64,8 +64,8 @@ async fn handle(req: Request<Incoming>) -> Result<Reply, Infallible> {
 
     let reply = match (req.method(), path.as_str()) {
         (&Method::GET, "/") => {
-            let page = ui.page("axum-nojs on hyper", html! {
-                h1 { "axum-nojs on hyper" }
+            let page = ui.page("loco-ui on hyper", html! {
+                h1 { "loco-ui on hyper" }
                 p { "This browser supports: " @for n in ui.caps.names() { code { (n) } " " } }
                 (ui.dialog("Open dialog").body(html! { p { "Closed by the platform, not by script." } }))
                 h2 { "Tabs" }

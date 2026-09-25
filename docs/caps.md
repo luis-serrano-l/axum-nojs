@@ -1,6 +1,6 @@
 # How the server learns what a browser can do, with no script
 
-`axum-nojs-caps` is server-side feature detection. The page carries a few empty elements; CSS
+`loco-ui-caps` is server-side feature detection. The page carries a few empty elements; CSS
 `@supports` rules give each one a background image only when the browser understands the
 feature; loading that image hits one tiny route that sets a cookie. From the next request on,
 the server knows and every component emits only the markup that browser needs.
@@ -10,9 +10,9 @@ the server knows and every component emits only the markup that browser needs.
 `caps::beacons(&caps)` puts this at the end of `<body>` while the browser is still unknown:
 
 ```html
-<div class="nojs-caps" aria-hidden="true">
-  <i class="nojs-cap nojs-cap-probed"></i>
-  <i class="nojs-cap nojs-cap-invokers"></i>
+<div class="lui-caps" aria-hidden="true">
+  <i class="lui-cap lui-cap-probed"></i>
+  <i class="lui-cap lui-cap-invokers"></i>
   …one per flag…
 </div>
 ```
@@ -22,9 +22,9 @@ the server knows and every component emits only the markup that browser needs.
 out and fetch its background:
 
 ```css
-.nojs-cap-probed { background-image: url("/nojs/caps?flag=probed"); }
+.lui-cap-probed { background-image: url("/lui/caps?flag=probed"); }
 @supports selector(:popover-open) {
-  .nojs-cap-popover { background-image: url("/nojs/caps?flag=popover"); }
+  .lui-cap-popover { background-image: url("/lui/caps?flag=popover"); }
 }
 ```
 
@@ -34,25 +34,25 @@ elements are not emitted any more, so a known browser pays nothing.
 
 ## 2. The beacon route
 
-`GET /nojs/caps?flag=<name>` answers `204 No Content` with `Cache-Control: no-store` and
+`GET /lui/caps?flag=<name>` answers `204 No Content` with `Cache-Control: no-store` and
 
 ```
-Set-Cookie: nojs-cap-<name>=1; Path=/; Max-Age=2592000; SameSite=Lax
+Set-Cookie: lui-cap-<name>=1; Path=/; Max-Age=2592000; SameSite=Lax
 ```
 
 An unknown flag answers `404`. `caps::beacon_cookie(query)` is that logic as a function of the
 raw query string; the `axum` feature wraps it in `caps::router()`, and
-`axum-nojs/examples/hyper_server.rs` wires it by hand in six lines.
+`loco-ui/examples/hyper_server.rs` wires it by hand in six lines.
 
 ## 3. The cookie format
 
-One cookie per flag, `nojs-cap-<name>=1`, never a list. The beacons load in parallel: seven
-responses each writing `nojs-caps=<old list + me>` would overwrite one another and keep one flag.
+One cookie per flag, `lui-cap-<name>=1`, never a list. The beacons load in parallel: seven
+responses each writing `lui-caps=<old list + me>` would overwrite one another and keep one flag.
 Separate names cannot race. There is no negative cache: an unsupported feature has no cookie,
 and `probed` says the beacons ran. Cookies last 30 days so a browser upgrade is re-detected.
 
 `Caps::from_cookie_header(header)` reads the whole `Cookie:` value and returns the set.
-Without `nojs-cap-probed=1` it returns `Caps::ASSUMED` instead, whatever else it finds.
+Without `lui-cap-probed=1` it returns `Caps::ASSUMED` instead, whatever else it finds.
 
 ## 4. The first-view problem
 
@@ -72,7 +72,7 @@ forced set counts as probed.
 ## 5. What the beacons cost
 
 **After the first visit, nothing.** Once the cookies are set the server sees `Probed` and
-`beacons()` renders an empty string: no `.nojs-cap-*` elements, no rules, no image requests. The
+`beacons()` renders an empty string: no `.lui-cap-*` elements, no rules, no image requests. The
 cookies last 30 days (`Max-Age=2592000`); a browser whose cookies lapsed is simply probed again.
 
 **On the first visit, one small request per supported flag**, made by the CSS engine after the
@@ -82,7 +82,7 @@ stylesheet parses, at image priority, after the page's own resources. Each answe
 - **Serve them from the page's own origin.** `BEACON_PATH` is a path, not a URL, so the
   requests reuse the page's connection, send its cookies and set cookies the page can read.
   Mount the route on the same server (`caps::router()` in Axum, or match `caps::BEACON_PATH`
-  by hand as `examples/hyper_server.rs` does). A CDN in front must pass `/nojs/caps` through
+  by hand as `examples/hyper_server.rs` does). A CDN in front must pass `/lui/caps` through
   uncached: the answers are `Cache-Control: no-store` because they set a cookie.
 - **Speak HTTP/2 or HTTP/3.** Over HTTP/1.1 a browser opens up to six connections per origin
   and queues the rest; over HTTP/2 or HTTP/3 every beacon is a stream on the one connection
@@ -112,12 +112,12 @@ claim a feature the browser lacks; the error bands are in `FINDINGS.md` under M1
 
 ## 7. Adding a flag
 
-1. Add a variant to `Cap` in `axum-nojs-caps/src/lib.rs` and to `Cap::ALL` (display order).
+1. Add a variant to `Cap` in `loco-ui-caps/src/lib.rs` and to `Cap::ALL` (display order).
 2. Give it a `name()` (snake case; it becomes the cookie, the URL and the class name), a
    `supports()` test (`None` only for `probed`) and a one-line `description()`.
 3. If the test is a proxy, say so in the doc header and add the error band to `FINDINGS.md`.
 4. Branch on `caps.has(Cap::New)` in the component, emitting one variant only.
-5. `cargo test -p axum-nojs-caps`: the round-trip and one-rule-per-flag tests cover the new flag
+5. `cargo test -p loco-ui-caps`: the round-trip and one-rule-per-flag tests cover the new flag
    without further changes. The `/caps` page of the demo lists it automatically.
 
 `Caps` is a `u16` bitset, so up to 16 flags fit; past that, widen the field.

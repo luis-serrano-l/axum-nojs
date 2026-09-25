@@ -21,15 +21,15 @@
 //! Cumulative pages (`?page=3` shows rows 1..3×N) give the same *feel* with one click per page.
 //!
 //! ```rust
-//! use axum_nojs::prelude::*;
+//! use loco_ui::prelude::*;
 //! // `?page=2` of 30 rows, 10 at a time: rows 0 to 19 are shown.
 //! let ui = Ui::from_request("/list", "page=2", "");
 //! let list = ui.pager("/list", 30).per_page(10);
 //! assert_eq!(list.shown(), 20);
 //! let m = list.rows(|i| html! { "Row " (i + 1) }).render().into_string();
 //! assert!(m.contains("Row 20") && !m.contains("Row 21") && m.contains("?page=3#more"));
-//! // The same in `nojs!`:
-//! let same = nojs! { Pager("/list", 30) per_page=10 rows=|i| { "Row " (i + 1) }; };
+//! // The same in `lui!`:
+//! let same = lui! { Pager("/list", 30) per_page=10 rows=|i| { "Row " (i + 1) }; };
 //! assert_eq!(same.into_string(), m);
 //! ```
 
@@ -140,21 +140,21 @@ impl Render for Pager<'_> {
         let first_new = (page - 1) * per_page;
         let next = format!("{href}?page={}#more", page + 1);
         html! {
-            div id=(enhance::swap_id("nojs-pager", href)) data-nojs="swap" class="nojs-pager" {
-                ol class="nojs-pager-list" style=[vt.then_some("view-transition-name: nojs-pager-list")] {
+            div id=(enhance::swap_id("lui-pager", href)) data-lui="swap" class="lui-pager" {
+                ol class="lui-pager-list" style=[vt.then_some("view-transition-name: lui-pager-list")] {
                     @if let Some(row) = row {
                         @for i in 0..shown {
                             @if i == first_new && page > 1 {
-                                li id="more" class="nojs-pager-anchor" { (row(i)) }
+                                li id="more" class="lui-pager-anchor" { (row(i)) }
                             } @else {
                                 li { (row(i)) }
                             }
                         }
                     }
                 }
-                p class="nojs-note" { "Showing " (shown) " of " (total) }
+                p class="lui-note" { "Showing " (shown) " of " (total) }
                 @if page * per_page < total {
-                    (Button::link(caps, "Load more", &next).class("nojs-pager-more"))
+                    (Button::link(caps, "Load more", &next).class("lui-pager-more"))
                 }
             }
         }
@@ -162,9 +162,9 @@ impl Render for Pager<'_> {
 }
 /// Styles for this component; included in [`crate::stylesheet`].
 pub const CSS: &str = r#"
-.nojs-pager-list { margin: 0; padding-left: 1.5rem; font-size: 0.875rem; }
-.nojs-pager-list li { padding: 0.5rem 0; border-bottom: 1px solid var(--nojs-line); }
-.nojs-pager-anchor { scroll-margin-top: 4rem; }
+.lui-pager-list { margin: 0; padding-left: 1.5rem; font-size: 0.875rem; }
+.lui-pager-list li { padding: 0.5rem 0; border-bottom: 1px solid var(--lui-line); }
+.lui-pager-anchor { scroll-margin-top: 4rem; }
 /* "Load more" is the outline button, full width under the list. */
-.nojs-pager-more { display: flex; margin-top: 1rem; }
+.lui-pager-more { display: flex; margin-top: 1rem; }
 "#;

@@ -12,17 +12,17 @@
 //! **Fallback:** none needed.
 //!
 //! ```rust
-//! use axum_nojs::prelude::*;
+//! use loco_ui::prelude::*;
 //! let ui = Ui::default();
 //! let m = ui.split(html! { nav { "Settings" } }, html! { p { "Form" } }).render().into_string();
-//! assert!(m.contains(r#"<div class="nojs-split-side"><nav>Settings</nav></div>"#));
-//! // The same in `nojs!`:
-//! let same = nojs! { Split(html! { nav { "Settings" } }, html! { p { "Form" } }); };
+//! assert!(m.contains(r#"<div class="lui-split-side"><nav>Settings</nav></div>"#));
+//! // The same in `lui!`:
+//! let same = lui! { Split(html! { nav { "Settings" } }, html! { p { "Form" } }); };
 //! assert_eq!(same.into_string(), m);
 //! // A wider side, placed after the main part.
 //! let m = ui.split(html! { aside { "Filters" } }, html! { p { "Results" } }).side_width("20rem").side_end();
 //! let m = m.render().into_string();
-//! assert!(m.contains("--nojs-split-side: 20rem") && m.find("Results") < m.find("Filters"));
+//! assert!(m.contains("--lui-split-side: 20rem") && m.find("Results") < m.find("Filters"));
 //! ```
 
 use maud::{Markup, Render, html};
@@ -51,7 +51,7 @@ impl Split<'_> {
         Prop::new("side_end", PropKind::Switch, "")
             .doc("The side after the main part, in the markup and on screen."),
         Prop::new("gap", PropKind::Number, "n: u8")
-            .doc("The gap as a step of the `--nojs-space-*` scale."),
+            .doc("The gap as a step of the `--lui-space-*` scale."),
     ];
 }
 
@@ -81,7 +81,7 @@ impl<'a> Split<'a> {
         self
     }
 
-    /// The gap as a step of the `--nojs-space-*` scale: 0, 1, 2, 3, 4, 6 or 8.
+    /// The gap as a step of the `--lui-space-*` scale: 0, 1, 2, 3, 4, 6 or 8.
     pub fn gap(mut self, n: u8) -> Self {
         self.gap = Some(n);
         self
@@ -90,11 +90,11 @@ impl<'a> Split<'a> {
 
 impl Render for Split<'_> {
     fn render(&self) -> Markup {
-        let side = html! { div class="nojs-split-side" { (self.side) } };
-        let main = html! { div class="nojs-split-main" { (self.main) } };
+        let side = html! { div class="lui-split-side" { (self.side) } };
+        let main = html! { div class="lui-split-main" { (self.main) } };
         html! {
-            div class={ "nojs-split" @if let Some(n) = self.gap { " " (crate::gap_class(n)) } }
-                style=[self.width.map(|w| format!("--nojs-split-side: {w}"))] {
+            div class={ "lui-split" @if let Some(n) = self.gap { " " (crate::gap_class(n)) } }
+                style=[self.width.map(|w| format!("--lui-split-side: {w}"))] {
                 @if self.side_end { (main) (side) } @else { (side) (main) }
             }
         }
@@ -103,8 +103,8 @@ impl Render for Split<'_> {
 
 /// Styles for this component; included in [`crate::stylesheet`].
 pub const CSS: &str = r#"
-.nojs-split { display: flex; flex-wrap: wrap; }
-:where(.nojs-split) { gap: var(--nojs-space-4); }
-.nojs-split-side { flex-basis: var(--nojs-split-side, 15rem); flex-grow: 1; }
-.nojs-split-main { flex-basis: 0; flex-grow: 999; min-inline-size: 50%; }
+.lui-split { display: flex; flex-wrap: wrap; }
+:where(.lui-split) { gap: var(--lui-space-4); }
+.lui-split-side { flex-basis: var(--lui-split-side, 15rem); flex-grow: 1; }
+.lui-split-main { flex-basis: 0; flex-grow: 999; min-inline-size: 50%; }
 "#;

@@ -5,7 +5,7 @@ been published.*
 
 ---
 
-**axum-nojs** is a UI kit for Rust servers: buttons, forms, dialogs, menus, tabs, data tables,
+**loco-ui** is a UI kit for Rust servers: buttons, forms, dialogs, menus, tabs, data tables,
 a calendar and date picker, uploads and a kanban board for Axum and Maud, in shadcn/ui's look.
 Every one of them works with JavaScript turned off.
 
@@ -47,4 +47,4 @@ collaboration, use Leptos or Dioxus. This kit is for admin panels, dashboards, s
 forms, content sites and public services: things that refresh per action and must work
 everywhere.
 
-Repository: https://github.com/luis-serrano-l/axum-nojs · Demo: *(link once hosted)*
+Repository: https://github.com/luis-serrano-l/loco-ui · Demo: *(link once hosted)*

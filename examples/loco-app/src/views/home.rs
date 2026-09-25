@@ -1,10 +1,10 @@
-use axum_nojs::prelude::*;
+use loco_ui::prelude::*;
 
 pub fn index(ui: &Ui) -> Markup {
     html! {
         (ui.flash())
         h1 { "Notes" }
-        p { "A Loco app on axum-nojs. Every page works with script off." }
+        p { "A Loco app on loco-ui. Every page works with script off." }
         (ui.cluster(html! {
             (ui.link_button("Sign in", "/signin").primary())
             (ui.link_button("Sign up", "/signup"))

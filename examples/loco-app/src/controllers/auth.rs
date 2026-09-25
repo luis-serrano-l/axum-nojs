@@ -1,10 +1,10 @@
 //! Sign up, sign in and sign out as plain forms. The token Loco's `auth::JWT` checks travels in
 //! the `auth` cookie (`auth.jwt.location` in `config/*.yaml`), so no page needs script to send it.
-use axum_nojs::{
+use loco_rs::prelude::*;
+use loco_ui::{
     loco::{FieldErrors, Submitted},
     prelude::*,
 };
-use loco_rs::prelude::*;
 
 use crate::{models::users, views};
 

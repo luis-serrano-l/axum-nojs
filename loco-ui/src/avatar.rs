@@ -13,15 +13,15 @@
 //! **Fallback:** the initials are the fallback.
 //!
 //! ```rust
-//! use axum_nojs::prelude::*;
+//! use loco_ui::prelude::*;
 //! let ui = Ui::default();
 //! let m = ui.avatar("Ada Lovelace").render().into_string();
 //! assert!(m.contains(r#"role="img" aria-label="Ada Lovelace""#) && m.contains(">AL</span>"));
-//! // The same in `nojs!`:
-//! let same = nojs! { Avatar("Ada Lovelace"); };
+//! // The same in `lui!`:
+//! let same = lui! { Avatar("Ada Lovelace"); };
 //! assert_eq!(same.into_string(), m);
 //! let m = ui.avatar("Grace Hopper").src("/img/grace.jpg").large().render().into_string();
-//! assert!(m.contains(r#"<img src="/img/grace.jpg" alt="" loading="lazy">"#) && m.contains("nojs-avatar-large"));
+//! assert!(m.contains(r#"<img src="/img/grace.jpg" alt="" loading="lazy">"#) && m.contains("lui-avatar-large"));
 //! ```
 
 use maud::{Markup, Render, html};
@@ -73,13 +73,13 @@ impl<'a> Avatar<'a> {
 
     /// 1.5rem across instead of 2rem, for lists and table rows.
     pub fn small(mut self) -> Self {
-        self.size = Some("nojs-avatar-small");
+        self.size = Some("lui-avatar-small");
         self
     }
 
     /// 3rem across, for a profile header.
     pub fn large(mut self) -> Self {
-        self.size = Some("nojs-avatar-large");
+        self.size = Some("lui-avatar-large");
         self
     }
 }
@@ -99,8 +99,8 @@ fn initials(name: &str) -> String {
 impl Render for Avatar<'_> {
     fn render(&self) -> Markup {
         html! {
-            span class={ "nojs-avatar" @if let Some(s) = self.size { " " (s) } } role="img" aria-label=(self.name) {
-                span class="nojs-avatar-initials" aria-hidden="true" { (initials(self.name)) }
+            span class={ "lui-avatar" @if let Some(s) = self.size { " " (s) } } role="img" aria-label=(self.name) {
+                span class="lui-avatar-initials" aria-hidden="true" { (initials(self.name)) }
                 @if let Some(src) = self.src { img src=(src) alt="" loading="lazy"; }
             }
         }
@@ -108,18 +108,18 @@ impl Render for Avatar<'_> {
 }
 
 /// Styles for this component; included in [`crate::stylesheet`]. shadcn: size-8, rounded-full,
-/// the fallback on `--nojs-secondary`.
+/// the fallback on `--lui-secondary`.
 pub const CSS: &str = r#"
-.nojs-avatar {
+.lui-avatar {
   position: relative; display: inline-grid; place-items: center; flex: none; overflow: hidden;
-  width: 2rem; height: 2rem; border-radius: 9999px; background: var(--nojs-secondary); color: var(--nojs-fg);
+  width: 2rem; height: 2rem; border-radius: 9999px; background: var(--lui-secondary); color: var(--lui-fg);
   font-size: 0.75rem; font-weight: 500; line-height: 1; vertical-align: middle; user-select: none;
 }
 /* 2px past the edge on every side: the frame Firefox draws round a broken image falls
    outside the circle and is clipped away. */
-.nojs-avatar img { position: absolute; inset: -2px; width: calc(100% + 4px); height: calc(100% + 4px); max-width: none; object-fit: cover; color: transparent; }
-.nojs-avatar-small { width: 1.5rem; height: 1.5rem; font-size: 0.625rem; }
-.nojs-avatar-large { width: 3rem; height: 3rem; font-size: 1rem; }
+.lui-avatar img { position: absolute; inset: -2px; width: calc(100% + 4px); height: calc(100% + 4px); max-width: none; object-fit: cover; color: transparent; }
+.lui-avatar-small { width: 1.5rem; height: 1.5rem; font-size: 0.625rem; }
+.lui-avatar-large { width: 3rem; height: 3rem; font-size: 1rem; }
 "#;
 
 #[cfg(test)]

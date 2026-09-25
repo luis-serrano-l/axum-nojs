@@ -5,9 +5,9 @@
 //! page it describes:
 //!
 //! ```rust
-//! use axum_nojs::prelude::*;
+//! use loco_ui::prelude::*;
 //!
-//! let ui = Ui::from_request("/account", "dialog=delete-account", "nojs-flash=Saved.");
+//! let ui = Ui::from_request("/account", "dialog=delete-account", "lui-flash=Saved.");
 //! let page = ui.page("Account", html! {
 //!     (ui.flash())
 //!     (ui.dialog("Delete account")
@@ -52,7 +52,7 @@ pub struct Ui {
     pub caps: Caps,
     /// The theme from the `theme` cookie, `Auto` without one.
     pub theme: Theme,
-    /// Query and `nojs-ui` cookie state, and the flash.
+    /// Query and `lui-ui` cookie state, and the flash.
     pub state: UiState,
     /// Every query parameter, decoded, in order: what components read their own input from.
     params: Vec<(String, String)>,
@@ -112,7 +112,7 @@ impl Ui {
     /// calendar's month links and the table's "Edit" links are built.
     ///
     /// ```rust
-    /// use axum_nojs::prelude::*;
+    /// use loco_ui::prelude::*;
     /// let ui = Ui::from_request("/orders", "sort=date&page=2", "");
     /// assert_eq!(ui.link_with("page", "3"), "/orders?sort=date&page=3");
     /// assert_eq!(ui.link_with("q", "late fee"), "/orders?sort=date&page=2&q=late%20fee");
@@ -256,7 +256,7 @@ impl Render for Page {
 }
 
 /// A `303 See Other` answering a form post, made by [`Ui::redirect`]. Messages ride along in
-/// the one-shot `nojs-flash` cookie; each call adds one, and they show stacked in call order.
+/// the one-shot `lui-flash` cookie; each call adds one, and they show stacked in call order.
 #[derive(Clone, Debug)]
 pub struct Redirect {
     to: String,
@@ -413,11 +413,7 @@ mod tests {
 
     #[test]
     fn one_value_carries_caps_theme_state_and_flash() {
-        let ui = Ui::from_request(
-            "/t",
-            "tab.t=1&caps=popover",
-            "theme=light; nojs-ui=open.f=2",
-        );
+        let ui = Ui::from_request("/t", "tab.t=1&caps=popover", "theme=light; lui-ui=open.f=2");
         assert!(
             ui.has(Cap::Popover) && !ui.has(Cap::Invokers),
             "?caps= wins and Deref reaches Caps"
@@ -438,7 +434,7 @@ mod tests {
 
     #[test]
     fn a_page_carries_the_state_it_changed() {
-        let ui = Ui::from_request("/t", "tab.t=1", "theme=dark; nojs-flash=Saved.");
+        let ui = Ui::from_request("/t", "tab.t=1", "theme=dark; lui-flash=Saved.");
         let page = ui.page("T", maud::html! { p { "body" } });
         assert_eq!(
             page.set_cookies().len(),
@@ -449,7 +445,7 @@ mod tests {
         assert!(
             html.contains(r#"data-theme="dark""#)
                 && html.contains("<title>T</title>")
-                && html.contains("nojs-tokens")
+                && html.contains("lui-tokens")
         );
     }
 
@@ -459,7 +455,7 @@ mod tests {
         let plain = ui.redirect("/s").flash("Saved.");
         assert_eq!(
             plain.set_cookies(),
-            ["nojs-flash=Saved.; Path=/; Max-Age=60; SameSite=Lax"]
+            ["lui-flash=Saved.; Path=/; Max-Age=60; SameSite=Lax"]
         );
         let two = ui
             .redirect("/s")
@@ -468,7 +464,7 @@ mod tests {
             .cookie("x=1".into());
         let cookies = two.set_cookies();
         assert!(
-            cookies[0].starts_with("nojs-flash=ok%3ASaved.%0Awarn%3ALook.") && cookies[1] == "x=1"
+            cookies[0].starts_with("lui-flash=ok%3ASaved.%0Awarn%3ALook.") && cookies[1] == "x=1"
         );
         assert!(ui.redirect("/s").set_cookies().is_empty());
     }

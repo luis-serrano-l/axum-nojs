@@ -19,7 +19,7 @@
 //! still checked and posts.
 //!
 //! ```rust
-//! use axum_nojs::prelude::*;
+//! use loco_ui::prelude::*;
 //! let ui = Ui::from_request("/book", "month.due=2026-09", "");
 //! let m = ui.calendar("due").today("2026-09-24").render().into_string();
 //! assert!(m.contains("September 2026") && m.contains(r#"aria-current="date""#));
@@ -33,8 +33,8 @@
 //! let m = m.render().into_string();
 //! assert!(m.contains(r#"type="radio" name="due" value="2026-09-11""#));
 //! assert!(m.contains(r#"value="2026-09-12" disabled"#) && m.contains("Invoice due"));
-//! // The same in `nojs!`:
-//! let same = nojs! { Calendar("due") radio required min="2026-09-10" max="2026-10-31"
+//! // The same in `lui!`:
+//! let same = lui! { Calendar("due") radio required min="2026-09-10" max="2026-10-31"
 //!     disabled=(|d| d.weekday() >= 5) event=("2026-09-30", "Invoice due") sunday_first; };
 //! assert_eq!(same.into_string(), m);
 //! ```
@@ -353,7 +353,7 @@ impl Render for Calendar<'_> {
         let first = shown.add_days(-lead);
         let len = i64::from(days_in_month(shown.year, shown.month));
         let weeks = (lead + len + 6) / 7;
-        let root = enhance::swap_id("nojs-calendar", name);
+        let root = enhance::swap_id("lui-calendar", name);
         let title_id = format!("{root}-title");
         let title = format!("{} {}", MONTHS[usize::from(shown.month - 1)], shown.year);
         let (prev_href, next_href) = (
@@ -375,15 +375,15 @@ impl Render for Calendar<'_> {
         };
         let weekdays = (0..7).map(|i| WEEKDAYS[((i + start) % 7) as usize]);
         html! {
-            div id=(root) data-nojs="swap" class="nojs-calendar"
+            div id=(root) data-lui="swap" class="lui-calendar"
                 role=(if self.radio { "radiogroup" } else { "group" }) aria-labelledby=(title_id)
                 aria-required=[(self.radio && self.required).then_some("true")] {
-                div class="nojs-calendar-head" {
+                div class="lui-calendar-head" {
                     (nav(&prev_href, "Previous month", Icon::ChevronLeft, has_prev))
-                    p id=(title_id) class="nojs-calendar-title" aria-live="polite" { (title) }
+                    p id=(title_id) class="lui-calendar-title" aria-live="polite" { (title) }
                     (nav(&next_href, "Next month", Icon::ChevronRight, has_next))
                 }
-                table class="nojs-calendar-grid" aria-labelledby=(title_id) {
+                table class="lui-calendar-grid" aria-labelledby=(title_id) {
                     thead { tr { @for w in weekdays { th scope="col" abbr=(w) { (&w[..2]) } } } }
                     tbody {
                         @for week in 0..weeks { tr {
@@ -409,22 +409,18 @@ impl Calendar<'_> {
             .map(|e| e.1)
             .collect();
         let class = format!(
-            "nojs-calendar-day{}{}{}{}",
-            if outside {
-                " nojs-calendar-outside"
-            } else {
-                ""
-            },
-            if today { " nojs-calendar-today" } else { "" },
-            if picked { " nojs-calendar-picked" } else { "" },
-            if off { " nojs-calendar-off" } else { "" },
+            "lui-calendar-day{}{}{}{}",
+            if outside { " lui-calendar-outside" } else { "" },
+            if today { " lui-calendar-today" } else { "" },
+            if picked { " lui-calendar-picked" } else { "" },
+            if off { " lui-calendar-off" } else { "" },
         );
         let tip = (!events.is_empty()).then(|| events.join(", "));
         let face = html! {
             span aria-hidden="true" { (d.day) }
-            span class="nojs-sr" { (d.spoken()) @for e in &events { ", " (e) } }
+            span class="lui-sr" { (d.spoken()) @for e in &events { ", " (e) } }
             @if !events.is_empty() {
-                span class="nojs-calendar-dots" aria-hidden="true" { @for _ in events.iter().take(3) { span {} } }
+                span class="lui-calendar-dots" aria-hidden="true" { @for _ in events.iter().take(3) { span {} } }
             }
         };
         let current = today.then_some("date");
@@ -433,7 +429,7 @@ impl Calendar<'_> {
             td {
                 @if self.radio {
                     label class=(class) title=[tip] aria-current=[current] {
-                        input class="nojs-calendar-radio" type="radio" name=(self.name) value=(value)
+                        input class="lui-calendar-radio" type="radio" name=(self.name) value=(value)
                             checked[picked] disabled[off] required[self.required && !off];
                         (face)
                     }
@@ -451,34 +447,34 @@ impl Calendar<'_> {
 /// Styles for this component; included in [`crate::stylesheet`]. shadcn Calendar: p-3, 2rem
 /// day cells, the picked day in the primary colour, today on the accent.
 pub const CSS: &str = r#"
-.nojs-calendar {
-  display: inline-block; padding: 0.75rem; background: var(--nojs-card); color: var(--nojs-fg);
-  border: 1px solid var(--nojs-line); border-radius: var(--nojs-radius); box-shadow: var(--nojs-shadow-xs);
+.lui-calendar {
+  display: inline-block; padding: 0.75rem; background: var(--lui-card); color: var(--lui-fg);
+  border: 1px solid var(--lui-line); border-radius: var(--lui-radius); box-shadow: var(--lui-shadow-xs);
 }
-.nojs-calendar-head { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.5rem; }
-.nojs-calendar-title { margin: 0; font-size: 0.875rem; font-weight: 500; }
-.nojs-calendar-head .nojs-button[aria-disabled=true] { visibility: hidden; }
-.nojs-calendar-grid { width: auto; border-collapse: separate; border-spacing: 0 0.25rem; font-size: 0.875rem; }
-.nojs-calendar-grid th { height: auto; padding: 0 0 0.25rem; width: 2.25rem; text-align: center; font-size: 0.8rem; font-weight: 400; color: var(--nojs-muted); border: 0; }
-.nojs-calendar-grid td { padding: 0; border: 0; text-align: center; }
-.nojs-calendar-grid tbody tr:hover { background: none; }
-.nojs-calendar-day {
+.lui-calendar-head { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.5rem; }
+.lui-calendar-title { margin: 0; font-size: 0.875rem; font-weight: 500; }
+.lui-calendar-head .lui-button[aria-disabled=true] { visibility: hidden; }
+.lui-calendar-grid { width: auto; border-collapse: separate; border-spacing: 0 0.25rem; font-size: 0.875rem; }
+.lui-calendar-grid th { height: auto; padding: 0 0 0.25rem; width: 2.25rem; text-align: center; font-size: 0.8rem; font-weight: 400; color: var(--lui-muted); border: 0; }
+.lui-calendar-grid td { padding: 0; border: 0; text-align: center; }
+.lui-calendar-grid tbody tr:hover { background: none; }
+.lui-calendar-day {
   position: relative; display: inline-flex; flex-direction: column; align-items: center; justify-content: center;
-  width: 2.25rem; height: 2.25rem; box-sizing: border-box; border-radius: var(--nojs-radius-sm);
+  width: 2.25rem; height: 2.25rem; box-sizing: border-box; border-radius: var(--lui-radius-sm);
   color: inherit; text-decoration: none; font-weight: 400; cursor: pointer; font-variant-numeric: tabular-nums;
 }
-a.nojs-calendar-day:hover, label.nojs-calendar-day:not(.nojs-calendar-off):hover { background: var(--nojs-accent); color: var(--nojs-on-accent); }
-.nojs-calendar-outside { color: var(--nojs-muted); }
-.nojs-calendar-today { background: var(--nojs-accent); color: var(--nojs-on-accent); }
+a.lui-calendar-day:hover, label.lui-calendar-day:not(.lui-calendar-off):hover { background: var(--lui-accent); color: var(--lui-on-accent); }
+.lui-calendar-outside { color: var(--lui-muted); }
+.lui-calendar-today { background: var(--lui-accent); color: var(--lui-on-accent); }
 /* Two rules, not one list: a browser without :has() drops a whole selector list it cannot
    parse, which would lose the picked link's fill too. */
-.nojs-calendar-picked, a.nojs-calendar-picked:hover { background: var(--nojs-primary); color: var(--nojs-on-primary); }
-.nojs-calendar-day:has(.nojs-calendar-radio:checked) { background: var(--nojs-primary); color: var(--nojs-on-primary); }
-.nojs-calendar-off { color: var(--nojs-muted); opacity: 0.5; cursor: not-allowed; }
-.nojs-calendar-day .nojs-calendar-radio { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: inherit; }
-.nojs-calendar-day:has(.nojs-calendar-radio:focus-visible) { outline: 3px solid color-mix(in srgb, var(--nojs-ring) 50%, transparent); }
-.nojs-calendar-dots { position: absolute; bottom: 3px; display: flex; gap: 2px; }
-.nojs-calendar-dots span { width: 4px; height: 4px; border-radius: 50%; background: currentColor; }
+.lui-calendar-picked, a.lui-calendar-picked:hover { background: var(--lui-primary); color: var(--lui-on-primary); }
+.lui-calendar-day:has(.lui-calendar-radio:checked) { background: var(--lui-primary); color: var(--lui-on-primary); }
+.lui-calendar-off { color: var(--lui-muted); opacity: 0.5; cursor: not-allowed; }
+.lui-calendar-day .lui-calendar-radio { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: inherit; }
+.lui-calendar-day:has(.lui-calendar-radio:focus-visible) { outline: 3px solid color-mix(in srgb, var(--lui-ring) 50%, transparent); }
+.lui-calendar-dots { position: absolute; bottom: 3px; display: flex; gap: 2px; }
+.lui-calendar-dots span { width: 4px; height: 4px; border-radius: 50%; background: currentColor; }
 "#;
 
 #[cfg(test)]
@@ -558,11 +554,11 @@ mod tests {
             .into_string();
         assert!(m.matches(r#"aria-disabled="true""#).count() >= 2);
         assert!(
-            !m.contains("nojs-calendar-picked"),
+            !m.contains("lui-calendar-picked"),
             "a picked day out of range is ignored"
         );
-        assert!(m.contains(
-            r#"<span class="nojs-calendar-day nojs-calendar-off" aria-disabled="true">"#
-        ));
+        assert!(
+            m.contains(r#"<span class="lui-calendar-day lui-calendar-off" aria-disabled="true">"#)
+        );
     }
 }

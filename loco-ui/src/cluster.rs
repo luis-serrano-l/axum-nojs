@@ -11,18 +11,18 @@
 //! **Fallback:** none needed.
 //!
 //! ```rust
-//! use axum_nojs::prelude::*;
+//! use loco_ui::prelude::*;
 //! let ui = Ui::default();
 //! let m = ui.cluster(html! { (ui.badge("rust")) (ui.badge("maud")) }).render().into_string();
-//! assert!(m.starts_with(r#"<div class="nojs-cluster">"#));
-//! // The same in `nojs!`:
-//! let same = nojs! { Cluster(html! { (ui.badge("rust")) (ui.badge("maud")) }); };
+//! assert!(m.starts_with(r#"<div class="lui-cluster">"#));
+//! // The same in `lui!`:
+//! let same = lui! { Cluster(html! { (ui.badge("rust")) (ui.badge("maud")) }); };
 //! assert_eq!(same.into_string(), m);
 //! // A toolbar: the title on the left, the actions pushed to the right.
 //! let m = ui.cluster(html! { h2 { "Orders" } (ui.button("New order").primary()) })
 //!     .between()
 //!     .gap(4);
-//! assert!(m.render().into_string().contains(r#"class="nojs-cluster nojs-cluster-between nojs-gap-4""#));
+//! assert!(m.render().into_string().contains(r#"class="lui-cluster lui-cluster-between lui-gap-4""#));
 //! ```
 
 use maud::{Markup, Render, html};
@@ -49,7 +49,7 @@ impl Cluster {
         Prop::new("end", PropKind::Switch, "")
             .doc("Children packed at the end of the row (a dialog's or card's actions)."),
         Prop::new("gap", PropKind::Number, "n: u8")
-            .doc("The gap as a step of the `--nojs-space-*` scale."),
+            .doc("The gap as a step of the `--lui-space-*` scale."),
     ];
 }
 
@@ -68,17 +68,17 @@ impl Ui {
 impl Cluster {
     /// First child at the start, last at the end, the rest spread between.
     pub fn between(mut self) -> Self {
-        self.justify = Some("nojs-cluster-between");
+        self.justify = Some("lui-cluster-between");
         self
     }
 
     /// Children packed at the end of the row (a dialog's or card's actions).
     pub fn end(mut self) -> Self {
-        self.justify = Some("nojs-cluster-end");
+        self.justify = Some("lui-cluster-end");
         self
     }
 
-    /// The gap as a step of the `--nojs-space-*` scale: 0, 1, 2, 3, 4, 6 or 8.
+    /// The gap as a step of the `--lui-space-*` scale: 0, 1, 2, 3, 4, 6 or 8.
     pub fn gap(mut self, n: u8) -> Self {
         self.gap = Some(n);
         self
@@ -89,7 +89,7 @@ impl Render for Cluster {
     fn render(&self) -> Markup {
         html! {
             div class={
-                "nojs-cluster"
+                "lui-cluster"
                 @if let Some(j) = self.justify { " " (j) }
                 @if let Some(n) = self.gap { " " (crate::gap_class(n)) }
             } { (self.content) }
@@ -99,9 +99,9 @@ impl Render for Cluster {
 
 /// Styles for this component; included in [`crate::stylesheet`].
 pub const CSS: &str = r#"
-.nojs-cluster { display: flex; flex-wrap: wrap; align-items: center; }
-:where(.nojs-cluster) { gap: var(--nojs-space-2); }
-.nojs-cluster > * { margin: 0; }
-.nojs-cluster-between { justify-content: space-between; }
-.nojs-cluster-end { justify-content: flex-end; }
+.lui-cluster { display: flex; flex-wrap: wrap; align-items: center; }
+:where(.lui-cluster) { gap: var(--lui-space-2); }
+.lui-cluster > * { margin: 0; }
+.lui-cluster-between { justify-content: space-between; }
+.lui-cluster-end { justify-content: flex-end; }
 "#;

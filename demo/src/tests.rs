@@ -6,7 +6,7 @@ use crate::site::{COMPONENTS, LAYERS};
 use crate::{PATHS, router};
 use axum::body::Body;
 use axum::http::Request;
-use axum_nojs::prelude::*;
+use loco_ui::prelude::*;
 use tower::ServiceExt;
 
 /// Every route answers with the strict CSP (`script-src 'self'`, nothing inline), and
@@ -55,10 +55,10 @@ fn every_index_entry_sits_in_a_layer() {
 /// without it.
 #[tokio::test]
 async fn pages_ship_only_the_enhancement_script() {
-    let tag = axum_nojs::enhance::script_tag().into_string();
+    let tag = loco_ui::enhance::script_tag().into_string();
     for path in PATHS {
         let modern = Cap::ALL
-            .map(|c| format!("nojs-cap-{}=1", c.name()))
+            .map(|c| format!("lui-cap-{}=1", c.name()))
             .join("; ");
         for cookie in ["", modern.as_str()] {
             let req = Request::get(path)
@@ -156,7 +156,7 @@ async fn every_component_page_shows_its_code() {
         .unwrap();
         // The highlighted block, tags stripped, is exactly the code.
         let pre = html
-            .split("class=\"nojs-snippet\"")
+            .split("class=\"lui-snippet\"")
             .nth(1)
             .and_then(|s| s.split("<pre>").nth(1))
             .and_then(|s| s.split("</pre>").next());
@@ -171,7 +171,7 @@ async fn every_component_page_shows_its_code() {
             "{href}: the box does not show its code"
         );
         assert!(
-            pre.unwrap().contains("class=\"nojs-hl-"),
+            pre.unwrap().contains("class=\"lui-hl-"),
             "{href}: not highlighted"
         );
     }
@@ -231,14 +231,14 @@ async fn enhanced_requests_get_the_page_without_its_stylesheet() {
     let get = |enhanced: bool| {
         let req = Request::get("/tabs?tab.demo=1");
         let req = if enhanced {
-            req.header("nojs-enhance", "1")
+            req.header("lui-enhance", "1")
         } else {
             req
         };
         router().oneshot(req.body(Body::empty()).unwrap())
     };
     let full = get(false).await.unwrap();
-    assert_eq!(full.headers()["vary"], "nojs-enhance, cookie");
+    assert_eq!(full.headers()["vary"], "lui-enhance, cookie");
     let full = String::from_utf8(
         axum::body::to_bytes(full.into_body(), usize::MAX)
             .await
@@ -247,7 +247,7 @@ async fn enhanced_requests_get_the_page_without_its_stylesheet() {
     )
     .unwrap();
     let slim = get(true).await.unwrap();
-    assert_eq!(slim.headers()["vary"], "nojs-enhance, cookie");
+    assert_eq!(slim.headers()["vary"], "lui-enhance, cookie");
     let slim = String::from_utf8(
         axum::body::to_bytes(slim.into_body(), usize::MAX)
             .await
@@ -260,7 +260,7 @@ async fn enhanced_requests_get_the_page_without_its_stylesheet() {
         "the stylesheet stays home"
     );
     assert!(
-        slim.contains("id=\"nojs-tabs-demo\"") && slim.contains("<title>"),
+        slim.contains("id=\"lui-tabs-demo\"") && slim.contains("<title>"),
         "the swap root and title are still there"
     );
     assert!(
@@ -273,7 +273,7 @@ async fn enhanced_requests_get_the_page_without_its_stylesheet() {
 
 #[tokio::test]
 async fn enhancement_script_is_served_immutable() {
-    let req = Request::get(axum_nojs::enhance::script_url())
+    let req = Request::get(loco_ui::enhance::script_url())
         .body(Body::empty())
         .unwrap();
     let res = router().oneshot(req).await.unwrap();
@@ -291,19 +291,19 @@ async fn enhancement_script_is_served_immutable() {
     let body = axum::body::to_bytes(res.into_body(), usize::MAX)
         .await
         .unwrap();
-    assert_eq!(body, axum_nojs::enhance::served().as_bytes());
+    assert_eq!(body, loco_ui::enhance::served().as_bytes());
 }
 
 #[tokio::test]
 async fn caps_beacon_sets_one_cookie_per_flag() {
-    let req = Request::get("/nojs/caps?flag=popover")
+    let req = Request::get("/lui/caps?flag=popover")
         .body(Body::empty())
         .unwrap();
     let res = router().oneshot(req).await.unwrap();
     assert_eq!(res.status(), 204);
     let cookie = res.headers().get("set-cookie").unwrap().to_str().unwrap();
-    assert!(cookie.starts_with("nojs-cap-popover=1;"), "{cookie}");
-    let req = Request::get("/nojs/caps?flag=nope")
+    assert!(cookie.starts_with("lui-cap-popover=1;"), "{cookie}");
+    let req = Request::get("/lui/caps?flag=nope")
         .body(Body::empty())
         .unwrap();
     assert_eq!(router().oneshot(req).await.unwrap().status(), 404);
@@ -329,7 +329,7 @@ async fn frames(path: &str, cookie: &str) -> Vec<String> {
 
 #[tokio::test]
 async fn stream_is_chunked_in_completion_order() {
-    let chunks = frames("/stream", "nojs-cap-probed=1; nojs-cap-streaming_dsd=1").await;
+    let chunks = frames("/stream", "lui-cap-probed=1; lui-cap-streaming_dsd=1").await;
     assert!(
         chunks.len() >= 6,
         "expected head + shell + 3 fills + suffix, got {}",
@@ -361,7 +361,7 @@ async fn stream_is_chunked_in_completion_order() {
 
 #[tokio::test]
 async fn stream_fallback_is_in_document_order() {
-    let chunks = frames("/stream", "nojs-cap-probed=1").await;
+    let chunks = frames("/stream", "lui-cap-probed=1").await;
     let html = chunks.concat();
     assert!(!html.contains("<template") && !html.contains("<slot"));
     let pos = |s: &str| html.find(s).unwrap();
@@ -404,7 +404,7 @@ async fn palette_exact_name_redirects_and_toast_posts_stack() {
     let res = router().oneshot(req).await.unwrap();
     let cookie = res.headers().get("set-cookie").unwrap().to_str().unwrap();
     assert!(
-        cookie.starts_with("nojs-flash=ok%3AInvite")
+        cookie.starts_with("lui-flash=ok%3AInvite")
             && cookie.contains("%0Awarn%3A")
             && cookie.contains("%0Adanger%3A"),
         "{cookie}"
@@ -413,7 +413,7 @@ async fn palette_exact_name_redirects_and_toast_posts_stack() {
 
 #[tokio::test]
 async fn state_round_trip_through_prg_and_cookies() {
-    // POST → 303 with a flash cookie and the values saved; the tab is in the nojs-ui cookie.
+    // POST → 303 with a flash cookie and the values saved; the tab is in the lui-ui cookie.
     let req = Request::post("/settings")
         .header("content-type", "application/x-www-form-urlencoded")
         .body(Body::from("name=Ada&notify=true"))
@@ -430,20 +430,20 @@ async fn state_round_trip_through_prg_and_cookies() {
     assert!(
         cookies
             .iter()
-            .any(|c| c.starts_with("nojs-flash=ok%3ASettings%20saved.")),
+            .any(|c| c.starts_with("lui-flash=ok%3ASettings%20saved.")),
         "{cookies:?}"
     );
     assert!(
         cookies
             .iter()
-            .any(|c| c.starts_with("nojs-settings=name%3DAda%26notify%3Dtrue;")),
+            .any(|c| c.starts_with("lui-settings=name%3DAda%26notify%3Dtrue;")),
         "{cookies:?}"
     );
-    // GET the redirect target: flash shown and cleared, tab persisted to nojs-ui, values filled in.
+    // GET the redirect target: flash shown and cleared, tab persisted to lui-ui, values filled in.
     let req = Request::get("/settings?tab.settings=1")
         .header(
             "cookie",
-            "nojs-flash=Settings%20saved.; nojs-settings=name%3DAda%26notify%3Dtrue",
+            "lui-flash=Settings%20saved.; lui-settings=name%3DAda%26notify%3Dtrue",
         )
         .body(Body::empty())
         .unwrap();
@@ -457,13 +457,13 @@ async fn state_round_trip_through_prg_and_cookies() {
     assert!(
         cookies
             .iter()
-            .any(|c| c.starts_with("nojs-ui=tab.settings=1;")),
+            .any(|c| c.starts_with("lui-ui=tab.settings=1;")),
         "{cookies:?}"
     );
     assert!(
         cookies
             .iter()
-            .any(|c| c.starts_with("nojs-flash=; Path=/; Max-Age=0")),
+            .any(|c| c.starts_with("lui-flash=; Path=/; Max-Age=0")),
         "{cookies:?}"
     );
     let html = String::from_utf8(
@@ -484,7 +484,7 @@ async fn state_round_trip_through_prg_and_cookies() {
     );
     // Coming back with only the cookie: the tab is still open, nothing is rewritten.
     let req = Request::get("/settings")
-        .header("cookie", "nojs-ui=tab.settings=1")
+        .header("cookie", "lui-ui=tab.settings=1")
         .body(Body::empty())
         .unwrap();
     let res = router().oneshot(req).await.unwrap();
@@ -514,24 +514,24 @@ async fn markup_follows_caps() {
     }
     let old = body("/dialog", "").await;
     assert!(old.contains("href=\"#confirm\"") && !old.contains("commandfor"));
-    assert!(old.contains("nojs-caps"), "unknown browser gets beacons");
-    let new = body("/dialog", "nojs-cap-probed=1; nojs-cap-invokers=1").await;
+    assert!(old.contains("lui-caps"), "unknown browser gets beacons");
+    let new = body("/dialog", "lui-cap-probed=1; lui-cap-invokers=1").await;
     assert!(new.contains("commandfor=\"confirm\"") && !new.contains("href=\"#confirm\""));
     assert!(
-        !new.contains("class=\"nojs-caps\""),
+        !new.contains("class=\"lui-caps\""),
         "probed browser gets no beacons"
     );
-    assert!(body("/popover", "").await.contains("nojs-popover-details"));
+    assert!(body("/popover", "").await.contains("lui-popover-details"));
     assert!(
-        body("/tabs", "nojs-cap-details_content=1")
+        body("/tabs", "lui-cap-details_content=1")
             .await
-            .contains("nojs-tabs-panel")
+            .contains("lui-tabs-panel")
     );
-    assert!(body("/tabs", "").await.contains("nojs-accordion-body"));
+    assert!(body("/tabs", "").await.contains("lui-accordion-body"));
 }
 
 /// A component page lists what its builders accept under the snippet, from
-/// `axum_nojs::props()`: the tabs page has a `Tabs` table with every setter in it.
+/// `loco_ui::props()`: the tabs page has a `Tabs` table with every setter in it.
 #[tokio::test]
 async fn component_pages_show_their_props() {
     let res = router()
@@ -546,11 +546,11 @@ async fn component_pages_show_their_props() {
     )
     .unwrap();
     let section = html
-        .split("class=\"nojs-props\"")
+        .split("class=\"lui-props\"")
         .nth(1)
         .expect("/tabs: no props section");
     assert!(section.contains("<summary><code>Tabs</code> <code>ui.tabs(name: &amp;str)</code>"));
-    let tabs = axum_nojs::props()
+    let tabs = loco_ui::props()
         .iter()
         .find(|c| c.builder == "Tabs")
         .unwrap();

@@ -4,12 +4,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-`axum-nojs` is a no-JavaScript-required component library for Rust servers (Axum + Maud).
+`loco-ui` is a no-JavaScript-required component library for Rust servers (Axum + Maud).
 Every component is a plain `fn name(caps, ...) -> Markup`; interactivity comes from the HTML/CSS
 platform (`<dialog>`, `popover`, invoker commands, `<details name>`, `<datalist>`, view
 transitions) and ordinary form round trips. **Every page must work with script disabled.** One
-optional script, `axum-nojs/src/enhance.rs`, served at `/nojs/enhance.js`, upgrades swap roots
-(`id` + `data-nojs="swap"`) to fetch-and-replace in place. It is the only `<script>` allowed: a
+optional script, `loco-ui/src/enhance.rs`, served at `/lui/enhance.js`, upgrades swap roots
+(`id` + `data-lui="swap"`) to fetch-and-replace in place. It is the only `<script>` allowed: a
 test enforces that (`demo/src/tests.rs::pages_ship_only_the_enhancement_script`), Blitz
 (no script engine) proves every route works without it, and `scripts/browser-check.mjs` drives
 headless Firefox to prove the script does its job. Never add inline script, handlers or a
@@ -23,10 +23,10 @@ cargo dev                          # same, rebuilt and restarted when crate sour
 cargo test                         # all tests, including the only-one-script test and doctests
 cargo test -p demo pages_ship_only_the_enhancement_script   # the single enforcement test
 node scripts/browser-check.mjs     # headless Firefox via geckodriver: the script works (needs a built demo)
-cargo test -p axum-nojs --doc      # component doc examples
+cargo test -p loco-ui --doc      # component doc examples
 cargo clippy --all-targets         # must be clean before a roadmap milestone counts as done
-cargo test -p axum-nojs-test       # Blitz layout assertions + screenshots into tests/shots/
-cargo bench -p axum-nojs           # criterion: stylesheet, layout, table with 1 000 rows, paged table, UiState
+cargo test -p loco-ui-test       # Blitz layout assertions + screenshots into tests/shots/
+cargo bench -p loco-ui           # criterion: stylesheet, layout, table with 1 000 rows, paged table, UiState
 scripts/bench.sh                   # latency baseline: curl p50/p95 TTFB and Firefox navigation timing on 3001
 node scripts/bench-swap.mjs [runs] # click-to-paint of in-place updates: the script beside htmx 2 on the same answers
 scripts/look.sh                    # Firefox shots of every page (light/dark, 1280/420) beside the shadcn docs, into target/look/
@@ -35,19 +35,19 @@ scripts/verify.sh                  # everything above plus a <script> grep and t
 
 ## Workspace layout
 
-- `axum-nojs-caps/` – the detection crate: `Caps`/`Cap` bitset, `@supports` beacons, cookie and
+- `loco-ui-caps/` – the detection crate: `Caps`/`Cap` bitset, `@supports` beacons, cookie and
   query parsing, `beacon_cookie`, and an `axum` feature with the extractor and beacon route.
-  `axum-nojs` re-exports it as `axum_nojs::caps`, so nothing else changes.
-- `axum-nojs-macros/` – the `nojs!` proc macro (Maud plus components written like elements), re-exported
-  as `axum_nojs::nojs` and in the prelude. A token walker over `proc-macro2`/`quote`, no `syn`; its
-  rules are tested in `axum-nojs/tests/nojs.rs` and its errors pinned with `trybuild` in `tests/ui/`.
-- `axum-nojs/` – the library crate. Depends only on `maud`, `axum-nojs-caps` and `axum-nojs-macros`. Feature `http` adds
+  `loco-ui` re-exports it as `loco_ui::caps`, so nothing else changes.
+- `loco-ui-macros/` – the `lui!` proc macro (Maud plus components written like elements), re-exported
+  as `loco_ui::lui` and in the prelude. A token walker over `proc-macro2`/`quote`, no `syn`; its
+  rules are tested in `loco-ui/tests/lui.rs` and its errors pinned with `trybuild` in `tests/ui/`.
+- `loco-ui/` – the library crate. Depends only on `maud`, `loco-ui-caps` and `loco-ui-macros`. Feature `http` adds
   `Redirect::into_http` and `Streamed` (a chunk stream); feature `axum` adds the `Ui` extractor,
-  `IntoResponse` for `Page`/`Redirect`/`Streamed`, the `/nojs/caps` beacon route, and
+  `IntoResponse` for `Page`/`Redirect`/`Streamed`, the `/lui/caps` beacon route, and
   `Saved<T>` (the only use of serde); feature `loco` adds `loco::Initializer`, which mounts
   the script and beacon routes in a Loco app. Everything else is plain functions over strings
   (`Ui::from_request`, `Page::into_string`, `Redirect::set_cookies`, `caps::beacon_cookie`).
-- `demo/` – Axum lib + binary, one route per component, one `use axum_nojs::prelude::*`.
+- `demo/` – Axum lib + binary, one route per component, one `use loco_ui::prelude::*`.
   Routes live in `demo/src/routes/<group>.rs`, one file per index group, each with a
   `routes()` that `router()` in `lib.rs` merges; the shell and index are in `site.rs`, the
   snippet machinery in `code.rs`, the tests in `tests.rs`. A new route file must also be
@@ -55,32 +55,32 @@ scripts/verify.sh                  # everything above plus a <script> grep and t
   markers (a test fails if a component page has none), so keep the markers around the
   component call when editing a route.
   Handlers take `ui: Ui` (plus `Saved<T>` / `Form<T>` when they need them) and return `Page`
-  or `Redirect`; they only parse input and call `axum-nojs`; keep each route around 15 lines. The only-one-script test lives here
+  or `Redirect`; they only parse input and call `loco-ui`; keep each route around 15 lines. The only-one-script test lives here
   and hits every route via `tower::oneshot`, so **add new demo routes to `PATHS`** (the
-  screenshot test in `axum-nojs-test` uses the same list).
+  screenshot test in `loco-ui-test` uses the same list).
 - `examples/loco-app/` – a Loco app (sign-in, notes) whose notes controller and views were
-  generated by `cargo loco generate scaffold` from `axum-nojs/loco-templates/`. After changing
+  generated by `cargo loco generate scaffold` from `loco-ui/loco-templates/`. After changing
   a template, regenerate the notes there and run its `tests/pages.rs` (one script, Blitz shots).
-- `axum-nojs-test/` – Blitz-based test harness: `Page::render(router, path, cookie)` then
+- `loco-ui-test/` – Blitz-based test harness: `Page::render(router, path, cookie)` then
   `exists / is_visible / bbox / text / display / screenshot`. Blitz gaps go in `FINDINGS.md`
   with an issue link, never as skipped assertions without a comment.
 
 ## Component conventions (follow exactly when adding one)
 
-1. One component = one file `axum-nojs/src/<name>.rs`, registered in `lib.rs` as `pub mod`.
+1. One component = one file `loco-ui/src/<name>.rs`, registered in `lib.rs` as `pub mod`.
    Only types a caller names go in the `prelude` (most never do: builders are reached from `ui`).
 2. File starts with a `//!` header: what it does, **Platform features** (with browser baseline
    versions), **What it does not do without script**, **Fallback**, and a runnable ```` ```rust ```` usage example (these are doctests).
 3. CSS lives beside the component as `pub const CSS: &str` and must be appended to the array in
    `stylesheet()` in `lib.rs`; `ui.page()` inlines that once per page. Theming only through
-   `--nojs-*` custom properties defined in `layout.rs`.
-4. Root element carries a single `nojs-<component>` class; sub-parts use `nojs-<component>-<part>`.
+   `--lui-*` custom properties defined in `layout.rs`.
+4. Root element carries a single `lui-<component>` class; sub-parts use `lui-<component>-<part>`.
    Output should be readable via `curl`.
-5. No macros beyond `html!` and `nojs!` (the `axum-nojs-macros` crate: Maud plus components
+5. No macros beyond `html!` and `lui!` (the `loco-ui-macros` crate: Maud plus components
    written like elements, expanding to the builder chain). A component is a builder struct holding `&Ui` (or what it needs
    from it) plus an `impl Ui { pub fn <name>(&self, required…) -> <Name> }` in the same file,
    and `impl Render for <Name>`, so a route writes `(ui.<name>(..).setter()..)` inside `html!`,
-   or `Name(..) setter item "x" { .. }` inside `nojs!`.
+   or `Name(..) setter item "x" { .. }` inside `lui!`.
    Required arguments stay in the call (text first); everything else is a chained setter. An
    id the caller does not care about is derived from the label with `crate::slug`, with an
    `.id()` override. Components read their own input from `ui` (`ui.param`, `ui.params`,
@@ -94,22 +94,22 @@ scripts/verify.sh                  # everything above plus a <script> grep and t
    route sets from a condition (`.open(..)`, `.loading(..)`). Branch on `caps.has(Cap::X)` and
    emit only one variant, never both.
    A root that should update in place gets `id=(enhance::swap_id(prefix, key))` and
-   `data-nojs="swap"`; the markup must behave identically without the script.
+   `data-lui="swap"`; the markup must behave identically without the script.
    Every builder with setters carries `pub const PROPS: &'static [Prop]` (name, `PropKind`,
    arguments as written, default, HTML attribute, first doc sentence) and an entry in
-   `props::COMPONENTS`, so `axum_nojs::props()`, the spec JSON and the demo's props tables
-   list it; the doc header's main doctest ends with the same call in `nojs!` and an
+   `props::COMPONENTS`, so `loco_ui::props()`, the spec JSON and the demo's props tables
+   list it; the doc header's main doctest ends with the same call in `lui!` and an
    `assert_eq!` on the HTML. Tests fail when a setter is missing from `PROPS`, a builder or
-   constructor from `props()`, or a header lacks its `nojs!` twin. Demo snippets use
-   `nojs!` unless the route keeps the builder in a variable.
+   constructor from `props()`, or a header lacks its `lui!` twin. Demo snippets use
+   `lui!` unless the route keeps the builder in a variable.
 6. Server-held state (theme, counter, active tab) travels via cookie or `?query=`; mutations use
    `<form method="post">` + redirect (Post/Redirect/Get), never GET side effects.
 7. Update the README feature matrix and Findings when a component or its fallback changes.
 8. A component builds its parts from the primitives: `ui.button` / `Button::new(caps, ..)`
-   (or `class="nojs-button"` on a `<summary>`), `ui.input` / `Input` with `.hide_label()` for a
+   (or `class="lui-button"` on a `<summary>`), `ui.input` / `Input` with `.hide_label()` for a
    bare control, `ui.badge`, `ui.card`, `Icon`, and the layouts (`ui.stack`, `ui.cluster`,
    `ui.grid`, `ui.split`). Never a raw `<button>` or visible `<input>` with its own CSS: a
-   component's CSS styles its parts by class (`.nojs-<component>-<part>`), and a test
+   component's CSS styles its parts by class (`.lui-<component>-<part>`), and a test
    (`only_the_primitives_select_bare_buttons_and_inputs`) fails if it selects a bare `button`
    or `input`. Hidden inputs, `<select>`, range sliders and menu items are the exceptions.
 

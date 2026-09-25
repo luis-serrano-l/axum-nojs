@@ -3,7 +3,7 @@
 use crate::pricing::{PRICING_CSS, PricingExt};
 use crate::site::page;
 use axum::{Router, routing::get};
-use axum_nojs::prelude::*;
+use loco_ui::prelude::*;
 
 pub(crate) fn routes() -> Router {
     Router::new().route("/pricing", get(pricing_page))
@@ -26,10 +26,10 @@ async fn pricing_page(ui: Ui) -> Page {
         let b = ui.link_button(text, href).small().current(on);
         if on { b } else { b.ghost() }
     };
-    page(&ui, "Pricing card", html! { (ui.stack(nojs! {
+    page(&ui, "Pricing card", html! { (ui.stack(lui! {
         (ui.cluster(html! { (pick("Monthly", &by_month, !yearly)) (pick("Yearly", &by_year, yearly)) }).gap(1))
         // code: /pricing
-        Grid("14rem", nojs! {
+        Grid("14rem", lui! {
             PricingCard("Hobby", hobby) period=(period) blurb="For a side project." {
                 feature "1 project"; feature "Community support"; cta "Start free" "/pricing";
             }
@@ -41,6 +41,6 @@ async fn pricing_page(ui: Ui) -> Page {
             }
         });
         // end code
-        p class="nojs-note" { "The card lives in " code { "demo/src/pricing.rs" } ": an extension trait on " code { "Ui" } ", a builder, " code { "impl Render" } " and a CSS const added with " code { "Page::css" } ". See " code { "docs/components.md" } "." }
+        p class="lui-note" { "The card lives in " code { "demo/src/pricing.rs" } ": an extension trait on " code { "Ui" } ", a builder, " code { "impl Render" } " and a CSS const added with " code { "Page::css" } ". See " code { "docs/components.md" } "." }
     }).gap(6)) }).css(PRICING_CSS)
 }

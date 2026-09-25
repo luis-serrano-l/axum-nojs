@@ -46,55 +46,55 @@ try {
   // Counter: five fast clicks, all counted, no page load.
   await go("/counter");
   await click("button[value=reset]");
-  await until(async () => (await text(".nojs-counter output")) === "0", "reset");
+  await until(async () => (await text(".lui-counter output")) === "0", "reset");
   for (let i = 0; i < 5; i++) await click("button[value=inc]");
-  await until(async () => (await text(".nojs-counter output")) === "10", "counter to reach 10 in steps of 2");
+  await until(async () => (await text(".lui-counter output")) === "10", "counter to reach 10 in steps of 2");
   assert(await navigations() === 1, "counter: 5 quick clicks counted in place, no reload");
-  await js("document.querySelector('.nojs-counter input[name=value]').value = 20");
-  await click(".nojs-counter button[value=set]");
-  await until(async () => (await text(".nojs-counter output")) === "20", "typed value set");
-  assert(await js("return document.querySelector('.nojs-counter button[value=inc]').disabled"), "counter: + switches off at the maximum");
+  await js("document.querySelector('.lui-counter input[name=value]').value = 20");
+  await click(".lui-counter button[value=set]");
+  await until(async () => (await text(".lui-counter output")) === "20", "typed value set");
+  assert(await js("return document.querySelector('.lui-counter button[value=inc]').disabled"), "counter: + switches off at the maximum");
 
   // Tabs: click a title, panel switches, URL updated, no reload.
   await go("/tabs");
   // The toggle comes from the script, before the answer: the strip it fires in is still the original.
-  assert(await wd("POST", S + "/execute/async", { args: [], script: "var cb = arguments[0], a = document.querySelector(\".nojs-tabs summary a[href*='tab.demo=1']\"), d = a.closest('details'); d.addEventListener('toggle', function () { cb(d.open && a.isConnected && !!a.closest('summary').querySelector('.nojs-tabs-mark')); }, { once: true }); a.click();" }), "tabs: the clicked tab opens and takes the underline before the answer");
-  await until(async () => (await text(".nojs-tabs details[open] summary")).startsWith("Use"), "tab switch");
+  assert(await wd("POST", S + "/execute/async", { args: [], script: "var cb = arguments[0], a = document.querySelector(\".lui-tabs summary a[href*='tab.demo=1']\"), d = a.closest('details'); d.addEventListener('toggle', function () { cb(d.open && a.isConnected && !!a.closest('summary').querySelector('.lui-tabs-mark')); }, { once: true }); a.click();" }), "tabs: the clicked tab opens and takes the underline before the answer");
+  await until(async () => (await text(".lui-tabs details[open] summary")).startsWith("Use"), "tab switch");
   await until(async () => (await js("return location.search")) === "?tab.demo=1", "tabs: URL follows the swap");
   assert(true, "tabs: URL follows the swap");
   assert(await navigations() === 1, "tabs: switched without a reload");
-  assert(await js("return getComputedStyle(document.querySelector('.nojs-tabs details[open] .nojs-tabs-mark')).viewTransitionName") === "nojs-tabs-demo", "tabs: the underline, not the title, carries the view-transition-name");
+  assert(await js("return getComputedStyle(document.querySelector('.lui-tabs details[open] .lui-tabs-mark')).viewTransitionName") === "lui-tabs-demo", "tabs: the underline, not the title, carries the view-transition-name");
   const fetched = (q) => js("return performance.getEntriesByType('resource').filter((r) => r.name.endsWith(arguments[0])).length", q);
-  await js("document.querySelector(\".nojs-tabs summary a[href*='tab.demo=2']\").dispatchEvent(new MouseEvent('mouseover', { bubbles: true }))");
+  await js("document.querySelector(\".lui-tabs summary a[href*='tab.demo=2']\").dispatchEvent(new MouseEvent('mouseover', { bubbles: true }))");
   await until(async () => (await fetched("?tab.demo=2")) === 1, "hover prefetches the tab");
-  await click(".nojs-tabs summary a[href*='tab.demo=2']");
-  await until(async () => await js("return !!document.querySelector('#nojs-tabs-demo details[open] .nojs-tabs-panel p')"), "prefetched tab shown");
+  await click(".lui-tabs summary a[href*='tab.demo=2']");
+  await until(async () => await js("return !!document.querySelector('#lui-tabs-demo details[open] .lui-tabs-panel p')"), "prefetched tab shown");
   assert(await fetched("?tab.demo=2") === 1 && await navigations() === 1, "tabs: the click reused the prefetched answer in place, no second request");
-  await until(async () => await js("return !!document.querySelector('#nojs-tabs-demo details[open] .nojs-tabs-panel p')"), "lazy tab filled");
-  assert(!(await js("return document.querySelector('#nojs-tabs-demo details[open] .nojs-tabs-lazy')")), "tabs: lazy panel rendered by the request that opened it");
+  await until(async () => await js("return !!document.querySelector('#lui-tabs-demo details[open] .lui-tabs-panel p')"), "lazy tab filled");
+  assert(!(await js("return document.querySelector('#lui-tabs-demo details[open] .lui-tabs-lazy')")), "tabs: lazy panel rendered by the request that opened it");
   await wd("POST", S + "/window/rect", { width: 500, height: 800 });
-  await until(async () => await js("return document.querySelector('#nojs-tabs-demo .nojs-tabs-select').offsetParent !== null"), "select shown on a narrow screen");
-  assert(await js("return document.querySelector('#nojs-tabs-demo summary').offsetParent === null"), "tabs: titles hidden when the select shows");
-  await js("var s = document.querySelector('#nojs-tabs-demo select'); s.value = '0'; s.dispatchEvent(new Event('change', { bubbles: true }))");
-  await until(async () => (await js("return document.querySelector('#nojs-tabs-demo select').value")) === "0" && (await text("#nojs-tabs-demo details[open] summary")) === "Install", "select switched the tab");
+  await until(async () => await js("return document.querySelector('#lui-tabs-demo .lui-tabs-select').offsetParent !== null"), "select shown on a narrow screen");
+  assert(await js("return document.querySelector('#lui-tabs-demo summary').offsetParent === null"), "tabs: titles hidden when the select shows");
+  await js("var s = document.querySelector('#lui-tabs-demo select'); s.value = '0'; s.dispatchEvent(new Event('change', { bubbles: true }))");
+  await until(async () => (await js("return document.querySelector('#lui-tabs-demo select').value")) === "0" && (await text("#lui-tabs-demo details[open] summary")) === "Install", "select switched the tab");
   assert(await navigations() === 1 && await js("return location.search") === "?tab.demo=0", "tabs: select change swapped in place");
   await wd("POST", S + "/window/rect", { width: 1000, height: 700 });
 
   // Accordion: expand all, then one title, in place; several stay open.
   await go("/accordion");
-  await click(".nojs-accordion-controls a");
-  await until(async () => (await js("return document.querySelectorAll('#nojs-accordion-faq > details[open]').length")) === 3, "expand all");
+  await click(".lui-accordion-controls a");
+  await until(async () => (await js("return document.querySelectorAll('#lui-accordion-faq > details[open]').length")) === 3, "expand all");
   assert(await js("return location.search").then(q => q.includes("open.faq=0%2C1%2C2")), "accordion: expand all swapped in place with the list in the URL");
-  await click("#nojs-accordion-faq > details:nth-of-type(2) > summary a");
-  await until(async () => (await js("return [...document.querySelectorAll('#nojs-accordion-faq > details')].map(d => d.open ? 1 : 0).join('')")) === "101", "toggle one of three");
-  await click("#nojs-accordion-faq-more > details:nth-of-type(2) > summary a");
-  await until(async () => (await js("return [...document.querySelectorAll('#nojs-accordion-faq-more > details')].map(d => d.open ? 1 : 0).join('')")) === "01", "nested group toggles on its own key");
-  assert(await js("return [...document.querySelectorAll('#nojs-accordion-faq > details')].map(d => d.open ? 1 : 0).join('')") === "101", "accordion: nested toggle kept the outer sections");
-  await click(".nojs-accordion-controls a:last-child");
-  await until(async () => (await js("return document.querySelectorAll('#nojs-accordion-faq > details[open]').length")) === 0, "collapse all");
+  await click("#lui-accordion-faq > details:nth-of-type(2) > summary a");
+  await until(async () => (await js("return [...document.querySelectorAll('#lui-accordion-faq > details')].map(d => d.open ? 1 : 0).join('')")) === "101", "toggle one of three");
+  await click("#lui-accordion-faq-more > details:nth-of-type(2) > summary a");
+  await until(async () => (await js("return [...document.querySelectorAll('#lui-accordion-faq-more > details')].map(d => d.open ? 1 : 0).join('')")) === "01", "nested group toggles on its own key");
+  assert(await js("return [...document.querySelectorAll('#lui-accordion-faq > details')].map(d => d.open ? 1 : 0).join('')") === "101", "accordion: nested toggle kept the outer sections");
+  await click(".lui-accordion-controls a:last-child");
+  await until(async () => (await js("return document.querySelectorAll('#lui-accordion-faq > details[open]').length")) === 0, "collapse all");
   assert(await navigations() === 1, "accordion: every toggle swapped without a reload");
   await go("/accordion");
-  assert(await js("return document.querySelectorAll('#nojs-accordion-faq > details[open]').length") === 0, "accordion: collapse all beat the cookie's memory on the next visit");
+  assert(await js("return document.querySelectorAll('#lui-accordion-faq > details[open]').length") === 0, "accordion: collapse all beat the cookie's memory on the next visit");
 
   // Combobox: results as you type, focus kept.
   await go("/combobox");
@@ -104,32 +104,32 @@ try {
   await js("document.activeElement.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }))");
   assert(await js("return document.activeElement.textContent") === "Rust", "combobox: ArrowDown moves from the input to the first result");
   await js("document.activeElement.click()");
-  await until(async () => (await js("return [...document.querySelectorAll('.nojs-combobox-chip')].map(c => c.firstChild.textContent).join()")) === "Rust", "result became a chip");
+  await until(async () => (await js("return [...document.querySelectorAll('.lui-combobox-chip')].map(c => c.firstChild.textContent).join()")) === "Rust", "result became a chip");
   assert(await js("return location.search") === "?q=ru&sel=Rust", "combobox: the chip is in the URL");
-  await click(".nojs-combobox-chip a");
-  await until(async () => (await js("return document.querySelectorAll('.nojs-combobox-chip').length")) === 0, "chip removed");
+  await click(".lui-combobox-chip a");
+  await until(async () => (await js("return document.querySelectorAll('.lui-combobox-chip').length")) === 0, "chip removed");
   assert(await navigations() === 1, "combobox: searched, picked and removed without a reload");
 
   // Table: a sort link re-renders the rows in place, URL follows.
   await go("/table?per.files=5");
-  await click(".nojs-table th a[href*='sort=size']");
-  await until(async () => (await js("return document.querySelector('.nojs-table th[aria-sort]')?.textContent.trim()")) === "Size▲", "sort by size");
+  await click(".lui-table th a[href*='sort=size']");
+  await until(async () => (await js("return document.querySelector('.lui-table th[aria-sort]')?.textContent.trim()")) === "Size▲", "sort by size");
   assert(await js("return location.search") === "?sort=size&dir=asc&per.files=5", "table: URL follows the sort");
   assert(await navigations() === 1, "table: sorted without a reload");
   assert(await js("return document.querySelector('a[rel=next]').href.includes('sort=size')"), "table: the pager's links follow the sort swapped in place");
-  await click(".nojs-table-cols summary");
-  await click(".nojs-table-cols a[href*='cols=name%2Csize']");
-  await until(async () => (await js("return document.querySelectorAll('.nojs-table thead th a').length")) === 2, "column hidden");
+  await click(".lui-table-cols summary");
+  await click(".lui-table-cols a[href*='cols=name%2Csize']");
+  await until(async () => (await js("return document.querySelectorAll('.lui-table thead th a').length")) === 2, "column hidden");
   assert(await js("return location.search").then(q => q.includes("cols=name%2Csize")), "table: hidden column swapped in place with ?cols= in the URL");
-  await js("document.querySelector('tbody tr:nth-child(2) input[type=checkbox]').click(); document.querySelector('#nojs-table-files-bulk button[value=archive]').click()");
-  await until(async () => (await js("return document.querySelector('.nojs-flash')?.textContent || ''")).includes("archive: 1 file"), "bulk form posted and redirected with a flash");
-  await js("document.querySelector('tbody tr:first-child .nojs-table-detail summary').click()");
-  assert(await js("return document.querySelector('tbody tr:first-child .nojs-table-detail').open"), "table: a row's detail opens natively");
-  // Paged table: the page size picked on one visit is remembered on the next (nojs-ui cookie).
+  await js("document.querySelector('tbody tr:nth-child(2) input[type=checkbox]').click(); document.querySelector('#lui-table-files-bulk button[value=archive]').click()");
+  await until(async () => (await js("return document.querySelector('.lui-flash')?.textContent || ''")).includes("archive: 1 file"), "bulk form posted and redirected with a flash");
+  await js("document.querySelector('tbody tr:first-child .lui-table-detail summary').click()");
+  assert(await js("return document.querySelector('tbody tr:first-child .lui-table-detail').open"), "table: a row's detail opens natively");
+  // Paged table: the page size picked on one visit is remembered on the next (lui-ui cookie).
   await go("/table");
-  assert(await text(".nojs-paged-table-range") === "1–5 of 36", "table: page size remembered from the earlier visit");
-  await js("const f = document.querySelector('.nojs-paged-table-jump'); f.page.value = 7; f.requestSubmit()");
-  await until(async () => (await js("return document.querySelector('.nojs-paged-table-range')?.textContent")) === "31–35 of 36", "jump to page 7");
+  assert(await text(".lui-paged-table-range") === "1–5 of 36", "table: page size remembered from the earlier visit");
+  await js("const f = document.querySelector('.lui-paged-table-jump'); f.page.value = 7; f.requestSubmit()");
+  await until(async () => (await js("return document.querySelector('.lui-paged-table-range')?.textContent")) === "31–35 of 36", "jump to page 7");
   assert(await js("return location.search").then(q => q.includes("page=7")), "table: the jump is in the URL");
   assert(await navigations() === 1, "table: jumped without a reload");
 
@@ -137,22 +137,22 @@ try {
   await go("/wizard?step.signup=0");
   await type("input[name=name]", "Ada");
   await type("input[name=email]", "ada@example.com");
-  await click(".nojs-wizard button.nojs-button-primary");
+  await click(".lui-wizard button.lui-button-primary");
   await until(async () => (await js("return document.querySelector('#f-email-error')?.textContent || ''")).includes("example.com"), "server message beside the field");
-  assert(await js("return document.querySelector('.nojs-wizard-steps li[aria-current=step]').classList.contains('nojs-wizard-error')"), "wizard: the step is marked in error");
+  assert(await js("return document.querySelector('.lui-wizard-steps li[aria-current=step]').classList.contains('lui-wizard-error')"), "wizard: the step is marked in error");
   await js("const e = document.querySelector('input[name=email]'); e.value = ''");
   await type("input[name=email]", "ada@example.org");
-  await click(".nojs-wizard button.nojs-button-primary");
-  await until(async () => (await text(".nojs-wizard li[aria-current=step]")) === "Newsletter (optional)", "wizard step 2");
+  await click(".lui-wizard button.lui-button-primary");
+  await until(async () => (await text(".lui-wizard li[aria-current=step]")) === "Newsletter (optional)", "wizard step 2");
   assert(await navigations() === 1, "wizard: advanced without a reload");
-  await click(".nojs-wizard-back");
+  await click(".lui-wizard-back");
   await until(async () => (await js("return document.querySelector('input[name=name]')?.value")) === "Ada", "wizard back keeps the name");
-  await click(".nojs-wizard button.nojs-button-primary");
-  await until(async () => (await text(".nojs-wizard li[aria-current=step]")) === "Newsletter (optional)", "wizard step 2 again");
-  await click(".nojs-wizard button[name=skip]");
-  await until(async () => (await js("return document.querySelector('.nojs-wizard-review')?.textContent || ''")).includes("(skipped)"), "skipped straight to the review");
+  await click(".lui-wizard button.lui-button-primary");
+  await until(async () => (await text(".lui-wizard li[aria-current=step]")) === "Newsletter (optional)", "wizard step 2 again");
+  await click(".lui-wizard button[name=skip]");
+  await until(async () => (await js("return document.querySelector('.lui-wizard-review')?.textContent || ''")).includes("(skipped)"), "skipped straight to the review");
   await go("/wizard");
-  assert(await js("return !!document.querySelector('.nojs-wizard-resume')") && await text(".nojs-wizard li[aria-current=step]") === "Review", "wizard: a new visit resumes at the review");
+  assert(await js("return !!document.querySelector('.lui-wizard-resume')") && await text(".lui-wizard li[aria-current=step]") === "Review", "wizard: a new visit resumes at the review");
 
   // Form: the counter follows typing; a multipart post with a file lands as a flash in place.
   await go("/form");
@@ -162,40 +162,40 @@ try {
   await type("#f-email", "ada@example.org");
   await type("#f-age", "36");
   await type("#f-handle", "ada_l");
-  await type("#f-avatar", process.cwd() + "/axum-nojs-test/tests/fixture.png");
-  await click(".nojs-form button[type=submit]");
-  await until(async () => (await js("return document.querySelector('.nojs-flash')?.textContent || ''")).includes("fixture.png"), "file posted as multipart and named in the flash");
+  await type("#f-avatar", process.cwd() + "/loco-ui-test/tests/fixture.png");
+  await click(".lui-form button[type=submit]");
+  await until(async () => (await js("return document.querySelector('.lui-flash')?.textContent || ''")).includes("fixture.png"), "file posted as multipart and named in the flash");
   assert(await navigations() === 1, "form: submitted with a file without a reload");
 
   // Swap targets: a link outside any root updates only #count; a form appends to #log.
   await go("/swap");
-  await click("a[data-nojs-target='#count']");
+  await click("a[data-lui-target='#count']");
   await until(async () => (await text("#count")) === "2", "count swapped by target");
   assert(await js("return location.search") === "?n=2", "swap: URL follows the targeted link");
   const before = await js("return document.querySelectorAll('#log li').length");
   await type("input[name=note]", "hello");
-  await click("form[data-nojs-target='#log'] button");
+  await click("form[data-lui-target='#log'] button");
   await until(async () => (await js("return document.querySelectorAll('#log li').length")) === before + 1, "note appended");
   assert(await js("return document.querySelector('#log li:last-child').textContent") === "hello", "swap: appended the fragment only");
   assert((await text("#note-count")) === String(before + 1), "swap: out-of-band count updated outside the target");
-  assert(!(await js("return document.querySelector('[data-nojs-oob]')")), "swap: oob element not left in the page");
+  assert(!(await js("return document.querySelector('[data-lui-oob]')")), "swap: oob element not left in the page");
   assert(await navigations() === 1, "swap: target and append without a reload");
   // Busy state is observable synchronously right after the submit is dispatched.
   await type("input[name=note]", "again");
-  const busy = await js(`var f = document.querySelector("form[data-nojs-target='#log']"); f.requestSubmit();
-    return [document.querySelector('#log').hasAttribute('data-nojs-busy'), f.getAttribute('aria-busy'), f.querySelector('button').disabled, !document.querySelector('#saving').hidden]`);
+  const busy = await js(`var f = document.querySelector("form[data-lui-target='#log']"); f.requestSubmit();
+    return [document.querySelector('#log').hasAttribute('data-lui-busy'), f.getAttribute('aria-busy'), f.querySelector('button').disabled, !document.querySelector('#saving').hidden]`);
   assert(busy.every(Boolean), "busy: root marked, form aria-busy, button disabled, indicator shown while pending");
   await until(async () => (await js("return document.querySelectorAll('#log li').length")) === before + 2, "second note appended");
-  const idle = await js("return [!document.querySelector('[data-nojs-busy],[aria-busy],[data-nojs-disabled]'), !document.querySelector('form button').disabled, document.querySelector('#saving').hidden]");
+  const idle = await js("return [!document.querySelector('[data-lui-busy],[aria-busy],[data-lui-disabled]'), !document.querySelector('form button').disabled, document.querySelector('#saving').hidden]");
   assert(idle.every(Boolean), "busy: everything restored after the swap");
   // A failed fetch becomes the navigation the browser would have made.
   await js("window.fetch = function () { return Promise.reject(new Error('down')); }");
-  await click("a[data-nojs-target='#count']");
+  await click("a[data-lui-target='#count']");
   await until(async () => await js("return !/down/.test(String(window.fetch))"), "document reloaded after the failed fetch");
   assert(await js("return location.search") === "?n=2" && (await text("#count")) === "2", "busy: failed request fell back to a full navigation");
-  // History: Back and Forward restore the root from the entry's copy, with no request; nojs:swap fires.
-  await js("window.__swaps = []; addEventListener('nojs:swap', function (e) { window.__swaps.push(e.detail); })");
-  await click("a[data-nojs-target='#count']:not([data-nojs-push])");
+  // History: Back and Forward restore the root from the entry's copy, with no request; lui:swap fires.
+  await js("window.__swaps = []; addEventListener('lui:swap', function (e) { window.__swaps.push(e.detail); })");
+  await click("a[data-lui-target='#count']:not([data-lui-push])");
   await until(async () => (await text("#count")) === "3", "count pushed to 3");
   await js("window.__fetch = window.fetch; window.fetch = function () { return Promise.reject(new Error('down')); }; history.back()");
   await until(async () => (await text("#count")) === "2", "count restored by Back");
@@ -203,16 +203,16 @@ try {
   await js("history.forward()");
   await until(async () => (await text("#count")) === "3", "count restored by Forward");
   assert(await js("return location.search") === "?n=3", "history: Forward restored the root too");
-  assert(await js("return window.__swaps.filter(function (d) { return d.id === 'count'; }).length") === 3, "history: nojs:swap fired for the swap and both restores");
+  assert(await js("return window.__swaps.filter(function (d) { return d.id === 'count'; }).length") === 3, "history: lui:swap fired for the swap and both restores");
   await js("window.fetch = window.__fetch");
-  await click("a[data-nojs-push='false']");
+  await click("a[data-lui-push='false']");
   await until(async () => (await text("#count")) === "12", "count swapped with the URL kept");
-  assert(await js("return location.search") === "?n=3", "history: data-nojs-push=false keeps the URL");
-  const len = await js("var a = document.querySelector('a[data-nojs-push]'); a.removeAttribute('data-nojs-push'); a.setAttribute('data-nojs-replace', ''); return history.length");
+  assert(await js("return location.search") === "?n=3", "history: data-lui-push=false keeps the URL");
+  const len = await js("var a = document.querySelector('a[data-lui-push]'); a.removeAttribute('data-lui-push'); a.setAttribute('data-lui-replace', ''); return history.length");
   const swapsBefore = await js("return window.__swaps.length");
-  await click("a[data-nojs-replace]");
+  await click("a[data-lui-replace]");
   await until(async () => (await js("return window.__swaps.length")) === swapsBefore + 1, "swap with replace");
-  assert(await js("return history.length") === len && await js("return location.search") === "?n=12", "history: data-nojs-replace rewrites the entry");
+  assert(await js("return history.length") === len && await js("return location.search") === "?n=12", "history: data-lui-replace rewrites the entry");
 
   // Dialog: opens modal from the invoker, focus on the first field, Escape closes, confirm posts.
   await go("/dialog");
@@ -223,9 +223,9 @@ try {
   await until(async () => !(await js("return document.querySelector('dialog').open")), "dialog closed by Escape");
   await click("button[command=show-modal]");
   await until(async () => await js("return document.querySelector('dialog').open"), "dialog open again");
-  await click("dialog button.nojs-button-danger");
-  await until(async () => (await js("return document.querySelector('.nojs-flash')?.textContent")) || "").then(() => {}, () => {});
-  await until(async () => /Account deleted/.test(await js("return document.querySelector('.nojs-flash')?.textContent || ''")), "flash after confirm");
+  await click("dialog button.lui-button-danger");
+  await until(async () => (await js("return document.querySelector('.lui-flash')?.textContent")) || "").then(() => {}, () => {});
+  await until(async () => /Account deleted/.test(await js("return document.querySelector('.lui-flash')?.textContent || ''")), "flash after confirm");
   assert(await js("return location.pathname") === "/dialog" && !(await js("return document.querySelector('dialog').open")), "dialog: confirm posted and the server came back");
 
   // Popover: arrow keys walk the items, submenu opens inside, an action posts and comes back.
@@ -233,41 +233,41 @@ try {
   await click("button[popovertarget=account]");
   await until(async () => await js("return document.querySelector('#account').matches(':popover-open')"), "menu open");
   await type("button[popovertarget=account]", ""); // ArrowDown from the button
-  assert(await js("return document.activeElement.querySelector('.nojs-popover-text').textContent") === "Profile", "popover: ArrowDown focuses the first item");
+  assert(await js("return document.activeElement.querySelector('.lui-popover-text').textContent") === "Profile", "popover: ArrowDown focuses the first item");
   await js("document.activeElement.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }))");
-  assert(await js("return document.activeElement.querySelector('.nojs-popover-text').textContent") === "Settings", "popover: ArrowDown moves to the next item");
+  assert(await js("return document.activeElement.querySelector('.lui-popover-text').textContent") === "Settings", "popover: ArrowDown moves to the next item");
   await click("button[popovertarget=account-theme]");
   await until(async () => await js("return document.querySelector('#account-theme').matches(':popover-open') && document.querySelector('#account').matches(':popover-open')"), "submenu open with parent");
   await click("#account form button");
-  await until(async () => /Signed out/.test(await js("return document.querySelector('.nojs-flash')?.textContent || ''")), "flash after the action");
+  await until(async () => /Signed out/.test(await js("return document.querySelector('.lui-flash')?.textContent || ''")), "flash after the action");
 
   // Flash: saving with notifications off stacks ok + warn; ok fades by CSS; dismiss clears both.
   await go("/settings?tab.settings=1");
-  await click(".nojs-tabs details[open] button[type=submit]");
-  await until(async () => (await js("return document.querySelectorAll('.nojs-flash-item').length")) === 2, "flash: ok and warn stacked");
-  assert(await js("return getComputedStyle(document.querySelector('.nojs-flash-ok')).animationName") === "nojs-flash-hide", "flash: ok auto-hides by CSS animation");
-  assert(await js("return getComputedStyle(document.querySelector('.nojs-flash-warn')).animationName") === "none", "flash: warn stays");
-  await click(".nojs-flash-warn .nojs-flash-dismiss");
-  await until(async () => (await js("return document.querySelectorAll('.nojs-flash-item').length")) === 0, "flash: dismiss link clears the stack");
+  await click(".lui-tabs details[open] button[type=submit]");
+  await until(async () => (await js("return document.querySelectorAll('.lui-flash-item').length")) === 2, "flash: ok and warn stacked");
+  assert(await js("return getComputedStyle(document.querySelector('.lui-flash-ok')).animationName") === "lui-flash-hide", "flash: ok auto-hides by CSS animation");
+  assert(await js("return getComputedStyle(document.querySelector('.lui-flash-warn')).animationName") === "none", "flash: warn stays");
+  await click(".lui-flash-warn .lui-flash-dismiss");
+  await until(async () => (await js("return document.querySelectorAll('.lui-flash-item').length")) === 0, "flash: dismiss link clears the stack");
 
   // Command palette: the popover opens with the caret in the box; an exact name redirects.
   await go("/palette");
-  await click(".nojs-palette-open");
+  await click(".lui-palette-open");
   await until(async () => await js("return document.querySelector('#cmd').matches(':popover-open') && document.activeElement.name === 'q'"), "palette: opens focused");
   await type("#cmd input[name=q]", "Toasts\ue007"); // Enter
   await until(async () => (await js("return location.pathname")) === "/toast", "palette: exact name goes to its page");
 
   // Toasts: posted, stacked in the corner, calm ones fade, danger stays.
   await click("button[value=all]");
-  await until(async () => (await js("return document.querySelectorAll('.nojs-toast').length")) === 3, "toasts: three stacked");
-  assert(await js("return getComputedStyle(document.querySelector('.nojs-toasts')).position") === "fixed", "toasts: out of the flow");
-  assert(await js("return getComputedStyle(document.querySelector('.nojs-toast-ok')).animationName") === "nojs-toast-out", "toasts: ok fades");
-  assert(await js("return getComputedStyle(document.querySelector('.nojs-toast-danger')).animationName") === "none", "toasts: danger stays");
+  await until(async () => (await js("return document.querySelectorAll('.lui-toast').length")) === 3, "toasts: three stacked");
+  assert(await js("return getComputedStyle(document.querySelector('.lui-toasts')).position") === "fixed", "toasts: out of the flow");
+  assert(await js("return getComputedStyle(document.querySelector('.lui-toast-ok')).animationName") === "lui-toast-out", "toasts: ok fades");
+  assert(await js("return getComputedStyle(document.querySelector('.lui-toast-danger')).animationName") === "none", "toasts: danger stays");
 
   // Range: output mirrors while moving, before any submit.
   await go("/inputs");
   await type("#f-volume", ""); // ArrowRight
-  assert((await text(".nojs-range output")) !== "40", "range: output mirrors the slider live");
+  assert((await text(".lui-range output")) !== "40", "range: output mirrors the slider live");
   await type("#f-price_max", ""); // ArrowLeft
   assert((await text("output[for=f-price_max]")) === "75", "range pair: the high thumb mirrors into its own output");
   // Select: typing in the filter re-renders the options through a GET, nothing is saved.
@@ -275,59 +275,59 @@ try {
   await until(async () => (await js("return [...document.querySelectorAll('#country option')].map(o => o.value).join()")) === "es,jp", "filtered to Japan plus the selected Spain");
   assert(await js("return location.search").then(q => q.includes("country-q=jap")), "select: the filter is a GET in the URL");
   assert(await navigations() === 1, "select: filtered in place");
-  await click(".nojs-color-presets button[value='#b3261e']");
-  await until(async () => (await js("return document.querySelector('.nojs-color-presets button[aria-pressed=true]')?.value")) === "#b3261e", "preset saved");
-  assert(/Inputs saved/.test(await js("return document.querySelector('.nojs-flash')?.textContent || ''")), "color: a preset posts the form");
+  await click(".lui-color-presets button[value='#b3261e']");
+  await until(async () => (await js("return document.querySelector('.lui-color-presets button[aria-pressed=true]')?.value")) === "#b3261e", "preset saved");
+  assert(/Inputs saved/.test(await js("return document.querySelector('.lui-flash')?.textContent || ''")), "color: a preset posts the form");
 
   // Button: Tab onto the primary button; the keyboard focus ring is a 3px outline (Blitz
   // cannot check this: :focus-visible never matches there, blitz#839).
   await go("/button");
-  await js("document.querySelector('.nojs-back').focus()");
+  await js("document.querySelector('.lui-back').focus()");
   const tab = () => wd("POST", S + "/actions", { actions: [{ type: "key", id: "kb", actions: [{ type: "keyDown", value: "\ue004" }, { type: "keyUp", value: "\ue004" }] }] });
-  for (let i = 0; i < 10 && !(await js("return document.activeElement.matches('.nojs-button-primary')")); i++) await tab();
-  assert(await js("return document.activeElement.matches('.nojs-button-primary:focus-visible')"), "button: reached by Tab, :focus-visible");
+  for (let i = 0; i < 10 && !(await js("return document.activeElement.matches('.lui-button-primary')")); i++) await tab();
+  assert(await js("return document.activeElement.matches('.lui-button-primary:focus-visible')"), "button: reached by Tab, :focus-visible");
   assert(await js("return getComputedStyle(document.activeElement).outlineWidth") === "3px", "button: the focus ring is a 3px outline");
 
   // Table: edit a row in place; Save posts, the redirect comes back with the new value.
   await go("/table?per.files=5&edit.files=src/build.rs");
-  await js("const i = document.querySelector('.nojs-table-edit-input'); i.value = 'rust'");
-  await click(".nojs-table-editing .nojs-button-primary");
-  await until(async () => /Saved src\/build.rs/.test(await js("return document.querySelector('.nojs-flash')?.textContent || ''")), "table: row saved");
-  assert(await js("return !document.querySelector('.nojs-table-edit-input') && [...document.querySelectorAll('td')].some(td => td.textContent.trim() === 'rust')"), "table: an edited row is saved and shown");
+  await js("const i = document.querySelector('.lui-table-edit-input'); i.value = 'rust'");
+  await click(".lui-table-editing .lui-button-primary");
+  await until(async () => /Saved src\/build.rs/.test(await js("return document.querySelector('.lui-flash')?.textContent || ''")), "table: row saved");
+  assert(await js("return !document.querySelector('.lui-table-edit-input') && [...document.querySelectorAll('td')].some(td => td.textContent.trim() === 'rust')"), "table: an edited row is saved and shown");
 
   // Upload: a real file through the enhancement script (XMLHttpRequest, progress bar), in place.
   await go("/upload");
-  await type(".nojs-upload-input", process.cwd() + "/axum-nojs/src/upload.rs");
-  await click(".nojs-upload-form .nojs-button-primary");
-  await until(async () => /Uploaded 1/.test(await js("return document.querySelector('.nojs-flash')?.textContent || ''")), "upload: the file arrived");
-  assert(await js("return [...document.querySelectorAll('.nojs-upload-name')].some(n => n.textContent.trim() === 'upload.rs')"), "upload: the list shows what the server kept");
+  await type(".lui-upload-input", process.cwd() + "/loco-ui/src/upload.rs");
+  await click(".lui-upload-form .lui-button-primary");
+  await until(async () => /Uploaded 1/.test(await js("return document.querySelector('.lui-flash')?.textContent || ''")), "upload: the file arrived");
+  assert(await js("return [...document.querySelectorAll('.lui-upload-name')].some(n => n.textContent.trim() === 'upload.rs')"), "upload: the list shows what the server kept");
   assert(await navigations() === 1, "upload: sent in place, no reload");
 
   // Kanban: an arrow posts the move; the card lands in the next column in place.
   await go("/kanban");
-  await click(".nojs-kanban-card:has(input[value=docs]) button[value=doing]");
-  await until(async () => await js("return !!document.querySelector('.nojs-kanban-column:nth-child(2) input[value=docs]')"), "kanban: card moved");
+  await click(".lui-kanban-card:has(input[value=docs]) button[value=doing]");
+  await until(async () => await js("return !!document.querySelector('.lui-kanban-column:nth-child(2) input[value=docs]')"), "kanban: card moved");
   assert(await navigations() === 1, "kanban: moved in place, no reload");
   await sleep(600); // let the card's view transition finish before the next click
-  await click(".nojs-kanban-card:has(input[value=docs]) button[value=todo]");
-  await until(async () => await js("return !!document.querySelector('.nojs-kanban-column:nth-child(1) input[value=docs]')"), "kanban: card moved back");
+  await click(".lui-kanban-card:has(input[value=docs]) button[value=todo]");
+  await until(async () => await js("return !!document.querySelector('.lui-kanban-column:nth-child(1) input[value=docs]')"), "kanban: card moved back");
   assert(true, "kanban: and back again");
 
   // Calendar: the next-month link swaps the calendar in place; picking a day follows.
   await go("/calendar?month.day=2026-09");
-  await click("#nojs-calendar-day a[aria-label='Next month']");
-  await until(async () => (await text("#nojs-calendar-day .nojs-calendar-title")) === "October 2026", "calendar: next month");
+  await click("#lui-calendar-day a[aria-label='Next month']");
+  await until(async () => (await text("#lui-calendar-day .lui-calendar-title")) === "October 2026", "calendar: next month");
   assert(await navigations() === 1 && (await js("return location.search")).includes("month.day=2026-10"), "calendar: month changed in place, URL follows");
-  await click("#nojs-calendar-day a[href*='day=2026-10-15']");
-  await until(async () => await js("return !!document.querySelector('.nojs-calendar-picked[href*=\"2026-10-15\"]')"), "calendar: day picked");
+  await click("#lui-calendar-day a[href*='day=2026-10-15']");
+  await until(async () => await js("return !!document.querySelector('.lui-calendar-picked[href*=\"2026-10-15\"]')"), "calendar: day picked");
   assert(await navigations() === 1, "calendar: a day picked in place");
 
   // Tooltip: hidden until its trigger has focus (or the pointer), then shown; named by aria-describedby.
   await go("/feedback");
-  assert(await js("return getComputedStyle(document.querySelector('.nojs-tooltip-text')).visibility") === "hidden", "tooltip: hidden at rest");
-  await js("document.querySelector('.nojs-tooltip button').focus()");
-  await until(async () => (await js("return getComputedStyle(document.querySelector('.nojs-tooltip-text')).visibility")) === "visible", "tooltip shows on focus");
-  assert(await js("return document.activeElement.getAttribute('aria-describedby') === document.querySelector('.nojs-tooltip-text').id"), "tooltip: shown on focus and named by aria-describedby");
+  assert(await js("return getComputedStyle(document.querySelector('.lui-tooltip-text')).visibility") === "hidden", "tooltip: hidden at rest");
+  await js("document.querySelector('.lui-tooltip button').focus()");
+  await until(async () => (await js("return getComputedStyle(document.querySelector('.lui-tooltip-text')).visibility")) === "visible", "tooltip shows on focus");
+  assert(await js("return document.activeElement.getAttribute('aria-describedby') === document.querySelector('.lui-tooltip-text').id"), "tooltip: shown on focus and named by aria-describedby");
 
   // Date picker: the button opens the calendar popover; a day is a radio the form posts.
   await go("/calendar?due=2026-09-24");
@@ -338,7 +338,7 @@ try {
   assert(await js("return document.querySelector(\"#f-due-calendar input[value='2026-09-25']\").checked"), "date picker: clicking a day checks its radio");
 
   // Theme: applied in place.
-  await click(".nojs-theme button[value=dark]");
+  await click(".lui-theme button[value=dark]");
   await until(async () => (await js("return document.documentElement.dataset.theme")) === "dark", "theme");
   assert(await navigations() === 1, "theme: switched without a reload");
 
@@ -346,11 +346,11 @@ try {
   // prefetched before a theme change is not reused: Vary: Cookie; checked by hand, see FINDINGS.)
   await go("/");
   await sleep(1000);
-  await click(".nojs-index a[href='/dialog']");
+  await click(".lui-index a[href='/dialog']");
   await until(async () => (await js("return location.pathname")) === "/dialog", "dialog opened");
   assert(await js("return performance.getEntriesByType('navigation')[0].transferSize") === 0, "index: the prefetched page came from the cache");
   assert(await js("return document.documentElement.dataset.theme") === "dark", "index: the cached copy follows the theme cookie");
-  await click(".nojs-theme button[value=auto]");
+  await click(".lui-theme button[value=auto]");
   await until(async () => (await js("return document.documentElement.dataset.theme")) === "auto", "theme back");
 } catch (e) {
   console.error("FAIL: " + e.message);

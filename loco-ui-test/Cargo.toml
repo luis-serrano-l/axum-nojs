@@ -1,5 +1,5 @@
 [package]
-name = "axum-nojs-test"
+name = "loco-ui-test"
 version = "0.1.0"
 edition = "2024"
 description = "Render Axum routes through Blitz: layout assertions and headless screenshots"

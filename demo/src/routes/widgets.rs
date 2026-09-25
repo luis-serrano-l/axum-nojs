@@ -6,8 +6,8 @@ use axum::{
     response::{IntoResponse, Response},
     routing::{get, post},
 };
-use axum_nojs::calendar::Date;
-use axum_nojs::prelude::*;
+use loco_ui::calendar::Date;
+use loco_ui::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::{
     sync::{LazyLock, Mutex},
@@ -29,17 +29,17 @@ async fn calendar_page(ui: Ui) -> Page {
     page(
         &ui,
         "Calendar",
-        nojs! {
+        lui! {
             // code: /calendar
             Calendar("day") disabled=(|d| d.weekday() >= 5)
                 event=(&invoice, "Invoice due") event=(&release, "Release");
             // end code
-            p class="nojs-note" { @match ui.param("day") {
+            p class="lui-note" { @match ui.param("day") {
                 Some(d) => { "You picked " (d) ". Weekends cannot be picked; a dot marks an event." },
                 None => { "Pick a weekday. The month links and the days are ordinary links: the page comes back with " code { "?day=" } " set." },
             } }
             h2 { "In a form" }
-            form class="nojs-stack" method="get" action="/calendar" {
+            form class="lui-stack" method="get" action="/calendar" {
                 // code: /calendar
                 DatePicker("due", "Due date") required disabled=(|d| d.weekday() >= 5);
                 DatePicker("born", "Born") native max="2026-12-31";
@@ -98,7 +98,7 @@ async fn upload_page(ui: Ui, Saved(who): Saved<Uploader>) -> Page {
         .map(|n| format!("/upload/file/{n}"))
         .collect();
     // code: /upload
-    let up = nojs! {
+    let up = lui! {
         Upload("/upload", "file") accept="image/*,.txt,.pdf" multiple
             hint="Images, text or PDF, up to 200 KB each. The last three are kept." {
             @for ((name, bytes), href) in files.iter().zip(&links) {
@@ -224,7 +224,7 @@ impl Default for Board {
 
 async fn kanban_page(ui: Ui, Saved(board): Saved<Board>) -> Page {
     // code: /kanban
-    let k = nojs! {
+    let k = lui! {
         Kanban("/kanban") {
             @for (lane, title) in LANES {
                 column (lane) (title) limit=[(lane == "doing").then_some(2)] {
@@ -241,7 +241,7 @@ async fn kanban_page(ui: Ui, Saved(board): Saved<Board>) -> Page {
     page(
         &ui,
         "Kanban",
-        html! { (ui.flash()) (k) p class="nojs-note" { "Each arrow posts the card and its new column; the server moves it and redirects back. Doing has a limit of two: past it, its count turns red." } },
+        html! { (ui.flash()) (k) p class="lui-note" { "Each arrow posts the card and its new column; the server moves it and redirects back. Doing has a limit of two: past it, its count turns red." } },
     )
 }
 

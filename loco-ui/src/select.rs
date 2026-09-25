@@ -26,7 +26,7 @@
 //! **Enhanced:** the enhancement script filters as you type, through the same GET.
 //!
 //! ```rust
-//! use axum_nojs::{prelude::*, select::SelectOption};
+//! use loco_ui::{prelude::*, select::SelectOption};
 //! let mut ui = Ui::from_request("/shop", "food-q=k", "");
 //! ui.caps = Caps::all();
 //! // Plain tuples of (value, label) or (value, label, icon) are options.
@@ -43,8 +43,8 @@
 //! assert!(m.contains("<optgroup label=\"Fruit\">") && !m.contains("Apple"), "filtered to 'k'");
 //! assert!(m.contains("formmethod=\"get\" formaction=\"/shop\""));
 //!
-//! // The same in `nojs!`:
-//! let same = nojs! { Select("food", "leek") search="/shop" search_over=2 {
+//! // The same in `lui!`:
+//! let same = lui! { Select("food", "leek") search="/shop" search_over=2 {
 //!     group "Fruit" ([
 //!         SelectOption::new("apple", "Apple"),
 //!         SelectOption::new("kiwi", "Kiwi").content(html! { b { "Kiwi" } }),
@@ -173,7 +173,7 @@ impl Select<'_> {
             .doc("Show the filter box above this many options (default 15)."),
         Prop::new("label", PropKind::Value, "label: &'a str")
             .attr("label")
-            .doc("A `<label>` above the select, in a `div.nojs-field` like a form field."),
+            .doc("A `<label>` above the select, in a `div.lui-field` like a form field."),
     ];
 }
 
@@ -243,7 +243,7 @@ impl<'a> Select<'a> {
         self
     }
 
-    /// A `<label>` above the select, in a `div.nojs-field` like a form field.
+    /// A `<label>` above the select, in a `div.lui-field` like a form field.
     pub fn label(mut self, label: &'a str) -> Self {
         self.label = Some(label);
         self
@@ -278,7 +278,7 @@ impl Render for Select<'_> {
         let option = |o: &SelectOption| {
             html! {
                 option value=(o.value) selected[o.value == selected] {
-                    @if let Some(i) = o.icon { span class="nojs-select-icon" aria-hidden="true" { (i) } " " }
+                    @if let Some(i) = o.icon { span class="lui-select-icon" aria-hidden="true" { (i) } " " }
                     @match (&o.content, rich) { (Some(c), true) => (c), _ => (o.text) }
                 }
             }
@@ -287,10 +287,10 @@ impl Render for Select<'_> {
             label,
             name,
             html! {
-                span class="nojs-select" {
+                span class="lui-select" {
                     @if let Some(action) = search {
-                        span class="nojs-select-search" {
-                            (Input::search_box(&q_name, "Filter options", q).id(&q_id).placeholder("Filter").class("nojs-select-filter"))
+                        span class="lui-select-search" {
+                            (Input::search_box(&q_name, "Filter options", q).id(&q_id).placeholder("Filter").class("lui-select-filter"))
                             (ui.button("Filter").formmethod("get").formaction(action).formnovalidate())
                         }
                     }
@@ -312,23 +312,23 @@ impl Render for Select<'_> {
 }
 /// Styles for this component; included in [`crate::stylesheet`].
 pub const CSS: &str = r#"
-.nojs-select { display: inline-grid; gap: 0.4rem; }
-.nojs-select-search { display: flex; gap: 0.4rem; }
-.nojs-select-filter { flex: 1; min-width: 0; }
-.nojs-select select, .nojs-select select::picker(select) { appearance: base-select; }
-.nojs-select select { min-width: 12rem; }
+.lui-select { display: inline-grid; gap: 0.4rem; }
+.lui-select-search { display: flex; gap: 0.4rem; }
+.lui-select-filter { flex: 1; min-width: 0; }
+.lui-select select, .lui-select select::picker(select) { appearance: base-select; }
+.lui-select select { min-width: 12rem; }
 /* base-select draws its own ::picker-icon; drop the gradient chevron from layout.rs. */
-@supports (appearance: base-select) { .nojs-select select { background-image: none; padding-right: 0.75rem; } }
-.nojs-select select::picker(select) {
-  border: 1px solid var(--nojs-line); border-radius: var(--nojs-radius); padding: 0.25rem;
-  background: var(--nojs-popover); color: var(--nojs-fg); box-shadow: var(--nojs-shadow-lg);
+@supports (appearance: base-select) { .lui-select select { background-image: none; padding-right: 0.75rem; } }
+.lui-select select::picker(select) {
+  border: 1px solid var(--lui-line); border-radius: var(--lui-radius); padding: 0.25rem;
+  background: var(--lui-popover); color: var(--lui-fg); box-shadow: var(--lui-shadow-lg);
   max-height: 20rem;
 }
-.nojs-select option { padding: 0.375rem 0.5rem; border-radius: var(--nojs-radius-sm); font-size: 0.875rem; }
-.nojs-select option:hover, .nojs-select option:focus-visible { background: var(--nojs-accent); color: var(--nojs-on-accent); }
-.nojs-select option::checkmark { order: 1; margin-left: auto; }
-.nojs-select optgroup { font-size: 0.75rem; font-weight: 500; color: var(--nojs-muted); padding: 0.375rem 0.5rem 0; }
-.nojs-select optgroup option { font-weight: 400; color: var(--nojs-fg); }
-.nojs-select-icon { display: inline-block; width: 1.25em; text-align: center; }
-.nojs-swatch { display: inline-block; width: 1em; height: 1em; border-radius: 50%; vertical-align: -0.15em; margin-right: 0.4em; border: 1px solid var(--nojs-line); }
+.lui-select option { padding: 0.375rem 0.5rem; border-radius: var(--lui-radius-sm); font-size: 0.875rem; }
+.lui-select option:hover, .lui-select option:focus-visible { background: var(--lui-accent); color: var(--lui-on-accent); }
+.lui-select option::checkmark { order: 1; margin-left: auto; }
+.lui-select optgroup { font-size: 0.75rem; font-weight: 500; color: var(--lui-muted); padding: 0.375rem 0.5rem 0; }
+.lui-select optgroup option { font-weight: 400; color: var(--lui-fg); }
+.lui-select-icon { display: inline-block; width: 1.25em; text-align: center; }
+.lui-swatch { display: inline-block; width: 1em; height: 1em; border-radius: 50%; vertical-align: -0.15em; margin-right: 0.4em; border: 1px solid var(--lui-line); }
 "#;

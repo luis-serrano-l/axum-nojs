@@ -1,5 +1,5 @@
-//! Demo server: one route per component. Handlers only parse input and call `axum-nojs`.
-//! The binary in `main.rs` serves [`router`]; tests and `axum-nojs-test` call it directly.
+//! Demo server: one route per component. Handlers only parse input and call `loco-ui`.
+//! The binary in `main.rs` serves [`router`]; tests and `loco-ui-test` call it directly.
 
 pub mod pricing;
 pub mod snapshot;
@@ -69,10 +69,10 @@ pub fn router() -> Router {
         .merge(routes::widgets::routes())
         .merge(routes::flows::routes())
         .merge(routes::own::routes())
-        .merge(axum_nojs::caps::router())
-        .merge(axum_nojs::enhance::router())
-        .layer(axum::middleware::from_fn(axum_nojs::enhance::slim))
-        .layer(axum::middleware::from_fn(axum_nojs::enhance::csp))
+        .merge(loco_ui::caps::router())
+        .merge(loco_ui::enhance::router())
+        .layer(axum::middleware::from_fn(loco_ui::enhance::slim))
+        .layer(axum::middleware::from_fn(loco_ui::enhance::csp))
         .layer(CompressionLayer::new().compress_when(DefaultPredicate::new().and(WholeBody)))
 }
 

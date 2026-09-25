@@ -15,7 +15,7 @@
 //! the new `data-theme` without a reload.
 //!
 //! ```rust
-//! use axum_nojs::prelude::*;
+//! use loco_ui::prelude::*;
 //! let ui = Ui::from_request("/", "", "theme=dark");
 //! let m = ui.theme_toggle("/theme").render().into_string();
 //! assert!(m.contains(r#"value="dark" aria-pressed="true""#));
@@ -24,8 +24,8 @@
 //! let r = ui.redirect("/").theme(Theme::parse("light"));
 //! assert!(r.set_cookies()[0].starts_with("theme=light;"));
 //!
-//! // The same in `nojs!`:
-//! let same = nojs! { ThemeToggle("/theme"); };
+//! // The same in `lui!`:
+//! let same = lui! { ThemeToggle("/theme"); };
 //! assert_eq!(same.into_string(), m);
 //! ```
 
@@ -99,7 +99,7 @@ impl Redirect {
 impl Render for ThemeToggle<'_> {
     fn render(&self) -> Markup {
         html! {
-            form id="nojs-theme" data-nojs="swap" class="nojs-theme" method="post" action=(self.action) {
+            form id="lui-theme" data-lui="swap" class="lui-theme" method="post" action=(self.action) {
                 @for choice in [Theme::Auto, Theme::Light, Theme::Dark] {
                     (Button::new(Caps::NONE, choice.as_str()).ghost().small().name("theme").value(choice.as_str()).pressed(choice == self.current))
                 }
@@ -110,8 +110,8 @@ impl Render for ThemeToggle<'_> {
 /// Styles for this component; included in [`crate::stylesheet`].
 pub const CSS: &str = r#"
 /* shadcn ToggleGroup, outline variant: one bordered strip, the pressed item on the accent. */
-.nojs-theme { display: inline-flex; gap: 0; border: 1px solid var(--nojs-input); border-radius: var(--nojs-radius-sm); overflow: hidden; box-shadow: var(--nojs-shadow-xs); }
-.nojs-theme .nojs-button { border-radius: 0; text-transform: capitalize; }
-.nojs-theme .nojs-button + .nojs-button { border-inline-start: 1px solid var(--nojs-input); }
-.nojs-theme .nojs-button[aria-pressed="true"] { background: var(--nojs-accent); color: var(--nojs-on-accent); }
+.lui-theme { display: inline-flex; gap: 0; border: 1px solid var(--lui-input); border-radius: var(--lui-radius-sm); overflow: hidden; box-shadow: var(--lui-shadow-xs); }
+.lui-theme .lui-button { border-radius: 0; text-transform: capitalize; }
+.lui-theme .lui-button + .lui-button { border-inline-start: 1px solid var(--lui-input); }
+.lui-theme .lui-button[aria-pressed="true"] { background: var(--lui-accent); color: var(--lui-on-accent); }
 "#;

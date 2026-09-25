@@ -12,12 +12,12 @@
 //! **Fallback:** none needed.
 //!
 //! ```rust
-//! use axum_nojs::prelude::*;
+//! use loco_ui::prelude::*;
 //! let ui = Ui::default();
 //! let check = ui.icon(Icon::Check).render().into_string();
-//! assert!(check.starts_with(r#"<svg class="nojs-icon" aria-hidden="true""#));
-//! // The same in `nojs!`:
-//! let same = nojs! { Icon(Icon::Check); };
+//! assert!(check.starts_with(r#"<svg class="lui-icon" aria-hidden="true""#));
+//! // The same in `lui!`:
+//! let same = lui! { Icon(Icon::Check); };
 //! assert_eq!(same.into_string(), check);
 //! // An icon that is the only content of a link or a button needs a name.
 //! let warn = ui.icon(Icon::TriangleAlert).label("Warning").render().into_string();
@@ -236,7 +236,7 @@ impl<'a> IconMark<'a> {
 impl Render for IconMark<'_> {
     fn render(&self) -> Markup {
         html! {
-            svg class="nojs-icon" aria-hidden=[self.label.is_none().then_some("true")]
+            svg class="lui-icon" aria-hidden=[self.label.is_none().then_some("true")]
                 role=[self.label.map(|_| "img")] aria-label=[self.label]
                 xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-icon=(self.icon.name()) {
@@ -258,7 +258,7 @@ impl Render for Icon {
 
 /// Styles for this component; included in [`crate::stylesheet`]. shadcn's size-4.
 pub const CSS: &str = r#"
-.nojs-icon { width: 1rem; height: 1rem; flex: none; vertical-align: -0.125em; pointer-events: none; }
+.lui-icon { width: 1rem; height: 1rem; flex: none; vertical-align: -0.125em; pointer-events: none; }
 "#;
 
 #[cfg(test)]

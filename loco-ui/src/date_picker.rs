@@ -17,7 +17,7 @@
 //! **Fallback:** without `popover` the calendar is laid out in the form under the label.
 //!
 //! ```rust
-//! use axum_nojs::prelude::*;
+//! use loco_ui::prelude::*;
 //! let ui = Ui::from(Caps::all());
 //! let m = ui.date_picker("due", "Due date").value("2026-09-24").render().into_string();
 //! assert!(m.contains(r#"popovertarget="f-due-calendar""#) && m.contains("24 September 2026"));
@@ -28,8 +28,8 @@
 //! // The browser's own control, with bounds.
 //! let m = ui.date_picker("due", "Due date").min("2026-01-01").max("2026-12-31").native();
 //! assert!(m.render().into_string().contains(r#"type="date" value="" min="2026-01-01" max="2026-12-31""#));
-//! // The same in `nojs!`:
-//! let same = nojs! { DatePicker("due", "Due date") min="2026-01-01" max="2026-12-31" native; };
+//! // The same in `lui!`:
+//! let same = lui! { DatePicker("due", "Due date") min="2026-01-01" max="2026-12-31" native; };
 //! assert_eq!(same.into_string(), m.render().into_string());
 //! ```
 
@@ -173,26 +173,26 @@ impl Render for DatePicker<'_> {
         let shown = Date::parse(value).map(|d| d.long());
         let face = html! {
             (Icon::Calendar)
-            span class=[shown.is_none().then_some("nojs-date-picker-empty")] {
+            span class=[shown.is_none().then_some("lui-date-picker-empty")] {
                 @if let Some(s) = &shown { (s) } @else { "Pick a date" }
             }
         };
         let legend = format!("{id}-label");
         let text = html! { (self.label) @if self.required { " *" } };
         html! {
-            div class="nojs-field nojs-date-picker" role=[(!popover).then_some("group")]
+            div class="lui-field lui-date-picker" role=[(!popover).then_some("group")]
                 aria-labelledby=[(!popover).then_some(&legend)] {
                 @if popover {
                     label for=(id) { (text) }
-                    div class="nojs-date-picker-anchor" style=[anchor.then(|| format!("anchor-name: --{panel}"))] {
-                        (Button::new(ui.caps, self.label).id(&id).class("nojs-date-picker-trigger").popovertarget(&panel).aria_haspopup("dialog").content(face))
-                        div id=(panel) popover class="nojs-date-picker-panel"
+                    div class="lui-date-picker-anchor" style=[anchor.then(|| format!("anchor-name: --{panel}"))] {
+                        (Button::new(ui.caps, self.label).id(&id).class("lui-date-picker-trigger").popovertarget(&panel).aria_haspopup("dialog").content(face))
+                        div id=(panel) popover class="lui-date-picker-panel"
                             style=[anchor.then(|| format!("position-anchor: --{panel}; position-area: bottom span-right"))] {
                             (calendar)
                         }
                     }
                 } @else {
-                    span id=(legend) class="nojs-date-picker-label" { (text) }
+                    span id=(legend) class="lui-date-picker-label" { (text) }
                     (calendar)
                 }
             }
@@ -203,11 +203,11 @@ impl Render for DatePicker<'_> {
 /// Styles for this component; included in [`crate::stylesheet`]. shadcn DatePicker: an outline
 /// button with a calendar icon, 15rem wide, the Calendar in a PopoverContent (p-0, no border).
 pub const CSS: &str = r#"
-.nojs-date-picker-anchor { position: relative; }
-.nojs-date-picker-label { font-size: 0.875rem; line-height: 1; font-weight: 500; }
-.nojs-date-picker > .nojs-calendar { justify-self: start; }
-.nojs-date-picker-trigger { width: 15rem; justify-content: flex-start; font-weight: 400; }
-.nojs-date-picker-empty { color: var(--nojs-muted); }
-.nojs-date-picker-panel { margin: 0; margin-top: 4px; padding: 0; border: 0; background: none; overflow: visible; }
-.nojs-date-picker-panel > .nojs-calendar { box-shadow: var(--nojs-shadow-lg); }
+.lui-date-picker-anchor { position: relative; }
+.lui-date-picker-label { font-size: 0.875rem; line-height: 1; font-weight: 500; }
+.lui-date-picker > .lui-calendar { justify-self: start; }
+.lui-date-picker-trigger { width: 15rem; justify-content: flex-start; font-weight: 400; }
+.lui-date-picker-empty { color: var(--lui-muted); }
+.lui-date-picker-panel { margin: 0; margin-top: 4px; padding: 0; border: 0; background: none; overflow: visible; }
+.lui-date-picker-panel > .lui-calendar { box-shadow: var(--lui-shadow-lg); }
 "#;

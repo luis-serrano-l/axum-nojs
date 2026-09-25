@@ -15,14 +15,14 @@
 //!
 //! **Fallback:** without view transitions the page simply reloads.
 //!
-//! **Enhanced:** the form is a swap root (`data-nojs="swap"`), so with the [`crate::enhance`]
+//! **Enhanced:** the form is a swap root (`data-lui="swap"`), so with the [`crate::enhance`]
 //! script each click is a background POST and only the form is replaced; rapid clicks queue.
 //!
 //! **Finding:** without the script every click is a full navigation, and a click that lands
 //! while the page unloads is dropped. There is no optimistic update and no offline behaviour.
 //!
 //! ```rust
-//! use axum_nojs::prelude::*;
+//! use loco_ui::prelude::*;
 //! let ui = Ui::from(Caps::all());
 //! let plain = ui.counter("/counter", 3);
 //! let bounded = ui.counter("/counter", 10).min(0).max(10).step(2).typed();
@@ -33,8 +33,8 @@
 //! assert_eq!(bounded.apply("dec", None), 8);
 //! # let _ = plain;
 //!
-//! // The same in `nojs!`:
-//! let same = nojs! { Counter("/counter", 10) min=0 max=10 step=2 typed; };
+//! // The same in `lui!`:
+//! let same = lui! { Counter("/counter", 10) min=0 max=10 step=2 typed; };
 //! assert_eq!(same.into_string(), bounded.render().into_string());
 //! ```
 
@@ -146,28 +146,28 @@ impl Render for Counter<'_> {
         } = *self;
         let vt = caps
             .has(Cap::ViewTransitions)
-            .then_some("view-transition-name: nojs-counter");
+            .then_some("view-transition-name: lui-counter");
         let at_min = min.is_some_and(|m| value <= m);
         let at_max = max.is_some_and(|m| value >= m);
         let value_text = value.to_string();
-        let typed_id = format!("{}-value", enhance::swap_id("nojs-counter", action));
+        let typed_id = format!("{}-value", enhance::swap_id("lui-counter", action));
         // Every button posts `op`; `dec` and `inc` switch off at their bound.
         let op = |op: &'static str, off: bool| {
             let b = Button::new(caps, "").name("op").value(op);
             if off { b.disabled() } else { b }
         };
         html! {
-            form id=(enhance::swap_id("nojs-counter", action)) data-nojs="swap" class="nojs-counter" method="post" action=(action) {
+            form id=(enhance::swap_id("lui-counter", action)) data-lui="swap" class="lui-counter" method="post" action=(action) {
                 (op("dec", at_min).icon().label("decrement").content(html! { (Icon::Minus) }))
                 output style=[vt] { (value) }
                 (op("inc", at_max).icon().label("increment").content(html! { (Icon::Plus) }))
                 (op("reset", false).ghost().content(html! { "Reset" }))
                 @if typed {
-                    (Input::number_within("value", "Value", min, max).hide_label().class("nojs-counter-input").step(step).inputmode("numeric").id(&typed_id).value(&value_text))
+                    (Input::number_within("value", "Value", min, max).hide_label().class("lui-counter-input").step(step).inputmode("numeric").id(&typed_id).value(&value_text))
                     (op("set", false).content(html! { "Set" }))
                 }
                 @if min.is_some() || max.is_some() {
-                    small class="nojs-counter-bounds" {
+                    small class="lui-counter-bounds" {
                         @match (min, max) {
                             (Some(a), Some(b)) => { (a) " to " (b) },
                             (Some(a), None) => { "at least " (a) },
@@ -183,10 +183,10 @@ impl Render for Counter<'_> {
 }
 /// Styles for this component; included in [`crate::stylesheet`].
 pub const CSS: &str = r#"
-.nojs-counter { display: inline-flex; flex-wrap: wrap; align-items: center; gap: var(--nojs-space); }
-.nojs-counter output { min-width: 3ch; text-align: center; font-size: 1.5rem; font-weight: 600; font-variant-numeric: tabular-nums; }
-.nojs-counter-input { width: 6em; }
-.nojs-counter-bounds { flex-basis: 100%; color: var(--nojs-muted); font-size: 0.875rem; }
+.lui-counter { display: inline-flex; flex-wrap: wrap; align-items: center; gap: var(--lui-space); }
+.lui-counter output { min-width: 3ch; text-align: center; font-size: 1.5rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+.lui-counter-input { width: 6em; }
+.lui-counter-bounds { flex-basis: 100%; color: var(--lui-muted); font-size: 0.875rem; }
 "#;
 
 #[cfg(test)]

@@ -1,9 +1,9 @@
 //! Every demo route through Blitz: layout assertions plus a PNG under `tests/shots/`.
 
-use axum_nojs_test::Page;
+use loco_ui_test::Page;
 
-const MODERN: &str = "nojs-cap-probed=1; nojs-cap-invokers=1; nojs-cap-anchor=1; nojs-cap-details_content=1; nojs-cap-view_transitions=1; nojs-cap-popover=1; nojs-cap-light_dark=1; nojs-cap-streaming_dsd=1; nojs-cap-base_select=1";
-const OLD: &str = "nojs-cap-probed=1";
+const MODERN: &str = "lui-cap-probed=1; lui-cap-invokers=1; lui-cap-anchor=1; lui-cap-details_content=1; lui-cap-view_transitions=1; lui-cap-popover=1; lui-cap-light_dark=1; lui-cap-streaming_dsd=1; lui-cap-base_select=1";
+const OLD: &str = "lui-cap-probed=1";
 
 fn shot(page: &mut Page, name: &str) {
     let dir = concat!(env!("CARGO_MANIFEST_DIR"), "/../tests/shots");
@@ -16,7 +16,7 @@ fn shot(page: &mut Page, name: &str) {
 async fn index_under_another_palette() {
     let mut page = Page::render(demo::router(), "/?palette=linen", MODERN).await;
     assert!(
-        page.exists("style.nojs-tokens"),
+        page.exists("style.lui-tokens"),
         "layout_with emits the token overrides"
     );
     assert!(page.is_visible("h1"));
@@ -42,7 +42,7 @@ async fn every_route_renders_and_is_captured() {
             if !inside_shadow_root {
                 assert!(page.is_visible("h1"), "{path} ({suffix}) has no visible h1");
                 assert!(
-                    page.is_visible(".nojs-header"),
+                    page.is_visible(".lui-header"),
                     "{path} ({suffix}) has no header"
                 );
             }
@@ -55,11 +55,11 @@ async fn every_route_renders_and_is_captured() {
 async fn dialog_variants_follow_caps() {
     let page = Page::render(demo::router(), "/dialog", MODERN).await;
     assert!(page.is_visible("button[command=show-modal]"));
-    assert!(!page.exists(".nojs-dialog-open"));
+    assert!(!page.exists(".lui-dialog-open"));
     assert!(!page.is_visible("dialog"), "closed dialog must not render");
 
     let page = Page::render(demo::router(), "/dialog", OLD).await;
-    assert!(page.is_visible(".nojs-dialog-open"));
+    assert!(page.is_visible(".lui-dialog-open"));
     assert!(!page.exists("button[command]"));
 
     let page = Page::render(demo::router(), "/dialog?dialog=confirm", OLD).await;
@@ -68,17 +68,17 @@ async fn dialog_variants_follow_caps() {
         "server-opened dialog renders"
     );
     assert_eq!(page.text("dialog h2").as_deref(), Some("Delete account?"));
-    assert!(page.exists("dialog.nojs-dialog-sm[aria-labelledby='confirm-title']"));
+    assert!(page.exists("dialog.lui-dialog-sm[aria-labelledby='confirm-title']"));
     assert!(
         page.is_visible(
-            ".nojs-dialog-danger form[method=post][action='/dialog/delete'] button.nojs-button-danger"
+            ".lui-dialog-danger form[method=post][action='/dialog/delete'] button.lui-button-danger"
         ),
         "confirm is a real form"
     );
     assert!(page.exists("form input[type=hidden][name=returns_to][value='/dialog']"));
     assert!(
-        page.is_visible("a.nojs-dialog-cancel[href='#']")
-            && page.is_visible("a.nojs-dialog-close[href='#']"),
+        page.is_visible("a.lui-dialog-cancel[href='#']")
+            && page.is_visible("a.lui-dialog-close[href='#']"),
         "fallback closes through links"
     );
     let page = Page::render(demo::router(), "/dialog?dialog=confirm", MODERN).await;
@@ -87,7 +87,7 @@ async fn dialog_variants_follow_caps() {
         "cancel is an invoker"
     );
     assert!(
-        page.exists("dialog > .nojs-dialog-close:last-child"),
+        page.exists("dialog > .lui-dialog-close:last-child"),
         "close control is last so focus lands on the field"
     );
 }
@@ -96,12 +96,12 @@ async fn dialog_variants_follow_caps() {
 async fn tabs_strip_versus_accordion() {
     let modern = Page::render(demo::router(), "/tabs?tab.demo=1", MODERN).await;
     assert_eq!(
-        modern.display(".nojs-tabs details").as_deref(),
+        modern.display(".lui-tabs details").as_deref(),
         Some("contents")
     );
-    let first = modern.bbox(".nojs-tabs summary").unwrap();
+    let first = modern.bbox(".lui-tabs summary").unwrap();
     let second = modern
-        .bbox(".nojs-tabs details:nth-of-type(2) summary")
+        .bbox(".lui-tabs details:nth-of-type(2) summary")
         .unwrap();
     assert!(
         (first.y - second.y).abs() < 1.0,
@@ -109,33 +109,31 @@ async fn tabs_strip_versus_accordion() {
     );
     assert!(second.x > first.x + first.width - 1.0);
     let panel = modern
-        .bbox(".nojs-tabs details[open] .nojs-tabs-panel")
+        .bbox(".lui-tabs details[open] .lui-tabs-panel")
         .unwrap();
     assert!(
         panel.y >= first.y + first.height - 2.0,
         "open panel sits below the strip: {panel:?} vs {first:?}"
     );
     assert!(
-        !modern.is_visible(".nojs-tabs details:nth-of-type(1) .nojs-tabs-panel"),
+        !modern.is_visible(".lui-tabs details:nth-of-type(1) .lui-tabs-panel"),
         "closed panel hidden"
     );
     assert_eq!(
         modern
-            .text("#nojs-tabs-demo details[open] .nojs-tabs-badge")
+            .text("#lui-tabs-demo details[open] .lui-tabs-badge")
             .as_deref(),
         Some("3")
     );
     assert!(
-        modern.exists("#nojs-tabs-demo details:nth-of-type(3) .nojs-tabs-lazy"),
+        modern.exists("#lui-tabs-demo details:nth-of-type(3) .lui-tabs-lazy"),
         "lazy tab has no body until opened"
     );
-    assert!(modern.exists("#nojs-tabs-demo details[open] summary .nojs-tabs-mark[style*='view-transition-name: nojs-tabs-demo']"), "only the chip carries the name");
+    assert!(modern.exists("#lui-tabs-demo details[open] summary .lui-tabs-mark[style*='view-transition-name: lui-tabs-demo']"), "only the chip carries the name");
     let mark = modern
-        .bbox("#nojs-tabs-demo details[open] .nojs-tabs-mark")
+        .bbox("#lui-tabs-demo details[open] .lui-tabs-mark")
         .unwrap();
-    let open_title = modern
-        .bbox("#nojs-tabs-demo details[open] summary")
-        .unwrap();
+    let open_title = modern.bbox("#lui-tabs-demo details[open] summary").unwrap();
     // The mark is shadcn's active-tab chip: the open title inset by the pill's 3px padding.
     assert!(
         (mark.width - (open_title.width - 6.0)).abs() < 1.0
@@ -143,18 +141,18 @@ async fn tabs_strip_versus_accordion() {
             && (mark.x - open_title.x - 3.0).abs() < 1.0,
         "chip fills the open title inside the pill: {mark:?} {open_title:?}"
     );
-    assert!(modern.exists("#nojs-tabs-demo form.nojs-tabs-select select[name='tab.demo'] option[value='1'][selected]") && !modern.is_visible(".nojs-tabs-select"), "select is there but hidden on a wide screen");
+    assert!(modern.exists("#lui-tabs-demo form.lui-tabs-select select[name='tab.demo'] option[value='1'][selected]") && !modern.is_visible(".lui-tabs-select"), "select is there but hidden on a wide screen");
     let lazy = Page::render(demo::router(), "/tabs?tab.demo=2", MODERN).await;
     assert!(
-        lazy.is_visible("#nojs-tabs-demo details:nth-of-type(3) .nojs-tabs-panel p"),
+        lazy.is_visible("#lui-tabs-demo details:nth-of-type(3) .lui-tabs-panel p"),
         "lazy tab rendered once open"
     );
-    let side_first = modern.bbox("#nojs-tabs-side summary").unwrap();
+    let side_first = modern.bbox("#lui-tabs-side summary").unwrap();
     let side_second = modern
-        .bbox("#nojs-tabs-side details:nth-of-type(2) summary")
+        .bbox("#lui-tabs-side details:nth-of-type(2) summary")
         .unwrap();
     let side_panel = modern
-        .bbox("#nojs-tabs-side details[open] .nojs-tabs-panel")
+        .bbox("#lui-tabs-side details[open] .lui-tabs-panel")
         .unwrap();
     assert!(
         side_second.y > side_first.y + side_first.height - 1.0,
@@ -168,12 +166,12 @@ async fn tabs_strip_versus_accordion() {
 
     let old = Page::render(demo::router(), "/tabs?tab.demo=1", OLD).await;
     assert_eq!(
-        old.display(".nojs-tabs details").as_deref(),
+        old.display(".lui-tabs details").as_deref(),
         Some("block/flow")
     );
-    let first = old.bbox(".nojs-tabs summary").unwrap();
+    let first = old.bbox(".lui-tabs summary").unwrap();
     let second = old
-        .bbox(".nojs-tabs details:nth-of-type(2) summary")
+        .bbox(".lui-tabs details:nth-of-type(2) summary")
         .unwrap();
     assert!(
         second.y > first.y + first.height - 1.0,
@@ -190,55 +188,55 @@ async fn accordion_multi_open_with_controls_and_nesting() {
     )
     .await;
     assert_eq!(
-        page.count("#nojs-accordion-faq > details[open]"),
+        page.count("#lui-accordion-faq > details[open]"),
         2,
         "two sections open at once"
     );
     assert!(
-        page.exists("#nojs-accordion-faq > details:not([name])"),
+        page.exists("#lui-accordion-faq > details:not([name])"),
         "multi group has no name attribute"
     );
     assert!(
-        page.exists("#nojs-accordion-faq-more > details[name='faq-more'][open]"),
+        page.exists("#lui-accordion-faq-more > details[name='faq-more'][open]"),
         "nested group is exclusive and open"
     );
     assert!(
-        page.is_visible("#nojs-accordion-faq-more"),
+        page.is_visible("#lui-accordion-faq-more"),
         "nested accordion sits inside the open third section"
     );
     assert_eq!(
-        page.text(".nojs-accordion-controls a:first-child")
+        page.text(".lui-accordion-controls a:first-child")
             .as_deref(),
         Some("Expand all")
     );
     assert!(
         page.exists(
-            ".nojs-accordion-controls a[href='/accordion?open.faq=0%2C1%2C2&open.faq-more=0']"
+            ".lui-accordion-controls a[href='/accordion?open.faq=0%2C1%2C2&open.faq-more=0']"
         ),
         "expand all links to every index and keeps the nested key"
     );
     assert!(
-        page.exists(".nojs-accordion-controls a[href='/accordion?open.faq=&open.faq-more=0']"),
+        page.exists(".lui-accordion-controls a[href='/accordion?open.faq=&open.faq-more=0']"),
         "collapse all sets the key to nothing, explicitly, so the cookie cannot reopen them"
     );
-    assert!(page.exists("#nojs-accordion-faq > details:nth-of-type(2) summary a[href='/accordion?open.faq=0%2C1%2C2&open.faq-more=0']"), "a closed title adds itself to the list");
-    assert!(page.exists("#nojs-accordion-faq > details:nth-of-type(1) summary a[href='/accordion?open.faq=2&open.faq-more=0']"), "an open title removes itself");
+    assert!(page.exists("#lui-accordion-faq > details:nth-of-type(2) summary a[href='/accordion?open.faq=0%2C1%2C2&open.faq-more=0']"), "a closed title adds itself to the list");
+    assert!(page.exists("#lui-accordion-faq > details:nth-of-type(1) summary a[href='/accordion?open.faq=2&open.faq-more=0']"), "an open title removes itself");
     assert!(
-        page.is_visible("#nojs-accordion-faq > details:nth-of-type(2) .nojs-accordion-summary"),
+        page.is_visible("#lui-accordion-faq > details:nth-of-type(2) .lui-accordion-summary"),
         "summary line shows on a closed section"
     );
     assert!(
         !page.is_visible(
-            "#nojs-accordion-faq > details:nth-of-type(1) > summary .nojs-accordion-summary"
+            "#lui-accordion-faq > details:nth-of-type(1) > summary .lui-accordion-summary"
         ),
         "summary line hidden once open"
     );
-    assert!(page.is_visible("#nojs-accordion-faq > details:nth-of-type(1) .nojs-accordion-icon"));
+    assert!(page.is_visible("#lui-accordion-faq > details:nth-of-type(1) .lui-accordion-icon"));
     let outer = page
-        .bbox("#nojs-accordion-faq > details:nth-of-type(3) > summary")
+        .bbox("#lui-accordion-faq > details:nth-of-type(3) > summary")
         .unwrap();
     let inner = page
-        .bbox("#nojs-accordion-faq-more > details:nth-of-type(1) > summary")
+        .bbox("#lui-accordion-faq-more > details:nth-of-type(1) > summary")
         .unwrap();
     assert!(
         inner.x > outer.x + 8.0 && inner.y > outer.y + outer.height,
@@ -250,16 +248,16 @@ async fn accordion_multi_open_with_controls_and_nesting() {
 async fn combobox_chips_results_and_create_row() {
     let page = Page::render(demo::router(), "/combobox?q=ru&sel=Zig", MODERN).await;
     assert_eq!(
-        page.count(".nojs-combobox-chip"),
+        page.count(".lui-combobox-chip"),
         1,
         "one chip for the selection"
     );
     assert!(
-        page.exists(".nojs-combobox-chip input[type=hidden][name=sel][value=Zig]"),
+        page.exists(".lui-combobox-chip input[type=hidden][name=sel][value=Zig]"),
         "the chip rides along with the next search"
     );
     assert!(
-        page.exists(".nojs-combobox-chip a[href='/combobox?q=ru'][aria-label='Remove Zig']"),
+        page.exists(".lui-combobox-chip a[href='/combobox?q=ru'][aria-label='Remove Zig']"),
         "the chip's link removes it"
     );
     assert!(
@@ -277,10 +275,10 @@ async fn combobox_chips_results_and_create_row() {
     );
     assert!(page.exists("#q-results[aria-live=polite]"));
     assert_eq!(
-        page.text(".nojs-combobox-status").as_deref(),
+        page.text(".lui-combobox-status").as_deref(),
         Some("2 matches")
     );
-    let chip = page.bbox(".nojs-combobox-chip").unwrap();
+    let chip = page.bbox(".lui-combobox-chip").unwrap();
     let input = page.bbox("input[type=search]").unwrap();
     assert!(
         (chip.y + chip.height / 2.0 - (input.y + input.height / 2.0)).abs() < 6.0
@@ -290,20 +288,20 @@ async fn combobox_chips_results_and_create_row() {
 
     let none = Page::render(demo::router(), "/combobox?q=elixir&sel=Zig", MODERN).await;
     assert_eq!(
-        none.text(".nojs-combobox-status").as_deref(),
+        none.text(".lui-combobox-status").as_deref(),
         Some("No matches.")
     );
     assert!(
         none.exists(
-            "form.nojs-combobox-create[action='/combobox/new'] input[name=name][value=elixir]"
+            "form.lui-combobox-create[action='/combobox/new'] input[name=name][value=elixir]"
         ),
         "create row posts the text"
     );
     assert!(
-        none.exists("form.nojs-combobox-create input[name=sel][value=Zig]"),
+        none.exists("form.lui-combobox-create input[name=sel][value=Zig]"),
         "and keeps the selection"
     );
-    assert!(none.is_visible("form.nojs-combobox-create button"));
+    assert!(none.is_visible("form.lui-combobox-create button"));
     let picked = Page::render(demo::router(), "/combobox?q=zig&sel=Zig", MODERN).await;
     assert!(
         picked.exists("[role=option][aria-selected=true]") && !picked.exists("[role=option] a"),
@@ -325,8 +323,8 @@ async fn popover_variants() {
         "links, submenu button, action and the disabled link"
     );
     assert!(
-        modern.exists("#account .nojs-popover-heading")
-            && modern.count("#account .nojs-popover-sep") == 2
+        modern.exists("#account .lui-popover-heading")
+            && modern.count("#account .lui-popover-sep") == 2
     );
     assert!(
         modern.exists("#account a[aria-disabled=true]:not([href])"),
@@ -334,7 +332,7 @@ async fn popover_variants() {
     );
     assert!(
         modern.exists(
-            "#account form[method=post][action='/popover/signout'] button.nojs-popover-danger"
+            "#account form[method=post][action='/popover/signout'] button.lui-popover-danger"
         ),
         "action is a post form"
     );
@@ -343,15 +341,15 @@ async fn popover_variants() {
             && modern.exists("#account button[popovertarget=account-theme]"),
         "submenu is a nested popover"
     );
-    assert!(modern.exists("#account kbd.nojs-popover-kbd"));
+    assert!(modern.exists("#account kbd.lui-popover-kbd"));
     assert!(
-        modern.exists(".nojs-popover-end nav#more[popover]"),
+        modern.exists(".lui-popover-end nav#more[popover]"),
         "placement class"
     );
     let old = Page::render(demo::router(), "/popover", OLD).await;
-    assert!(old.is_visible(".nojs-popover-details summary"));
+    assert!(old.is_visible(".lui-popover-details summary"));
     assert!(
-        !old.is_visible(".nojs-popover-details nav"),
+        !old.is_visible(".lui-popover-details nav"),
         "closed details hides the menu"
     );
     assert!(
@@ -363,34 +361,34 @@ async fn popover_variants() {
 #[tokio::test]
 async fn settings_flash_and_form_values() {
     let cookie = format!(
-        "{MODERN}; nojs-flash=ok%3ASettings%20saved.%0Awarn%3ANo%20releases.%0Adanger%3AReserved.; nojs-settings=name%3DAda%26notify%3Dtrue; nojs-ui=tab.settings=1"
+        "{MODERN}; lui-flash=ok%3ASettings%20saved.%0Awarn%3ANo%20releases.%0Adanger%3AReserved.; lui-settings=name%3DAda%26notify%3Dtrue; lui-ui=tab.settings=1"
     );
     let page = Page::render(demo::router(), "/settings", &cookie).await;
     assert_eq!(
-        page.text(".nojs-flash-ok .nojs-flash-text").as_deref(),
+        page.text(".lui-flash-ok .lui-flash-text").as_deref(),
         Some("Settings saved.")
     );
-    assert!(page.is_visible(".nojs-flash"));
+    assert!(page.is_visible(".lui-flash"));
     // Stacked in order, one per level, danger announced as an alert, each with a dismiss link.
     let (ok, warn, danger) = (
-        page.bbox(".nojs-flash-ok").unwrap(),
-        page.bbox(".nojs-flash-warn").unwrap(),
-        page.bbox(".nojs-flash-danger").unwrap(),
+        page.bbox(".lui-flash-ok").unwrap(),
+        page.bbox(".lui-flash-warn").unwrap(),
+        page.bbox(".lui-flash-danger").unwrap(),
     );
     assert!(
         ok.y + ok.height <= warn.y + 1.0 && warn.y + warn.height <= danger.y + 1.0,
         "messages stack top to bottom"
     );
     assert!(
-        page.exists(".nojs-flash-danger[role=alert]") && page.exists(".nojs-flash-ok[role=status]")
+        page.exists(".lui-flash-danger[role=alert]") && page.exists(".lui-flash-ok[role=status]")
     );
     assert!(
-        page.exists(".nojs-flash-ok.nojs-flash-auto")
-            && !page.exists(".nojs-flash-danger.nojs-flash-auto"),
+        page.exists(".lui-flash-ok.lui-flash-auto")
+            && !page.exists(".lui-flash-danger.lui-flash-auto"),
         "only calm levels auto-hide"
     );
-    assert!(page.exists(".nojs-flash-warn a.nojs-flash-dismiss[href='/settings']"));
-    assert!(page.is_visible(".nojs-flash-dismiss"));
+    assert!(page.exists(".lui-flash-warn a.lui-flash-dismiss[href='/settings']"));
+    assert!(page.is_visible(".lui-flash-dismiss"));
     assert!(
         page.is_visible("input[type=checkbox][name=notify]"),
         "notifications tab is open"
@@ -399,8 +397,8 @@ async fn settings_flash_and_form_values() {
         !page.is_visible("input[name=name][id]"),
         "profile tab is closed"
     );
-    let flash = page.bbox(".nojs-flash").unwrap();
-    let tabs = page.bbox(".nojs-tabs").unwrap();
+    let flash = page.bbox(".lui-flash").unwrap();
+    let tabs = page.bbox(".lui-tabs").unwrap();
     assert!(
         flash.y + flash.height <= tabs.y + 1.0,
         "flash sits above the tabs"
@@ -410,14 +408,14 @@ async fn settings_flash_and_form_values() {
 #[tokio::test]
 async fn caps_table_lists_every_flag() {
     let page = Page::render(demo::router(), "/caps", MODERN).await;
-    assert_eq!(page.count(".nojs-caps-table tbody tr"), 9);
-    assert_eq!(page.count(".nojs-yes"), 9);
+    assert_eq!(page.count(".lui-caps-table tbody tr"), 9);
+    assert_eq!(page.count(".lui-yes"), 9);
     let old = Page::render(demo::router(), "/caps", OLD).await;
-    assert_eq!(old.count(".nojs-no"), 8);
-    assert!(!old.exists(".nojs-caps"), "probed browser gets no beacons");
+    assert_eq!(old.count(".lui-no"), 8);
+    assert!(!old.exists(".lui-caps"), "probed browser gets no beacons");
     let fresh = Page::render(demo::router(), "/caps", "").await;
     assert_eq!(
-        fresh.count(".nojs-cap"),
+        fresh.count(".lui-cap"),
         9,
         "unknown browser gets one beacon per flag"
     );
@@ -437,11 +435,11 @@ async fn blitz_has_no_declarative_shadow_dom() {
     );
     let fallback = Page::render(demo::router(), "/stream", OLD).await;
     assert!(fallback.is_visible("h1"));
-    assert_eq!(fallback.count(".nojs-stream-section"), 3);
+    assert_eq!(fallback.count(".lui-stream-section"), 3);
     let boxes: Vec<_> = (1..=3)
         .map(|i| {
             fallback
-                .bbox(&format!(".nojs-stream-section:nth-of-type({i})"))
+                .bbox(&format!(".lui-stream-section:nth-of-type({i})"))
                 .unwrap()
         })
         .collect();
@@ -460,7 +458,7 @@ async fn table_sort_links_and_pages() {
     )
     .await;
     assert_eq!(
-        page.count(".nojs-table thead th a"),
+        page.count(".lui-table thead th a"),
         2,
         "every visible column header is a sort link"
     );
@@ -474,42 +472,42 @@ async fn table_sort_links_and_pages() {
         ),
         "other links keep filter, page size and columns"
     );
-    assert_eq!(page.count(".nojs-table tbody tr"), 5, "one page of rows");
+    assert_eq!(page.count(".lui-table tbody tr"), 5, "one page of rows");
     assert!(
         !page.exists("th a[href*='sort=kind']"),
         "the hidden column has no header"
     );
     assert!(
-        page.exists(".nojs-table-cols a[aria-pressed=false][href*='cols=name%2Csize%2Ckind']"),
+        page.exists(".lui-table-cols a[aria-pressed=false][href*='cols=name%2Csize%2Ckind']"),
         "the chooser links to showing Kind again"
     );
     assert!(
-        page.exists(".nojs-table-cols a[aria-pressed=true][href*='cols=size']"),
+        page.exists(".lui-table-cols a[aria-pressed=true][href*='cols=size']"),
         "and to hiding Name"
     );
-    assert!(page.exists("a.nojs-table-csv[download][href='/table.csv?sort=size&dir=desc&q=a&per.files=5&cols=name%2Csize']"), "CSV link carries the whole state");
+    assert!(page.exists("a.lui-table-csv[download][href='/table.csv?sort=size&dir=desc&q=a&per.files=5&cols=name%2Csize']"), "CSV link carries the whole state");
     assert_eq!(
-        page.count("tbody input[type=checkbox][name=row][form='nojs-table-files-bulk']"),
+        page.count("tbody input[type=checkbox][name=row][form='lui-table-files-bulk']"),
         5,
         "a checkbox per row, owned by the bulk form"
     );
-    assert!(page.exists("form#nojs-table-files-bulk[method=post][action='/table/bulk'] button[name=action][value=archive]"));
+    assert!(page.exists("form#lui-table-files-bulk[method=post][action='/table/bulk'] button[name=action][value=archive]"));
     assert_eq!(
-        page.count("tbody .nojs-table-menu .nojs-popover"),
+        page.count("tbody .lui-table-menu .lui-popover"),
         5,
         "a menu per row"
     );
     assert_eq!(
-        page.count("tbody details.nojs-table-detail"),
+        page.count("tbody details.lui-table-detail"),
         5,
         "a detail block per row"
     );
     assert!(
-        !page.is_visible("tbody details.nojs-table-detail .nojs-table-detail-body"),
+        !page.is_visible("tbody details.lui-table-detail .lui-table-detail-body"),
         "detail closed by default"
     );
-    let size_head = page.bbox("th.nojs-table-num").unwrap();
-    let size_cell = page.bbox("tbody tr td.nojs-table-num").unwrap();
+    let size_head = page.bbox("th.lui-table-num").unwrap();
+    let size_cell = page.bbox("tbody tr td.lui-table-num").unwrap();
     assert!(
         (size_head.x + size_head.width - (size_cell.x + size_cell.width)).abs() < 2.0,
         "numeric cells end where their header ends: {size_head:?} {size_cell:?}"
@@ -525,67 +523,67 @@ async fn table_sort_links_and_pages() {
             && page.exists("a[rel=next][href*='page=3']")
     );
     assert_eq!(
-        page.text(".nojs-paged-table-range").as_deref(),
+        page.text(".lui-paged-table-range").as_deref(),
         Some("6–10 of 21")
     );
     assert!(page.exists("select[name='per.files'] option[value='5'][selected]"));
     assert!(
-        page.exists(".nojs-paged-table-per input[name=cols][value='name,size']"),
+        page.exists(".lui-paged-table-per input[name=cols][value='name,size']"),
         "the page-size form keeps the columns"
     );
     assert!(
-        page.exists("a.nojs-paged-table-end[href*='page=1']")
-            && page.exists("a.nojs-paged-table-end[href*='page=5']"),
+        page.exists("a.lui-paged-table-end[href*='page=1']")
+            && page.exists("a.lui-paged-table-end[href*='page=5']"),
         "first and last links"
     );
     assert!(
-        page.exists(".nojs-paged-table-jump input[type=number][name=page][max='5'][value='2']"),
+        page.exists(".lui-paged-table-jump input[type=number][name=page][max='5'][value='2']"),
         "jump-to-page form"
     );
     assert!(
-        page.exists(".nojs-paged-table-jump input[type=hidden][name='per.files'][value='5']"),
+        page.exists(".lui-paged-table-jump input[type=hidden][name='per.files'][value='5']"),
         "the jump keeps the page size"
     );
-    assert!(page.is_visible(".nojs-paged-table-jump button"));
+    assert!(page.is_visible(".lui-paged-table-jump button"));
 
     // 36 files at 5 a page is 8 pages: page 5 numbers 1 … 4 5 6 7 8.
     let long = Page::render(
         demo::router(),
         "/table?page=5",
-        "nojs-cap-probed=1; nojs-ui=per.files=5",
+        "lui-cap-probed=1; lui-ui=per.files=5",
     )
     .await;
     assert_eq!(
-        long.text(".nojs-paged-table-range").as_deref(),
+        long.text(".lui-paged-table-range").as_deref(),
         Some("21–25 of 36"),
-        "page size from the nojs-ui cookie"
+        "page size from the lui-ui cookie"
     );
     assert_eq!(
-        long.count(".nojs-paged-table-gap"),
+        long.count(".lui-paged-table-gap"),
         1,
         "one ellipsis before the current page's neighbours"
     );
     assert!(
-        long.exists("a.nojs-paged-table-end[href='/table?per.files=5&page=8']"),
+        long.exists("a.lui-paged-table-end[href='/table?per.files=5&page=8']"),
         "Last names the remembered size"
     );
-    let rows = page.bbox(".nojs-table tbody").unwrap();
-    let nav = page.bbox(".nojs-paged-table-nav").unwrap();
+    let rows = page.bbox(".lui-table tbody").unwrap();
+    let nav = page.bbox(".lui-paged-table-nav").unwrap();
     assert!(
         nav.y >= rows.y + rows.height - 1.0,
         "pager sits under the rows: {nav:?} vs {rows:?}"
     );
     // Blitz paints sticky header cells at the viewport top (FINDINGS.md); the row still exists.
-    assert!(page.exists(".nojs-table thead th"));
+    assert!(page.exists(".lui-table thead th"));
 
     let empty = Page::render(demo::router(), "/table?q=zzz", MODERN).await;
     assert_eq!(
-        empty.text(".nojs-table-empty").as_deref(),
+        empty.text(".lui-table-empty").as_deref(),
         Some("No files match this filter.")
     );
     let loading = Page::render(demo::router(), "/table?loading=1", MODERN).await;
     assert!(
-        loading.exists("tbody[aria-busy=true]") && loading.count("tr.nojs-table-skeleton") == 3,
+        loading.exists("tbody[aria-busy=true]") && loading.count("tr.lui-table-skeleton") == 3,
         "loading body is marked busy and drawn as skeleton rows"
     );
 }
@@ -597,7 +595,7 @@ async fn swap_targets_render_without_script() {
     let page = Page::render(
         demo::router(),
         "/swap?n=3",
-        "nojs-cap-probed=1; nojs-notes=note%3Done%26note%3Dtwo",
+        "lui-cap-probed=1; lui-notes=note%3Done%26note%3Dtwo",
     )
     .await;
     assert_eq!(page.text("#count").as_deref(), Some("3"));
@@ -607,22 +605,22 @@ async fn swap_targets_render_without_script() {
         Some("2"),
         "the count is plain markup on the full page"
     );
-    assert!(page.exists("a[data-nojs-target='#count']"));
-    assert!(page.exists("form[data-nojs-target='#log'][data-nojs-swap='append']"));
+    assert!(page.exists("a[data-lui-target='#count']"));
+    assert!(page.exists("form[data-lui-target='#log'][data-lui-swap='append']"));
     assert!(
-        !page.exists("form [data-nojs=swap]"),
+        !page.exists("form [data-lui=swap]"),
         "the form is not inside a root"
     );
     assert!(
-        page.exists("a[data-nojs-push='false'][data-nojs-target='#count']"),
+        page.exists("a[data-lui-push='false'][data-lui-target='#count']"),
         "the quiet link is a plain link"
     );
     assert!(
-        page.exists("form[data-nojs-indicator='#saving']") && !page.is_visible("#saving"),
+        page.exists("form[data-lui-indicator='#saving']") && !page.is_visible("#saving"),
         "indicator hidden without the script"
     );
     assert!(
-        !page.exists("[data-nojs-busy], [aria-busy]"),
+        !page.exists("[data-lui-busy], [aria-busy]"),
         "nothing is busy without the script"
     );
 }
@@ -634,23 +632,23 @@ async fn counter_and_inputs() {
     let top = Page::render(
         demo::router(),
         "/counter",
-        &format!("{MODERN}; nojs-count=n%3D20"),
+        &format!("{MODERN}; lui-count=n%3D20"),
     )
     .await;
     assert!(
-        top.exists(".nojs-counter button[value=inc][disabled]")
-            && !top.exists(".nojs-counter button[value=dec][disabled]"),
+        top.exists(".lui-counter button[value=inc][disabled]")
+            && !top.exists(".lui-counter button[value=dec][disabled]"),
         "+ is off at the maximum"
     );
     assert!(top.is_visible(
-        ".nojs-counter input[type=number][name=value][min='0'][max='20'][step='2'][value='20']"
+        ".lui-counter input[type=number][name=value][min='0'][max='20'][step='2'][value='20']"
     ));
     assert_eq!(
-        top.text(".nojs-counter-bounds").as_deref(),
+        top.text(".lui-counter-bounds").as_deref(),
         Some("0 to 20, in steps of 2")
     );
 
-    let page = Page::render(demo::router(), "/inputs", &format!("{MODERN}; nojs-inputs=size%3Dl%26volume%3D40%26accent%3D%2523b3261e%26accent-alpha%3D60%26price_min%3D10%26price_max%3D90%26country%3Djp")).await;
+    let page = Page::render(demo::router(), "/inputs", &format!("{MODERN}; lui-inputs=size%3Dl%26volume%3D40%26accent%3D%2523b3261e%26accent-alpha%3D60%26price_min%3D10%26price_max%3D90%26country%3Djp")).await;
     let (lo, hi) = (
         page.bbox("#f-price_min").unwrap(),
         page.bbox("#f-price_max").unwrap(),
@@ -660,30 +658,30 @@ async fn counter_and_inputs() {
         "both thumbs on one track: {lo:?} {hi:?}"
     );
     assert_eq!(page.text("output[for=f-price_min]").as_deref(), Some("10"));
-    assert_eq!(page.count(".nojs-color-presets button"), 5);
+    assert_eq!(page.count(".lui-color-presets button"), 5);
     assert!(
-        page.exists(".nojs-color-presets button[aria-pressed=true][value='#b3261e']"),
+        page.exists(".lui-color-presets button[aria-pressed=true][value='#b3261e']"),
         "the saved colour is the pressed preset"
     );
     assert_eq!(
-        page.text(".nojs-color code").as_deref(),
+        page.text(".lui-color code").as_deref(),
         Some("#b3261e99"),
         "opacity 60% in the code"
     );
-    assert!(page.exists(".nojs-color input[type=range][name=accent-alpha][value='60']"));
+    assert!(page.exists(".lui-color input[type=range][name=accent-alpha][value='60']"));
     assert_eq!(page.count("#country optgroup"), 3, "grouped countries");
     assert!(page.exists("#country option[value=jp][selected]"));
     assert!(
-        page.is_visible(".nojs-select-search input[name=country-q]")
-            && page.exists(".nojs-select-search button[formmethod=get][formaction='/inputs']"),
+        page.is_visible(".lui-select-search input[name=country-q]")
+            && page.exists(".lui-select-search button[formmethod=get][formaction='/inputs']"),
         "21 options: a filter box"
     );
     assert!(
-        !page.exists(".nojs-select-search input[name=size-q]"),
+        !page.exists(".lui-select-search input[name=size-q]"),
         "3 options: none"
     );
     assert!(
-        page.exists("#size option[value=l] .nojs-select-icon"),
+        page.exists("#size option[value=l] .lui-select-icon"),
         "icons in options"
     );
 
@@ -702,13 +700,13 @@ async fn counter_and_inputs() {
 async fn form_groups_help_counters_and_layouts() {
     let page = Page::render(demo::router(), "/form", MODERN).await;
     assert_eq!(
-        page.count("form.nojs-form fieldset.nojs-form-group legend"),
+        page.count("form.lui-form fieldset.lui-form-group legend"),
         2,
         "two groups with legends"
     );
-    assert!(page.exists("form.nojs-form[enctype='multipart/form-data'] input[type=file][accept='image/png,image/jpeg']"), "file field makes the form multipart");
+    assert!(page.exists("form.lui-form[enctype='multipart/form-data'] input[type=file][accept='image/png,image/jpeg']"), "file field makes the form multipart");
     assert_eq!(
-        page.text("output.nojs-field-count[for=f-bio]").as_deref(),
+        page.text("output.lui-field-count[for=f-bio]").as_deref(),
         Some("0 / 160")
     );
     assert!(
@@ -737,27 +735,27 @@ async fn form_groups_help_counters_and_layouts() {
 #[tokio::test]
 async fn wizard_marks_steps() {
     let page = Page::render(demo::router(), "/wizard?step.signup=1", MODERN).await;
-    assert_eq!(page.count(".nojs-wizard-steps li"), 3);
+    assert_eq!(page.count(".lui-wizard-steps li"), 3);
     assert_eq!(
         page.text("li[aria-current=step]").as_deref(),
         Some("Newsletter (optional)")
     );
     assert!(
-        page.exists(".nojs-wizard-done a[href='/wizard?step.signup=0']"),
+        page.exists(".lui-wizard-done a[href='/wizard?step.signup=0']"),
         "done step links back"
     );
     assert!(
-        !page.exists(".nojs-wizard-steps li:nth-child(3) a"),
+        !page.exists(".lui-wizard-steps li:nth-child(3) a"),
         "future step is not a link"
     );
     assert!(
         page.is_visible("input[type=hidden][name=step][value='1'] ~ fieldset")
-            || page.is_visible(".nojs-wizard-form fieldset")
+            || page.is_visible(".lui-wizard-form fieldset")
     );
-    assert!(page.exists("a.nojs-wizard-back[href='/wizard?step.signup=0']"));
+    assert!(page.exists("a.lui-wizard-back[href='/wizard?step.signup=0']"));
     let steps: Vec<_> = (1..=3)
         .map(|i| {
-            page.bbox(&format!(".nojs-wizard-steps li:nth-child({i})"))
+            page.bbox(&format!(".lui-wizard-steps li:nth-child({i})"))
                 .unwrap()
         })
         .collect();
@@ -771,16 +769,16 @@ async fn wizard_marks_steps() {
         Some("Account")
     );
     assert!(
-        !first.exists(".nojs-wizard-back"),
+        !first.exists(".lui-wizard-back"),
         "no Back on the first step"
     );
     assert!(
-        first.is_visible("progress.nojs-wizard-progress[value='0'][max='2']"),
+        first.is_visible("progress.lui-wizard-progress[value='0'][max='2']"),
         "progress bar"
     );
-    assert!(!first.exists(".nojs-wizard-resume"), "nothing to resume");
+    assert!(!first.exists(".lui-wizard-resume"), "nothing to resume");
     assert!(
-        page.exists(".nojs-wizard-steps li:nth-child(2) small"),
+        page.exists(".lui-wizard-steps li:nth-child(2) small"),
         "the optional step says so"
     );
     assert!(
@@ -793,7 +791,7 @@ async fn wizard_marks_steps() {
         demo::router(),
         "/wizard",
         &format!(
-            "{MODERN}; nojs-ui=step.signup=2; wizard=name=Ada&email=ada@example.org&digest=weekly"
+            "{MODERN}; lui-ui=step.signup=2; wizard=name=Ada&email=ada@example.org&digest=weekly"
         ),
     )
     .await;
@@ -802,19 +800,19 @@ async fn wizard_marks_steps() {
         Some("Review")
     );
     assert!(
-        back.is_visible(".nojs-wizard-resume a[href='/wizard?step.signup=0']"),
+        back.is_visible(".lui-wizard-resume a[href='/wizard?step.signup=0']"),
         "resume notice with Start over"
     );
     assert_eq!(
-        back.count(".nojs-wizard-review dd a.nojs-wizard-edit"),
+        back.count(".lui-wizard-review dd a.lui-wizard-edit"),
         4,
         "an Edit link per value"
     );
     assert!(
-        back.exists("a.nojs-wizard-edit[aria-label='Edit Topics'][href='/wizard?step.signup=1']")
+        back.exists("a.lui-wizard-edit[aria-label='Edit Topics'][href='/wizard?step.signup=1']")
     );
     assert_eq!(
-        back.text(".nojs-wizard-review dd:nth-of-type(4) .nojs-note")
+        back.text(".lui-wizard-review dd:nth-of-type(4) .lui-note")
             .as_deref(),
         Some("(skipped)")
     );
@@ -822,55 +820,55 @@ async fn wizard_marks_steps() {
 
 #[tokio::test]
 async fn toasts_stack_in_the_corner() {
-    let cookie = format!("{MODERN}; nojs-flash=ok%3AInvite%20sent.%0Adanger%3ASync%20failed.");
+    let cookie = format!("{MODERN}; lui-flash=ok%3AInvite%20sent.%0Adanger%3ASync%20failed.");
     let page = Page::render(demo::router(), "/toast", &cookie).await;
-    assert_eq!(page.count(".nojs-toast"), 2);
+    assert_eq!(page.count(".lui-toast"), 2);
     assert!(
-        page.exists(".nojs-toast-danger[role=alert]") && page.exists(".nojs-toast-ok[role=status]")
+        page.exists(".lui-toast-danger[role=alert]") && page.exists(".lui-toast-ok[role=status]")
     );
-    assert!(page.exists(".nojs-toast a.nojs-toast-close[href='/toast']"));
-    let (list, h1) = (page.bbox(".nojs-toasts").unwrap(), page.bbox("h1").unwrap());
+    assert!(page.exists(".lui-toast a.lui-toast-close[href='/toast']"));
+    let (list, h1) = (page.bbox(".lui-toasts").unwrap(), page.bbox("h1").unwrap());
     assert!(
         list.x > h1.x + 100.0,
         "toasts sit at the right edge, out of the flow"
     );
     let empty = Page::render(demo::router(), "/toast", MODERN).await;
-    assert!(!empty.exists(".nojs-toasts"));
+    assert!(!empty.exists(".lui-toasts"));
 }
 
 #[tokio::test]
 async fn drawer_is_a_sidebar_when_wide_and_breadcrumbs_fold() {
     let page = Page::render(demo::router(), "/nav", MODERN).await;
-    assert!(page.exists("button.nojs-drawer-open[command=show-modal][commandfor=site]"));
+    assert!(page.exists("button.lui-drawer-open[command=show-modal][commandfor=site]"));
     assert!(
-        page.is_visible(".nojs-drawer-panel nav a[aria-current=page]"),
+        page.is_visible(".lui-drawer-panel nav a[aria-current=page]"),
         "wide viewport: the closed dialog shows as a sidebar"
     );
     assert!(
-        !page.is_visible(".nojs-drawer-open"),
+        !page.is_visible(".lui-drawer-open"),
         "wide viewport: no menu button"
     );
     let (side, content) = (
-        page.bbox(".nojs-drawer-panel").unwrap(),
-        page.bbox(".nojs-drawer-content").unwrap(),
+        page.bbox(".lui-drawer-panel").unwrap(),
+        page.bbox(".lui-drawer-content").unwrap(),
     );
     assert!(
         side.x + side.width <= content.x + 1.0,
         "sidebar left of the content"
     );
-    assert_eq!(page.count(".nojs-breadcrumbs"), 2);
-    assert!(page.exists(".nojs-breadcrumbs li:last-child [aria-current=page]"));
+    assert_eq!(page.count(".lui-breadcrumbs"), 2);
+    assert!(page.exists(".lui-breadcrumbs li:last-child [aria-current=page]"));
     assert!(
-        page.exists(".nojs-breadcrumbs-fold details"),
+        page.exists(".lui-breadcrumbs-fold details"),
         "the long trail folds"
     );
     assert!(
-        !page.is_visible(".nojs-breadcrumbs-fold ol"),
+        !page.is_visible(".lui-breadcrumbs-fold ol"),
         "folded middle is closed"
     );
     let old = Page::render(demo::router(), "/nav", OLD).await;
     assert!(
-        old.exists("a.nojs-drawer-open[href='#site']"),
+        old.exists("a.lui-drawer-open[href='#site']"),
         "fallback opener is a :target link"
     );
 }
@@ -878,38 +876,38 @@ async fn drawer_is_a_sidebar_when_wide_and_breadcrumbs_fold() {
 #[tokio::test]
 async fn stats_and_empty_state() {
     let page = Page::render(demo::router(), "/dashboard?orders=none", MODERN).await;
-    assert_eq!(page.count(".nojs-stat"), 4);
+    assert_eq!(page.count(".lui-stat"), 4);
     let (a, b) = (
-        page.bbox(".nojs-stat-grid > :nth-child(1)").unwrap(),
-        page.bbox(".nojs-stat-grid > :nth-child(2)").unwrap(),
+        page.bbox(".lui-stat-grid > :nth-child(1)").unwrap(),
+        page.bbox(".lui-stat-grid > :nth-child(2)").unwrap(),
     );
     assert!(
         (a.y - b.y).abs() < 1.0 && b.x > a.x,
         "cards sit side by side when there is room"
     );
     assert!(
-        page.exists(".nojs-stat-good") && page.exists(".nojs-stat-bad"),
+        page.exists(".lui-stat-good") && page.exists(".lui-stat-bad"),
         "down_is_good flips the colour"
     );
     assert!(
-        page.exists("a.nojs-stat[href='/table']"),
+        page.exists("a.lui-stat[href='/table']"),
         "a card can be a link"
     );
-    assert!(page.is_visible(".nojs-empty-title"));
-    assert!(page.exists(".nojs-empty-actions a[href='/dashboard']"));
+    assert!(page.is_visible(".lui-empty-title"));
+    assert!(page.exists(".lui-empty-actions a[href='/dashboard']"));
     let full = Page::render(demo::router(), "/dashboard", MODERN).await;
-    assert!(!full.exists(".nojs-empty"));
+    assert!(!full.exists(".lui-empty"));
 }
 
 #[tokio::test]
 async fn command_palette_suggests_and_lists_matches() {
     let page = Page::render(demo::router(), "/palette?q=ta", MODERN).await;
-    assert!(page.exists("button.nojs-palette-open[popovertarget=cmd][accesskey=k]"));
+    assert!(page.exists("button.lui-palette-open[popovertarget=cmd][accesskey=k]"));
     assert!(page.exists("#cmd[popover] input[type=search][list=cmd-list][autofocus]"));
     assert!(page.count("datalist#cmd-list option") >= 19);
     assert!(!page.is_visible("#cmd"), "the popover is closed on arrival");
     assert!(
-        page.is_visible(".nojs-palette-results a[href='/table']"),
+        page.is_visible(".lui-palette-results a[href='/table']"),
         "results for a partial query"
     );
     let old = Page::render(demo::router(), "/palette?q=ta", OLD).await;
@@ -928,22 +926,22 @@ async fn table_row_edits_in_place() {
     )
     .await;
     assert!(page.is_visible(
-        ".nojs-table-editing .nojs-table-edit-input[name=kind][form='nojs-table-files-edit']"
+        ".lui-table-editing .lui-table-edit-input[name=kind][form='lui-table-files-edit']"
     ));
-    assert!(page.exists("form#nojs-table-files-edit[method=post][action='/table/edit'] input[name=key][value='src/build.rs']"));
+    assert!(page.exists("form#lui-table-files-edit[method=post][action='/table/edit'] input[name=key][value='src/build.rs']"));
     assert_eq!(
-        page.count(".nojs-table-edit-input"),
+        page.count(".lui-table-edit-input"),
         1,
         "only the edited row, only its editable column"
     );
-    let row = page.bbox(".nojs-table-editing").unwrap();
+    let row = page.bbox(".lui-table-editing").unwrap();
     let other = page.bbox("tbody tr:first-child").unwrap();
     assert!(
         (row.width - other.width).abs() < 1.0,
         "the edited row keeps the table's columns"
     );
     assert!(
-        page.exists("tbody tr:not(.nojs-table-editing) a.nojs-button[href*='edit.files=']"),
+        page.exists("tbody tr:not(.lui-table-editing) a.lui-button[href*='edit.files=']"),
         "other rows link to their edit"
     );
 }
@@ -958,9 +956,9 @@ async fn buttons_badges_and_icons() {
         format!("{:?}", style.clone_background_color())
     };
     let outline = page
-        .bbox(".nojs-cluster > .nojs-button:nth-child(2)")
+        .bbox(".lui-cluster > .lui-button:nth-child(2)")
         .unwrap();
-    let primary = page.bbox(".nojs-button-primary").unwrap();
+    let primary = page.bbox(".lui-button-primary").unwrap();
     assert!(
         (outline.height - 36.0).abs() < 1.0,
         "h-9 buttons: {outline:?}"
@@ -970,35 +968,35 @@ async fn buttons_badges_and_icons() {
         "same height in every tone"
     );
     assert_ne!(
-        bg(".nojs-button-primary"),
-        bg(".nojs-cluster > .nojs-button:nth-child(2)"),
+        bg(".lui-button-primary"),
+        bg(".lui-cluster > .lui-button:nth-child(2)"),
         "primary is filled, outline is not"
     );
-    assert_ne!(bg(".nojs-button-danger"), bg(".nojs-button-primary"));
+    assert_ne!(bg(".lui-button-danger"), bg(".lui-button-primary"));
     // The cluster stretches nothing (align-items: center), so small and icon keep their size.
-    let small = page.bbox(".nojs-button-small").unwrap();
+    let small = page.bbox(".lui-button-small").unwrap();
     assert!((small.height - 32.0).abs() < 1.0, "small is h-8: {small:?}");
-    let icon = page.bbox(".nojs-button-icon").unwrap();
+    let icon = page.bbox(".lui-button-icon").unwrap();
     assert!(
         (icon.width - icon.height).abs() < 1.0,
         "an icon button is square: {icon:?}"
     );
     assert!(
-        page.is_visible(".nojs-button-primary .nojs-button-spinner"),
+        page.is_visible(".lui-button-primary .lui-button-spinner"),
         "?loading=1 shows the spinner"
     );
     assert!(page.html.contains(r#"aria-busy="true" disabled"#));
     assert!(
-        page.is_visible("a.nojs-button[href='/']"),
+        page.is_visible("a.lui-button[href='/']"),
         "a link can look like a button"
     );
-    assert_eq!(page.count(".nojs-badge"), 6);
-    let svg = page.bbox("svg.nojs-icon").unwrap();
+    assert_eq!(page.count(".lui-badge"), 6);
+    let svg = page.bbox("svg.lui-icon").unwrap();
     assert!(
         (svg.width - 16.0).abs() < 1.0 && (svg.height - 16.0).abs() < 1.0,
         "icons are 1rem: {svg:?}"
     );
-    assert_eq!(page.count("svg.nojs-icon"), 29);
+    assert_eq!(page.count("svg.lui-icon"), 29);
 }
 
 #[tokio::test]
@@ -1010,40 +1008,38 @@ async fn fields_cards_and_layouts() {
         "the server's error shows under the field"
     );
     assert!(page.html.contains(r#"aria-describedby="f-email-error""#));
-    assert!(page.is_visible("input.nojs-switch[role=switch]"));
-    assert_eq!(page.count(".nojs-radio-group input[type=radio]"), 2);
+    assert!(page.is_visible("input.lui-switch[role=switch]"));
+    assert_eq!(page.count(".lui-radio-group input[type=radio]"), 2);
 
     let mut page = Page::render(demo::router(), "/card", MODERN).await;
     shot(&mut page, "card");
     let (a, b) = (
-        page.bbox(".nojs-grid > .nojs-card:nth-child(1)").unwrap(),
-        page.bbox(".nojs-grid > .nojs-card:nth-child(2)").unwrap(),
+        page.bbox(".lui-grid > .lui-card:nth-child(1)").unwrap(),
+        page.bbox(".lui-grid > .lui-card:nth-child(2)").unwrap(),
     );
     assert!(
         (a.y - b.y).abs() < 1.0 && b.x > a.x,
         "two cards side by side at 1000px"
     );
-    let action = page.bbox(".nojs-card-action").unwrap();
-    let title = page.bbox(".nojs-card-title").unwrap();
+    let action = page.bbox(".lui-card-action").unwrap();
+    let title = page.bbox(".lui-card-title").unwrap();
     assert!(
         action.x > title.x + title.width,
         "the header action sits right of the title"
     );
-    let avatar = page.bbox(".nojs-avatar").unwrap();
-    assert!(
-        (avatar.width - 32.0).abs() < 1.0 && page.text(".nojs-avatar").as_deref() == Some("AL")
-    );
+    let avatar = page.bbox(".lui-avatar").unwrap();
+    assert!((avatar.width - 32.0).abs() < 1.0 && page.text(".lui-avatar").as_deref() == Some("AL"));
 
     let mut page = Page::render(demo::router(), "/layout", MODERN).await;
     shot(&mut page, "layout");
-    let side = page.bbox(".nojs-split-side").unwrap();
-    let main = page.bbox(".nojs-split-main").unwrap();
+    let side = page.bbox(".lui-split-side").unwrap();
+    let main = page.bbox(".lui-split-main").unwrap();
     assert!(
         (side.y - main.y).abs() < 1.0 && main.x > side.x && main.width > side.width,
         "split: side beside a wider main"
     );
-    let first = page.bbox(".nojs-grid > :nth-child(1)").unwrap();
-    let second = page.bbox(".nojs-grid > :nth-child(2)").unwrap();
+    let first = page.bbox(".lui-grid > :nth-child(1)").unwrap();
+    let second = page.bbox(".lui-grid > :nth-child(2)").unwrap();
     assert!(
         (second.x - (first.x + first.width) - 8.0).abs() < 1.0,
         "grid.gap(2) is 8px"
@@ -1059,13 +1055,13 @@ async fn calendar_date_picker_upload_and_kanban() {
     )
     .await;
     assert_eq!(
-        page.count("#nojs-calendar-day .nojs-calendar-grid thead th"),
+        page.count("#lui-calendar-day .lui-calendar-grid thead th"),
         7
     );
     let (mo, tu) = (
-        page.bbox("#nojs-calendar-day .nojs-calendar-grid tbody tr:first-child td:nth-child(1)")
+        page.bbox("#lui-calendar-day .lui-calendar-grid tbody tr:first-child td:nth-child(1)")
             .unwrap(),
-        page.bbox("#nojs-calendar-day .nojs-calendar-grid tbody tr:first-child td:nth-child(2)")
+        page.bbox("#lui-calendar-day .lui-calendar-grid tbody tr:first-child td:nth-child(2)")
             .unwrap(),
     );
     assert!(
@@ -1073,16 +1069,14 @@ async fn calendar_date_picker_upload_and_kanban() {
         "a week is one row of seven cells"
     );
     assert!(
-        page.is_visible("#nojs-calendar-day a.nojs-calendar-picked[href*='day=2026-09-17']"),
+        page.is_visible("#lui-calendar-day a.lui-calendar-picked[href*='day=2026-09-17']"),
         "the picked day is drawn"
     );
     assert!(
-        page.exists("#nojs-calendar-day span.nojs-calendar-off[aria-disabled=true]"),
+        page.exists("#lui-calendar-day span.lui-calendar-off[aria-disabled=true]"),
         "weekends cannot be picked"
     );
-    assert!(
-        page.exists("#nojs-calendar-day a[aria-label='Next month'][href*='month.day=2026-10']")
-    );
+    assert!(page.exists("#lui-calendar-day a[aria-label='Next month'][href*='month.day=2026-10']"));
     assert!(
         page.is_visible("#f-due[popovertarget='f-due-calendar']"),
         "the date picker is a button with a popover"
@@ -1094,7 +1088,7 @@ async fn calendar_date_picker_upload_and_kanban() {
 
     let page = Page::render(demo::router(), "/calendar?month.due=2026-10", MODERN).await;
     assert!(
-        page.is_visible(".nojs-date-picker > .nojs-calendar"),
+        page.is_visible(".lui-date-picker > .lui-calendar"),
         "after a month link the picker's calendar is in the page"
     );
 
@@ -1103,32 +1097,32 @@ async fn calendar_date_picker_upload_and_kanban() {
         "form[method=post][enctype='multipart/form-data'] input[type=file][name=file][multiple]"
     ));
     assert!(
-        page.exists("progress[data-nojs-progress][hidden]"),
+        page.exists("progress[data-lui-progress][hidden]"),
         "the progress bar waits for the script"
     );
-    assert!(page.is_visible(".nojs-upload-drop"));
+    assert!(page.is_visible(".lui-upload-drop"));
 
     let page = Page::render(demo::router(), "/kanban", MODERN).await;
-    assert_eq!(page.count(".nojs-kanban-column"), 3);
+    assert_eq!(page.count(".lui-kanban-column"), 3);
     let (a, b) = (
-        page.bbox(".nojs-kanban-column:nth-child(1)").unwrap(),
-        page.bbox(".nojs-kanban-column:nth-child(2)").unwrap(),
+        page.bbox(".lui-kanban-column:nth-child(1)").unwrap(),
+        page.bbox(".lui-kanban-column:nth-child(2)").unwrap(),
     );
     assert!(
         (a.y - b.y).abs() < 1.0 && b.x > a.x + a.width,
         "columns side by side"
     );
     assert!(
-        page.exists(".nojs-kanban-over"),
+        page.exists(".lui-kanban-over"),
         "Doing is past its limit in the starting board"
     );
     assert!(
         page.exists(
-            ".nojs-kanban-column:nth-child(1) .nojs-kanban-card button[name=to][value=doing]"
+            ".lui-kanban-column:nth-child(1) .lui-kanban-card button[name=to][value=doing]"
         )
     );
     assert!(
-        !page.exists(".nojs-kanban-column:nth-child(1) .nojs-kanban-card button[value=todo]"),
+        !page.exists(".lui-kanban-column:nth-child(1) .lui-kanban-card button[value=todo]"),
         "no arrow off the board"
     );
 }
@@ -1137,12 +1131,12 @@ async fn calendar_date_picker_upload_and_kanban() {
 async fn a_component_written_outside_the_library() {
     let page = Page::render(demo::router(), "/pricing?billing=yearly", MODERN).await;
     assert_eq!(
-        page.count(".demo-pricing .nojs-card"),
+        page.count(".demo-pricing .lui-card"),
         3,
         "built from ui.card"
     );
     assert!(
-        page.html.contains("<style class=\"nojs-user\">")
+        page.html.contains("<style class=\"lui-user\">")
             && page.html.matches(".demo-pricing-cta{").count() == 1,
         "Page::css inlines its CSS once"
     );
@@ -1155,7 +1149,7 @@ async fn a_component_written_outside_the_library() {
         "tiers side by side, equal height"
     );
     assert!(
-        page.exists(".demo-pricing-featured a.nojs-button-primary"),
+        page.exists(".demo-pricing-featured a.lui-button-primary"),
         "the featured tier's button is primary"
     );
     assert!(
@@ -1164,7 +1158,7 @@ async fn a_component_written_outside_the_library() {
             .contains("$120"),
         "yearly prices"
     );
-    assert!(page.exists("a.nojs-button[aria-current=page][href='/pricing?billing=yearly']"));
+    assert!(page.exists("a.lui-button[aria-current=page][href='/pricing?billing=yearly']"));
 }
 
 /// A form post through the demo router: status, the `Set-Cookie` pairs and the body.
@@ -1243,7 +1237,7 @@ async fn a_whole_app_flow_with_no_script() {
     )
     .await;
     shot(&mut page, "app-notes-edit");
-    assert!(page.is_visible(".nojs-table-editing .nojs-table-edit-input[name=text]"));
+    assert!(page.is_visible(".lui-table-editing .lui-table-edit-input[name=text]"));
     let (_, set, _) = post(
         "/app/notes/edit",
         &cookies.join("; "),

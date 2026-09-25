@@ -11,7 +11,7 @@
 //!   Safari 18.4) pushes every panel to a full-width row below all the summaries, or to the
 //!   column beside them when `vertical`.
 //! - `view-transition-name` (Chrome 111, Firefox 144, Safari 18) on the open tab's chip
-//!   (an empty `.nojs-tabs-mark`, never the title, so no text moves): the raised chip slides to
+//!   (an empty `.lui-tabs-mark`, never the title, so no text moves): the raised chip slides to
 //!   the new tab, across documents through the layout's `@view-transition` rule and in place
 //!   with the enhancement script.
 //!
@@ -34,7 +34,7 @@
 //! it on change.
 //!
 //! ```rust
-//! use axum_nojs::prelude::*;
+//! use loco_ui::prelude::*;
 //! let mut ui = Ui::from_request("/docs", "tab.docs=1", "");
 //! ui.caps = Caps::all();
 //! // `badge` applies to the tab added last.
@@ -46,10 +46,10 @@
 //!     .select_below();
 //! let html = m.render().into_string();
 //! assert!(html.contains("href=\"/docs?tab.docs=0\""));
-//! assert!(html.contains("view-transition-name: nojs-tabs-docs"));
+//! assert!(html.contains("view-transition-name: lui-tabs-docs"));
 //! assert!(html.contains("<select name=\"tab.docs\""));
-//! // The same in `nojs!`:
-//! let same = nojs! { Tabs("docs") vertical select_below {
+//! // The same in `lui!`:
+//! let same = lui! { Tabs("docs") vertical select_below {
 //!     tab "Install" { p { "cargo add" } }
 //!     tab "Use" badge=3 { p { "html!" } }
 //!     lazy "Changelog" || { p { "(long)" } }
@@ -194,15 +194,15 @@ impl Render for Tabs<'_> {
         let active = s.tab(name);
         let key = format!("tab.{name}");
         let class = match (strip, vertical) {
-            (false, _) => "nojs-tabs nojs-accordion",
-            (true, false) => "nojs-tabs",
-            (true, true) => "nojs-tabs nojs-tabs-vertical",
+            (false, _) => "lui-tabs lui-accordion",
+            (true, false) => "lui-tabs",
+            (true, true) => "lui-tabs lui-tabs-vertical",
         };
         html! {
-            div id={ "nojs-tabs-" (name) } data-nojs="swap"
-                class=(class) style=[(strip && vertical).then(|| format!("--nojs-tabs-n: {}", tabs.len()))] {
+            div id={ "lui-tabs-" (name) } data-lui="swap"
+                class=(class) style=[(strip && vertical).then(|| format!("--lui-tabs-n: {}", tabs.len()))] {
                 @if select_below {
-                    form method="get" action=(s.path()) class="nojs-tabs-select" {
+                    form method="get" action=(s.path()) class="lui-tabs-select" {
                         @for (k, v) in s.entries() { @if k != key { input type="hidden" name=(k) value=(v); } }
                         select name=(key) aria-label="Tab" {
                             @for (i, t) in tabs.iter().enumerate() {
@@ -217,14 +217,14 @@ impl Render for Tabs<'_> {
                         summary {
                             a href=(s.link(&key, &i.to_string())) { (t.title) (badge(t)) }
                             @if i == active && strip {
-                                span class="nojs-tabs-mark" style=(format!("view-transition-name: nojs-tabs-{name}")) {}
+                                span class="lui-tabs-mark" style=(format!("view-transition-name: lui-tabs-{name}")) {}
                             }
                         }
-                        div class=(if strip { "nojs-tabs-panel" } else { "nojs-accordion-body" }) {
+                        div class=(if strip { "lui-tabs-panel" } else { "lui-accordion-body" }) {
                             @match (&t.body, i == active) {
                                 (Body::Ready(body), _) => (body),
                                 (Body::Lazy(render), true) => (render()),
-                                (Body::Lazy(_), false) => span class="nojs-tabs-lazy" {},
+                                (Body::Lazy(_), false) => span class="lui-tabs-lazy" {},
                             }
                         }
                     }
@@ -234,70 +234,70 @@ impl Render for Tabs<'_> {
     }
 }
 fn badge(t: &Tab) -> Markup {
-    html! { @if let Some(n) = t.badge { " " span class="nojs-tabs-badge" { (n) } } }
+    html! { @if let Some(n) = t.badge { " " span class="lui-tabs-badge" { (n) } } }
 }
 
 /// Styles for this component; included in [`crate::stylesheet`].
 pub const CSS: &str = r#"
-.nojs-tabs:not(.nojs-accordion) { display: flex; flex-wrap: wrap; }
+.lui-tabs:not(.lui-accordion) { display: flex; flex-wrap: wrap; }
 /* Fills the rest of the titles' row so the panels start on the next one. */
-.nojs-tabs:not(.nojs-accordion):not(.nojs-tabs-vertical)::after { content: ""; order: 0; flex: 1; }
+.lui-tabs:not(.lui-accordion):not(.lui-tabs-vertical)::after { content: ""; order: 0; flex: 1; }
 /* shadcn Tabs: the titles sit in a muted pill (secondary, 3px padding, rounded-lg); the open
    one is a raised chip on the page background. Each summary paints its slice of the pill. */
-.nojs-tabs:not(.nojs-accordion) summary {
+.lui-tabs:not(.lui-accordion) summary {
   order: 0; position: relative; list-style: none; cursor: pointer; padding: 3px;
-  background: var(--nojs-secondary); color: var(--nojs-muted);
+  background: var(--lui-secondary); color: var(--lui-muted);
 }
-.nojs-tabs:not(.nojs-accordion):not(.nojs-tabs-vertical) > details:first-of-type > summary { border-radius: var(--nojs-radius) 0 0 var(--nojs-radius); }
-.nojs-tabs:not(.nojs-accordion):not(.nojs-tabs-vertical) > details:last-of-type > summary { border-radius: 0 var(--nojs-radius) var(--nojs-radius) 0; }
-.nojs-tabs:not(.nojs-accordion):not(.nojs-tabs-vertical) > details:only-of-type > summary { border-radius: var(--nojs-radius); }
-.nojs-tabs summary::-webkit-details-marker { display: none; }
+.lui-tabs:not(.lui-accordion):not(.lui-tabs-vertical) > details:first-of-type > summary { border-radius: var(--lui-radius) 0 0 var(--lui-radius); }
+.lui-tabs:not(.lui-accordion):not(.lui-tabs-vertical) > details:last-of-type > summary { border-radius: 0 var(--lui-radius) var(--lui-radius) 0; }
+.lui-tabs:not(.lui-accordion):not(.lui-tabs-vertical) > details:only-of-type > summary { border-radius: var(--lui-radius); }
+.lui-tabs summary::-webkit-details-marker { display: none; }
 /* The link fills the summary, so every click goes through the server (a click on bare summary
    padding would toggle natively and be undone by the next render). */
-.nojs-tabs summary a { display: block; color: inherit; text-decoration: none; }
-.nojs-tabs:not(.nojs-accordion) summary a {
+.lui-tabs summary a { display: block; color: inherit; text-decoration: none; }
+.lui-tabs:not(.lui-accordion) summary a {
   position: relative; z-index: 1; display: flex; align-items: center; gap: 0.375rem;
   padding: 0.25rem 0.75rem; font-size: 0.875rem; line-height: 1.25rem; font-weight: 500; white-space: nowrap;
 }
-.nojs-tabs:not(.nojs-accordion) summary a:hover { color: var(--nojs-fg); }
-.nojs-tabs:not(.nojs-accordion) details[open] summary { color: var(--nojs-fg); }
+.lui-tabs:not(.lui-accordion) summary a:hover { color: var(--lui-fg); }
+.lui-tabs:not(.lui-accordion) details[open] summary { color: var(--lui-fg); }
 /* The chip is its own empty element so the view transition slides it, not the text. */
-.nojs-tabs-mark {
-  position: absolute; inset: 3px; border-radius: var(--nojs-radius-sm);
-  background: var(--nojs-bg); box-shadow: var(--nojs-shadow-xs);
+.lui-tabs-mark {
+  position: absolute; inset: 3px; border-radius: var(--lui-radius-sm);
+  background: var(--lui-bg); box-shadow: var(--lui-shadow-xs);
 }
-.nojs-tabs-badge {
+.lui-tabs-badge {
   display: inline-block; min-width: 1.25rem; padding: 0 0.3rem; border-radius: 1em; text-align: center;
-  font-size: 0.75rem; font-weight: 500; line-height: 1.25rem; background: var(--nojs-line); color: var(--nojs-fg);
+  font-size: 0.75rem; font-weight: 500; line-height: 1.25rem; background: var(--lui-line); color: var(--lui-fg);
 }
-.nojs-tabs details[open] .nojs-tabs-badge { background: var(--nojs-primary); color: var(--nojs-on-primary); }
+.lui-tabs details[open] .lui-tabs-badge { background: var(--lui-primary); color: var(--lui-on-primary); }
 /* Push every panel to a full-width row under the strip. */
-.nojs-tabs details::details-content { order: 1; flex-basis: 100%; }
-.nojs-tabs .nojs-tabs-panel { order: 1; flex-basis: 100%; padding: 1rem 0; }
-.nojs-tabs:not(.nojs-accordion) details { display: contents; }
+.lui-tabs details::details-content { order: 1; flex-basis: 100%; }
+.lui-tabs .lui-tabs-panel { order: 1; flex-basis: 100%; padding: 1rem 0; }
+.lui-tabs:not(.lui-accordion) details { display: contents; }
 /* Vertical: a plain list with a rule, the open title marked by a bar on the rule. The titles
    are in the first column, the open panel spans every row of the second. The rule goes on
    ::details-content, the grid item, so it runs the full height; the padding stays on the
    panel (Blitz builds no ::details-content box, see FINDINGS). */
-.nojs-tabs.nojs-tabs-vertical { display: grid; grid-template-columns: max-content 1fr; }
-.nojs-tabs.nojs-tabs-vertical summary {
-  grid-column: 1; padding: 0; background: none; border-right: 1px solid var(--nojs-line); margin: 0 -1px 0 0;
+.lui-tabs.lui-tabs-vertical { display: grid; grid-template-columns: max-content 1fr; }
+.lui-tabs.lui-tabs-vertical summary {
+  grid-column: 1; padding: 0; background: none; border-right: 1px solid var(--lui-line); margin: 0 -1px 0 0;
 }
-.nojs-tabs.nojs-tabs-vertical summary a { padding: 0.5rem 1rem; }
-.nojs-tabs.nojs-tabs-vertical .nojs-tabs-mark { inset: 0 -1px 0 auto; width: 2px; border-radius: 0; background: var(--nojs-fg); box-shadow: none; }
-.nojs-tabs.nojs-tabs-vertical details::details-content {
-  grid-column: 2; grid-row: 1 / span var(--nojs-tabs-n, 1); border-left: 1px solid var(--nojs-line);
+.lui-tabs.lui-tabs-vertical summary a { padding: 0.5rem 1rem; }
+.lui-tabs.lui-tabs-vertical .lui-tabs-mark { inset: 0 -1px 0 auto; width: 2px; border-radius: 0; background: var(--lui-fg); box-shadow: none; }
+.lui-tabs.lui-tabs-vertical details::details-content {
+  grid-column: 2; grid-row: 1 / span var(--lui-tabs-n, 1); border-left: 1px solid var(--lui-line);
 }
-.nojs-tabs.nojs-tabs-vertical .nojs-tabs-panel {
-  grid-column: 2; grid-row: 1 / span var(--nojs-tabs-n, 1); padding: 0 0 0 calc(var(--nojs-space) * 3);
+.lui-tabs.lui-tabs-vertical .lui-tabs-panel {
+  grid-column: 2; grid-row: 1 / span var(--lui-tabs-n, 1); padding: 0 0 0 calc(var(--lui-space) * 3);
 }
-.nojs-tabs.nojs-tabs-vertical .nojs-tabs-select { grid-column: 1 / -1; }
+.lui-tabs.lui-tabs-vertical .lui-tabs-select { grid-column: 1 / -1; }
 /* Narrow screens: the titles give way to the select (needs the enhancement script for
    submit-on-change; the Go button is always there). */
-.nojs-tabs-select { display: none; gap: var(--nojs-space); flex-basis: 100%; margin-bottom: var(--nojs-space); }
+.lui-tabs-select { display: none; gap: var(--lui-space); flex-basis: 100%; margin-bottom: var(--lui-space); }
 @media (max-width: 40rem) {
-  .nojs-tabs:not(.nojs-accordion):has(.nojs-tabs-select) summary, .nojs-tabs:has(.nojs-tabs-select)::after { display: none; }
-  .nojs-tabs:not(.nojs-accordion) .nojs-tabs-select { display: flex; }
+  .lui-tabs:not(.lui-accordion):has(.lui-tabs-select) summary, .lui-tabs:has(.lui-tabs-select)::after { display: none; }
+  .lui-tabs:not(.lui-accordion) .lui-tabs-select { display: flex; }
 }
 "#;
 
@@ -322,10 +322,10 @@ mod tests {
                 .into_string()
         };
         let closed = strip("");
-        assert!(!closed.contains("Changelog body") && closed.contains("nojs-tabs-lazy"));
+        assert!(!closed.contains("Changelog body") && closed.contains("lui-tabs-lazy"));
         assert_eq!(calls.get(), 0);
         let open = strip("tab.docs=1");
-        assert!(open.contains("Changelog body") && !open.contains("nojs-tabs-lazy"));
+        assert!(open.contains("Changelog body") && !open.contains("lui-tabs-lazy"));
         assert_eq!(calls.get(), 1);
     }
 }

@@ -12,14 +12,14 @@
 //! **Fallback:** none needed.
 //!
 //! ```rust
-//! use axum_nojs::prelude::*;
+//! use loco_ui::prelude::*;
 //! let ui = Ui::default();
-//! assert_eq!(ui.separator().render().into_string(), r#"<hr class="nojs-separator">"#);
+//! assert_eq!(ui.separator().render().into_string(), r#"<hr class="lui-separator">"#);
 //! let or = ui.separator().label("or").render().into_string();
 //! assert!(or.contains(r#"role="separator""#) && or.contains(">or<"));
 //! assert!(ui.separator().vertical().render().into_string().contains(r#"aria-orientation="vertical""#));
-//! // The same in `nojs!`:
-//! let same = nojs! { Separator label="or"; };
+//! // The same in `lui!`:
+//! let same = lui! { Separator label="or"; };
 //! assert_eq!(same.into_string(), or);
 //! ```
 
@@ -73,22 +73,22 @@ impl Render for Separator<'_> {
     fn render(&self) -> Markup {
         html! {
             @if self.vertical {
-                span class="nojs-separator nojs-separator-vertical" role="separator" aria-orientation="vertical" {}
+                span class="lui-separator lui-separator-vertical" role="separator" aria-orientation="vertical" {}
             } @else if let Some(l) = self.label {
-                div class="nojs-separator nojs-separator-label" role="separator" { span { (l) } }
+                div class="lui-separator lui-separator-label" role="separator" { span { (l) } }
             } @else {
-                hr class="nojs-separator";
+                hr class="lui-separator";
             }
         }
     }
 }
 
 /// Styles for this component; included in [`crate::stylesheet`]. shadcn Separator: a 1px
-/// line in `--nojs-line`.
+/// line in `--lui-line`.
 pub const CSS: &str = r#"
-.nojs-separator { border: 0; margin: 1rem 0; }
-hr.nojs-separator { height: 1px; background: var(--nojs-line); }
-.nojs-separator-vertical { display: inline-block; align-self: stretch; width: 1px; min-height: 1rem; margin: 0; background: var(--nojs-line); }
-.nojs-separator-label { display: flex; align-items: center; gap: 0.75rem; color: var(--nojs-muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; }
-.nojs-separator-label::before, .nojs-separator-label::after { content: ""; flex: 1; height: 1px; background: var(--nojs-line); }
+.lui-separator { border: 0; margin: 1rem 0; }
+hr.lui-separator { height: 1px; background: var(--lui-line); }
+.lui-separator-vertical { display: inline-block; align-self: stretch; width: 1px; min-height: 1rem; margin: 0; background: var(--lui-line); }
+.lui-separator-label { display: flex; align-items: center; gap: 0.75rem; color: var(--lui-muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; }
+.lui-separator-label::before, .lui-separator-label::after { content: ""; flex: 1; height: 1px; background: var(--lui-line); }
 "#;

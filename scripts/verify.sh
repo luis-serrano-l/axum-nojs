@@ -15,24 +15,24 @@ cargo build --workspace --all-targets
 echo "== clippy (deny warnings)"
 cargo clippy --workspace --all-targets -- -D warnings
 # The library must build and be clean at every feature level: none, http, axum.
-cargo clippy -p axum-nojs-caps --all-targets -- -D warnings
-cargo clippy -p axum-nojs --all-targets -- -D warnings
-cargo clippy -p axum-nojs --features http --all-targets -- -D warnings
-cargo clippy -p axum-nojs --features loco --all-targets -- -D warnings
+cargo clippy -p loco-ui-caps --all-targets -- -D warnings
+cargo clippy -p loco-ui --all-targets -- -D warnings
+cargo clippy -p loco-ui --features http --all-targets -- -D warnings
+cargo clippy -p loco-ui --features loco --all-targets -- -D warnings
 
 echo "== tests (unit, doc, only-one-script, Blitz layout + screenshots)"
 cargo test --workspace
 # `examples/loco-app` turns `loco` on for the workspace run; these check the crate on its own.
-cargo test -p axum-nojs --features loco loco
-cargo test -p axum-nojs --features loco --doc loco
+cargo test -p loco-ui --features loco loco
+cargo test -p loco-ui --features loco --doc loco
 
 echo "== rustdoc (deny warnings, all features)"
-RUSTDOCFLAGS="-D warnings" cargo doc --no-deps -p axum-nojs-caps -p axum-nojs-macros -p axum-nojs --all-features
+RUSTDOCFLAGS="-D warnings" cargo doc --no-deps -p loco-ui-caps -p loco-ui-macros -p loco-ui --all-features
 
 echo "== no <script> outside enhance.rs"
-# The enhancement tag is built in axum-nojs/src/enhance.rs; nothing else may write one.
-if grep -rn '<script' axum-nojs/src demo/src axum-nojs-test/src examples/loco-app/src \
-     | grep -v '^axum-nojs/src/enhance.rs:' \
+# The enhancement tag is built in loco-ui/src/enhance.rs; nothing else may write one.
+if grep -rn '<script' loco-ui/src demo/src loco-ui-test/src examples/loco-app/src \
+     | grep -v '^loco-ui/src/enhance.rs:' \
      | grep -v 'matches("<script")' \
      | grep -v '^\S*:\s*//' \
      | grep -v 'code { "<script>" }'; then

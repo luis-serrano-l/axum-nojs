@@ -1,9 +1,9 @@
 //! A component written outside the library, the way `docs/components.md` describes: an
 //! extension trait on `Ui`, a builder holding `&Ui`, `impl Render`, and a CSS const the page
-//! adds with `Page::css`. It uses only public `axum-nojs` API (primitives and tokens), so it
+//! adds with `Page::css`. It uses only public `loco-ui` API (primitives and tokens), so it
 //! restyles with the rest when the theme or a primitive changes.
 
-use axum_nojs::{Icon, prelude::*, slug};
+use loco_ui::{Icon, prelude::*, slug};
 
 /// A pricing tier: name, price, what it includes, and a call to action.
 pub struct PricingCard<'a> {
@@ -105,16 +105,16 @@ impl Render for PricingCard<'_> {
     }
 }
 
-/// The card's own styles: classes prefixed `demo-`, sizes and colours from `--nojs-*` tokens.
+/// The card's own styles: classes prefixed `demo-`, sizes and colours from `--lui-*` tokens.
 pub const PRICING_CSS: &str = r#"
-.demo-pricing, .demo-pricing > .nojs-card { height: 100%; box-sizing: border-box; }
-.demo-pricing-featured > .nojs-card { border-color: var(--nojs-primary); box-shadow: var(--nojs-shadow-lg); }
+.demo-pricing, .demo-pricing > .lui-card { height: 100%; box-sizing: border-box; }
+.demo-pricing-featured > .lui-card { border-color: var(--lui-primary); box-shadow: var(--lui-shadow-lg); }
 .demo-pricing-price { display: flex; align-items: baseline; gap: 0.25rem; margin: 0; }
 .demo-pricing-price > span:first-child { font-size: 2.25rem; line-height: 2.5rem; font-weight: 600; letter-spacing: -0.025em; }
-.demo-pricing-period { color: var(--nojs-muted); font-size: 0.875rem; }
+.demo-pricing-period { color: var(--lui-muted); font-size: 0.875rem; }
 .demo-pricing-features { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.5rem; font-size: 0.875rem; }
 .demo-pricing-features li { display: flex; align-items: center; gap: 0.5rem; }
-.demo-pricing-features .nojs-icon { color: var(--nojs-ok); }
-.demo-pricing .nojs-card-body { flex: 1; }
+.demo-pricing-features .lui-icon { color: var(--lui-ok); }
+.demo-pricing .lui-card-body { flex: 1; }
 .demo-pricing-cta { width: 100%; }
 "#;

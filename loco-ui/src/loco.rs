@@ -3,14 +3,14 @@
 //! [Loco](https://loco.rs) controllers are Axum handlers, so `Ui`, `Page`, `Redirect` and
 //! `Saved<T>` work in them as they are. What Loco needs from this crate is the two routes every
 //! page may ask for: the enhancement script at [`SCRIPT_PATH`](crate::enhance::SCRIPT_PATH)
-//! and the capability beacon at `/nojs/caps`. [`Initializer`] mounts both, plus the
+//! and the capability beacon at `/lui/caps`. [`Initializer`] mounts both, plus the
 //! [`slim`](crate::enhance::slim) layer that drops the stylesheet from enhanced responses, in
 //! Loco's `after_routes`, so an app adds one line to `app.rs`:
 //!
 //! ```rust
 //! # use loco_rs::{app::{AppContext, Initializer}, Result};
 //! async fn initializers(_ctx: &AppContext) -> Result<Vec<Box<dyn Initializer>>> {
-//!     Ok(vec![Box::new(axum_nojs::loco::Initializer)])
+//!     Ok(vec![Box::new(loco_ui::loco::Initializer)])
 //! }
 //! ```
 //!
@@ -21,7 +21,7 @@
 //! No wrapper type:
 //!
 //! ```rust
-//! use axum_nojs::prelude::*;
+//! use loco_ui::prelude::*;
 //! use loco_rs::prelude::*;
 //!
 //! async fn show(ui: Ui, Path(id): Path<u32>) -> Result<Page> {
@@ -53,7 +53,7 @@
 //! each message lands on the field it is about when the form is shown again:
 //!
 //! ```rust
-//! use axum_nojs::{loco::FieldErrors, prelude::*};
+//! use loco_ui::{loco::FieldErrors, prelude::*};
 //! use loco_rs::prelude::*;
 //! use serde::Deserialize;
 //!
@@ -84,13 +84,13 @@
 //! beside them. `docs/loco.md` says why there is no Tera function bridge.
 //!
 //! ```rust
-//! use axum_nojs::prelude::*;
+//! use loco_ui::prelude::*;
 //! use loco_rs::prelude::*;
 //! # pub struct Note { pub id: i32, pub title: String }
 //!
 //! mod views {
 //!     pub mod notes {
-//!         use axum_nojs::{prelude::*, table::Row};
+//!         use loco_ui::{prelude::*, table::Row};
 //!         use crate::Note; // `crate::models::_entities::notes::Model` in a Loco app
 //!
 //!         pub fn list(ui: &Ui, rows: &[Note], total: usize) -> Markup {
@@ -120,7 +120,7 @@
 //! page and the count, never every row. `.paged(total)` then draws the pager:
 //!
 //! ```rust
-//! use axum_nojs::{prelude::*, table::Row};
+//! use loco_ui::{prelude::*, table::Row};
 //! use sea_orm::{DatabaseConnection, DbErr, EntityTrait, PaginatorTrait, QueryFilter, QueryOrder};
 //! # mod notes {
 //! #     use sea_orm::entity::prelude::*;
@@ -167,7 +167,7 @@
 //! fetches the first `pager.shown()` rows: `query.limit(pager.shown() as u64).all(db)`.
 //!
 //! Flash and Post/Redirect/Get need nothing from Loco. The flash and UI state are plain
-//! `nojs-*` cookies read and written by `Ui` and `Redirect`, so there is no signing key to take
+//! `lui-*` cookies read and written by `Ui` and `Redirect`, so there is no signing key to take
 //! from `config/*.yaml`, and they never collide with the JWT cookie `auth.jwt.location` names.
 //! Loco 1.2 has no session middleware in its core. A test runs a post, the redirect and the
 //! page showing the flash through Loco's default middleware stack. Two settings of Loco's
@@ -179,7 +179,7 @@
 //!   `github`, or `owasp` with that header overridden.
 //!
 //! The strict [`csp`](crate::enhance::csp) layer is not added: an app states its own policy
-//! (add `axum::middleware::from_fn(axum_nojs::enhance::csp)` in `after_routes` to use ours).
+//! (add `axum::middleware::from_fn(loco_ui::enhance::csp)` in `after_routes` to use ours).
 //!
 //! **Platform features:** none of its own; it serves what the components rely on.
 //!
@@ -192,14 +192,14 @@ use async_trait::async_trait;
 use axum::Router;
 use loco_rs::{Result, app::AppContext, validation::ModelValidationErrors};
 
-/// The Loco initializer: `Box::new(axum_nojs::loco::Initializer)` in `App::initializers`.
+/// The Loco initializer: `Box::new(loco_ui::loco::Initializer)` in `App::initializers`.
 #[derive(Clone, Copy, Debug, Default)]
 pub struct Initializer;
 
 #[async_trait]
 impl loco_rs::app::Initializer for Initializer {
     fn name(&self) -> String {
-        "axum-nojs".to_string()
+        "loco-ui".to_string()
     }
 
     async fn after_routes(&self, router: Router, _ctx: &AppContext) -> Result<Router> {
@@ -308,7 +308,7 @@ fn message(code: &str, message: Option<&str>) -> String {
 /// `Form<Vec<(String, String)>>`.
 ///
 /// ```rust
-/// use axum_nojs::loco::Submitted;
+/// use loco_ui::loco::Submitted;
 /// let mut form = Submitted::new(vec![("title".into(), "".into()), ("stars".into(), "x".into())]);
 /// let title: Option<String> = form.required("title");
 /// let stars: Option<u8> = form.optional("stars");
@@ -532,7 +532,7 @@ mod tests {
         for (path, status) in [
             ("/", 200),
             (crate::enhance::SCRIPT_PATH, 200),
-            ("/nojs/caps?flag=popover", 204),
+            ("/lui/caps?flag=popover", 204),
         ] {
             let req = Request::get(path).body(Body::empty()).unwrap();
             let res = app.clone().oneshot(req).await.unwrap();

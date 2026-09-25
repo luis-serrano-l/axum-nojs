@@ -14,13 +14,13 @@
 //! when the real content arrives (a streamed slot, a swap, the next page).
 //!
 //! ```rust
-//! use axum_nojs::prelude::*;
+//! use loco_ui::prelude::*;
 //! let ui = Ui::from(Caps::all());
-//! assert_eq!(ui.skeleton(3).render().into_string().matches("nojs-skeleton-line").count(), 3);
+//! assert_eq!(ui.skeleton(3).render().into_string().matches("lui-skeleton-line").count(), 3);
 //! let m = ui.skeleton(2).label("Loading orders").heading().render().into_string();
-//! assert!(m.contains("Loading orders") && m.contains("nojs-skeleton-heading"));
-//! // The same in `nojs!`:
-//! let same = nojs! { Skeleton(2) label="Loading orders" heading; };
+//! assert!(m.contains("Loading orders") && m.contains("lui-skeleton-heading"));
+//! // The same in `lui!`:
+//! let same = lui! { Skeleton(2) label="Loading orders" heading; };
 //! assert_eq!(same.into_string(), m);
 //! ```
 
@@ -81,11 +81,11 @@ impl Render for Skeleton<'_> {
     fn render(&self) -> Markup {
         let lines = self.lines;
         html! {
-            div class="nojs-skeleton" role="status" aria-busy="true" {
-                span class="nojs-sr" { (self.label) }
-                @if self.heading { span class="nojs-skeleton-heading" aria-hidden="true" {} }
+            div class="lui-skeleton" role="status" aria-busy="true" {
+                span class="lui-sr" { (self.label) }
+                @if self.heading { span class="lui-skeleton-heading" aria-hidden="true" {} }
                 @for i in 0..lines {
-                    span class={ "nojs-skeleton-line" @if i + 1 == lines && lines > 1 { " nojs-skeleton-last" } } aria-hidden="true" {}
+                    span class={ "lui-skeleton-line" @if i + 1 == lines && lines > 1 { " lui-skeleton-last" } } aria-hidden="true" {}
                 }
             }
         }
@@ -94,13 +94,13 @@ impl Render for Skeleton<'_> {
 /// Styles for this component; included in [`crate::stylesheet`].
 pub const CSS: &str = r#"
 /* shadcn Skeleton: accent-coloured blocks, rounded-md, a slow pulse. */
-.nojs-skeleton { display: grid; gap: calc(var(--nojs-space) * 1.25); padding-block: var(--nojs-space); }
-.nojs-skeleton-line, .nojs-skeleton-heading {
-  display: block; height: 1rem; border-radius: var(--nojs-radius-sm); background: var(--nojs-accent);
-  animation: nojs-skeleton-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+.lui-skeleton { display: grid; gap: calc(var(--lui-space) * 1.25); padding-block: var(--lui-space); }
+.lui-skeleton-line, .lui-skeleton-heading {
+  display: block; height: 1rem; border-radius: var(--lui-radius-sm); background: var(--lui-accent);
+  animation: lui-skeleton-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
-.nojs-skeleton-heading { height: 1.5rem; width: 45%; margin-bottom: calc(var(--nojs-space) * 0.5); }
-.nojs-skeleton-last { width: 60%; }
-@keyframes nojs-skeleton-pulse { 50% { opacity: 0.5; } }
-@media (prefers-reduced-motion: reduce) { .nojs-skeleton-line, .nojs-skeleton-heading { animation: none; } }
+.lui-skeleton-heading { height: 1.5rem; width: 45%; margin-bottom: calc(var(--lui-space) * 0.5); }
+.lui-skeleton-last { width: 60%; }
+@keyframes lui-skeleton-pulse { 50% { opacity: 0.5; } }
+@media (prefers-reduced-motion: reduce) { .lui-skeleton-line, .lui-skeleton-heading { animation: none; } }
 "#;

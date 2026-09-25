@@ -2,7 +2,7 @@
 
 use crate::site::page;
 use axum::{Router, routing::get};
-use axum_nojs::prelude::*;
+use loco_ui::prelude::*;
 
 pub(crate) fn routes() -> Router {
     Router::new()
@@ -14,19 +14,19 @@ async fn tabs_page(ui: Ui) -> Page {
     page(
         &ui,
         "Tabs",
-        nojs! {
+        lui! {
             // Hovering or focusing a tab title fetches it early; the click reuses the answer.
             // code: /tabs
-            div data-nojs-prefetch {
+            div data-lui-prefetch {
                 Tabs("demo") select_below {
-                    tab "Install" { p { code { "cargo add axum-nojs maud axum" } } }
+                    tab "Install" { p { code { "cargo add loco-ui maud axum" } } }
                     tab "Use" badge=3 { p { "Call a function, get " code { "Markup" } ", send it." } }
                     // Lazy: the body is rendered only by the request that opens the tab.
                     lazy "Why" || { p { "Because the platform can do this without script now. (Rendered on demand.)" } }
                 }
             }
             // end code
-            p class="nojs-note" { "Deep link: " a href="/tabs?tab.demo=2" { "?tab.demo=2" } ". Leave and come back: the tab is remembered. The third tab is lazy; under 40rem the strip becomes a select." }
+            p class="lui-note" { "Deep link: " a href="/tabs?tab.demo=2" { "?tab.demo=2" } ". Leave and come back: the tab is remembered. The third tab is lazy; under 40rem the strip becomes a select." }
             h2 { "Vertical" }
             (ui.tabs("side").vertical()
                 .tab("General", html! { p { "Titles stack on the left; the open panel sits beside them." } })
@@ -40,7 +40,7 @@ async fn accordion_page(ui: Ui) -> Page {
     page(
         &ui,
         "Accordion",
-        nojs! {
+        lui! {
             // code: /accordion
             Accordion("faq") multi controls {
                 item "Does this need JavaScript?" icon="\u{1F50D}"
@@ -61,7 +61,7 @@ async fn accordion_page(ui: Ui) -> Page {
                 }
             }
             // end code
-            p class="nojs-note" { "Deep link: " a href="/accordion?open.faq=0,2" { "?open.faq=0,2" } ". Leave and come back: the open sections are remembered." }
+            p class="lui-note" { "Deep link: " a href="/accordion?open.faq=0,2" { "?open.faq=0,2" } ". Leave and come back: the open sections are remembered." }
         },
     )
 }

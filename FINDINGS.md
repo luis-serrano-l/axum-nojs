@@ -3,7 +3,7 @@
 What the HTML/CSS platform can and cannot do for a server-rendered app with no script, as
 learned building and testing this crate. Three lists first; the milestone notes with the
 reasons follow. The per-component feature matrix (with per-browser versions) is generated
-from `axum_nojs::spec` into `spec/components.json` and README.
+from `loco_ui::spec` into `spec/components.json` and README.
 
 ## 1. What works with no script
 
@@ -43,7 +43,7 @@ from `axum_nojs::spec` into `spec/components.json` and README.
 
 ## 3. What is impossible without script
 
-Each of these is now covered by the optional enhancement script (`axum_nojs::enhance`,
+Each of these is now covered by the optional enhancement script (`loco_ui::enhance`,
 section 4). The list stays true for a browser with script disabled.
 
 - Filtering results as you type against server data. `<datalist>` covers static suggestions;
@@ -74,20 +74,20 @@ action need no script. Editors, real-time collaboration and per-keystroke reacti
 One 11 KB file, no framework, no build step, `script-src 'self'` compatible. It never changes
 what the server sends; it changes what the browser does with it.
 
-- **Swap roots.** A root with `id` and `data-nojs="swap"` has its forms and links fetched in the
+- **Swap roots.** A root with `id` and `data-lui="swap"` has its forms and links fetched in the
   background; the response document is parsed and only the root (plus flash, title, theme and
   URL) is replaced, inside `document.startViewTransition` when available. Requests on one root
   are queued, so five fast counter clicks count five.
-- **Targets and modes.** `data-nojs-target="#id"` lets a control anywhere name its root;
-  `data-nojs-swap` picks outer, inner, append or prepend; `data-nojs-oob` elements in the answer
-  update their twin anywhere on the page. The `Nojs-Enhance: 1` header lets a handler answer
+- **Targets and modes.** `data-lui-target="#id"` lets a control anywhere name its root;
+  `data-lui-swap` picks outer, inner, append or prepend; `data-lui-oob` elements in the answer
+  update their twin anywhere on the page. The `Lui-Enhance: 1` header lets a handler answer
   with a fragment. Without the script the same request is the full page, which shows all of it.
-- **Lifecycle.** `data-nojs-busy` and `aria-busy` on the root and form while a request runs,
-  submit buttons disabled, a `data-nojs-indicator` element shown, `--nojs-busy` for the fade. A
+- **Lifecycle.** `data-lui-busy` and `aria-busy` on the root and form while a request runs,
+  submit buttons disabled, a `data-lui-indicator` element shown, `--lui-busy` for the fade. A
   failed request becomes the navigation the browser would have made.
-- **History.** Links push an entry, forms replace it, `data-nojs-push="false"` keeps the URL and
-  `data-nojs-replace` rewrites the entry. Every swap stores a copy of the roots in the entry, so
-  Back and Forward restore in place with no request. `nojs:swap` fires after every swap.
+- **History.** Links push an entry, forms replace it, `data-lui-push="false"` keeps the URL and
+  `data-lui-replace` rewrites the entry. Every swap stores a copy of the roots in the entry, so
+  Back and Forward restore in place with no request. `lui:swap` fires after every swap.
 - **Search as you type** in a combobox inside a swap root, debounced, focus and caret kept.
 - **Live mirroring** of range output and colour swatch while the control moves.
 - **Real modal** for the `:target` dialog fallback; light dismiss for the `<details>` popover
@@ -99,7 +99,7 @@ Proven by `scripts/browser-check.mjs`: headless Firefox 155 through geckodriver,
 What stays impossible even with it, because the script owns no state and never runs before
 the server answers: offline behaviour and retry queues; optimistic updates (the counter shows
 the new value when the server says so, not on click); client-side validation beyond what
-`required`, `pattern` and `:user-invalid` give; polling or server push (`data-nojs-oob` only
+`required`, `pattern` and `:user-invalid` give; polling or server push (`data-lui-oob` only
 rides on a request the user made; a `<meta http-equiv="refresh">` or a streamed page is the
 no-script answer); drag and drop, keyboard shortcuts and anything driven by pointer position;
 a "dirty form" warning before leaving; and restoring scroll position or form input inside a
@@ -111,8 +111,8 @@ not what the user typed since).
 ### M1 · Capability beacons
 
 **One cookie per flag, not one list cookie.** The beacons load in parallel. Seven responses
-each setting `nojs-caps=<old list + me>` would overwrite one another and keep one flag. Separate
-cookies `nojs-cap-<name>=1` cannot race. The roadmap's "sets/extends a `axum-nojs-caps` cookie" is
+each setting `lui-caps=<old list + me>` would overwrite one another and keep one flag. Separate
+cookies `lui-cap-<name>=1` cannot race. The roadmap's "sets/extends a `loco-ui-caps` cookie" is
 implemented as this prefix family.
 
 **Proxies for HTML attributes** (versions from MDN browser-compat-data, September 2026):
@@ -145,22 +145,22 @@ and `probed` says the beacons ran. Once `probed` is set the beacon elements are 
 ### M2 · Out-of-order streaming
 
 **The host must be an ancestor of the late chunks.** Slots only match direct light-DOM
-children of the host. A per-section `<nojs-slot>` host cannot receive a chunk appended at the end
+children of the host. A per-section `<lui-slot>` host cannot receive a chunk appended at the end
 of the document, so the roadmap's per-slot host became one host: `<body>`. `slot()` emits a
 plain `<slot name>` inside it.
 
 **Shadow trees do not see document stylesheets.** The page inside the shadow root needs its
 own `<style>`; the slotted chunks are light DOM and need the document one. The stylesheet is
-inlined twice in DSD mode (about 12 KB extra). A `<link>` to a cached `/nojs.css` in both places
+inlined twice in DSD mode (about 12 KB extra). A `<link>` to a cached `/lui.css` in both places
 would cost one fetch instead; not done because the layout's contract is one inline stylesheet.
 
-**Fallback is still streaming.** Without DSD `slot()` leaves `<!--nojs-slot:id-->` and the
+**Fallback is still streaming.** Without DSD `slot()` leaves `<!--lui-slot:id-->` and the
 response is spliced in document order: the bytes before the first marker leave immediately,
 each section as soon as it and its predecessors resolve. A slow first section delays the rest.
 
 ### M3 · State model
 
-**The `nojs-ui` cookie is written on GET.** Preference state has no other trigger without script:
+**The `lui-ui` cookie is written on GET.** Preference state has no other trigger without script:
 the tab link is a GET. It is idempotent and never touches application data, which stays
 POST-only. `UiState` only emits `Set-Cookie` when the query actually changed something.
 
@@ -182,7 +182,7 @@ a small deserializer that unwraps newtypes (`saved.rs`).
 
 ### M4 · Blitz as the test engine
 
-`axum-nojs-test` renders any demo route through `tower::oneshot`, parses it with `blitz-html`,
+`loco-ui-test` renders any demo route through `tower::oneshot`, parses it with `blitz-html`,
 resolves Stylo styles and Taffy layout, and paints it with `vello_cpu`. Every route is
 screenshotted twice (modern and no-capability cookies) into `tests/shots/`. Blitz has no script
 engine, so passing there is proof the page needs none.
@@ -196,7 +196,7 @@ engine, so passing there is proof the page needs none.
 | The form's `type=number` field is an 18 px strip | [#925](https://github.com/DioxusLabs/blitz/issues/925) (filed) |
 | Tables with `border-collapse: collapse` get a 2 px black grid on every edge | [#386](https://github.com/DioxusLabs/blitz/issues/386), [#504](https://github.com/DioxusLabs/blitz/issues/504) |
 | `<dialog open>` is 114 px wide: absolutely positioned box sized by its DOM parent | [#764](https://github.com/DioxusLabs/blitz/issues/764) |
-| Header reads "axum-nojs· zero": leading space of a span after an inline is trimmed | [#857](https://github.com/DioxusLabs/blitz/pull/857) (open PR, whitespace collapsing across spans) |
+| Header reads "loco-ui· zero": leading space of a span after an inline is trimmed | [#857](https://github.com/DioxusLabs/blitz/pull/857) (open PR, whitespace collapsing across spans) |
 | `/tabs` vertical strip: the panel's left rule spans one row, not the column: Blitz builds boxes only for `::before`/`::after` (`blitz-dom/src/layout/construct.rs`), so `::details-content` never gets one; the panel's own padding is what keeps the shot readable | tracked under [#119](https://github.com/DioxusLabs/blitz/issues/119) (roadmap: pseudo-elements); no dedicated issue |
 | `/inputs`: selects render as an empty box (option text and `<selectedcontent>` not drawn), range inputs as a plain box with no thumb, the colour input as a blank box; the two-thumb pair shows only its track. `blitz-paint` `render/form_controls.rs` draws only checkboxes and radios. The Blitz test asserts on attributes and geometry (both thumbs share one track) instead | [#258](https://github.com/DioxusLabs/blitz/issues/258) ("Tracking: Form controls") |
 | `loco-notes-edit.png` (the Loco example): the textarea and the `type=date` field are blank though the HTML carries `>Hello</textarea>` and `value="2026-10-01"`. `blitz-dom` `layout/construct.rs` `create_text_editor` seeds the editor from the `value` attribute only (a textarea's text child is ignored), and `date` is not among the input types that get an editor. `examples/loco-app/tests/pages.rs` asserts the prefilled values on the HTML instead | [#258](https://github.com/DioxusLabs/blitz/issues/258) ("Tracking: Form controls") |
@@ -227,7 +227,7 @@ empty boxes and `<input type=range>` as an inert box ([#456](https://github.com/
 all three under the form-controls tracking issue [#258](https://github.com/DioxusLabs/blitz/issues/258)).
 The `/inputs` screenshot therefore shows the layout, not the controls.
 
-**Publishing.** `cargo publish --dry-run -p axum-nojs` packages and builds cleanly. A real
+**Publishing.** `cargo publish --dry-run -p loco-ui` packages and builds cleanly. A real
 publish still needs a `license` field, which is a decision for the owner (see `BLOCKED.md`).
 
 ### Feel · why navigations felt slow
@@ -251,7 +251,7 @@ fade in under the old ones and the button simply re-renders where it belongs.
 **A named tab title is the same block, sideways.** The first tabs morph put the name on the
 open `<summary>`; every switch slid the old title's snapshot, text included, across the strip
 and cross-faded it into the new one: a flicker and a bounce to the left. The name now sits on an
-empty `.nojs-tabs-mark` (then a 2px underline, since M20 shadcn's raised chip behind the open
+empty `.lui-tabs-mark` (then a 2px underline, since M20 shadcn's raised chip behind the open
 title), so the highlight glides and the titles stay still. Rule of
 thumb: name the highlight, never the thing that holds text.
 
@@ -269,7 +269,7 @@ redirects to the same-origin `Referer` path, `/` when there is none.
 
 ### M5 · Machine-readable spec
 
-`axum_nojs::spec::SPECS` is the single source: `spec/components.json` and the README matrix
+`loco_ui::spec::SPECS` is the single source: `spec/components.json` and the README matrix
 are generated from it (`cargo run -p demo -- spec write`) and tests fail when they drift. A
 test also reads every component's `//!` header and requires each spec feature name to appear
 in it verbatim, so the header and the spec cannot disagree about which features a component
@@ -286,7 +286,7 @@ The `<search>` form keeps the sort in hidden inputs and the sort links keep the 
 query, so no action forgets the others; `paged_table` threads `per` through both.
 
 **A remembered page size that still shares.** With a `UiState` the size is the state key
-`per.<table>`, so the `nojs-ui` cookie brings back the size a visitor picked. Every page link
+`per.<table>`, so the `lui-ui` cookie brings back the size a visitor picked. Every page link
 still names it, so a URL someone sends shows the same rows for everyone; only a bare `/table`
 differs per visitor.
 
@@ -320,7 +320,7 @@ one request. The enhancement script swaps the `422` body like any other, so the 
 and the no-script path show the same thing. Skipping an optional step uses `formnovalidate`,
 so the browser does not demand its fields first.
 
-**Resuming is the cookie doing its job.** The step already lived in the `nojs-ui` cookie; a bare
+**Resuming is the cookie doing its job.** The step already lived in the `lui-ui` cookie; a bare
 visit to the wizard lands on it. `UiState::remembered` tells the two apart (the key came from
 the cookie, not the link), so the page can say "Picked up where you left off" and offer Start
 over. The entered values need their own persistent cookie (the demo keeps them a week) or a
@@ -341,7 +341,7 @@ leaving an empty row in the table (screenshot `table-*.png`; tracked under
 `step=<n>`; the handler merges the fields into stored data and answers with PRG to the next
 step's URL. Refresh never re-submits, the browser's Back returns to the previous step with
 its values, and the "Back" link is the same URL. The current step is a `step.<id>` key in
-`UiState`, so it travels in the query and the `nojs-ui` cookie like a tab; the entered values
+`UiState`, so it travels in the query and the `lui-ui` cookie like a tab; the entered values
 are application data and live in the app's store (a cookie in the demo). Putting them in
 the URL would leak names and emails into history and logs.
 
@@ -349,7 +349,7 @@ the URL would leak names and emails into history and logs.
 selection that survives paging without a form round trip, and "unsaved changes" warnings
 when leaving a wizard step.
 
-**A flash stack is one cookie.** Several messages travel as one `nojs-flash` value, one line
+**A flash stack is one cookie.** Several messages travel as one `lui-flash` value, one line
 each, prefixed with their level (`ok:Saved.\nwarn:Look.`); plain text stays `info`, so a lone
 `ui.redirect(to).flash("Saved.")` sends the text as is. Dismiss is a link back to the page: reading the
 flash already queued the cookie's deletion, so the next render is clean. Auto-hide is a CSS
@@ -403,8 +403,8 @@ the demo router gets `tower-http`'s `CompressionLayer` for gzip and br, restrict
 with a known size so `/stream` keeps its chunks (gzip would hold them until its buffer
 fills); the release profile is `lto = "fat"`, `codegen-units = 1`, `panic = "abort"`.
 Every non-streamed response already carries `Content-Length` (axum sets it from the body's
-exact size; a test checks it). `/nojs/enhance.js` is served `immutable` under a `?v=<hash>`
-URL, verified. The `/nojs/caps` beacons stay `no-store` on purpose: each one sets a cookie, and a
+exact size; a test checks it). `/lui/enhance.js` is served `immutable` under a `?v=<hash>`
+URL, verified. The `/lui/caps` beacons stay `no-store` on purpose: each one sets a cookie, and a
 cached answer would never set it again after the cookie is cleared; they are only requested
 while the cookie lacks the flag, so they cost nothing after the first visit.
 
@@ -430,20 +430,20 @@ The rest of the box, checked and left as is:
 - The beacons are CSS `background-image`s on 1px `<i>` elements inside `@supports`, not
   `<img>`, so `loading="lazy"` and `fetchpriority` do not apply. Background images never block
   first paint, browsers fetch them at low priority after layout, and the whole block is gone
-  once `nojs-cap-probed` is set.
-- `<script src="/nojs/enhance.js?v=…" defer>` is the last element of `<body>` (unchanged).
+  once `lui-cap-probed` is set.
+- `<script src="/lui/enhance.js?v=…" defer>` is the last element of `<body>` (unchanged).
 - `<link rel="preconnect">` is not needed: the page has no third-party origin.
-- Caps travel as one cookie per flag (`nojs-cap-<name>=1`, nine flags, about 170 bytes on every
+- Caps travel as one cookie per flag (`lui-cap-<name>=1`, nine flags, about 170 bytes on every
   request once all are set), and each beacon answer is exactly one `Set-Cookie`. Folding them
   into a single bitset cookie would need the server to merge flags, and the beacons fire in
   parallel, so two answers would race and one flag would be lost; the per-flag cookies stay.
 
-**Script cheap wins.** Every request from `enhance.js` sends `Nojs-Enhance: 1` and
+**Script cheap wins.** Every request from `enhance.js` sends `Lui-Enhance: 1` and
 `Accept: text/html`, and user actions fetch with `priority: "high"`. Rather than a
 hand-written fragment per route, one middleware (`enhance::slim`, on the whole demo router)
 answers any enhanced request with the page minus its inline stylesheet, which the requesting
-document already has; every HTML answer says `Vary: Nojs-Enhance`. `/swap` keeps its own
-smaller answer. Links under `data-nojs-prefetch` (the demo's first tab strip) are fetched at
+document already has; every HTML answer says `Vary: Lui-Enhance`. `/swap` keeps its own
+smaller answer. Links under `data-lui-prefetch` (the demo's first tab strip) are fetched at
 low priority on hover or focus and a click within five seconds reuses the answer; the browser
 check proves one request, no reload. Links to the page already shown are not prefetched: after
 a swap the link under the pointer is a new element and gets a fresh `mouseover`.
@@ -467,14 +467,14 @@ priority on each index view, about 170 KB gzipped.
 
 A first try served a stale page: after switching to dark on the index, `/dialog` came from the
 prefetch cache still light. Every page depends on cookies (caps, theme, flash), so
-`enhance::slim` now sends `Vary: Nojs-Enhance, Cookie` on every HTML answer; with it the cached
+`enhance::slim` now sends `Vary: Lui-Enhance, Cookie` on every HTML answer; with it the cached
 copy is dropped when the cookie changes and the page is fetched fresh (checked by hand in
 Firefox; the browser check covers the cache hit).
 
 What the platform cannot do without the rules script: **prerender** (`<link rel="prerender">`
 is gone from every engine; only speculation rules prerender, in Chromium), eagerness levels
 (`moderate` = on hover, `conservative` = on pointer down) and document rules that match links
-by selector. The hover-time version lives in `enhance.js` as `data-nojs-prefetch`; `rel=prefetch`
+by selector. The hover-time version lives in `enhance.js` as `data-lui-prefetch`; `rel=prefetch`
 is all-or-nothing at page load.
 
 **Streaming where it pays.** `Streamed::into_stream` now yields the document up to `</head>`
@@ -491,7 +491,7 @@ instead of 9 KB. The rule for a real server: stream a route only when its body a
 (a database, another service); give it a `slot` per slow part, or one `slot` around the whole
 body if nothing can be shown early, and the head still goes out first.
 
-**Structural.** `cargo bench -p axum-nojs` (criterion, `axum-nojs/benches/render.rs`), before
+**Structural.** `cargo bench -p loco-ui` (criterion, `loco-ui/benches/render.rs`), before
 → after on this machine:
 
 | bench | before | after | what changed |
@@ -551,7 +551,7 @@ Blitz with no script. The Blitz tests and the Firefox check found three things:
   under `@media (max-width: 30rem)` caps it with `min(<min>, 100%)`, so a wide minimum cannot
   overflow a phone. Blitz tests run at 1000px, so they never reach that rule.
   Inline SVG needs Blitz's `svg` feature. The test harness had turned it off, so icons were
-  laid out but not painted; `axum-nojs-test` now enables it (a first-party inline-SVG plan
+  laid out but not painted; `loco-ui-test` now enables it (a first-party inline-SVG plan
   is [#701](https://github.com/DioxusLabs/blitz/issues/701)).
 
 A crate that uses `html!` from the prelude still needs its own `maud` dependency, because
@@ -593,7 +593,7 @@ Hinnant's `days_from_civil`), so the crate still depends only on `maud`.
 - **Never put `:has()` in a selector list with a selector that must work everywhere.** A
   browser that cannot parse one selector drops the whole list. That includes Blitz, and
   browsers from before `:has()`: Chrome < 105, Firefox < 121. The first draft wrote
-  `.nojs-calendar-picked, .nojs-calendar-day:has(:checked) { … }`, and Blitz lost the picked
+  `.lui-calendar-picked, .lui-calendar-day:has(:checked) { … }`, and Blitz lost the picked
   day's fill. The two now have separate rules.
 - **What it cannot do without script:** move between days with the arrow keys (Tab walks them
   in order), or keep a form's other unsaved fields when a month link is followed in radio mode.
@@ -603,7 +603,7 @@ Hinnant's `days_from_civil`), so the crate still depends only on `maud`.
 A file upload needs no script: a multipart `<form>`, `<input type="file" accept multiple>`
 (a file dropped on the input is picked like a chosen one), Post/Redirect/Get, and a list of
 what the server kept. The script adds only a progress bar. `fetch` cannot report upload
-progress, so a form holding `<progress data-nojs-progress>` is sent through `XMLHttpRequest`
+progress, so a form holding `<progress data-lui-progress>` is sent through `XMLHttpRequest`
 and the bar fills as the body goes out. That took the script from about 10.2 KB to
 10,564 bytes served, and its budget from 10 KB to 11 KB (README updated).
 
@@ -655,10 +655,10 @@ Loco's JSON 401, not a page; the example links to `/signin` from its front page 
 adding a redirect layer. The sign-in token travels in an `HttpOnly` cookie
 (`auth.jwt.location: {from: Cookie, name: auth}`), so no page needs script to send it.
 
-### M28 · `nojs!` in the editor
+### M28 · `lui!` in the editor
 
 Checked with rust-analyzer 1.96 over LSP (hover, go to definition and completion at
-positions in `axum-nojs/tests/nojs.rs`), since the macro keeps the span of every name it
+positions in `loco-ui/tests/lui.rs`), since the macro keeps the span of every name it
 turns into a call:
 
 - Hover works on a component (`Dialog` shows `Ui::dialog` and its doc), on an attribute
@@ -669,10 +669,10 @@ turns into a call:
   trait methods every builder has (`render`, `clone`, `into`) and is not sorted by name.
 - Nothing is offered for a component name itself (`Dia` does not complete to `Dialog`):
   the name is a method on `Ui` only once it has been expanded.
-- rustfmt does not format inside `nojs!`, as with `html!`.
+- rustfmt does not format inside `lui!`, as with `html!`.
 
 Compiler errors are rustc's own at the written token (pinned by the `trybuild` tests in
-`axum-nojs-macros/tests/ui/`): a misspelled attribute gives "no method named `vertcal` …
+`loco-ui-macros/tests/ui/`): a misspelled attribute gives "no method named `vertcal` …
 there is a method `vertical` with a similar name", a missing argument "this method takes 1
 argument but 0 arguments were supplied" under `Tabs()`, a wrong value "expected `usize`,
 found `&str`" under the value. The `.stderr` files follow rustc's wording, so a new stable
@@ -683,13 +683,13 @@ release can require `TRYBUILD=overwrite` once.
 `scripts/bench-swap.mjs` times click → new state on the page → two animation frames, in
 headless Firefox, with the demo's release build on 3002 and a proxy on 3003 serving the same
 pages with htmx 2.0.11 (`hx-boost`, `hx-select`, `hx-swap="outerHTML"` on each swap root) in
-place of the script, its requests carrying `Nojs-Enhance: 1` so both sides get the same bytes.
+place of the script, its requests carrying `Lui-Enhance: 1` so both sides get the same bytes.
 
 First run (20 each, p50 / p90 ms): table sort 51 / 58 against htmx 41 / 49, tab 16 / 30
 against 18 / 25, pager 47 / 61 against 22 / 35. With `startViewTransition` removed the
 script's table and pager were 37 and 31: the transition's old-state capture costs about a
 frame on every swap. Fix: an answer within 150 ms of the click swaps directly; slower answers
-still morph (on a real network the morph hides the wait), and `data-nojs-morph` on a root
+still morph (on a real network the morph hides the wait), and `data-lui-morph` on a root
 (the kanban) keeps it always. After: table 35 / 50 against 41 / 51, tab 13 / 18 against
 14 / 26, pager 32 / 35 against 22 / 35.
 

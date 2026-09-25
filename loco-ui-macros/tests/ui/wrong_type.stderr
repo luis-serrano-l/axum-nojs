@@ -1,13 +1,13 @@
 error[E0308]: mismatched types
- --> tests/ui/wrong_type.rs:5:52
+ --> tests/ui/wrong_type.rs:5:51
   |
-5 |     let _ = nojs! { Tabs("demo") { tab "One" badge="three" { "1" } } };
-  |                                              ----- ^^^^^^^ expected `usize`, found `&str`
-  |                                              |
-  |                                              arguments to this method are incorrect
+5 |     let _ = lui! { Tabs("demo") { tab "One" badge="three" { "1" } } };
+  |                                             ----- ^^^^^^^ expected `usize`, found `&str`
+  |                                             |
+  |                                             arguments to this method are incorrect
   |
 note: method defined here
- --> $WORKSPACE/axum-nojs/src/tabs.rs
+ --> $WORKSPACE/loco-ui/src/tabs.rs
   |
   |     pub fn badge(mut self, count: usize) -> Self {
   |            ^^^^^

@@ -22,7 +22,7 @@
 //! moves. Without it the `<output>` shows the value the server last saw.
 //!
 //! ```rust
-//! use axum_nojs::prelude::*;
+//! use loco_ui::prelude::*;
 //! let ui = Ui::from(Caps::all());
 //! let m = ui.range("volume", 40).step(5).label("Volume").render().into_string();
 //! assert!(m.contains(r#"<label for="f-volume">Volume</label>"#) && m.contains("<output"));
@@ -31,8 +31,8 @@
 //! assert!(m.contains("name=\"price_min\"") && m.contains("name=\"price_max\""));
 //! assert!(m.contains("<output for=\"f-price_min\">20</output>"));
 //!
-//! // The same in `nojs!`:
-//! let same = nojs! { RangePair("price", (80, 20)) step=10; };
+//! // The same in `lui!`:
+//! let same = lui! { RangePair("price", (80, 20)) step=10; };
 //! assert_eq!(same.into_string(), m);
 //! ```
 
@@ -74,7 +74,7 @@ impl Range<'_> {
             .doc("Distance between allowed values (at least 1)."),
         Prop::new("label", PropKind::Value, "label: &'a str")
             .attr("label")
-            .doc("A `<label>` above the slider, in a `div.nojs-field` like a form field."),
+            .doc("A `<label>` above the slider, in a `div.lui-field` like a form field."),
     ];
 }
 
@@ -121,7 +121,7 @@ impl<'a> Range<'a> {
         self
     }
 
-    /// A `<label>` above the slider, in a `div.nojs-field` like a form field.
+    /// A `<label>` above the slider, in a `div.lui-field` like a form field.
     pub fn label(mut self, label: &'a str) -> Self {
         self.label = Some(label);
         self
@@ -142,8 +142,8 @@ impl Render for Range<'_> {
             (value, None) => {
                 let (list, id) = (format!("{name}-ticks"), format!("f-{name}"));
                 html! {
-                    div class="nojs-range" {
-                        input type="range" class="nojs-range-input" id=(id) name=(name) min=(min) max=(max) step=(step) value=(value) list=(list);
+                    div class="lui-range" {
+                        input type="range" class="lui-range-input" id=(id) name=(name) min=(min) max=(max) step=(step) value=(value) list=(list);
                         datalist id=(list) {
                             option value=(min) label=(min) {}
                             option value=((min + max) / 2) {}
@@ -156,12 +156,12 @@ impl Render for Range<'_> {
             (lo, Some(hi)) => {
                 let (lo_id, hi_id) = (format!("f-{name}_min"), format!("f-{name}_max"));
                 html! {
-                    div class="nojs-range nojs-range-pair" {
-                        div class="nojs-range-track" {
-                            input type="range" class="nojs-range-input" id=(lo_id) name={ (name) "_min" } min=(min) max=(max) step=(step) value=(lo) aria-label="Minimum";
-                            input type="range" class="nojs-range-input" id=(hi_id) name={ (name) "_max" } min=(min) max=(max) step=(step) value=(hi) aria-label="Maximum";
+                    div class="lui-range lui-range-pair" {
+                        div class="lui-range-track" {
+                            input type="range" class="lui-range-input" id=(lo_id) name={ (name) "_min" } min=(min) max=(max) step=(step) value=(lo) aria-label="Minimum";
+                            input type="range" class="lui-range-input" id=(hi_id) name={ (name) "_max" } min=(min) max=(max) step=(step) value=(hi) aria-label="Maximum";
                         }
-                        span class="nojs-range-values" { output for=(lo_id) { (lo) } " – " output for=(hi_id) { (hi) } }
+                        span class="lui-range-values" { output for=(lo_id) { (lo) } " – " output for=(hi_id) { (hi) } }
                     }
                 }
             }
@@ -182,29 +182,29 @@ pub fn order(a: i64, b: i64) -> (i64, i64) {
 
 /// Styles for this component; included in [`crate::stylesheet`].
 pub const CSS: &str = r#"
-.nojs-range { display: flex; align-items: center; gap: var(--nojs-space); }
-.nojs-range-input { flex: 1; accent-color: var(--nojs-primary); }
-.nojs-range output { min-width: 3ch; text-align: right; font-variant-numeric: tabular-nums; }
+.lui-range { display: flex; align-items: center; gap: var(--lui-space); }
+.lui-range-input { flex: 1; accent-color: var(--lui-primary); }
+.lui-range output { min-width: 3ch; text-align: right; font-variant-numeric: tabular-nums; }
 /* Two inputs share one grid cell; only their thumbs catch the pointer. */
-.nojs-range-track { flex: 1; display: grid; align-items: center; min-height: 1.5rem; }
-.nojs-range-track::before { content: ""; grid-area: 1 / 1; height: 6px; border-radius: 3px; background: var(--nojs-secondary); }
-.nojs-range-track .nojs-range-input {
+.lui-range-track { flex: 1; display: grid; align-items: center; min-height: 1.5rem; }
+.lui-range-track::before { content: ""; grid-area: 1 / 1; height: 6px; border-radius: 3px; background: var(--lui-secondary); }
+.lui-range-track .lui-range-input {
   grid-area: 1 / 1; appearance: none; width: 100%; height: 1.5rem; margin: 0; padding: 0;
   border: 0; background: none; pointer-events: none;
 }
-.nojs-range-track .nojs-range-input::-webkit-slider-runnable-track { background: none; }
-.nojs-range-track .nojs-range-input::-moz-range-track { background: none; }
-.nojs-range-track .nojs-range-input::-moz-range-progress { background: none; }
-.nojs-range-track .nojs-range-input::-webkit-slider-thumb {
+.lui-range-track .lui-range-input::-webkit-slider-runnable-track { background: none; }
+.lui-range-track .lui-range-input::-moz-range-track { background: none; }
+.lui-range-track .lui-range-input::-moz-range-progress { background: none; }
+.lui-range-track .lui-range-input::-webkit-slider-thumb {
   appearance: none; pointer-events: auto; cursor: pointer; width: 1rem; height: 1rem; border-radius: 50%;
-  background: var(--nojs-bg); border: 1px solid var(--nojs-primary); box-shadow: var(--nojs-shadow-xs);
+  background: var(--lui-bg); border: 1px solid var(--lui-primary); box-shadow: var(--lui-shadow-xs);
 }
-.nojs-range-track .nojs-range-input::-moz-range-thumb {
+.lui-range-track .lui-range-input::-moz-range-thumb {
   pointer-events: auto; cursor: pointer; width: 1rem; height: 1rem; border-radius: 50%; box-sizing: border-box;
-  background: var(--nojs-bg); border: 1px solid var(--nojs-primary); box-shadow: var(--nojs-shadow-xs);
+  background: var(--lui-bg); border: 1px solid var(--lui-primary); box-shadow: var(--lui-shadow-xs);
 }
-.nojs-range-track .nojs-range-input:focus-visible { outline: none; }
-.nojs-range-track .nojs-range-input:focus-visible::-webkit-slider-thumb { outline: 4px solid color-mix(in srgb, var(--nojs-ring) 50%, transparent); outline-offset: 0; }
-.nojs-range-track .nojs-range-input:focus-visible::-moz-range-thumb { outline: 4px solid color-mix(in srgb, var(--nojs-ring) 50%, transparent); outline-offset: 0; }
-.nojs-range-values { text-wrap: nowrap; font-variant-numeric: tabular-nums; }
+.lui-range-track .lui-range-input:focus-visible { outline: none; }
+.lui-range-track .lui-range-input:focus-visible::-webkit-slider-thumb { outline: 4px solid color-mix(in srgb, var(--lui-ring) 50%, transparent); outline-offset: 0; }
+.lui-range-track .lui-range-input:focus-visible::-moz-range-thumb { outline: 4px solid color-mix(in srgb, var(--lui-ring) 50%, transparent); outline-offset: 0; }
+.lui-range-values { text-wrap: nowrap; font-variant-numeric: tabular-nums; }
 "#;

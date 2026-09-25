@@ -1,17 +1,17 @@
-//! axum-nojs-caps on raw hyper, nothing else: `cargo run -p axum-nojs-caps --example hyper`, then open
+//! loco-ui-caps on raw hyper, nothing else: `cargo run -p loco-ui-caps --example hyper`, then open
 //! http://127.0.0.1:3003 twice. The first view says "unknown" for every flag while the
 //! beacons fire; the second view has one line per flag with a yes or a no.
 
 use std::convert::Infallible;
 use std::net::SocketAddr;
 
-use axum_nojs_caps::{BEACON_PATH, Cap, Caps, beacon_cookie, beacon_css, beacons};
 use http_body_util::Full;
 use hyper::body::{Bytes, Incoming};
 use hyper::server::conn::http1;
 use hyper::service::service_fn;
 use hyper::{Method, Request, Response, StatusCode, header};
 use hyper_util::rt::TokioIo;
+use loco_ui_caps::{BEACON_PATH, Cap, Caps, beacon_cookie, beacon_css, beacons};
 use tokio::net::TcpListener;
 
 async fn handle(req: Request<Incoming>) -> Result<Response<Full<Bytes>>, Infallible> {
@@ -53,7 +53,7 @@ async fn handle(req: Request<Incoming>) -> Result<Response<Full<Bytes>>, Infalli
                 lines += &format!("<li><code>{}</code>: {answer}</li>", cap.name());
             }
             let page = format!(
-                "<!DOCTYPE html><meta charset=utf-8><title>axum-nojs-caps</title><style>{}</style>\
+                "<!DOCTYPE html><meta charset=utf-8><title>loco-ui-caps</title><style>{}</style>\
                  <h1>What this browser can do</h1><p>{}</p><ul>{lines}</ul>{}",
                 beacon_css(),
                 if probed {

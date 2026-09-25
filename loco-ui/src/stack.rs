@@ -4,23 +4,23 @@
 //! vertical rhythm of a form, a card body, a settings page.
 //!
 //! **Platform features:** a flex column with `gap` (Chrome 84, Firefox 63, Safari 14.1);
-//! the gap is a step of the `--nojs-space-*` scale.
+//! the gap is a step of the `--lui-space-*` scale.
 //!
 //! **What it does not do without script:** nothing is missing.
 //!
 //! **Fallback:** none needed.
 //!
 //! ```rust
-//! use axum_nojs::prelude::*;
+//! use loco_ui::prelude::*;
 //! let ui = Ui::default();
 //! let m = ui.stack(html! { p { "One" } p { "Two" } }).render().into_string();
-//! assert_eq!(m, r#"<div class="nojs-stack"><p>One</p><p>Two</p></div>"#);
-//! // The same in `nojs!`:
-//! let same = nojs! { Stack(html! { p { "One" } p { "Two" } }); };
+//! assert_eq!(m, r#"<div class="lui-stack"><p>One</p><p>Two</p></div>"#);
+//! // The same in `lui!`:
+//! let same = lui! { Stack(html! { p { "One" } p { "Two" } }); };
 //! assert_eq!(same.into_string(), m);
-//! // `.gap(n)` picks a step: n × 4px with the default `--nojs-space`.
+//! // `.gap(n)` picks a step: n × 4px with the default `--lui-space`.
 //! let m = ui.stack(html! { p { "Tight" } }).gap(2).render().into_string();
-//! assert!(m.contains(r#"class="nojs-stack nojs-gap-2""#));
+//! assert!(m.contains(r#"class="lui-stack lui-gap-2""#));
 //! ```
 
 use maud::{Markup, Render, html};
@@ -41,7 +41,7 @@ impl Stack {
     /// Every setter with its kind, arguments, default and the HTML attribute it sets; listed by
     /// [`crate::props()`] and kept in step with the setters by a test.
     pub const PROPS: &'static [Prop] = &[Prop::new("gap", PropKind::Number, "n: u8")
-        .doc("The gap as a step of the `--nojs-space-*` scale.")];
+        .doc("The gap as a step of the `--lui-space-*` scale.")];
 }
 
 impl Ui {
@@ -52,7 +52,7 @@ impl Ui {
 }
 
 impl Stack {
-    /// The gap as a step of the `--nojs-space-*` scale: 0, 1, 2, 3, 4, 6 or 8 (n × 4px by
+    /// The gap as a step of the `--lui-space-*` scale: 0, 1, 2, 3, 4, 6 or 8 (n × 4px by
     /// default); other values take the step below.
     pub fn gap(mut self, n: u8) -> Self {
         self.gap = Some(n);
@@ -63,16 +63,16 @@ impl Stack {
 impl Render for Stack {
     fn render(&self) -> Markup {
         html! {
-            div class={ "nojs-stack" @if let Some(n) = self.gap { " " (crate::gap_class(n)) } } { (self.content) }
+            div class={ "lui-stack" @if let Some(n) = self.gap { " " (crate::gap_class(n)) } } { (self.content) }
         }
     }
 }
 
 /// Styles for this component; included in [`crate::stylesheet`].
 pub const CSS: &str = r#"
-.nojs-stack { display: flex; flex-direction: column; }
-:where(.nojs-stack) { gap: var(--nojs-space-4); }
-.nojs-stack > * { margin-block: 0; }
+.lui-stack { display: flex; flex-direction: column; }
+:where(.lui-stack) { gap: var(--lui-space-4); }
+.lui-stack > * { margin-block: 0; }
 /* Fields and blocks take the full width; a button or badge keeps its own. */
-.nojs-stack > :is(.nojs-button, .nojs-badge) { align-self: flex-start; }
+.lui-stack > :is(.lui-button, .lui-badge) { align-self: flex-start; }
 "#;

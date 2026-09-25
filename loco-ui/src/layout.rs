@@ -13,17 +13,17 @@
 //! **Fallback:** browsers without view transitions navigate normally. Theme colours are plain
 //! custom properties switched by a media query and `data-theme`, so no `light-dark()` needed.
 //!
-//! **Theming:** every colour, radius and spacing the components use is a `--nojs-*` custom
+//! **Theming:** every colour, radius and spacing the components use is a `--lui-*` custom
 //! property. [`Tokens`] holds them for light and dark; `ui.page(..).tokens(&tokens)` emits them once per page
 //! as a `<style>` after the stylesheet, so a different palette is a struct, not a CSS file.
 //! `docs/theming.md` lists each token and what it affects.
 //!
 //! ```rust
-//! use axum_nojs::{prelude::*, layout::{Palette, Tokens}};
+//! use loco_ui::{prelude::*, layout::{Palette, Tokens}};
 //! let ui = Ui::from(Caps::all());
 //! let page = ui.page("Title", html! { p { "body" } });
 //! let tokens = Tokens { light: Palette { primary: "#7a3b1e", ..Tokens::default().light }, ..Default::default() };
-//! assert!(page.tokens(&tokens).into_string().contains("--nojs-primary: #7a3b1e"));
+//! assert!(page.tokens(&tokens).into_string().contains("--lui-primary: #7a3b1e"));
 //! ```
 
 use maud::{DOCTYPE, Markup, PreEscaped, Render, html};
@@ -34,39 +34,39 @@ use crate::{Caps, Theme, caps, enhance, stylesheet};
 /// `primary` is the brand colour, `accent` is the quiet surface under a hovered item.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Palette {
-    /// Page background (`--nojs-bg`).
+    /// Page background (`--lui-bg`).
     pub bg: &'static str,
-    /// Text on the page background (`--nojs-fg`).
+    /// Text on the page background (`--lui-fg`).
     pub fg: &'static str,
-    /// Secondary text: notes, labels, table headers (`--nojs-muted`).
+    /// Secondary text: notes, labels, table headers (`--lui-muted`).
     pub muted: &'static str,
-    /// Borders and rules (`--nojs-line`).
+    /// Borders and rules (`--lui-line`).
     pub line: &'static str,
-    /// Raised surfaces: `<code>`, the demo stage, open panels (`--nojs-surface`).
+    /// Raised surfaces: `<code>`, the demo stage, open panels (`--lui-surface`).
     pub surface: &'static str,
-    /// Cards and stat tiles (`--nojs-card`).
+    /// Cards and stat tiles (`--lui-card`).
     pub card: &'static str,
-    /// Dialogs, drawers, popovers, menus and toasts (`--nojs-popover`).
+    /// Dialogs, drawers, popovers, menus and toasts (`--lui-popover`).
     pub popover: &'static str,
-    /// Secondary buttons, the tab list, chips and badges (`--nojs-secondary`).
+    /// Secondary buttons, the tab list, chips and badges (`--lui-secondary`).
     pub secondary: &'static str,
-    /// Hover and highlighted surface: menu items, ghost buttons, rows (`--nojs-accent`).
+    /// Hover and highlighted surface: menu items, ghost buttons, rows (`--lui-accent`).
     pub accent: &'static str,
-    /// Text on the accent surface (`--nojs-on-accent`).
+    /// Text on the accent surface (`--lui-on-accent`).
     pub on_accent: &'static str,
-    /// Links, primary buttons, the current page and step (`--nojs-primary`).
+    /// Links, primary buttons, the current page and step (`--lui-primary`).
     pub primary: &'static str,
-    /// Text on the primary colour (`--nojs-on-primary`).
+    /// Text on the primary colour (`--lui-on-primary`).
     pub on_primary: &'static str,
-    /// Borders of inputs, selects and textareas (`--nojs-input`).
+    /// Borders of inputs, selects and textareas (`--lui-input`).
     pub input: &'static str,
-    /// The focus ring, drawn at 50% opacity (`--nojs-ring`).
+    /// The focus ring, drawn at 50% opacity (`--lui-ring`).
     pub ring: &'static str,
-    /// Errors and "no" (`--nojs-danger`).
+    /// Errors and "no" (`--lui-danger`).
     pub danger: &'static str,
-    /// Success and "yes" (`--nojs-ok`).
+    /// Success and "yes" (`--lui-ok`).
     pub ok: &'static str,
-    /// Warnings: worked, but look (`--nojs-warn`).
+    /// Warnings: worked, but look (`--lui-warn`).
     pub warn: &'static str,
 }
 
@@ -74,7 +74,7 @@ impl Palette {
     /// The custom property declarations for this palette, one per line.
     fn declarations(&self) -> String {
         format!(
-            "  --nojs-bg: {}; --nojs-fg: {}; --nojs-muted: {}; --nojs-line: {};\n  --nojs-surface: {}; --nojs-card: {}; --nojs-popover: {}; --nojs-secondary: {};\n  --nojs-accent: {}; --nojs-on-accent: {}; --nojs-primary: {}; --nojs-on-primary: {};\n  --nojs-input: {}; --nojs-ring: {};\n  --nojs-danger: {}; --nojs-ok: {}; --nojs-warn: {};\n",
+            "  --lui-bg: {}; --lui-fg: {}; --lui-muted: {}; --lui-line: {};\n  --lui-surface: {}; --lui-card: {}; --lui-popover: {}; --lui-secondary: {};\n  --lui-accent: {}; --lui-on-accent: {}; --lui-primary: {}; --lui-on-primary: {};\n  --lui-input: {}; --lui-ring: {};\n  --lui-danger: {}; --lui-ok: {}; --lui-warn: {};\n",
             self.bg,
             self.fg,
             self.muted,
@@ -96,7 +96,7 @@ impl Palette {
     }
 }
 
-/// Every `--nojs-*` token: a light and a dark palette plus the two shape tokens.
+/// Every `--lui-*` token: a light and a dark palette plus the two shape tokens.
 /// `Default` is shadcn/ui's neutral (zinc) theme: white and zinc-950, a near-black primary
 /// that turns near-white in the dark scheme, with status colours from Radix Colors step 11
 /// (the step made for text, so each clears 4.5:1 on the background).
@@ -106,13 +106,13 @@ pub struct Tokens {
     pub light: Palette,
     /// Colours for `prefers-color-scheme: dark` and for `data-theme="dark"`.
     pub dark: Palette,
-    /// Corner radius of dialogs and popovers (`--nojs-radius`); controls use
-    /// `--nojs-radius-sm` (2px less) and cards `--nojs-radius-lg` (4px more). The two
-    /// shadows, `--nojs-shadow-xs` (controls) and `--nojs-shadow-lg` (floating layers), are
+    /// Corner radius of dialogs and popovers (`--lui-radius`); controls use
+    /// `--lui-radius-sm` (2px less) and cards `--lui-radius-lg` (4px more). The two
+    /// shadows, `--lui-shadow-xs` (controls) and `--lui-shadow-lg` (floating layers), are
     /// emitted beside them and are the same in both schemes, as in shadcn/ui.
     pub radius: &'static str,
-    /// The spacing unit every gap and padding is a multiple of (`--nojs-space`). The scale
-    /// `--nojs-space-{1,2,3,4,6,8}` is derived from it: step n is n/2 units (4px each by
+    /// The spacing unit every gap and padding is a multiple of (`--lui-space`). The scale
+    /// `--lui-space-{1,2,3,4,6,8}` is derived from it: step n is n/2 units (4px each by
     /// default, as Tailwind's `gap-n`), and the layout primitives' `.gap(n)` uses it.
     pub space: &'static str,
 }
@@ -171,7 +171,7 @@ impl Tokens {
     pub fn css(&self) -> String {
         let (light, dark) = (self.light.declarations(), self.dark.declarations());
         format!(
-            ":root {{\n  color-scheme: light dark;\n{light}  --nojs-radius: {}; --nojs-space: {};\n  --nojs-space-1: calc(var(--nojs-space) * 0.5); --nojs-space-2: var(--nojs-space); --nojs-space-3: calc(var(--nojs-space) * 1.5);\n  --nojs-space-4: calc(var(--nojs-space) * 2); --nojs-space-6: calc(var(--nojs-space) * 3); --nojs-space-8: calc(var(--nojs-space) * 4);\n  --nojs-radius-sm: max(0px, var(--nojs-radius) - 2px); --nojs-radius-lg: calc(var(--nojs-radius) + 4px);\n  --nojs-shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.05);\n  --nojs-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);\n  --nojs-overlay: rgb(0 0 0 / 0.5);\n}}\n\
+            ":root {{\n  color-scheme: light dark;\n{light}  --lui-radius: {}; --lui-space: {};\n  --lui-space-1: calc(var(--lui-space) * 0.5); --lui-space-2: var(--lui-space); --lui-space-3: calc(var(--lui-space) * 1.5);\n  --lui-space-4: calc(var(--lui-space) * 2); --lui-space-6: calc(var(--lui-space) * 3); --lui-space-8: calc(var(--lui-space) * 4);\n  --lui-radius-sm: max(0px, var(--lui-radius) - 2px); --lui-radius-lg: calc(var(--lui-radius) + 4px);\n  --lui-shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.05);\n  --lui-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);\n  --lui-overlay: rgb(0 0 0 / 0.5);\n}}\n\
              @media (prefers-color-scheme: dark) {{\n  :root:not([data-theme=\"light\"]) {{\n{dark}  }}\n}}\n\
              :root[data-theme=\"dark\"] {{\n  color-scheme: dark;\n{dark}}}\n\
              :root[data-theme=\"light\"] {{ color-scheme: light; }}\n",
@@ -221,8 +221,8 @@ pub(crate) fn page(
                 // pages must not: their parse ends only when the last slot has filled.
                 link rel="expect" href="#main" blocking="render";
                 style { (PreEscaped(stylesheet())) }
-                @if let Some(t) = tokens { style class="nojs-tokens" { (PreEscaped(t.css())) } }
-                @if !css.is_empty() { style class="nojs-user" { @for c in css { (PreEscaped(crate::minify_css(c))) } } }
+                @if let Some(t) = tokens { style class="lui-tokens" { (PreEscaped(t.css())) } }
+                @if !css.is_empty() { style class="lui-user" { @for c in css { (PreEscaped(crate::minify_css(c))) } } }
             }
             body {
                 (header())
@@ -266,8 +266,8 @@ impl Render for Reserve {
 /// The site header shown on every page.
 pub fn header() -> Markup {
     html! {
-        header class="nojs-header" {
-            a href="/" { strong { "axum-nojs" } }
+        header class="lui-header" {
+            a href="/" { strong { "loco-ui" } }
             span { "Interactive HTML for Rust servers, works without JavaScript" }
         }
     }
@@ -285,149 +285,149 @@ pub const CSS: &str = r#"
    second tap while the first one is still morphing. */
 ::view-transition { pointer-events: none; }
 
-/* The --nojs-* tokens come first in stylesheet(), from Tokens::default().css(). */
+/* The --lui-* tokens come first in stylesheet(), from Tokens::default().css(). */
 
 * { box-sizing: border-box; }
 /* Type: the system stack only, no web font. Body text is 1rem/1.5; controls, tables and
    menus use shadcn's text-sm (0.875rem/1.25rem); weights are 500 for labels and buttons,
    600 for headings. Numbers in tables and stats are tabular. */
 :root {
-  --nojs-font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --nojs-font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --lui-font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --lui-font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 html {
-  font-family: var(--nojs-font-sans); line-height: 1.5;
+  font-family: var(--lui-font-sans); line-height: 1.5;
   -webkit-text-size-adjust: 100%; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
 }
-body { margin: 0; background: var(--nojs-bg); color: var(--nojs-fg); }
-main { max-width: 52rem; margin: 0 auto; padding: calc(var(--nojs-space) * 4) calc(var(--nojs-space) * 2) calc(var(--nojs-space) * 8); }
+body { margin: 0; background: var(--lui-bg); color: var(--lui-fg); }
+main { max-width: 52rem; margin: 0 auto; padding: calc(var(--lui-space) * 4) calc(var(--lui-space) * 2) calc(var(--lui-space) * 8); }
 p, li { max-width: 44rem; }
-.nojs-header {
+.lui-header {
   display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.25rem 1rem;
-  max-width: 52rem; margin: 0 auto; padding: calc(var(--nojs-space) * 2);
-  color: var(--nojs-muted);
+  max-width: 52rem; margin: 0 auto; padding: calc(var(--lui-space) * 2);
+  color: var(--lui-muted);
 }
-.nojs-header a { color: var(--nojs-fg); text-decoration: none; font-size: 1rem; letter-spacing: -0.01em; }
-.nojs-header span { font-size: 0.875rem; }
-.nojs-header strong { font-weight: 600; }
+.lui-header a { color: var(--lui-fg); text-decoration: none; font-size: 1rem; letter-spacing: -0.01em; }
+.lui-header span { font-size: 0.875rem; }
+.lui-header strong { font-weight: 600; }
 h1 { font-size: 2.25rem; line-height: 2.5rem; letter-spacing: -0.025em; font-weight: 600; margin: 0 0 0.75rem; }
 h2 { font-size: 1.5rem; line-height: 2rem; letter-spacing: -0.0125em; font-weight: 600; margin: 2rem 0 0.5rem; }
 h3 { font-size: 1.125rem; line-height: 1.75rem; font-weight: 600; }
 p { margin: 0 0 1rem; }
-a { color: var(--nojs-primary); text-underline-offset: 0.15em; text-decoration-thickness: 1px; }
+a { color: var(--lui-primary); text-underline-offset: 0.15em; text-decoration-thickness: 1px; }
 code {
-  font-family: var(--nojs-font-mono); font-size: 0.875em;
-  background: var(--nojs-surface); border: 1px solid var(--nojs-line); border-radius: var(--nojs-radius-sm); padding: 0.05em 0.35em;
+  font-family: var(--lui-font-mono); font-size: 0.875em;
+  background: var(--lui-surface); border: 1px solid var(--lui-line); border-radius: var(--lui-radius-sm); padding: 0.05em 0.35em;
 }
 /* Controls are styled in button.rs and input.rs. Focus everywhere is a 3px ring at 50%;
-   aria-invalid turns borders and the ring to --nojs-danger. */
+   aria-invalid turns borders and the ring to --lui-danger. */
 details > summary { cursor: pointer; font-weight: 500; }
-:focus-visible { outline: 3px solid color-mix(in srgb, var(--nojs-ring) 50%, transparent); outline-offset: 0; }
-[aria-invalid=true] { border-color: var(--nojs-danger); }
-[aria-invalid=true]:focus-visible { outline-color: color-mix(in srgb, var(--nojs-danger) 20%, transparent); }
+:focus-visible { outline: 3px solid color-mix(in srgb, var(--lui-ring) 50%, transparent); outline-offset: 0; }
+[aria-invalid=true] { border-color: var(--lui-danger); }
+[aria-invalid=true]:focus-visible { outline-color: color-mix(in srgb, var(--lui-danger) 20%, transparent); }
 /* A swap root or form with a request in flight (set by the enhancement script only). The
-   fade waits so a fast answer never flickers; --nojs-busy: 1 turns it off. */
+   fade waits so a fast answer never flickers; --lui-busy: 1 turns it off. */
 /* Gap steps for the layout primitives (stack, cluster, grid, split); their default gaps sit
    in :where() so one of these always wins. */
-.nojs-gap-0 { gap: 0; }
-.nojs-gap-1 { gap: var(--nojs-space-1); }
-.nojs-gap-2 { gap: var(--nojs-space-2); }
-.nojs-gap-3 { gap: var(--nojs-space-3); }
-.nojs-gap-4 { gap: var(--nojs-space-4); }
-.nojs-gap-6 { gap: var(--nojs-space-6); }
-.nojs-gap-8 { gap: var(--nojs-space-8); }
-.nojs-sr { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50%); text-wrap: nowrap; border: 0; }
-[data-nojs-busy] { opacity: var(--nojs-busy, 0.6); transition: opacity 0.15s 0.2s; cursor: progress; }
+.lui-gap-0 { gap: 0; }
+.lui-gap-1 { gap: var(--lui-space-1); }
+.lui-gap-2 { gap: var(--lui-space-2); }
+.lui-gap-3 { gap: var(--lui-space-3); }
+.lui-gap-4 { gap: var(--lui-space-4); }
+.lui-gap-6 { gap: var(--lui-space-6); }
+.lui-gap-8 { gap: var(--lui-space-8); }
+.lui-sr { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50%); text-wrap: nowrap; border: 0; }
+[data-lui-busy] { opacity: var(--lui-busy, 0.6); transition: opacity 0.15s 0.2s; cursor: progress; }
 table { border-collapse: collapse; width: 100%; font-size: 0.875rem; line-height: 1.25rem; font-variant-numeric: tabular-nums; }
 /* shadcn Table: h-10 heads in the muted colour, p-2 cells, a rule under each row, muted/50 hover. */
-th, td { text-align: left; padding: 0.5rem; border-bottom: 1px solid var(--nojs-line); vertical-align: middle; }
-th { height: 2.5rem; color: var(--nojs-muted); font-weight: 500; white-space: nowrap; }
+th, td { text-align: left; padding: 0.5rem; border-bottom: 1px solid var(--lui-line); vertical-align: middle; }
+th { height: 2.5rem; color: var(--lui-muted); font-weight: 500; white-space: nowrap; }
 tbody tr { transition: background-color 0.15s; }
-tbody tr:hover { background: color-mix(in srgb, var(--nojs-accent) 50%, transparent); }
-.nojs-note { color: var(--nojs-muted); font-size: 0.875rem; }
+tbody tr:hover { background: color-mix(in srgb, var(--lui-accent) 50%, transparent); }
+.lui-note { color: var(--lui-muted); font-size: 0.875rem; }
 /* The dashed boxes on the demo's layout page. */
-.nojs-layout-tile { padding: calc(var(--nojs-space) * 1.5); border: 1px dashed var(--nojs-input); border-radius: var(--nojs-radius-sm); background: var(--nojs-surface); font-size: 0.875rem; }
-.nojs-yes { color: var(--nojs-ok); font-weight: 600; }
-.nojs-no { color: var(--nojs-danger); font-weight: 600; }
+.lui-layout-tile { padding: calc(var(--lui-space) * 1.5); border: 1px dashed var(--lui-input); border-radius: var(--lui-radius-sm); background: var(--lui-surface); font-size: 0.875rem; }
+.lui-yes { color: var(--lui-ok); font-weight: 600; }
+.lui-no { color: var(--lui-danger); font-weight: 600; }
 
 /* Demo shell, after the shadcn docs: toolbar with the way back and the theme switch, the
    lede under a title, "built on" as outline badges, the plate (a preview box over a muted
    code block), and the index as a grid of cards per group. */
-.nojs-toolbar { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: var(--nojs-space); margin: 0 0 calc(var(--nojs-space) * 3); min-height: 2.25rem; }
-.nojs-popover-row { display: flex; justify-content: space-between; gap: var(--nojs-space); margin-bottom: calc(var(--nojs-space) * 2); }
-.nojs-back { color: var(--nojs-muted); text-decoration: none; font-size: 0.875rem; font-weight: 500; }
-.nojs-back::before { content: "\2190"; margin-right: 0.35em; }
-.nojs-back:hover { color: var(--nojs-fg); }
-.nojs-lede { font-size: 1.125rem; line-height: 1.75rem; color: var(--nojs-muted); margin-bottom: 1rem; }
-.nojs-built { color: var(--nojs-muted); font-size: 0.875rem; margin: 0 0 1.5rem; }
-.nojs-built code, .nojs-index li code {
+.lui-toolbar { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: var(--lui-space); margin: 0 0 calc(var(--lui-space) * 3); min-height: 2.25rem; }
+.lui-popover-row { display: flex; justify-content: space-between; gap: var(--lui-space); margin-bottom: calc(var(--lui-space) * 2); }
+.lui-back { color: var(--lui-muted); text-decoration: none; font-size: 0.875rem; font-weight: 500; }
+.lui-back::before { content: "\2190"; margin-right: 0.35em; }
+.lui-back:hover { color: var(--lui-fg); }
+.lui-lede { font-size: 1.125rem; line-height: 1.75rem; color: var(--lui-muted); margin-bottom: 1rem; }
+.lui-built { color: var(--lui-muted); font-size: 0.875rem; margin: 0 0 1.5rem; }
+.lui-built code, .lui-index li code {
   display: inline-block; margin: 0 0.25rem 0.25rem 0; padding: 0.125rem 0.5rem; white-space: nowrap;
-  font-size: 0.75rem; line-height: 1rem; font-weight: 500; color: var(--nojs-fg);
-  background: transparent; border: 1px solid var(--nojs-line); border-radius: var(--nojs-radius-sm);
+  font-size: 0.75rem; line-height: 1rem; font-weight: 500; color: var(--lui-fg);
+  background: transparent; border: 1px solid var(--lui-line); border-radius: var(--lui-radius-sm);
 }
 /* A component page's plate: the live component on a stage, the code that drew it joined
    underneath. One per page; no transform, overflow or contain on the stage, so dialogs,
    drawers and toasts still escape it. */
-.nojs-plate { margin: 0 0 2rem; }
-.nojs-stage {
-  padding: calc(var(--nojs-space) * 5) calc(var(--nojs-space) * 4); background: var(--nojs-bg);
-  border: 1px solid var(--nojs-line); border-bottom: 0; border-radius: var(--nojs-radius-lg) var(--nojs-radius-lg) 0 0;
+.lui-plate { margin: 0 0 2rem; }
+.lui-stage {
+  padding: calc(var(--lui-space) * 5) calc(var(--lui-space) * 4); background: var(--lui-bg);
+  border: 1px solid var(--lui-line); border-bottom: 0; border-radius: var(--lui-radius-lg) var(--lui-radius-lg) 0 0;
 }
-.nojs-stage > :last-child { margin-bottom: 0; }
-.nojs-stage h2:first-child { margin-top: 0; }
-@media (max-width: 40rem) { .nojs-stage { padding: calc(var(--nojs-space) * 3) calc(var(--nojs-space) * 2); } }
-.nojs-snippet {
+.lui-stage > :last-child { margin-bottom: 0; }
+.lui-stage h2:first-child { margin-top: 0; }
+@media (max-width: 40rem) { .lui-stage { padding: calc(var(--lui-space) * 3) calc(var(--lui-space) * 2); } }
+.lui-snippet {
   margin: 0; max-width: none; overflow: hidden;
-  border: 1px solid var(--nojs-line); border-radius: 0 0 var(--nojs-radius-lg) var(--nojs-radius-lg);
-  background: var(--nojs-surface);
+  border: 1px solid var(--lui-line); border-radius: 0 0 var(--lui-radius-lg) var(--lui-radius-lg);
+  background: var(--lui-surface);
 }
-.nojs-snippet figcaption {
+.lui-snippet figcaption {
   display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.25rem 1rem;
-  padding: 0.5rem calc(var(--nojs-space) * 2); border-bottom: 1px solid var(--nojs-line);
-  color: var(--nojs-muted); font-size: 0.75rem;
+  padding: 0.5rem calc(var(--lui-space) * 2); border-bottom: 1px solid var(--lui-line);
+  color: var(--lui-muted); font-size: 0.75rem;
 }
-.nojs-snippet figcaption span:first-child { color: var(--nojs-fg); font-weight: 500; font-family: var(--nojs-font-mono); }
-.nojs-snippet pre { margin: 0; padding: calc(var(--nojs-space) * 2); overflow-x: auto; scrollbar-color: var(--nojs-line) transparent; line-height: 1.7; tab-size: 4; }
-.nojs-snippet pre code { background: none; border: 0; padding: 0; font-size: 0.8125rem; color: var(--nojs-fg); }
+.lui-snippet figcaption span:first-child { color: var(--lui-fg); font-weight: 500; font-family: var(--lui-font-mono); }
+.lui-snippet pre { margin: 0; padding: calc(var(--lui-space) * 2); overflow-x: auto; scrollbar-color: var(--lui-line) transparent; line-height: 1.7; tab-size: 4; }
+.lui-snippet pre code { background: none; border: 0; padding: 0; font-size: 0.8125rem; color: var(--lui-fg); }
 /* Highlighted Rust in the status colours, as a GitHub-like theme: keywords in danger, strings
    in ok, numbers and types in warn, comments muted, macros bold. */
-.nojs-hl-k { color: var(--nojs-danger); }
-.nojs-hl-s { color: var(--nojs-ok); }
-.nojs-hl-n, .nojs-hl-t { color: var(--nojs-warn); }
-.nojs-hl-c { color: var(--nojs-muted); font-style: italic; }
-.nojs-hl-m { color: var(--nojs-fg); font-weight: 600; }
-.nojs-hl-f { color: var(--nojs-fg); }
+.lui-hl-k { color: var(--lui-danger); }
+.lui-hl-s { color: var(--lui-ok); }
+.lui-hl-n, .lui-hl-t { color: var(--lui-warn); }
+.lui-hl-c { color: var(--lui-muted); font-style: italic; }
+.lui-hl-m { color: var(--lui-fg); font-weight: 600; }
+.lui-hl-f { color: var(--lui-fg); }
 /* The demo's props tables under the snippet: one <details> per builder. */
-.nojs-props { max-width: none; margin: 0 0 2rem; }
-.nojs-props details { border: 1px solid var(--nojs-line); border-radius: var(--nojs-radius); margin: 0 0 0.5rem; }
-.nojs-props summary { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.25rem 0.5rem; padding: 0.5rem 0.75rem; cursor: pointer; }
-.nojs-props summary span { margin-left: auto; color: var(--nojs-muted); font-size: 0.8125rem; }
-.nojs-props-scroll { overflow-x: auto; border-top: 1px solid var(--nojs-line); }
-.nojs-props table { width: 100%; border-collapse: collapse; font-size: 0.8125rem; }
-.nojs-props th, .nojs-props td { text-align: left; vertical-align: top; padding: 0.375rem 0.75rem; border-bottom: 1px solid var(--nojs-line); }
-.nojs-props th { color: var(--nojs-muted); font-weight: 500; white-space: nowrap; }
-.nojs-props tbody tr:last-child td { border-bottom: 0; }
-.nojs-props td:nth-child(-n+2), .nojs-props td:nth-child(4), .nojs-props td:nth-child(5) { white-space: nowrap; }
-.nojs-props td:nth-child(3) { min-width: 10rem; }
-.nojs-props td:last-child { min-width: 16rem; }
-.nojs-index { max-width: none; }
-.nojs-index h2 { margin: 3rem 0 0.25rem; font-size: 1.5rem; line-height: 2rem; }
-.nojs-index-layer { margin: 0 0 1rem; color: var(--nojs-muted); font-size: 0.875rem; }
-.nojs-index h3 { margin: 1.5rem 0 0.75rem; font-size: 0.875rem; font-weight: 500; color: var(--nojs-muted); text-transform: uppercase; letter-spacing: 0.05em; }
-.nojs-index ul { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: 1rem; }
+.lui-props { max-width: none; margin: 0 0 2rem; }
+.lui-props details { border: 1px solid var(--lui-line); border-radius: var(--lui-radius); margin: 0 0 0.5rem; }
+.lui-props summary { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.25rem 0.5rem; padding: 0.5rem 0.75rem; cursor: pointer; }
+.lui-props summary span { margin-left: auto; color: var(--lui-muted); font-size: 0.8125rem; }
+.lui-props-scroll { overflow-x: auto; border-top: 1px solid var(--lui-line); }
+.lui-props table { width: 100%; border-collapse: collapse; font-size: 0.8125rem; }
+.lui-props th, .lui-props td { text-align: left; vertical-align: top; padding: 0.375rem 0.75rem; border-bottom: 1px solid var(--lui-line); }
+.lui-props th { color: var(--lui-muted); font-weight: 500; white-space: nowrap; }
+.lui-props tbody tr:last-child td { border-bottom: 0; }
+.lui-props td:nth-child(-n+2), .lui-props td:nth-child(4), .lui-props td:nth-child(5) { white-space: nowrap; }
+.lui-props td:nth-child(3) { min-width: 10rem; }
+.lui-props td:last-child { min-width: 16rem; }
+.lui-index { max-width: none; }
+.lui-index h2 { margin: 3rem 0 0.25rem; font-size: 1.5rem; line-height: 2rem; }
+.lui-index-layer { margin: 0 0 1rem; color: var(--lui-muted); font-size: 0.875rem; }
+.lui-index h3 { margin: 1.5rem 0 0.75rem; font-size: 0.875rem; font-weight: 500; color: var(--lui-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+.lui-index ul { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: 1rem; }
 /* Each component is a card; its title link stretches over the whole card. */
-.nojs-index li {
+.lui-index li {
   position: relative; display: grid; align-content: start; gap: 0.5rem; padding: 1.25rem; max-width: none;
-  background: var(--nojs-card); border: 1px solid var(--nojs-line); border-radius: var(--nojs-radius-lg);
-  box-shadow: var(--nojs-shadow-xs); transition: background-color 0.15s;
+  background: var(--lui-card); border: 1px solid var(--lui-line); border-radius: var(--lui-radius-lg);
+  box-shadow: var(--lui-shadow-xs); transition: background-color 0.15s;
 }
-.nojs-index li:hover { background: color-mix(in srgb, var(--nojs-accent) 50%, var(--nojs-card)); }
-.nojs-index li a { font-size: 1rem; font-weight: 600; line-height: 1.5rem; text-decoration: none; color: var(--nojs-fg); }
-.nojs-index li a::after { content: ""; position: absolute; inset: 0; border-radius: inherit; }
-.nojs-index li a:focus-visible { outline: none; }
-.nojs-index li:has(a:focus-visible) { outline: 3px solid color-mix(in srgb, var(--nojs-ring) 50%, transparent); }
-.nojs-index li p { margin: 0 0 0.5rem; font-size: 0.875rem; color: var(--nojs-muted); }
-.nojs-index li span { display: block; }
+.lui-index li:hover { background: color-mix(in srgb, var(--lui-accent) 50%, var(--lui-card)); }
+.lui-index li a { font-size: 1rem; font-weight: 600; line-height: 1.5rem; text-decoration: none; color: var(--lui-fg); }
+.lui-index li a::after { content: ""; position: absolute; inset: 0; border-radius: inherit; }
+.lui-index li a:focus-visible { outline: none; }
+.lui-index li:has(a:focus-visible) { outline: 3px solid color-mix(in srgb, var(--lui-ring) 50%, transparent); }
+.lui-index li p { margin: 0 0 0.5rem; font-size: 0.875rem; color: var(--lui-muted); }
+.lui-index li span { display: block; }
 
 @media (prefers-reduced-motion: reduce) {
   *, ::before, ::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }

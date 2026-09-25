@@ -14,14 +14,14 @@
 //! **Fallback:** without the pseudo-elements a browser draws its own bar.
 //!
 //! ```rust
-//! use axum_nojs::prelude::*;
+//! use loco_ui::prelude::*;
 //! let ui = Ui::default();
 //! let m = ui.progress(33, 100).label("Upload").render().into_string();
-//! assert!(m.contains(r#"<progress id="nojs-progress-upload" class="nojs-progress" value="33" max="100">33%</progress>"#));
+//! assert!(m.contains(r#"<progress id="lui-progress-upload" class="lui-progress" value="33" max="100">33%</progress>"#));
 //! let m = ui.progress(0, 0).label("Waiting").render().into_string();
-//! assert!(m.contains(r#"class="nojs-progress">"#) && !m.contains("value="));
-//! // The same in `nojs!`:
-//! let same = nojs! { Progress(0, 0) label="Waiting"; };
+//! assert!(m.contains(r#"class="lui-progress">"#) && !m.contains("value="));
+//! // The same in `lui!`:
+//! let same = lui! { Progress(0, 0) label="Waiting"; };
 //! assert_eq!(same.into_string(), m);
 //! ```
 
@@ -74,16 +74,16 @@ impl Render for Progress<'_> {
         } else {
             0
         };
-        let id = format!("nojs-progress-{}", slug(self.label.unwrap_or("bar")));
+        let id = format!("lui-progress-{}", slug(self.label.unwrap_or("bar")));
         html! {
-            div class="nojs-progress-field" {
+            div class="lui-progress-field" {
                 @if let Some(l) = self.label {
-                    label for=(id) { span { (l) } @if known { span class="nojs-progress-value" { (pct) "%" } } }
+                    label for=(id) { span { (l) } @if known { span class="lui-progress-value" { (pct) "%" } } }
                 }
                 @if known {
-                    progress id=(id) class="nojs-progress" value=(self.value.min(self.max)) max=(self.max) { (pct) "%" }
+                    progress id=(id) class="lui-progress" value=(self.value.min(self.max)) max=(self.max) { (pct) "%" }
                 } @else {
-                    progress id=(id) class="nojs-progress" {}
+                    progress id=(id) class="lui-progress" {}
                 }
             }
         }
@@ -93,14 +93,14 @@ impl Render for Progress<'_> {
 /// Styles for this component; included in [`crate::stylesheet`]. shadcn Progress: an 8px
 /// rounded track in the primary colour at 20%, the fill in the primary colour.
 pub const CSS: &str = r#"
-.nojs-progress-field { display: grid; gap: 0.5rem; }
-.nojs-progress-field label { display: flex; justify-content: space-between; font-size: 0.875rem; font-weight: 500; }
-.nojs-progress-value { color: var(--nojs-muted); font-variant-numeric: tabular-nums; font-weight: 400; }
-.nojs-progress {
+.lui-progress-field { display: grid; gap: 0.5rem; }
+.lui-progress-field label { display: flex; justify-content: space-between; font-size: 0.875rem; font-weight: 500; }
+.lui-progress-value { color: var(--lui-muted); font-variant-numeric: tabular-nums; font-weight: 400; }
+.lui-progress {
   appearance: none; display: block; width: 100%; height: 0.5rem; border: 0; border-radius: 9999px; overflow: hidden;
-  background: color-mix(in srgb, var(--nojs-primary) 20%, transparent); accent-color: var(--nojs-primary);
+  background: color-mix(in srgb, var(--lui-primary) 20%, transparent); accent-color: var(--lui-primary);
 }
-.nojs-progress::-webkit-progress-bar { background: transparent; }
-.nojs-progress::-webkit-progress-value { background: var(--nojs-primary); border-radius: 9999px; transition: width 0.3s; }
-.nojs-progress::-moz-progress-bar { background: var(--nojs-primary); border-radius: 9999px; }
+.lui-progress::-webkit-progress-bar { background: transparent; }
+.lui-progress::-webkit-progress-value { background: var(--lui-primary); border-radius: 9999px; transition: width 0.3s; }
+.lui-progress::-moz-progress-bar { background: var(--lui-primary); border-radius: 9999px; }
 "#;

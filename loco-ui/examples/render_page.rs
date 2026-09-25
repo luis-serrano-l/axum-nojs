@@ -1,15 +1,15 @@
-//! Render one page to stdout with no server at all: `cargo run -p axum-nojs --example render_page`.
+//! Render one page to stdout with no server at all: `cargo run -p loco-ui --example render_page`.
 //!
 //! `Caps::all()` stands in for a modern browser; pass `--fallback` to see what an unknown
 //! browser gets instead. Pipe into a file and open it, or `curl`-read it: no script anywhere.
 
-use axum_nojs::prelude::*;
+use loco_ui::prelude::*;
 
 fn main() {
     let fallback = std::env::args().any(|a| a == "--fallback");
     let ui = Ui::from(if fallback { Caps::NONE } else { Caps::all() });
-    let page = ui.page("axum-nojs example", html! {
-        h1 { "Hello from axum-nojs" }
+    let page = ui.page("loco-ui example", html! {
+        h1 { "Hello from loco-ui" }
         (ui.dialog("Open a dialog").body(html! { p { "Closed by the platform, not by script." } }))
         " "
         (ui.menu("Menu").link("Docs", "/docs").link("Source", "/src"))

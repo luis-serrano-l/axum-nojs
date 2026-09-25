@@ -2,7 +2,7 @@
 //! in the route files, highlighted on the server.
 
 use crate::site::COMPONENTS;
-use axum_nojs::props::Component;
+use loco_ui::props::Component;
 use maud::{Markup, html};
 use std::sync::LazyLock;
 
@@ -95,7 +95,7 @@ pub(crate) static CODE: LazyLock<Vec<Code>> = LazyLock::new(|| {
 pub(crate) type Code = (&'static str, &'static str, String, Vec<&'static Component>);
 
 /// The builders `code` calls, in the order they first appear: `ui.<method>(`, a type's own
-/// constructor (`Row::new(`), or the `nojs!` name (`Tabs(`, `Card title=..`).
+/// constructor (`Row::new(`), or the `lui!` name (`Tabs(`, `Card title=..`).
 fn called(code: &str) -> Vec<&'static Component> {
     // Lines joined, so a chain split as `ui` / `.upload(` reads `ui.upload(`.
     let code = &code
@@ -105,14 +105,14 @@ fn called(code: &str) -> Vec<&'static Component> {
         .join(" ")
         .replace(" .", ".");
     let mut found: Vec<(usize, &'static Component)> = Vec::new();
-    for c in axum_nojs::props() {
-        let nojs = c.nojs();
+    for c in loco_ui::props() {
+        let lui = c.lui();
         let at = c
             .calls
             .iter()
             .filter_map(|call| code.find(&call[..=call.find('(').unwrap()]))
             .chain(
-                [format!("{nojs}("), format!("{nojs} ")]
+                [format!("{lui}("), format!("{lui} ")]
                     .iter()
                     .filter_map(|n| {
                         code.match_indices(n.as_str())
@@ -132,7 +132,7 @@ fn called(code: &str) -> Vec<&'static Component> {
 }
 
 /// Rust source as spans the stylesheet colours, parsed by syntect's Rust grammar on the
-/// server (no script). Only seven classes, `nojs-hl-{k,s,n,c,m,f,t}`, coloured with tokens
+/// server (no script). Only seven classes, `lui-hl-{k,s,n,c,m,f,t}`, coloured with tokens
 /// in `layout.rs`, instead of syntect's own HTML with a class per scope and a bundled theme.
 pub(crate) fn highlight(code: &str) -> Markup {
     use syntect::{
@@ -186,5 +186,5 @@ pub(crate) fn highlight(code: &str) -> Markup {
             }
         }
     }
-    html! { @for (kind, text) in parts { @if kind.is_empty() { (text) } @else { span class={ "nojs-hl-" (kind) } { (text) } } } }
+    html! { @for (kind, text) in parts { @if kind.is_empty() { (text) } @else { span class={ "lui-hl-" (kind) } { (text) } } } }
 }

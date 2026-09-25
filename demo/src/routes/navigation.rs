@@ -6,7 +6,7 @@ use axum::{
     response::{IntoResponse, Response},
     routing::get,
 };
-use axum_nojs::prelude::*;
+use loco_ui::prelude::*;
 
 pub(crate) fn routes() -> Router {
     Router::new()
@@ -45,22 +45,22 @@ async fn nav_page(ui: Ui) -> Page {
     page(
         &ui,
         "Drawer and breadcrumbs",
-        nojs! {
+        lui! {
             // code: /nav
-            Drawer("Menu") id="site" title="axum-nojs" sidebar
+            Drawer("Menu") id="site" title="loco-ui" sidebar
                 nav=(html! { ul {
                     li { a href="/nav" aria-current="page" { "Overview" } }
                     li { a href="/table" { "Files" } } li { a href="/dashboard" { "Reports" } } li { a href="/settings" { "Settings" } }
                 } }) {
-                    Breadcrumbs { link "Home" "/"; link "Projects" "/nav"; here "axum-nojs"; }
+                    Breadcrumbs { link "Home" "/"; link "Projects" "/nav"; here "loco-ui"; }
                     p { "Wider than 60rem the navigation is a sidebar; narrower, the menu button opens it as a drawer. Escape or a click outside closes it." }
                     p { "A long trail folds its middle so both ends stay readable:" }
                     Breadcrumbs {
-                        link "Home" "/"; link "Projects" "/nav"; link "axum-nojs" "/nav";
+                        link "Home" "/"; link "Projects" "/nav"; link "loco-ui" "/nav";
                         link "Components" "/"; link "Navigation" "/nav"; here "Breadcrumbs";
                     }
             // end code
-                    p class="nojs-note" { "Server-opened: " a href="/nav?dialog=site" { "?dialog=site" } }
+                    p class="lui-note" { "Server-opened: " a href="/nav?dialog=site" { "?dialog=site" } }
                 }
         },
     )

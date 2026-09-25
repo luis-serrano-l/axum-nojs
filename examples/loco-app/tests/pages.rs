@@ -1,5 +1,5 @@
 //! Every page of the app as a browser without script sees it: sign up, then the scaffolded
-//! notes pages, through the router Loco boots (its middleware, `auth::JWT`, the axum-nojs
+//! notes pages, through the router Loco boots (its middleware, `auth::JWT`, the loco-ui
 //! initializer). Each GET page ships only the enhancement script, and Blitz (no script
 //! engine) renders it into `tests/shots/loco-*.png`.
 
@@ -8,9 +8,9 @@ use axum::{
     body::Body,
     http::{Request, Response, StatusCode, header},
 };
-use axum_nojs_test::Page;
 use loco_app::app::App;
 use loco_rs::testing::prelude::*;
+use loco_ui_test::Page;
 use serial_test::serial;
 use tower::ServiceExt;
 
@@ -59,7 +59,7 @@ fn auth_cookie(res: &Response<Body>) -> String {
 async fn every_page_works_without_script() {
     let boot = boot_test::<App>().await.unwrap();
     let router = boot.router.unwrap();
-    let tag = axum_nojs::enhance::script_tag().into_string();
+    let tag = loco_ui::enhance::script_tag().into_string();
 
     // Signed out, the scaffold's routes are Loco's 401.
     let res = send(&router, "GET", "/notes", "", "").await;
@@ -158,7 +158,7 @@ async fn every_page_works_without_script() {
     }
 
     // The script and the beacon the pages ask for are mounted.
-    let res = send(&router, "GET", axum_nojs::enhance::SCRIPT_PATH, "", "").await;
+    let res = send(&router, "GET", loco_ui::enhance::SCRIPT_PATH, "", "").await;
     assert_eq!(res.status(), StatusCode::OK);
 
     // Update and delete, each Post/Redirect/Get.

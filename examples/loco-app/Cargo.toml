@@ -6,7 +6,7 @@ publish = false
 default-run = "loco_app-cli"
 
 [dependencies]
-axum-nojs = { path = "../../axum-nojs", features = ["loco"] }
+loco-ui = { path = "../../loco-ui", features = ["loco"] }
 maud = { workspace = true }
 loco-rs = { version = "1.2", default-features = false, features = ["auth", "cli", "with-db", "db-sqlite"] }
 migration = { path = "migration" }
@@ -26,7 +26,7 @@ path = "src/bin/main.rs"
 
 [dev-dependencies]
 loco-rs = { version = "1.2", default-features = false, features = ["testing", "auth", "with-db", "db-sqlite"] }
-axum-nojs-test = { path = "../../axum-nojs-test" }
+loco-ui-test = { path = "../../loco-ui-test" }
 tower = { version = "0.5", features = ["util"] }
 serial_test = "3.1"
 insta = { version = "1.34", features = ["redactions", "yaml", "filters"] }

@@ -25,7 +25,7 @@
 //! **Without script:** nothing is lost.
 //!
 //! ```rust
-//! use axum_nojs::prelude::*;
+//! use loco_ui::prelude::*;
 //! // Items 0 and 2 of "faq" were left open, as the URL records it.
 //! let ui = Ui::from_request("/help", "open.faq=0,2", "");
 //! // `icon` and `summary` apply to the item added last.
@@ -38,12 +38,12 @@
 //! let html = m.render().into_string();
 //! assert!(html.contains("href=\"/help?open.faq=2\">Install"), "open item's link removes itself from the list");
 //! assert!(html.contains("href=\"/help?open.faq=0%2C1%2C2\">Expand all"));
-//! assert!(html.contains("class=\"nojs-accordion-summary\">One line."));
-//! // The same in `nojs!`:
-//! let same = nojs! { Accordion("faq") multi controls {
+//! assert!(html.contains("class=\"lui-accordion-summary\">One line."));
+//! // The same in `lui!`:
+//! let same = lui! { Accordion("faq") multi controls {
 //!     item "Install" icon="\u{1F4E6}" summary="One line." { p { "cargo add" } }
 //!     item "Use" { p { "html!" } }
-//!     item "More" { (nojs! { Accordion("faq-more") { item "Nested" { p { "Own group." } } } }) }
+//!     item "More" { (lui! { Accordion("faq-more") { item "Nested" { p { "Own group." } } } }) }
 //! } };
 //! assert_eq!(same.into_string(), html);
 //! ```
@@ -180,9 +180,9 @@ impl Render for Accordion<'_> {
             }
         };
         html! {
-            div id={ "nojs-accordion-" (group) } data-nojs="swap" class="nojs-accordion" {
+            div id={ "lui-accordion-" (group) } data-lui="swap" class="lui-accordion" {
                 @if multi && controls {
-                    p class="nojs-accordion-controls" {
+                    p class="lui-accordion-controls" {
                         a href=(s.link(&key, &list(&(0..items.len()).collect::<Vec<_>>()))) { "Expand all" }
                         a href=(s.link(&key, "")) { "Collapse all" }
                     }
@@ -190,13 +190,13 @@ impl Render for Accordion<'_> {
                 @for (i, item) in items.iter().enumerate() {
                     details name=[(!multi).then_some(group)] open[open.contains(&i)] {
                         summary {
-                            @if let Some(icon) = item.icon { span class="nojs-accordion-icon" aria-hidden="true" { (icon) } }
+                            @if let Some(icon) = item.icon { span class="lui-accordion-icon" aria-hidden="true" { (icon) } }
                             a href=(s.link(&key, &toggled(i))) {
                                 (item.title)
-                                @if let Some(line) = item.summary { span class="nojs-accordion-summary" { (line) } }
+                                @if let Some(line) = item.summary { span class="lui-accordion-summary" { (line) } }
                             }
                         }
-                        div class="nojs-accordion-body" { (item.body) }
+                        div class="lui-accordion-body" { (item.body) }
                     }
                 }
             }
@@ -208,34 +208,34 @@ pub const CSS: &str = r#"
 /* shadcn Accordion: items divided by a bottom rule, text-sm font-medium triggers that
    underline on hover, a chevron on the right that turns when open. interpolate-size
    (Chrome 129) lets height animate to auto; elsewhere it snaps. */
-.nojs-accordion { interpolate-size: allow-keywords; }
-.nojs-accordion details { border-bottom: 1px solid var(--nojs-line); }
-.nojs-accordion summary {
+.lui-accordion { interpolate-size: allow-keywords; }
+.lui-accordion details { border-bottom: 1px solid var(--lui-line); }
+.lui-accordion summary {
   display: flex; align-items: flex-start; gap: 0.5rem; list-style: none; cursor: pointer;
   padding: 1rem 0; font-size: 0.875rem; line-height: 1.25rem; font-weight: 500;
 }
-.nojs-accordion summary::-webkit-details-marker { display: none; }
+.lui-accordion summary::-webkit-details-marker { display: none; }
 /* The chevron is two borders of a rotated square in the muted colour. */
-.nojs-accordion summary::after {
+.lui-accordion summary::after {
   content: ""; flex: none; order: 2; width: 0.45rem; height: 0.45rem; margin: 0.3rem 0.25rem 0 auto;
-  border-right: 1.5px solid var(--nojs-muted); border-bottom: 1.5px solid var(--nojs-muted);
+  border-right: 1.5px solid var(--lui-muted); border-bottom: 1.5px solid var(--lui-muted);
   rotate: 45deg; transition: rotate 0.2s;
 }
-.nojs-accordion details[open] > summary::after { rotate: 225deg; margin-top: 0.5rem; }
+.lui-accordion details[open] > summary::after { rotate: 225deg; margin-top: 0.5rem; }
 /* The link fills the rest of the summary so a click never toggles natively without the server. */
-.nojs-accordion summary a, .nojs-accordion-title { flex: 1; margin: -1rem 0; padding: 1rem 0; color: inherit; text-decoration: none; }
-.nojs-accordion summary a:hover { text-decoration: underline; }
-.nojs-accordion-icon { font-size: 1.1em; line-height: 1; }
-.nojs-accordion-summary { display: block; font-weight: 400; font-size: 0.875rem; color: var(--nojs-muted); margin-top: 0.15rem; }
-.nojs-accordion details[open] > summary .nojs-accordion-summary { display: none; }
-.nojs-accordion-body { padding: 0 0 1rem; font-size: 0.875rem; }
-.nojs-accordion details::details-content { transition: height 0.2s, content-visibility 0.2s allow-discrete; height: 0; overflow: hidden; }
-.nojs-accordion details[open]::details-content { height: auto; }
-.nojs-accordion-controls { display: flex; gap: calc(var(--nojs-space) * 2); margin: 0; max-width: none; padding: 0 0 0.5rem; font-size: 0.875rem; border-bottom: 1px solid var(--nojs-line); }
+.lui-accordion summary a, .lui-accordion-title { flex: 1; margin: -1rem 0; padding: 1rem 0; color: inherit; text-decoration: none; }
+.lui-accordion summary a:hover { text-decoration: underline; }
+.lui-accordion-icon { font-size: 1.1em; line-height: 1; }
+.lui-accordion-summary { display: block; font-weight: 400; font-size: 0.875rem; color: var(--lui-muted); margin-top: 0.15rem; }
+.lui-accordion details[open] > summary .lui-accordion-summary { display: none; }
+.lui-accordion-body { padding: 0 0 1rem; font-size: 0.875rem; }
+.lui-accordion details::details-content { transition: height 0.2s, content-visibility 0.2s allow-discrete; height: 0; overflow: hidden; }
+.lui-accordion details[open]::details-content { height: auto; }
+.lui-accordion-controls { display: flex; gap: calc(var(--lui-space) * 2); margin: 0; max-width: none; padding: 0 0 0.5rem; font-size: 0.875rem; border-bottom: 1px solid var(--lui-line); }
 /* A nested accordion sits inside a body, indented. */
-.nojs-accordion .nojs-accordion { margin: 0.5rem 0 0 1rem; }
-.nojs-accordion .nojs-accordion details:last-child { border-bottom: 0; }
-.nojs-accordion .nojs-accordion summary { padding: 0.5rem 0; }
-.nojs-accordion .nojs-accordion summary a, .nojs-accordion .nojs-accordion .nojs-accordion-title { margin: -0.5rem 0; padding: 0.5rem 0; }
-.nojs-accordion .nojs-accordion .nojs-accordion-body { padding: 0 0 0.75rem; }
+.lui-accordion .lui-accordion { margin: 0.5rem 0 0 1rem; }
+.lui-accordion .lui-accordion details:last-child { border-bottom: 0; }
+.lui-accordion .lui-accordion summary { padding: 0.5rem 0; }
+.lui-accordion .lui-accordion summary a, .lui-accordion .lui-accordion .lui-accordion-title { margin: -0.5rem 0; padding: 0.5rem 0; }
+.lui-accordion .lui-accordion .lui-accordion-body { padding: 0 0 0.75rem; }
 "#;

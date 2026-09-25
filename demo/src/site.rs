@@ -7,8 +7,8 @@ use axum::{
     http::HeaderMap,
     routing::{get, post},
 };
-use axum_nojs::layout::{Palette, Tokens};
-use axum_nojs::prelude::*;
+use loco_ui::layout::{Palette, Tokens};
+use loco_ui::prelude::*;
 use serde::Deserialize;
 
 pub(crate) fn routes() -> Router {
@@ -227,7 +227,7 @@ pub(crate) const COMPONENTS: [(&str, &str, &str, &str, &str); 30] = [
         "/swap",
         "Swap targets",
         "Server state",
-        "data-nojs-target, data-nojs-swap, data-nojs-oob, data-nojs-indicator, data-nojs-push, Nojs-Enhance header",
+        "data-lui-target, data-lui-swap, data-lui-oob, data-lui-indicator, data-lui-push, Lui-Enhance header",
         "Update one part of the page without reloading it.",
     ),
 ];
@@ -314,8 +314,8 @@ const LINEN: Tokens = Tokens {
 
 /// The row above every title: the way back to the index (not on the index) and the theme switch.
 fn toolbar(ui: &Ui, back: bool) -> Markup {
-    html! { nav class="nojs-toolbar" {
-        @if back { a class="nojs-back" href="/" { "All components" } } @else { span {} }
+    html! { nav class="lui-toolbar" {
+        @if back { a class="lui-back" href="/" { "All components" } } @else { span {} }
         (ui.theme_toggle("/theme"))
     } }
 }
@@ -330,12 +330,12 @@ pub(crate) fn shell(ui: &Ui, title: &str, body: Markup) -> Markup {
     html! {
         (toolbar(ui, true))
         h1 { (title) }
-        p class="nojs-lede" { (c.4) }
-        p class="nojs-built" { "Built on " @for f in c.3.split(", ") { code { (f) } " " } }
+        p class="lui-lede" { (c.4) }
+        p class="lui-built" { "Built on " @for f in c.3.split(", ") { code { (f) } " " } }
         // The live component and the code that drew it, joined as one plate.
-        div class="nojs-plate" {
-            div class="nojs-stage" { (body) }
-            figure class="nojs-snippet" {
+        div class="lui-plate" {
+            div class="lui-stage" { (body) }
+            figure class="lui-snippet" {
                 @if let Some((_, path, code, _)) = CODE.iter().find(|h| h.0 == c.0) {
                     figcaption { span { (path) } span { "The code behind the component above" } }
                     pre { code { (maud::PreEscaped(code)) } }
@@ -353,21 +353,21 @@ fn inline_code(text: &str) -> Markup {
     html! { @for (i, part) in text.split('`').enumerate() { @if i % 2 == 1 { code { (part) } } @else { (part) } } }
 }
 
-/// What each builder on the page accepts, from `axum_nojs::props()`: one `<details>` per
+/// What each builder on the page accepts, from `loco_ui::props()`: one `<details>` per
 /// builder (the first open), its constructors in the summary and a table of its setters inside.
-fn props(builders: &[&axum_nojs::props::Component]) -> Markup {
+fn props(builders: &[&loco_ui::props::Component]) -> Markup {
     html! {
-        section class="nojs-props" {
+        section class="lui-props" {
             h2 { "Props" }
             @for (i, b) in builders.iter().enumerate() {
                 details open[i == 0] {
                     summary {
-                        code { (b.nojs()) }
+                        code { (b.lui()) }
                         @for call in b.calls { " " code { (call) } }
                         span { (b.props.len()) @if b.props.len() == 1 { " prop" } @else { " props" } }
                     }
                     @if !b.props.is_empty() {
-                        div class="nojs-props-scroll" { table {
+                        div class="lui-props-scroll" { table {
                             thead { tr { th { "Prop" } th { "Kind" } th { "Arguments" } th { "Default" } th { "HTML" } th { "What it does" } } }
                             tbody { @for p in b.props { tr {
                                 td { code { (p.name) } }
@@ -403,12 +403,12 @@ async fn index(ui: Ui) -> Page {
         "Components",
         html! {
             @let count = |groups: &[&str]| COMPONENTS.iter().filter(|c| groups.contains(&c.2)).count();
-            p class="nojs-lede" { (count(LAYERS[0].2)) " primitives, " (count(LAYERS[1].2)) " components, " (count(LAYERS[2].2)) " widgets and one of your own, for Axum and Maud, all working with JavaScript turned off. The HTML platform and plain form posts do the work. Each page loads one optional script, " code { "/nojs/enhance.js" } ", which updates the same markup in place instead of reloading. Block it and every page still works." }
-            @if !ui.has(Cap::Probed) { p class="nojs-note" { "First visit: this page is the fallback variant. Reload and the server will know your browser." } }
-            p class="nojs-note" { "Theme: " @if linen { a href="/" { "neutral" } " · linen and copper" } @else { "neutral · " a href="/?palette=linen" { "linen and copper" } } ", see " code { "docs/theming.md" } }
-            div class="nojs-index" { @for (layer, blurb, groups) in LAYERS {
+            p class="lui-lede" { (count(LAYERS[0].2)) " primitives, " (count(LAYERS[1].2)) " components, " (count(LAYERS[2].2)) " widgets and one of your own, for Axum and Maud, all working with JavaScript turned off. The HTML platform and plain form posts do the work. Each page loads one optional script, " code { "/lui/enhance.js" } ", which updates the same markup in place instead of reloading. Block it and every page still works." }
+            @if !ui.has(Cap::Probed) { p class="lui-note" { "First visit: this page is the fallback variant. Reload and the server will know your browser." } }
+            p class="lui-note" { "Theme: " @if linen { a href="/" { "neutral" } " · linen and copper" } @else { "neutral · " a href="/?palette=linen" { "linen and copper" } } ", see " code { "docs/theming.md" } }
+            div class="lui-index" { @for (layer, blurb, groups) in LAYERS {
                 h2 { (layer) }
-                p class="nojs-index-layer" { (blurb) }
+                p class="lui-index-layer" { (blurb) }
                 @for group in groups.iter() {
                     @if groups.len() > 1 { h3 { (group) } }
                     ul { @for (href, title, _, feats, what) in COMPONENTS.iter().filter(|c| c.2 == *group) {

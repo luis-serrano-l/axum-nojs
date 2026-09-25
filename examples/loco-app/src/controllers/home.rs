@@ -1,6 +1,6 @@
 //! The front page: what the app is and where to go.
-use axum_nojs::prelude::*;
 use loco_rs::prelude::*;
+use loco_ui::prelude::*;
 
 use crate::views;
 

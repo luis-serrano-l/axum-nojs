@@ -11,7 +11,7 @@
 //!   re-submits. An invalid POST answers with the same step, the values kept and the
 //!   messages beside the fields ([`Wizard::errors`]), and the step list shows it in error.
 //! - The current step is a `step.<id>` key in [`crate::UiState`]: it travels in `?step.<id>=n`
-//!   and the `nojs-ui` cookie, like a tab, so the URL of a step can be shared, Back/Forward in
+//!   and the `lui-ui` cookie, like a tab, so the URL of a step can be shared, Back/Forward in
 //!   the browser work, and a bare visit resumes where the cookie says
 //!   ([`crate::UiState::remembered`]) with a "Start over" link.
 //! - `<ol>` step list with `aria-current="step"` on the current one; done steps are links.
@@ -29,7 +29,7 @@
 //! in the URL. The demo keeps them in one cookie; a real app would use its session store.
 //!
 //! ```rust
-//! use axum_nojs::prelude::*;
+//! use loco_ui::prelude::*;
 //! // The request is on step 2 (0-based): the review.
 //! let ui = Ui::from_request("/wizard", "step.signup=2", "");
 //! let m = ui.wizard("signup", "/wizard")
@@ -40,11 +40,11 @@
 //!     .finish("Create account");
 //! let html = m.render().into_string();
 //! assert!(html.contains("aria-current=\"step\""));
-//! assert!(html.contains("<progress class=\"nojs-wizard-progress\" value=\"2\" max=\"2\""));
+//! assert!(html.contains("<progress class=\"lui-wizard-progress\" value=\"2\" max=\"2\""));
 //! assert!(html.contains("href=\"/wizard?step.signup=0\" aria-label=\"Edit Email\""));
 //! assert!(html.contains("(skipped)"), "an empty value");
-//! // The same in `nojs!`:
-//! let same = nojs! { Wizard("signup", "/wizard") {
+//! // The same in `lui!`:
+//! let same = lui! { Wizard("signup", "/wizard") {
 //!     step "Account" (ui.fields().email("email", "Email").required().value("a@b.c"));
 //!     step "Newsletter" (ui.fields().text("topics", "Topics")) optional;
 //!     review "Review";
@@ -268,15 +268,15 @@ impl<'a> Wizard<'a> {
 
     fn review_list(&self, upto: usize) -> Markup {
         html! {
-            dl class="nojs-wizard-review" {
+            dl class="lui-wizard-review" {
                 @for (i, step) in self.steps[..upto].iter().enumerate() {
                     @if let Body::Fields(form) = &step.body {
                         @for (_, fields) in self.filled(form).filled() {
                             @for f in fields.iter().filter(|f| f.shown()) {
                                 dt { (f.label) }
                                 dd {
-                                    @if f.value.is_empty() { span class="nojs-note" { "(skipped)" } } @else { (f.value) }
-                                    " " a class="nojs-wizard-edit" href=(self.link(i)) aria-label={ "Edit " (f.label) } { "Edit" }
+                                    @if f.value.is_empty() { span class="lui-note" { "(skipped)" } } @else { (f.value) }
+                                    " " a class="lui-wizard-edit" href=(self.link(i)) aria-label={ "Edit " (f.label) } { "Edit" }
                                 }
                             }
                         }
@@ -310,34 +310,34 @@ impl Render for Wizard<'_> {
             i == current && matches!(&steps[i].body, Body::Fields(f) if self.filled(f).has_errors())
         };
         html! {
-            div id=(enhance::swap_id("nojs-wizard", id)) data-nojs="swap" class="nojs-wizard" {
+            div id=(enhance::swap_id("lui-wizard", id)) data-lui="swap" class="lui-wizard" {
                 @if current > 0 && state.remembered(&key) {
-                    p class="nojs-wizard-resume" role="status" {
+                    p class="lui-wizard-resume" role="status" {
                         "Picked up where you left off, at step " (current + 1) ". "
                         a href=(self.link(0)) { "Start over" }
                     }
                 }
-                ol class="nojs-wizard-steps" {
+                ol class="lui-wizard-steps" {
                     @for (i, s) in steps.iter().enumerate() {
                         @let class = match (i == current, i < current, failed(i)) {
-                            (true, _, true) => "nojs-wizard-current nojs-wizard-error",
-                            (true, _, false) => "nojs-wizard-current",
-                            (false, true, _) => "nojs-wizard-done",
+                            (true, _, true) => "lui-wizard-current lui-wizard-error",
+                            (true, _, false) => "lui-wizard-current",
+                            (false, true, _) => "lui-wizard-done",
                             (false, false, _) => "",
                         };
                         li class=[(!class.is_empty()).then_some(class)] aria-current=[(i == current).then_some("step")] {
                             @if i < current { a href=(self.link(i)) { (s.title) } } @else { span { (s.title) } }
                             @if s.optional { " " small { "(optional)" } }
-                            @if failed(i) { span class="nojs-sr" { " (has errors)" } }
+                            @if failed(i) { span class="lui-sr" { " (has errors)" } }
                         }
                     }
                 }
                 @if progress {
-                    progress class="nojs-wizard-progress" value=(current) max=(steps.len().saturating_sub(1).max(1)) aria-label="Progress" {
+                    progress class="lui-wizard-progress" value=(current) max=(steps.len().saturating_sub(1).max(1)) aria-label="Progress" {
                         (current) " of " (steps.len().saturating_sub(1)) " steps done"
                     }
                 }
-                form method="post" action=(action) class="nojs-wizard-form" {
+                form method="post" action=(action) class="lui-wizard-form" {
                     input type="hidden" name="step" value=(current);
                     fieldset aria-invalid=[failed(current).then_some("true")] {
                         legend { "Step " (current + 1) " of " (steps.len()) ": " (step.title) @if step.optional { " (optional)" } }
@@ -347,10 +347,10 @@ impl Render for Wizard<'_> {
                             Body::Review => (self.review_list(current)),
                         }
                     }
-                    p class="nojs-wizard-actions" {
+                    p class="lui-wizard-actions" {
                         @if current > 0 {
                             @let back = self.link(current - 1).to_string();
-                            (ui.link_button("Back", &back).ghost().class("nojs-wizard-back"))
+                            (ui.link_button("Back", &back).ghost().class("lui-wizard-back"))
                         }
                         @if step.optional && !last { (ui.button("Skip").ghost().name("skip").value("1").formnovalidate()) }
                         (ui.button(if last { finish } else { "Next" }).primary())
@@ -362,29 +362,29 @@ impl Render for Wizard<'_> {
 }
 /// Styles for this component; included in [`crate::stylesheet`].
 pub const CSS: &str = r#"
-.nojs-wizard-steps { display: flex; flex-wrap: wrap; gap: var(--nojs-space); list-style: none; counter-reset: nojs-step; margin: 0 0 calc(var(--nojs-space) * 2); padding: 0; }
-.nojs-wizard-steps li { counter-increment: nojs-step; color: var(--nojs-muted); padding: 0.25rem 0.75rem; font-size: 0.875rem; font-weight: 500; border: 1px solid var(--nojs-line); border-radius: var(--nojs-radius-sm); }
-.nojs-wizard-steps li::before { content: counter(nojs-step) ". "; }
-.nojs-wizard-steps li a { color: var(--nojs-fg); text-decoration: none; }
-.nojs-wizard-steps li a:hover { text-decoration: underline; }
-.nojs-wizard-steps small { font-size: 0.8em; }
-.nojs-wizard-current { color: var(--nojs-on-primary) !important; background: var(--nojs-primary); border-color: transparent !important; }
-.nojs-wizard-steps .nojs-wizard-error { border-color: var(--nojs-danger) !important; }
-.nojs-wizard-steps .nojs-wizard-error::before { content: "! " counter(nojs-step) ". "; color: var(--nojs-danger); font-weight: 600; }
-.nojs-wizard-steps .nojs-wizard-current.nojs-wizard-error { background: var(--nojs-danger); }
-.nojs-wizard-steps .nojs-wizard-current.nojs-wizard-error::before { color: inherit; }
-.nojs-wizard-progress { display: block; width: 100%; max-width: 32rem; height: 0.5rem; border-radius: 1rem; margin: 0 0 calc(var(--nojs-space) * 2); accent-color: var(--nojs-primary); }
-.nojs-wizard-resume { padding: 0.75rem 1rem; font-size: 0.875rem; border: 1px solid var(--nojs-line); border-radius: var(--nojs-radius); background: var(--nojs-card); max-width: none; }
-.nojs-wizard-form fieldset { border: 1px solid var(--nojs-line); border-radius: var(--nojs-radius-lg); padding: 1.5rem; }
-.nojs-wizard-form fieldset[aria-invalid=true] { border-color: var(--nojs-danger); }
-.nojs-wizard-form legend { padding: 0 0.5rem; font-weight: 600; }
-.nojs-wizard-form label { display: block; margin: 0.75rem 0; font-size: 0.875rem; }
-.nojs-wizard-form .nojs-field { max-width: 24rem; }
-.nojs-wizard-actions { display: flex; align-items: center; gap: calc(var(--nojs-space) * 2); margin-top: 1rem; }
-.nojs-wizard-review { margin: 0; }
-.nojs-wizard-review dt { color: var(--nojs-muted); }
-.nojs-wizard-review dd { margin: 0 0 0.5rem; }
-.nojs-wizard-edit { margin-left: var(--nojs-space); font-size: 0.875rem; }
+.lui-wizard-steps { display: flex; flex-wrap: wrap; gap: var(--lui-space); list-style: none; counter-reset: lui-step; margin: 0 0 calc(var(--lui-space) * 2); padding: 0; }
+.lui-wizard-steps li { counter-increment: lui-step; color: var(--lui-muted); padding: 0.25rem 0.75rem; font-size: 0.875rem; font-weight: 500; border: 1px solid var(--lui-line); border-radius: var(--lui-radius-sm); }
+.lui-wizard-steps li::before { content: counter(lui-step) ". "; }
+.lui-wizard-steps li a { color: var(--lui-fg); text-decoration: none; }
+.lui-wizard-steps li a:hover { text-decoration: underline; }
+.lui-wizard-steps small { font-size: 0.8em; }
+.lui-wizard-current { color: var(--lui-on-primary) !important; background: var(--lui-primary); border-color: transparent !important; }
+.lui-wizard-steps .lui-wizard-error { border-color: var(--lui-danger) !important; }
+.lui-wizard-steps .lui-wizard-error::before { content: "! " counter(lui-step) ". "; color: var(--lui-danger); font-weight: 600; }
+.lui-wizard-steps .lui-wizard-current.lui-wizard-error { background: var(--lui-danger); }
+.lui-wizard-steps .lui-wizard-current.lui-wizard-error::before { color: inherit; }
+.lui-wizard-progress { display: block; width: 100%; max-width: 32rem; height: 0.5rem; border-radius: 1rem; margin: 0 0 calc(var(--lui-space) * 2); accent-color: var(--lui-primary); }
+.lui-wizard-resume { padding: 0.75rem 1rem; font-size: 0.875rem; border: 1px solid var(--lui-line); border-radius: var(--lui-radius); background: var(--lui-card); max-width: none; }
+.lui-wizard-form fieldset { border: 1px solid var(--lui-line); border-radius: var(--lui-radius-lg); padding: 1.5rem; }
+.lui-wizard-form fieldset[aria-invalid=true] { border-color: var(--lui-danger); }
+.lui-wizard-form legend { padding: 0 0.5rem; font-weight: 600; }
+.lui-wizard-form label { display: block; margin: 0.75rem 0; font-size: 0.875rem; }
+.lui-wizard-form .lui-field { max-width: 24rem; }
+.lui-wizard-actions { display: flex; align-items: center; gap: calc(var(--lui-space) * 2); margin-top: 1rem; }
+.lui-wizard-review { margin: 0; }
+.lui-wizard-review dt { color: var(--lui-muted); }
+.lui-wizard-review dd { margin: 0 0 0.5rem; }
+.lui-wizard-edit { margin-left: var(--lui-space); font-size: 0.875rem; }
 "#;
 
 #[cfg(test)]
@@ -404,13 +404,13 @@ mod tests {
         let ui = Ui::from_request("/w", "step.x=1", "");
         let m = three(&ui).finish("Done").render().into_string();
         assert!(
-            m.contains("class=\"nojs-wizard-done\"><a href=\"/w?step.x=0\">A</a>"),
+            m.contains("class=\"lui-wizard-done\"><a href=\"/w?step.x=0\">A</a>"),
             "{m}"
         );
         assert!(m.contains("aria-current=\"step\"><span>B</span>"));
         assert!(m.contains("value=\"1\"") && m.contains(">Next<") && !m.contains(">Done<"));
         assert!(
-            !m.contains("nojs-wizard-resume"),
+            !m.contains("lui-wizard-resume"),
             "the step came from the query"
         );
         let end = Ui::from_request("/w", "step.x=9", "");
@@ -424,17 +424,17 @@ mod tests {
 
     #[test]
     fn errors_skip_and_resume() {
-        let ui = Ui::from_request("/w", "", "nojs-ui=step.x=1");
+        let ui = Ui::from_request("/w", "", "lui-ui=step.x=1");
         let errors = [("b", "Say more.")];
         let m = three(&ui).errors(&errors).render().into_string();
         assert!(
-            m.contains("class=\"nojs-wizard-current nojs-wizard-error\" aria-current=\"step\""),
+            m.contains("class=\"lui-wizard-current lui-wizard-error\" aria-current=\"step\""),
             "{m}"
         );
         assert!(m.contains("<fieldset aria-invalid=\"true\">") && m.contains("Say more."));
         assert!(m.contains("name=\"skip\" value=\"1\" formnovalidate"));
         assert!(
-            m.contains("class=\"nojs-wizard-resume\"")
+            m.contains("class=\"lui-wizard-resume\"")
                 && m.contains("href=\"/w?step.x=0\">Start over")
         );
         assert!(

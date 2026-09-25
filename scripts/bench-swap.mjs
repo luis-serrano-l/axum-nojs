@@ -5,7 +5,7 @@
 // The demo runs on 3002. A small proxy on 3003 serves the same pages with the enhancement
 // script replaced by htmx 2 (`hx-boost`, `hx-target="this"`, `hx-select="#id"`,
 // `hx-swap="outerHTML"` on every swap root) and forwards htmx's requests with
-// `Nojs-Enhance: 1`, so both sides fetch the same bytes. For each case the page is loaded
+// `Lui-Enhance: 1`, so both sides fetch the same bytes. For each case the page is loaded
 // fresh, then a script clicks and times until the new state is on the page and two frames
 // have run (the paint that shows it).
 //
@@ -36,7 +36,7 @@ const proxy = http.createServer(async (req, res) => {
   const headers = { ...req.headers };
   delete headers.host; delete headers["accept-encoding"];
   const fromHtmx = "hx-request" in headers;
-  if (fromHtmx) headers["nojs-enhance"] = "1";
+  if (fromHtmx) headers["lui-enhance"] = "1";
   const body = await new Promise((ok) => { const c = []; req.on("data", (d) => c.push(d)); req.on("end", () => ok(Buffer.concat(c))); });
   const up = await fetch(DEMO + req.url, { method: req.method, headers, body: body.length ? body : undefined, redirect: "manual" });
   const out = {};
@@ -44,9 +44,9 @@ const proxy = http.createServer(async (req, res) => {
   let text = Buffer.from(await up.arrayBuffer());
   if ((out["content-type"] || "").startsWith("text/html") && !fromHtmx) {
     text = Buffer.from(text.toString()
-      .replace(/<script src="\/nojs\/enhance\.js[^"]*"[^>]*><\/script>/, "")
+      .replace(/<script src="\/lui\/enhance\.js[^"]*"[^>]*><\/script>/, "")
       .replace("</body>", '<script src="/htmx.min.js"></script></body>')
-      .replace(/id="([^"]+)" data-nojs="swap"/g, 'id="$1" data-nojs="swap" hx-boost="true" hx-target="this" hx-select="#$1" hx-swap="outerHTML"'));
+      .replace(/id="([^"]+)" data-lui="swap"/g, 'id="$1" data-lui="swap" hx-boost="true" hx-target="this" hx-select="#$1" hx-swap="outerHTML"'));
   }
   res.writeHead(up.status, out);
   res.end(text);
@@ -67,9 +67,9 @@ async function ready(url) {
 
 // Each case: the page, what to click, and the state that means the update is shown.
 const CASES = [
-  { name: "table sort", path: "/table", click: '#nojs-paged-table-files th a[href*="sort=size"]', root: "nojs-paged-table-files", shown: "replaced" },
-  { name: "tab", path: "/tabs", click: "#nojs-tabs-demo details:nth-of-type(2) > summary a", root: "nojs-tabs-demo", shown: "tab" },
-  { name: "pager", path: "/list", click: "#nojs-pager--list .nojs-pager-more", root: "nojs-pager--list", shown: "replaced" },
+  { name: "table sort", path: "/table", click: '#lui-paged-table-files th a[href*="sort=size"]', root: "lui-paged-table-files", shown: "replaced" },
+  { name: "tab", path: "/tabs", click: "#lui-tabs-demo details:nth-of-type(2) > summary a", root: "lui-tabs-demo", shown: "tab" },
+  { name: "pager", path: "/list", click: "#lui-pager--list .lui-pager-more", root: "lui-pager--list", shown: "replaced" },
 ];
 
 // Runs in the page: click, then resolve with the milliseconds until the new state is on the

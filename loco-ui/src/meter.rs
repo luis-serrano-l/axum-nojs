@@ -5,20 +5,20 @@
 //!
 //! **Platform features:** `<meter>` (Chrome 6, Firefox 16, Safari 6) with `low`, `high` and
 //! `optimum`, so the browser picks the good, average or bad colour itself; the
-//! `::-webkit-meter-*` and `::-moz-meter-bar` pseudo-elements map those to `--nojs-ok`,
-//! `--nojs-warn` and `--nojs-danger`.
+//! `::-webkit-meter-*` and `::-moz-meter-bar` pseudo-elements map those to `--lui-ok`,
+//! `--lui-warn` and `--lui-danger`.
 //!
 //! **What it does not do without script:** update live.
 //!
 //! **Fallback:** without the pseudo-elements a browser draws its own meter, in its own colours.
 //!
 //! ```rust
-//! use axum_nojs::prelude::*;
+//! use loco_ui::prelude::*;
 //! let ui = Ui::default();
 //! let m = ui.meter(82, 0, 100).label("Disk").low(60).high(80).optimum(0).render().into_string();
 //! assert!(m.contains(r#"value="82" min="0" max="100" low="60" high="80" optimum="0""#));
-//! // The same in `nojs!`:
-//! let same = nojs! { Meter(82, 0, 100) label="Disk" low=60 high=80 optimum=0; };
+//! // The same in `lui!`:
+//! let same = lui! { Meter(82, 0, 100) label="Disk" low=60 high=80 optimum=0; };
 //! assert_eq!(same.into_string(), m);
 //! ```
 
@@ -102,13 +102,13 @@ impl<'a> Meter<'a> {
 
 impl Render for Meter<'_> {
     fn render(&self) -> Markup {
-        let id = format!("nojs-meter-{}", slug(self.label.unwrap_or("meter")));
+        let id = format!("lui-meter-{}", slug(self.label.unwrap_or("meter")));
         html! {
-            div class="nojs-progress-field" {
+            div class="lui-progress-field" {
                 @if let Some(l) = self.label {
-                    label for=(id) { span { (l) } span class="nojs-progress-value" { (self.value) " / " (self.max) } }
+                    label for=(id) { span { (l) } span class="lui-progress-value" { (self.value) " / " (self.max) } }
                 }
-                meter id=(id) class="nojs-meter" value=(self.value) min=(self.min) max=(self.max)
+                meter id=(id) class="lui-meter" value=(self.value) min=(self.min) max=(self.max)
                     low=[self.low] high=[self.high] optimum=[self.optimum] { (self.value) " / " (self.max) }
             }
         }
@@ -118,15 +118,15 @@ impl Render for Meter<'_> {
 /// Styles for this component; included in [`crate::stylesheet`]. The progress bar's shape;
 /// the browser's good / average / bad choice picks ok, warn or danger.
 pub const CSS: &str = r#"
-.nojs-meter {
+.lui-meter {
   appearance: none; display: block; width: 100%; height: 0.5rem; border: 0; border-radius: 9999px; overflow: hidden;
-  background: var(--nojs-secondary);
+  background: var(--lui-secondary);
 }
-.nojs-meter::-webkit-meter-bar { background: var(--nojs-secondary); border: 0; border-radius: 9999px; height: 0.5rem; }
-.nojs-meter::-webkit-meter-optimum-value { background: var(--nojs-ok); border-radius: 9999px; }
-.nojs-meter::-webkit-meter-suboptimum-value { background: var(--nojs-warn); border-radius: 9999px; }
-.nojs-meter::-webkit-meter-even-less-good-value { background: var(--nojs-danger); border-radius: 9999px; }
-.nojs-meter::-moz-meter-bar { background: var(--nojs-ok); border-radius: 9999px; }
-.nojs-meter:-moz-meter-sub-optimum::-moz-meter-bar { background: var(--nojs-warn); }
-.nojs-meter:-moz-meter-sub-sub-optimum::-moz-meter-bar { background: var(--nojs-danger); }
+.lui-meter::-webkit-meter-bar { background: var(--lui-secondary); border: 0; border-radius: 9999px; height: 0.5rem; }
+.lui-meter::-webkit-meter-optimum-value { background: var(--lui-ok); border-radius: 9999px; }
+.lui-meter::-webkit-meter-suboptimum-value { background: var(--lui-warn); border-radius: 9999px; }
+.lui-meter::-webkit-meter-even-less-good-value { background: var(--lui-danger); border-radius: 9999px; }
+.lui-meter::-moz-meter-bar { background: var(--lui-ok); border-radius: 9999px; }
+.lui-meter:-moz-meter-sub-optimum::-moz-meter-bar { background: var(--lui-warn); }
+.lui-meter:-moz-meter-sub-sub-optimum::-moz-meter-bar { background: var(--lui-danger); }
 "#;

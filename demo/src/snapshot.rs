@@ -10,8 +10,8 @@
 
 use crate::{PATHS, router};
 use axum::{body::Body, http::Request};
-use axum_nojs::caps::Cap;
-use axum_nojs::prelude::*;
+use loco_ui::caps::Cap;
+use loco_ui::prelude::*;
 use tower::ServiceExt;
 
 /// The text every exported page carries (the test looks for it).
@@ -26,7 +26,7 @@ pub struct File {
 /// Every page of the snapshot, modern variants first in [`PATHS`] order.
 pub async fn pages() -> Vec<File> {
     let modern = Cap::ALL
-        .map(|c| format!("nojs-cap-{}=1", c.name()))
+        .map(|c| format!("lui-cap-{}=1", c.name()))
         .join("; ");
     let names = names();
     let mut files = Vec::new();
@@ -87,8 +87,8 @@ async fn render(path: &str, cookie: &str) -> String {
         .await
         .unwrap();
     let html = String::from_utf8(body.to_vec()).unwrap();
-    // The capability beacons ask `/nojs/caps` for a cookie; a static host has neither.
-    let beacons = r#"<div class="nojs-caps" aria-hidden="true">"#;
+    // The capability beacons ask `/lui/caps` for a cookie; a static host has neither.
+    let beacons = r#"<div class="lui-caps" aria-hidden="true">"#;
     match html.find(beacons) {
         Some(i) => {
             let end = i + html[i..].find("</div>").map_or(0, |j| j + "</div>".len());
@@ -100,7 +100,7 @@ async fn render(path: &str, cookie: &str) -> String {
 
 /// Drop the script, rewrite `href`/`action`, and put the banner at the top of `<main>`.
 fn finish(html: &str, names: &[String], other: Option<&str>, baseline: bool) -> String {
-    let html = html.replace(&axum_nojs::enhance::script_tag().into_string(), "");
+    let html = html.replace(&loco_ui::enhance::script_tag().into_string(), "");
     let html = rewrite(&html, "href=\"", names);
     let html = rewrite(&html, "action=\"", names);
     let at = html
@@ -118,7 +118,7 @@ fn finish(html: &str, names: &[String], other: Option<&str>, baseline: bool) -> 
 
 /// Point every root-relative URL that names an exported page at its file: the exact path and
 /// query if [`PATHS`] has it, else the first export of that route. Anything else (POST
-/// targets, `/nojs/*`, `/table.csv`) stays as it is and fails on a static host, as the banner
+/// targets, `/lui/*`, `/table.csv`) stays as it is and fails on a static host, as the banner
 /// says.
 fn rewrite(html: &str, attr: &str, names: &[String]) -> String {
     let mut out = String::with_capacity(html.len());
@@ -164,7 +164,7 @@ fn banner(other: Option<&str>, baseline: bool) -> Markup {
             } }
         }
     };
-    html! { div style="margin-block-end: var(--nojs-space-4)" { (ui.alert(BANNER).warn().body(body)) } }
+    html! { div style="margin-block-end: var(--lui-space-4)" { (ui.alert(BANNER).warn().body(body)) } }
 }
 
 #[cfg(test)]
@@ -180,7 +180,7 @@ mod tests {
             assert!(page.html.contains(BANNER), "{}: no banner", page.name);
             assert_eq!(page.html.matches("<script").count(), 0, "{}", page.name);
             assert!(
-                !page.html.contains(r#"class="nojs-caps""#),
+                !page.html.contains(r#"class="lui-caps""#),
                 "{}: beacons",
                 page.name
             );

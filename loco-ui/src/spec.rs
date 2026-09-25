@@ -9,7 +9,7 @@
 //! browser has not shipped the feature; the component then relies on its fallback there.
 //!
 //! ```rust
-//! use axum_nojs::spec::{SPECS, to_json, markdown_table};
+//! use loco_ui::spec::{SPECS, to_json, markdown_table};
 //! assert!(SPECS.iter().any(|c| c.module == "dialog"));
 //! assert!(to_json().starts_with("{\n  \"components\": ["));
 //! assert!(markdown_table().starts_with("| Component |"));
@@ -50,7 +50,7 @@ pub enum NeedsJs {
 pub struct ComponentSpec {
     /// Human name, as in the README matrix.
     pub name: &'static str,
-    /// File name under `axum-nojs/src/` without `.rs`.
+    /// File name under `loco-ui/src/` without `.rs`.
     pub module: &'static str,
     /// Platform features it relies on, in the order the header lists them.
     pub features: &'static [Feature],
@@ -89,7 +89,7 @@ pub const SPECS: &[ComponentSpec] = &[
             f("document.startViewTransition", b("111", "144", "18")),
             f("CustomEvent", b("15", "11", "6")),
         ],
-        fallback: "none needed: without the script every form and link is a normal navigation and every data-nojs-* attribute is inert",
+        fallback: "none needed: without the script every form and link is a normal navigation and every data-lui-* attribute is inert",
         needs_js: NeedsJs::No,
     },
     ComponentSpec {
@@ -644,9 +644,9 @@ pub fn to_json() -> String {
             for (j, b) in builders.iter().enumerate() {
                 let calls: Vec<String> = b.calls.iter().map(|c| json_str(c)).collect();
                 out.push_str(&format!(
-                    "        {{\n          \"builder\": {},\n          \"nojs\": {},\n          \"calls\": [{}],\n          \"props\": [",
+                    "        {{\n          \"builder\": {},\n          \"lui\": {},\n          \"calls\": [{}],\n          \"props\": [",
                     json_str(b.builder),
-                    json_str(&b.nojs()),
+                    json_str(&b.lui()),
                     calls.join(", ")
                 ));
                 for (k, p) in b.props.iter().enumerate() {
@@ -725,7 +725,7 @@ mod tests {
     const SOURCES: &[(&str, &str)] = &[
         ("enhance", include_str!("enhance.rs")),
         ("layout", include_str!("layout.rs")),
-        ("caps", include_str!("../../axum-nojs-caps/src/lib.rs")),
+        ("caps", include_str!("../../loco-ui-caps/src/lib.rs")),
         ("button", include_str!("button.rs")),
         ("input", include_str!("input.rs")),
         ("badge", include_str!("badge.rs")),

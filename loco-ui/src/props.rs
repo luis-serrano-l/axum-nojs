@@ -10,17 +10,17 @@
 //! and the demo's props tables are made from.
 //!
 //! ```rust
-//! use axum_nojs::props::PropKind;
-//! use axum_nojs::tabs::Tabs;
+//! use loco_ui::props::PropKind;
+//! use loco_ui::tabs::Tabs;
 //! let vertical = Tabs::PROPS.iter().find(|p| p.name == "vertical").unwrap();
 //! assert_eq!(vertical.kind, PropKind::Switch);
 //! assert_eq!(vertical.default, "off");
 //! let badge = Tabs::PROPS.iter().find(|p| p.name == "badge").unwrap();
 //! assert_eq!(badge.kind, PropKind::Modifier);
 //!
-//! let tabs = axum_nojs::props().iter().find(|c| c.builder == "Tabs").unwrap();
+//! let tabs = loco_ui::props().iter().find(|c| c.builder == "Tabs").unwrap();
 //! assert_eq!(tabs.calls, ["ui.tabs(name: &str)"]);
-//! assert_eq!(tabs.nojs(), "Tabs");
+//! assert_eq!(tabs.lui(), "Tabs");
 //! ```
 
 /// What a setter does to its builder.
@@ -112,7 +112,7 @@ impl Prop {
 /// setters.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Component {
-    /// The file under `axum-nojs/src/` without `.rs`, as in the spec.
+    /// The file under `loco-ui/src/` without `.rs`, as in the spec.
     pub module: &'static str,
     /// The builder type (`Tabs`).
     pub builder: &'static str,
@@ -123,9 +123,9 @@ pub struct Component {
 }
 
 impl Component {
-    /// The name `nojs!` knows it by: the first constructor's method in `UpperCamelCase`
+    /// The name `lui!` knows it by: the first constructor's method in `UpperCamelCase`
     /// (`ui.date_picker(..)` is `DatePicker`); a type's own constructor keeps the type name.
-    pub fn nojs(&self) -> String {
+    pub fn lui(&self) -> String {
         let call = self.calls.first().copied().unwrap_or(self.builder);
         let Some(method) = call.strip_prefix("ui.") else {
             return self.builder.to_string();

@@ -1,41 +1,41 @@
 # Theming
 
-Every colour, corner and gap in `axum-nojs` is a `--nojs-*` custom property. The components never
-name a colour of their own (a test in `axum-nojs/src/lib.rs` fails if one does), so a theme is
+Every colour, corner and gap in `loco-ui` is a `--lui-*` custom property. The components never
+name a colour of their own (a test in `loco-ui/src/lib.rs` fails if one does), so a theme is
 nineteen values, not a stylesheet. `layout::Tokens` holds them; `ui.page(..).tokens(&t)` emits them once
 per page.
 
 ## The tokens
 
-The roles are shadcn/ui's, under `--nojs-*` names. The default is shadcn's neutral (zinc)
+The roles are shadcn/ui's, under `--lui-*` names. The default is shadcn's neutral (zinc)
 theme; the status colours are Radix Colors step 11, the step made for text.
 
 | Token | Default light / dark | What it affects |
 |---|---|---|
-| `--nojs-bg` | `#ffffff` / `#09090b` | The page background. The sticky table header and the popover fallback paint it too, so they cover rows that scroll under them. |
-| `--nojs-fg` | `#09090b` / `#fafafa` | Body text, headings, tab titles, sorted column header, the dialog and flash text, the wordmark. |
-| `--nojs-muted` | `#71717a` / `#a1a1aa` | Secondary text: notes, table headers, the wizard's step list and legends, streamed placeholders, the "built on" line, the tagline. |
-| `--nojs-line` | `#e4e4e7` / `#27272a` | Every 1px rule: dialogs, popovers, cards, accordion and wizard fieldsets, table rules, the pager list. |
-| `--nojs-surface` | `#fafafa` / `#18181b` | Quiet raised areas: `<code>`, the demo stage, open accordion panels, streamed slots. |
-| `--nojs-card` | `#ffffff` / `#18181b` | Cards and stat tiles. |
-| `--nojs-popover` | `#ffffff` / `#18181b` | Floating layers: dialogs, drawers, popovers, menus, the command palette, toasts. |
-| `--nojs-secondary` | `#f4f4f5` / `#27272a` | Secondary buttons, the tab list, chips and badges, skeleton blocks. |
-| `--nojs-accent` | `#f4f4f5` / `#27272a` | The hover and highlighted surface: menu items, ghost buttons, table rows, the active palette entry. |
-| `--nojs-on-accent` | `#18181b` / `#fafafa` | Text on the accent surface. |
-| `--nojs-primary` | `#18181b` / `#e4e4e7` | Links, primary buttons, the current page, the current wizard step, the range slider. |
-| `--nojs-on-primary` | `#fafafa` / `#18181b` | Text on the primary colour and on danger buttons. |
-| `--nojs-input` | `#e4e4e7` / `#3f3f46` | Borders of inputs, selects, textareas, checkboxes and outline buttons. |
-| `--nojs-ring` | `#a1a1aa` / `#71717a` | The focus ring: 3px at 50% opacity, plus the focused control's border at full strength. |
-| `--nojs-danger` | `#ce2c31` / `#ff9592` | Form validation messages and `aria-invalid` / `:user-invalid` rings, danger buttons, the "no" cells on `/caps`, danger flashes. |
-| `--nojs-ok` | `#218358` / `#3dd68c` | The "yes" cells on `/caps`, ok flashes; free for your own success states. |
-| `--nojs-warn` | `#ab6400` / `#ffca16` | Warning flashes. |
-| `--nojs-radius` | `0.5rem` | Corners of cards, dialogs and popovers. |
-| `--nojs-radius-sm` | radius − 2px | Not a `Tokens` field, derived: corners of buttons, inputs, chips, `<code>`. |
-| `--nojs-radius-lg` | radius + 4px | Not a `Tokens` field, derived: corners of cards, sheets and large panels. |
-| `--nojs-shadow-xs`, `--nojs-shadow-lg` | shadcn's | Not `Tokens` fields: the shadow under controls and under floating layers (dialogs, popovers, menus, toasts). Same in both schemes. |
-| `--nojs-space` | `8px` | The unit every gap, margin and padding is a multiple of (`calc(var(--nojs-space) * 3)`). |
-| `--nojs-space-1` … `-8` | 4px steps | Not `Tokens` fields, derived from `--nojs-space`: steps 1, 2, 3, 4, 6 and 8 are that many halves of it (4, 8, 12, 16, 24, 32px by default). The gaps of `ui.stack`, `ui.cluster`, `ui.grid` and `ui.split` (`.gap(n)`). |
-| `--nojs-busy` | `0.6` | Not a `Tokens` field: the opacity of a swap root or form while the enhancement script has a request in flight (`[data-nojs-busy]`). Set it to `1` on `:root` or on one root to turn the fade off. |
+| `--lui-bg` | `#ffffff` / `#09090b` | The page background. The sticky table header and the popover fallback paint it too, so they cover rows that scroll under them. |
+| `--lui-fg` | `#09090b` / `#fafafa` | Body text, headings, tab titles, sorted column header, the dialog and flash text, the wordmark. |
+| `--lui-muted` | `#71717a` / `#a1a1aa` | Secondary text: notes, table headers, the wizard's step list and legends, streamed placeholders, the "built on" line, the tagline. |
+| `--lui-line` | `#e4e4e7` / `#27272a` | Every 1px rule: dialogs, popovers, cards, accordion and wizard fieldsets, table rules, the pager list. |
+| `--lui-surface` | `#fafafa` / `#18181b` | Quiet raised areas: `<code>`, the demo stage, open accordion panels, streamed slots. |
+| `--lui-card` | `#ffffff` / `#18181b` | Cards and stat tiles. |
+| `--lui-popover` | `#ffffff` / `#18181b` | Floating layers: dialogs, drawers, popovers, menus, the command palette, toasts. |
+| `--lui-secondary` | `#f4f4f5` / `#27272a` | Secondary buttons, the tab list, chips and badges, skeleton blocks. |
+| `--lui-accent` | `#f4f4f5` / `#27272a` | The hover and highlighted surface: menu items, ghost buttons, table rows, the active palette entry. |
+| `--lui-on-accent` | `#18181b` / `#fafafa` | Text on the accent surface. |
+| `--lui-primary` | `#18181b` / `#e4e4e7` | Links, primary buttons, the current page, the current wizard step, the range slider. |
+| `--lui-on-primary` | `#fafafa` / `#18181b` | Text on the primary colour and on danger buttons. |
+| `--lui-input` | `#e4e4e7` / `#3f3f46` | Borders of inputs, selects, textareas, checkboxes and outline buttons. |
+| `--lui-ring` | `#a1a1aa` / `#71717a` | The focus ring: 3px at 50% opacity, plus the focused control's border at full strength. |
+| `--lui-danger` | `#ce2c31` / `#ff9592` | Form validation messages and `aria-invalid` / `:user-invalid` rings, danger buttons, the "no" cells on `/caps`, danger flashes. |
+| `--lui-ok` | `#218358` / `#3dd68c` | The "yes" cells on `/caps`, ok flashes; free for your own success states. |
+| `--lui-warn` | `#ab6400` / `#ffca16` | Warning flashes. |
+| `--lui-radius` | `0.5rem` | Corners of cards, dialogs and popovers. |
+| `--lui-radius-sm` | radius − 2px | Not a `Tokens` field, derived: corners of buttons, inputs, chips, `<code>`. |
+| `--lui-radius-lg` | radius + 4px | Not a `Tokens` field, derived: corners of cards, sheets and large panels. |
+| `--lui-shadow-xs`, `--lui-shadow-lg` | shadcn's | Not `Tokens` fields: the shadow under controls and under floating layers (dialogs, popovers, menus, toasts). Same in both schemes. |
+| `--lui-space` | `8px` | The unit every gap, margin and padding is a multiple of (`calc(var(--lui-space) * 3)`). |
+| `--lui-space-1` … `-8` | 4px steps | Not `Tokens` fields, derived from `--lui-space`: steps 1, 2, 3, 4, 6 and 8 are that many halves of it (4, 8, 12, 16, 24, 32px by default). The gaps of `ui.stack`, `ui.cluster`, `ui.grid` and `ui.split` (`.gap(n)`). |
+| `--lui-busy` | `0.6` | Not a `Tokens` field: the opacity of a swap root or form while the enhancement script has a request in flight (`[data-lui-busy]`). Set it to `1` on `:root` or on one root to turn the fade off. |
 
 The dark palette applies under `prefers-color-scheme: dark` unless `<html data-theme="light">`,
 and always under `data-theme="dark"`. `theme_toggle` sets that attribute through a cookie, so a
@@ -80,8 +80,8 @@ formula; any contrast checker gives the same numbers.
 copper": warm paper, near-black text, a copper primary that turns to amber in the dark scheme.
 
 ```rust
-use axum_nojs::prelude::*;
-use axum_nojs::layout::{Palette, Tokens};
+use loco_ui::prelude::*;
+use loco_ui::layout::{Palette, Tokens};
 
 const LINEN: Tokens = Tokens {
     light: Palette {
@@ -106,21 +106,21 @@ let page = Ui::default().page("Hello", html! { p { "Warm." } }).tokens(&LINEN);
 Its ratios: `fg`/`bg` 15.1 and 14.9, `muted`/`bg` 6.2 and 6.8, `primary`/`bg` 6.8 and 7.9,
 `on-primary`/`primary` 7.7 and 8.0, `ok`/`bg` 5.6 and 10.5. Every text pair clears 4.5.
 
-To change one value, spread the default: `Tokens { radius: "0px", ..Default::default() }` (keep the unit: `--nojs-radius-sm` subtracts 2px from it) or
+To change one value, spread the default: `Tokens { radius: "0px", ..Default::default() }` (keep the unit: `--lui-radius-sm` subtracts 2px from it) or
 `Palette { primary: "#7a3b1e", ..Tokens::default().light }`.
 
-`.tokens(..)` puts a second `<style class="nojs-tokens">` right after the stylesheet with the
+`.tokens(..)` puts a second `<style class="lui-tokens">` right after the stylesheet with the
 same three rule blocks the default palette uses, so it wins by source order and nothing else
 changes. The demo shows the pair: `/` is the default, `/?palette=linen` is this one.
 
 ## Beyond the tokens
 
-Fonts are the system stack in two custom properties on `:root`, `--nojs-font-sans` and
-`--nojs-font-mono`; set either to change every component. The type scale and the page width are
+Fonts are the system stack in two custom properties on `:root`, `--lui-font-sans` and
+`--lui-font-mono`; set either to change every component. The type scale and the page width are
 base rules in `layout.rs`, not tokens; the look of buttons and native form controls lives in
 one place each, `button.rs` and `input.rs`, and every component draws its buttons and fields
 through them, so one override there reaches every dialog, table and form. To change
 them, put your own `<style>` after `layout`'s (or use your own shell and call
-`axum_nojs::stylesheet()` for the component CSS). A component's parts are addressable by class,
-`nojs-<component>` on the root and `nojs-<component>-<part>` inside, so overriding a single part is
+`loco_ui::stylesheet()` for the component CSS). A component's parts are addressable by class,
+`lui-<component>` on the root and `lui-<component>-<part>` inside, so overriding a single part is
 one selector.

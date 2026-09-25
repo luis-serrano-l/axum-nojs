@@ -1,7 +1,7 @@
 //! `cargo run -p demo` serves the component demo on http://127.0.0.1:3000 (`PORT` overrides
 //! the port; the checks use 3001 so they never kill a server you are looking at).
 //! `cargo run -p demo -- spec` prints `spec/components.json`; `-- spec write` regenerates
-//! that file and the README feature matrix from `axum_nojs::spec::SPECS`.
+//! that file and the README feature matrix from `loco_ui::spec::SPECS`.
 //! `cargo run -p demo -- snapshot <dir>` writes the static snapshot (`demo::snapshot`).
 
 use std::path::Path;
@@ -15,7 +15,7 @@ async fn main() {
         .collect::<Vec<_>>()
         .as_slice()
     {
-        ["spec"] => print!("{}", axum_nojs::spec::to_json()),
+        ["spec"] => print!("{}", loco_ui::spec::to_json()),
         ["spec", "write"] => write_spec(),
         ["snapshot", dir] => write_snapshot(Path::new(dir)).await,
         [] => serve().await,
@@ -40,11 +40,7 @@ async fn serve() {
 /// Regenerate `spec/components.json` and the README matrix between its markers.
 fn write_spec() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("..");
-    std::fs::write(
-        root.join("spec/components.json"),
-        axum_nojs::spec::to_json(),
-    )
-    .unwrap();
+    std::fs::write(root.join("spec/components.json"), loco_ui::spec::to_json()).unwrap();
     let readme_path = root.join("README.md");
     let readme = std::fs::read_to_string(&readme_path).unwrap();
     let (start, end) = ("<!-- matrix:start -->", "<!-- matrix:end -->");
@@ -53,7 +49,7 @@ fn write_spec() {
     let updated = format!(
         "{}\n{}{}",
         &readme[..a],
-        axum_nojs::spec::markdown_table(),
+        loco_ui::spec::markdown_table(),
         &readme[b..]
     );
     std::fs::write(&readme_path, updated).unwrap();

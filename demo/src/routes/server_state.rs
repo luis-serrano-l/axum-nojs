@@ -7,8 +7,8 @@ use axum::{
     response::{IntoResponse, Response},
     routing::get,
 };
-use axum_nojs::Streamed;
-use axum_nojs::prelude::*;
+use loco_ui::Streamed;
+use loco_ui::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
 
@@ -26,7 +26,7 @@ async fn list_page(ui: Ui) -> Page {
     page(
         &ui,
         "Load-more list",
-        nojs! {
+        lui! {
             // code: /list
             Pager("/list", 50) per_page=8 rows=|i| { "Row " (i + 1) };
             // end code
@@ -40,7 +40,7 @@ struct Count {
 }
 
 /// The counter's rules, shared by the page (to render them) and the post (to apply them).
-fn counter(ui: &Ui, n: i64) -> axum_nojs::counter::Counter<'static> {
+fn counter(ui: &Ui, n: i64) -> loco_ui::counter::Counter<'static> {
     // code: /counter
     ui.counter("/counter", n).min(0).max(20).step(2).typed()
     // end code
@@ -81,21 +81,21 @@ async fn swap_page(ui: Ui, Saved(notes): Saved<Notes>) -> Page {
     page(
         &ui,
         "Swap targets",
-        nojs! {
+        lui! {
             (ui.flash())
-            p class="nojs-note" { "Neither control sits inside a swap root. " code { "data-nojs-target" } " names the root to update and " code { "data-nojs-swap" } " how; without the script both are ordinary navigations to the same URL." }
+            p class="lui-note" { "Neither control sits inside a swap root. " code { "data-lui-target" } " names the root to update and " code { "data-lui-swap" } " how; without the script both are ordinary navigations to the same URL." }
             // code: /swap
-            p { "Count: " span id="count" data-nojs="swap" { (n) } " " a href={ "/swap?n=" (n + 1) } data-nojs-target="#count" { "Add one" }
-                " · " a href={ "/swap?n=" (n + 10) } data-nojs-target="#count" data-nojs-push="false" { "Add ten, keep the URL" } }
+            p { "Count: " span id="count" data-lui="swap" { (n) } " " a href={ "/swap?n=" (n + 1) } data-lui-target="#count" { "Add one" }
+                " · " a href={ "/swap?n=" (n + 10) } data-lui-target="#count" data-lui-push="false" { "Add ten, keep the URL" } }
             // end code
             p { "Notes so far: " span id="note-count" { (notes.0.len()) } }
             // code: /swap
-            form method="post" action="/swap" data-nojs-target="#log" data-nojs-swap="append" data-nojs-indicator="#saving" {
+            form method="post" action="/swap" data-lui-target="#log" data-lui-swap="append" data-lui-indicator="#saving" {
                 Input("note", "Note") hide_label required placeholder="A note" autocomplete="off";
                 Button("Add note") primary;
-                " " span id="saving" class="nojs-note" hidden { "Saving…" }
+                " " span id="saving" class="lui-note" hidden { "Saving…" }
             }
-            ol id="log" data-nojs="swap" { @for (_, note) in &notes.0 { li { (note) } } }
+            ol id="log" data-lui="swap" { @for (_, note) in &notes.0 { li { (note) } } }
             // end code
         },
     )
@@ -106,8 +106,8 @@ struct SwapForm {
     note: String,
 }
 
-/// An enhanced request (`Nojs-Enhance: 1`) gets only the new `<li>` inside an `#log` to append,
-/// plus the note count marked `data-nojs-oob` so it updates wherever it is on the page; a plain
+/// An enhanced request (`Lui-Enhance: 1`) gets only the new `<li>` inside an `#log` to append,
+/// plus the note count marked `data-lui-oob` so it updates wherever it is on the page; a plain
 /// one gets Post/Redirect/Get to the full page, which shows both anyway.
 async fn swap_submit(
     ui: Ui,
@@ -116,12 +116,12 @@ async fn swap_submit(
     Form(f): Form<SwapForm>,
 ) -> Response {
     notes.0.push(("note".into(), f.note.clone()));
-    if headers.contains_key("nojs-enhance") {
+    if headers.contains_key("lui-enhance") {
         let cookies = ui.redirect("/swap").save(&notes).set_cookies();
         let set = cookies
             .into_iter()
             .map(|c| (axum::http::header::SET_COOKIE, c));
-        return (axum::response::AppendHeaders(set), html! { ol id="log" { li { (f.note) } } span id="note-count" data-nojs-oob { (notes.0.len()) } }).into_response();
+        return (axum::response::AppendHeaders(set), html! { ol id="log" { li { (f.note) } } span id="note-count" data-lui-oob { (notes.0.len()) } }).into_response();
     }
     ui.redirect("/swap")
         .flash("Note added")
@@ -136,13 +136,13 @@ struct Settings {
     notify: bool,
 }
 
-/// Tabs + form + flash. Everything survives a full navigation: the tab in the `nojs-ui`
-/// cookie, the values in `nojs-settings`, the flash in a one-shot cookie.
+/// Tabs + form + flash. Everything survives a full navigation: the tab in the `lui-ui`
+/// cookie, the values in `lui-settings`, the flash in a one-shot cookie.
 async fn settings_page(ui: Ui, Saved(s): Saved<Settings>) -> Page {
     page(
         &ui,
         "Settings",
-        nojs! {
+        lui! {
             // code: /settings
             Flash dismiss auto_hide;
             Tabs("settings") {
@@ -160,7 +160,7 @@ async fn settings_page(ui: Ui, Saved(s): Saved<Settings>) -> Page {
                 }
             }
             // end code
-            p class="nojs-note" { "Go to " a href="/" { "the index" } " and come back: the open tab and the values are remembered. Saving with notifications off stacks a warning under the confirmation; the name " code { "admin" } " is refused with an alert. The confirmation fades after six seconds unless reduced motion is on." }
+            p class="lui-note" { "Go to " a href="/" { "the index" } " and come back: the open tab and the values are remembered. Saving with notifications off stacks a warning under the confirmation; the name " code { "admin" } " is refused with an alert. The confirmation fades after six seconds unless reduced motion is on." }
         },
     )
 }
@@ -190,7 +190,7 @@ async fn stream_page(ui: Ui) -> Streamed {
             @else { "This browser has no declarative shadow DOM: sections stream in document order." } }
         @for (id, ms) in sections {
             // code: /stream
-            (ui.slot(id, html! { section class="nojs-stream-section nojs-stream-pending" {
+            (ui.slot(id, html! { section class="lui-stream-section lui-stream-pending" {
                 (ui.skeleton(2).label(&format!("Loading {id} ({ms} ms)")).heading())
             } }))
             // end code
@@ -206,7 +206,7 @@ async fn stream_page(ui: Ui) -> Streamed {
 
 async fn section(id: &'static str, ms: u64) -> Markup {
     tokio::time::sleep(Duration::from_millis(ms)).await;
-    html! { section class="nojs-stream-section" { strong { (id) } " arrived after " (ms) " ms." } }
+    html! { section class="lui-stream-section" { strong { (id) } " arrived after " (ms) " ms." } }
 }
 
 /// What the server believes about this browser, one row per capability.
@@ -217,22 +217,22 @@ async fn caps_page(ui: Ui) -> Page {
         "Capabilities",
         html! {
             @if probed { p { "Beacons have fired. Rows below drive which markup every component emits." } }
-            @else { p class="nojs-error" { "Not probed yet: the beacons fire while this page loads. Reload to see the result." } }
-            table class="nojs-caps-table" {
+            @else { p class="lui-error" { "Not probed yet: the beacons fire while this page loads. Reload to see the result." } }
+            table class="lui-caps-table" {
                 thead { tr { th { "Capability" } th { "Supported" } th { "Effect" } th { "@supports test" } } }
                 // code: /caps
                 tbody { @for cap in Cap::ALL {
                     tr {
                         td { code { (cap.name()) } }
-                        td { @if ui.has(cap) { span class="nojs-yes" { "yes" } } @else if probed { span class="nojs-no" { "no" } } @else { span class="nojs-note" { "unknown" } } }
+                        td { @if ui.has(cap) { span class="lui-yes" { "yes" } } @else if probed { span class="lui-no" { "no" } } @else { span class="lui-note" { "unknown" } } }
                         td { (cap.description()) }
-                        td { @match cap.supports() { Some(t) => code { (t) }, None => span class="nojs-note" { "always" } } }
+                        td { @match cap.supports() { Some(t) => code { (t) }, None => span class="lui-note" { "always" } } }
                     }
                 } }
                 // end code
             }
-            p class="nojs-note" { "Cookies: " @for n in ui.names() { code { "nojs-cap-" (n) } " " } }
-            p class="nojs-note" { "To view any page as another browser, add " code { "?caps=popover,anchor" } " to its URL: the query wins over the cookies." }
+            p class="lui-note" { "Cookies: " @for n in ui.names() { code { "lui-cap-" (n) } " " } }
+            p class="lui-note" { "To view any page as another browser, add " code { "?caps=popover,anchor" } " to its URL: the query wins over the cookies." }
         },
     )
 }

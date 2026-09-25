@@ -1,8 +1,8 @@
-//! # axum-nojs-caps
+//! # loco-ui-caps
 //!
 //! Server-side feature detection with no script. The page carries a few empty beacon elements;
 //! `@supports` rules give each one a background image only when the browser understands the
-//! feature. Loading that image hits `/nojs/caps?flag=<name>`, which sets a cookie. From the next
+//! feature. Loading that image hits `/lui/caps?flag=<name>`, which sets a cookie. From the next
 //! request on, the server knows what the browser can do and every component emits only the
 //! markup that browser needs.
 //!
@@ -14,12 +14,12 @@
 //! view is tailored. Browsers that never load CSS images (`curl`, readers) stay on fallbacks.
 //!
 //! **Finding:** CSS cannot test HTML attributes, so `invokers` and `streaming_dsd` are proxies
-//! for CSS features that shipped in the same release. See `docs/caps.md` in the axum-nojs repo.
+//! for CSS features that shipped in the same release. See `docs/caps.md` in the loco-ui repo.
 //!
-//! One cookie per flag (`nojs-cap-<name>=1`) rather than one cookie holding a list: the beacons
+//! One cookie per flag (`lui-cap-<name>=1`) rather than one cookie holding a list: the beacons
 //! fire in parallel, and parallel `Set-Cookie` headers on one name would overwrite each other.
 //!
-//! This crate is the detection half of `axum-nojs` and stands on its own: any server that can
+//! This crate is the detection half of `loco-ui` and stands on its own: any server that can
 //! read a `Cookie:` header and answer one tiny route can use it.
 //!
 //! **Any server.** Three plain functions are the whole protocol, and none needs Axum:
@@ -30,15 +30,15 @@
 //! feature only wraps them: a `Caps` extractor and [`router`] for the beacon route.
 //!
 //! ```rust
-//! use axum_nojs_caps::{self as caps, Cap, Caps};
-//! let caps = Caps::from_cookie_header("nojs-cap-probed=1; nojs-cap-popover=1; theme=dark");
+//! use loco_ui_caps::{self as caps, Cap, Caps};
+//! let caps = Caps::from_cookie_header("lui-cap-probed=1; lui-cap-popover=1; theme=dark");
 //! assert!(caps.has(Cap::Popover));
 //! assert!(!caps.has(Cap::Invokers));
 //! assert_eq!(Caps::all().names().len(), Cap::ALL.len());
 //! // A query string overrides the cookies, so any URL can be viewed as any browser.
 //! assert!(Caps::from_query("caps=invokers,anchor").unwrap().has(Cap::Invokers));
-//! // The beacon route, by hand: `GET /nojs/caps?flag=popover` answers 204 with this cookie.
-//! assert!(caps::beacon_cookie("flag=popover").unwrap().starts_with("nojs-cap-popover=1"));
+//! // The beacon route, by hand: `GET /lui/caps?flag=popover` answers 204 with this cookie.
+//! assert!(caps::beacon_cookie("flag=popover").unwrap().starts_with("lui-cap-popover=1"));
 //! assert_eq!(caps::beacon_cookie("flag=nope"), None);
 //! ```
 
@@ -49,10 +49,10 @@
 use maud::{Markup, html};
 
 /// Path of the beacon route. `beacon_css` builds URLs from it; `router` serves it.
-pub const BEACON_PATH: &str = "/nojs/caps";
+pub const BEACON_PATH: &str = "/lui/caps";
 
-/// Cookie name prefix: the flag `popover` lives in the cookie `nojs-cap-popover`.
-pub const COOKIE_PREFIX: &str = "nojs-cap-";
+/// Cookie name prefix: the flag `popover` lives in the cookie `lui-cap-popover`.
+pub const COOKIE_PREFIX: &str = "lui-cap-";
 
 /// Cookie lifetime in seconds (30 days), so browser upgrades get re-detected eventually.
 pub const COOKIE_MAX_AGE: u32 = 30 * 24 * 60 * 60;
@@ -246,7 +246,7 @@ fn query_param<'a>(query: &'a str, name: &str) -> Option<&'a str> {
 }
 
 /// The beacon route without a framework: given the raw query string of
-/// `GET /nojs/caps?flag=<name>`, the `Set-Cookie` value to answer with, or `None` for an unknown
+/// `GET /lui/caps?flag=<name>`, the `Set-Cookie` value to answer with, or `None` for an unknown
 /// flag (answer 404). Either way answer without a body and with `Cache-Control: no-store`, so
 /// every page view re-fires the beacons until the cookie exists.
 pub fn beacon_cookie(query: &str) -> Option<String> {
@@ -256,14 +256,14 @@ pub fn beacon_cookie(query: &str) -> Option<String> {
 }
 
 /// The `@supports` rules. Each one gives a beacon element a background image whose URL is the
-/// beacon route with the flag name. Put it in the page's stylesheet; `axum_nojs::stylesheet()` does.
+/// beacon route with the flag name. Put it in the page's stylesheet; `loco_ui::stylesheet()` does.
 pub fn beacon_css() -> String {
     let mut css = String::from(
-        "\n.nojs-caps { position: fixed; bottom: 0; right: 0; width: 1px; height: 1px; overflow: hidden; opacity: 0; pointer-events: none; }\n.nojs-cap { display: block; width: 1px; height: 1px; }\n",
+        "\n.lui-caps { position: fixed; bottom: 0; right: 0; width: 1px; height: 1px; overflow: hidden; opacity: 0; pointer-events: none; }\n.lui-cap { display: block; width: 1px; height: 1px; }\n",
     );
     for cap in Cap::ALL {
         let rule = format!(
-            ".nojs-cap-{n} {{ background-image: url(\"{BEACON_PATH}?flag={n}\"); }}",
+            ".lui-cap-{n} {{ background-image: url(\"{BEACON_PATH}?flag={n}\"); }}",
             n = cap.name()
         );
         match cap.supports() {
@@ -278,13 +278,13 @@ pub fn beacon_css() -> String {
 }
 
 /// The beacon elements. Empty once the browser has been probed, so a known browser pays
-/// nothing. Put it at the end of `<body>`; `axum_nojs::layout` does.
+/// nothing. Put it at the end of `<body>`; `loco_ui::layout` does.
 pub fn beacons(caps: &Caps) -> Markup {
     html! {
         @if !caps.has(Cap::Probed) {
-            div class="nojs-caps" aria-hidden="true" {
+            div class="lui-caps" aria-hidden="true" {
                 @for cap in Cap::ALL {
-                    i class={ "nojs-cap nojs-cap-" (cap.name()) } {}
+                    i class={ "lui-cap lui-cap-" (cap.name()) } {}
                 }
             }
         }
@@ -330,8 +330,8 @@ mod axum_glue {
         }
     }
 
-    /// Serves `GET /nojs/caps?flag=<name>`: sets the flag's cookie and answers `204`.
-    /// Merge it into your app: `Router::new().merge(axum_nojs::caps::router())`.
+    /// Serves `GET /lui/caps?flag=<name>`: sets the flag's cookie and answers `204`.
+    /// Merge it into your app: `Router::new().merge(loco_ui::caps::router())`.
     pub fn router() -> Router {
         Router::new().route(BEACON_PATH, get(beacon))
     }
@@ -364,13 +364,13 @@ mod tests {
         assert_eq!(Caps::from_cookie_header(&header), Caps::all());
         // Not probed yet: the assumed set, whatever else the header says.
         assert_eq!(
-            Caps::from_cookie_header("nojs-cap-bogus=1; nojs-cap-popover=0"),
+            Caps::from_cookie_header("lui-cap-bogus=1; lui-cap-popover=0"),
             Caps::ASSUMED
         );
         assert_eq!(Caps::from_cookie_header(""), Caps::ASSUMED);
         // Probed with nothing else: an old browser, no assumptions.
         assert_eq!(
-            Caps::from_cookie_header("nojs-cap-probed=1; nojs-cap-popover=0"),
+            Caps::from_cookie_header("lui-cap-probed=1; lui-cap-popover=0"),
             Caps::NONE.with(Cap::Probed)
         );
     }
@@ -402,7 +402,7 @@ mod tests {
         assert!(
             beacons(&Caps::NONE)
                 .into_string()
-                .contains("nojs-cap-invokers")
+                .contains("lui-cap-invokers")
         );
         assert_eq!(beacons(&Caps::NONE.with(Cap::Probed)).into_string(), "");
     }

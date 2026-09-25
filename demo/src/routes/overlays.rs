@@ -5,7 +5,7 @@ use axum::{
     Form, Router,
     routing::{get, post},
 };
-use axum_nojs::prelude::*;
+use loco_ui::prelude::*;
 use serde::Deserialize;
 
 pub(crate) fn routes() -> Router {
@@ -20,7 +20,7 @@ async fn dialog_page(ui: Ui) -> Page {
     page(
         &ui,
         "Dialog",
-        nojs! {
+        lui! {
             (ui.flash())
             // code: /dialog
             Dialog("Delete account") id="confirm" title="Delete account?" small danger
@@ -29,7 +29,7 @@ async fn dialog_page(ui: Ui) -> Page {
                 Input("reason", "Tell us why (optional)") placeholder="Moving on";
             }
             // end code
-            p class="nojs-note" { "Opened by an invoker button; the footer is a real form posting to " code { "/dialog/delete" } " with a hidden " code { "returns_to" } " so the server comes back here. Server-opened: " a href="/dialog?dialog=confirm" { "?dialog=confirm" } }
+            p class="lui-note" { "Opened by an invoker button; the footer is a real form posting to " code { "/dialog/delete" } " with a hidden " code { "returns_to" } " so the server comes back here. Server-opened: " a href="/dialog?dialog=confirm" { "?dialog=confirm" } }
         },
     )
 }
@@ -58,9 +58,9 @@ async fn popover_page(ui: Ui) -> Page {
     page(
         &ui,
         "Popover menu",
-        nojs! {
+        lui! {
             (ui.flash())
-            div class="nojs-popover-row" {
+            div class="lui-popover-row" {
                 // code: /popover
                 Menu("Account") {
                     heading "Signed in as Ada";
@@ -78,7 +78,7 @@ async fn popover_page(ui: Ui) -> Page {
                 }
                 // end code
             }
-            p class="nojs-note" { "Links, a heading, a disabled item, a submenu that is another popover, and a " code { "<form method=\"post\">" } " action. Click outside or press Escape to close; the second menu opens end-aligned." }
+            p class="lui-note" { "Links, a heading, a disabled item, a submenu that is another popover, and a " code { "<form method=\"post\">" } " action. Click outside or press Escape to close; the second menu opens end-aligned." }
         },
     )
 }

@@ -1,8 +1,8 @@
 //! Render costs: the inline stylesheet, a whole page, a 1 000-row table and a paged table,
-//! and parsing UI state. `cargo bench -p axum-nojs`; numbers go in FINDINGS.md (M16).
+//! and parsing UI state. `cargo bench -p loco-ui`; numbers go in FINDINGS.md (M16).
 
-use axum_nojs::{UiState, prelude::*, stylesheet, table::Row};
 use criterion::{Criterion, black_box, criterion_group, criterion_main};
+use loco_ui::{UiState, prelude::*, stylesheet, table::Row};
 
 fn rows(n: usize) -> Vec<Row<'static>> {
     (0..n)
@@ -16,7 +16,7 @@ fn rows(n: usize) -> Vec<Row<'static>> {
         .collect()
 }
 
-fn files(ui: &Ui) -> axum_nojs::table::Table<'_> {
+fn files(ui: &Ui) -> loco_ui::table::Table<'_> {
     ui.table("t", "/t")
         .column("name", "Name")
         .sortable()
@@ -44,7 +44,7 @@ fn bench(c: &mut Criterion) {
                 .len()
         })
     });
-    let mut paged = Ui::from_request("/t", "page=20&q=file", "nojs-ui=per.t=25");
+    let mut paged = Ui::from_request("/t", "page=20&q=file", "lui-ui=per.t=25");
     paged.caps = Caps::all();
     let page = rows(25);
     c.bench_function("paged_table 25 of 1000", |b| {
@@ -62,7 +62,7 @@ fn bench(c: &mut Criterion) {
             UiState::from_request(
                 black_box("/settings"),
                 black_box("tab.settings=1&page=3&sort=name&q=hello+world"),
-                black_box("theme=dark; nojs-ui=open.faq=2%2C3&per.files=25; nojs-flash=Saved."),
+                black_box("theme=dark; lui-ui=open.faq=2%2C3&per.files=25; lui-flash=Saved."),
             )
         })
     });

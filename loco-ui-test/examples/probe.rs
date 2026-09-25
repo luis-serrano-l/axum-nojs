@@ -1,8 +1,8 @@
 //! Render one HTML file through Blitz and print the box of every selector given.
 //!
-//! `cargo run -p axum-nojs-test --example probe -- page.html out.png "table td" ".x"`
+//! `cargo run -p loco-ui-test --example probe -- page.html out.png "table td" ".x"`
 
-use axum_nojs_test::Page;
+use loco_ui_test::Page;
 
 fn main() {
     let mut args = std::env::args().skip(1);

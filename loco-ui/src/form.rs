@@ -36,7 +36,7 @@
 //! on the server round trip, and warning about unsaved changes when leaving needs script.
 //!
 //! ```rust
-//! use axum_nojs::prelude::*;
+//! use loco_ui::prelude::*;
 //! let ui = Ui::from(Caps::all());
 //! let m = ui.form("/signup").email("email", "Email").required();
 //! assert!(m.render().into_string().contains(r#"type="email" value="" required"#));
@@ -58,8 +58,8 @@
 //! assert!(html.contains("accept=\"image/png,image/jpeg\""));
 //! assert!(html.contains(r#"<option value="weekly" selected>"#));
 //!
-//! // The same in `nojs!`:
-//! let same = nojs! { Form("/profile") submit="Save profile" inline {
+//! // The same in `lui!`:
+//! let same = lui! { Form("/profile") submit="Save profile" inline {
 //!     group "About you";
 //!     textarea "bio" "Bio" 3 maxlength=280 value="Hi" help="Shown on your profile.";
 //!     file "avatar" "Avatar" "image/png,image/jpeg";
@@ -409,7 +409,7 @@ impl<'a> Form<'a> {
         html! {
             @for (legend, fs) in self.filled() {
                 @if let Some(legend) = legend {
-                    fieldset class="nojs-form-group" { legend { (legend) } @for f in &fs { (f) } }
+                    fieldset class="lui-form-group" { legend { (legend) } @for f in &fs { (f) } }
                 } @else {
                     @for f in &fs { (f) }
                 }
@@ -429,15 +429,15 @@ impl Render for Form<'_> {
             .flat_map(|g| &g.1)
             .any(|f| matches!(f.kind, FieldKind::File { .. }));
         let class = if self.inline {
-            "nojs-form nojs-form-inline"
+            "lui-form lui-form-inline"
         } else {
-            "nojs-form"
+            "lui-form"
         };
         html! {
-            form id=(enhance::swap_id("nojs-form", self.id.unwrap_or(action))) data-nojs="swap" class=(class) method="post" action=(action)
+            form id=(enhance::swap_id("lui-form", self.id.unwrap_or(action))) data-lui="swap" class=(class) method="post" action=(action)
                 enctype=[multipart.then_some("multipart/form-data")] {
                 (self.fields())
-                div class="nojs-form-actions" { (Button::new(Caps::NONE, self.submit).primary()) }
+                div class="lui-form-actions" { (Button::new(Caps::NONE, self.submit).primary()) }
             }
         }
     }
@@ -445,17 +445,17 @@ impl Render for Form<'_> {
 
 /// Styles for this component; included in [`crate::stylesheet`].
 pub const CSS: &str = r#"
-.nojs-form { display: grid; gap: calc(var(--nojs-space) * 3); max-width: 28rem; }
-.nojs-form-inline { max-width: 40rem; }
-.nojs-form-group { display: grid; gap: calc(var(--nojs-space) * 2); margin: 0; padding: calc(var(--nojs-space) * 3); border: 1px solid var(--nojs-line); border-radius: var(--nojs-radius-lg); }
-.nojs-form-group legend { padding: 0 0.5rem; font-weight: 600; }
+.lui-form { display: grid; gap: calc(var(--lui-space) * 3); max-width: 28rem; }
+.lui-form-inline { max-width: 40rem; }
+.lui-form-group { display: grid; gap: calc(var(--lui-space) * 2); margin: 0; padding: calc(var(--lui-space) * 3); border: 1px solid var(--lui-line); border-radius: var(--lui-radius-lg); }
+.lui-form-group legend { padding: 0 0.5rem; font-weight: 600; }
 @media (min-width: 40rem) {
-  .nojs-form-inline .nojs-field { grid-template-columns: 10rem 1fr; column-gap: calc(var(--nojs-space) * 2); }
-  .nojs-form-inline .nojs-field > :not(label) { grid-column: 2; }
+  .lui-form-inline .lui-field { grid-template-columns: 10rem 1fr; column-gap: calc(var(--lui-space) * 2); }
+  .lui-form-inline .lui-field > :not(label) { grid-column: 2; }
   /* The label sits on the input's row, centred on it; help, counter and error stack below. */
-  .nojs-form-inline .nojs-field > label { grid-column: 1; grid-row: 1; align-self: center; }
-  .nojs-form-inline .nojs-field-check > label { grid-column: 2; }
-  .nojs-form-inline .nojs-form-actions { padding-left: calc(10rem + var(--nojs-space) * 2); }
+  .lui-form-inline .lui-field > label { grid-column: 1; grid-row: 1; align-self: center; }
+  .lui-form-inline .lui-field-check > label { grid-column: 2; }
+  .lui-form-inline .lui-form-actions { padding-left: calc(10rem + var(--lui-space) * 2); }
 }
 "#;
 
@@ -534,7 +534,12 @@ mod tests {
             m.contains("aria-describedby=\"f-bio-help f-bio-count f-bio-error\""),
             "{m}"
         );
-        assert!(m.contains("<output id=\"f-bio-count\" for=\"f-bio\" class=\"nojs-field-count\">5 / 10</output>"), "counts chars, not bytes");
+        assert!(
+            m.contains(
+                "<output id=\"f-bio-count\" for=\"f-bio\" class=\"lui-field-count\">5 / 10</output>"
+            ),
+            "counts chars, not bytes"
+        );
         assert!(m.contains("aria-invalid=\"true\"") && m.contains(">héllo</textarea>"));
         assert!(!m.contains("<fieldset") && !m.contains("enctype"));
     }
@@ -569,7 +574,7 @@ mod tests {
         );
         assert!(m.contains("placeholder=\"Type\""));
         assert!(
-            m.contains("class=\"nojs-form nojs-form-inline\"") && m.contains("<legend>G</legend>")
+            m.contains("class=\"lui-form lui-form-inline\"") && m.contains("<legend>G</legend>")
         );
     }
 }

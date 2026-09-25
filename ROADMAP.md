@@ -6,23 +6,23 @@ matrix and findings are updated, and the work is committed. Unknowns become entr
 `FINDINGS.md`, never reasons to add script.
 
 ## M1 · Capability beacons (server-side feature detection, no script)
-- [x] `axum_nojs::caps`: `Caps` bitset (invokers, anchor, details_content, view_transitions, popover, light_dark, streaming_dsd)
-- [x] `caps::beacon_css()` emits `@supports` rules that request `/nojs/caps?flag=1` as a background image
-- [x] Axum route `/nojs/caps` sets/extends a `axum-nojs-caps` cookie; `Caps` implements `FromRequestParts`
+- [x] `loco_ui::caps`: `Caps` bitset (invokers, anchor, details_content, view_transitions, popover, light_dark, streaming_dsd)
+- [x] `caps::beacon_css()` emits `@supports` rules that request `/lui/caps?flag=1` as a background image
+- [x] Axum route `/lui/caps` sets/extends a `loco-ui-caps` cookie; `Caps` implements `FromRequestParts`
 - [x] Every component takes `&Caps` and emits only the best markup for that browser (dialog: invokers vs `:target`; popover: anchor vs centred; tabs: `::details-content` vs accordion)
 - [x] Demo page `/caps` shows what the server thinks the browser supports
 - [x] Screenshot verification in Firefox headless; old-Chrome-109 check confirms fallbacks render
 
 ## M2 · Out-of-order streaming without script
-- [x] `axum_nojs::stream`: `Streamed` response type built on `axum::body::Body::from_stream`
-- [x] `slot(id, placeholder)` renders `<nojs-slot><template shadowrootmode=open><slot name=id>…`
+- [x] `loco_ui::stream`: `Streamed` response type built on `axum::body::Body::from_stream`
+- [x] `slot(id, placeholder)` renders `<lui-slot><template shadowrootmode=open><slot name=id>…`
 - [x] `fill(id, future)` appends the resolved chunk with `slot=id` later in the stream, any order
 - [x] Demo `/stream` with three slow sections (100ms, 800ms, 2s) arriving out of order
 - [x] Fallback when DSD unsupported (per `Caps`): render sequentially at the end
 - [x] Test: response body is chunked and slots arrive in completion order
 
 ## M3 · State model for scriptless apps
-- [x] `axum_nojs::state`: `UiState` extractor merging query + cookie (open tab, open details, dialog)
+- [x] `loco_ui::state`: `UiState` extractor merging query + cookie (open tab, open details, dialog)
 - [x] `prg(redirect_to, flash)` helper: Post/Redirect/Get with a one-shot flash cookie
 - [x] `flash()` component rendering and clearing the flash
 - [x] `details` and `tabs` persist open state via `?open=` links generated from `UiState`
@@ -30,7 +30,7 @@ matrix and findings are updated, and the work is committed. Unknowns become entr
 - [x] Docs: one page "how state works with no script"
 
 ## M4 · Blitz as the test engine
-- [x] `axum-nojs-test` crate: render a route via `tower::oneshot`, load HTML into `blitz-dom`, resolve layout
+- [x] `loco-ui-test` crate: render a route via `tower::oneshot`, load HTML into `blitz-dom`, resolve layout
 - [x] Assertions: element exists, is visible, bounding box, computed style
 - [x] Screenshot every demo route through Blitz's painter; store PNGs under `tests/shots`
 - [x] CI-style script `just verify` (or `scripts/verify.sh`): build, clippy, tests, screenshots, no-script grep
@@ -45,12 +45,12 @@ matrix and findings are updated, and the work is committed. Unknowns become entr
 ## M6 · Polish for release
 - [x] `<select>` with `<selectedcontent>` component, `<input type=range>` and colour with server round trip
 - [x] Crate docs on docs.rs style: every pub item documented, `#![warn(missing_docs)]`
-- [x] Examples in `axum-nojs/examples/`
-- [x] Publish dry run: `cargo publish --dry-run -p axum-nojs`
-- [x] Demo visual pass: one palette (`--nojs-*` for light and dark, moss accent), one type scale, index grouped by platform feature, toolbar with a back link and the theme switch on every component page
+- [x] Examples in `loco-ui/examples/`
+- [x] Publish dry run: `cargo publish --dry-run -p loco-ui`
+- [x] Demo visual pass: one palette (`--lui-*` for light and dark, moss accent), one type scale, index grouped by platform feature, toolbar with a back link and the theme switch on every component page
 
 ## M7 · Optional enhancement script
-- [x] `axum_nojs::enhance`: one small script (`/nojs/enhance.js`, content-hashed, immutable) that upgrades swap roots (`id` + `data-nojs="swap"`) to fetch + replace, queued per root, with focus, flash, title, theme and URL synced
+- [x] `loco_ui::enhance`: one small script (`/lui/enhance.js`, content-hashed, immutable) that upgrades swap roots (`id` + `data-lui="swap"`) to fetch + replace, queued per root, with focus, flash, title, theme and URL synced
 - [x] Counter, form, tabs, accordion, pager, theme toggle are swap roots; combobox searches as you type; range and colour mirror live; `:target` dialog fallback opens as a real modal; `<details>` popover fallback light-dismisses
 - [x] Enforcement: exactly one `<script>` per page and it is the enhancement tag; no inline handlers; Blitz suite (no script engine) proves every route works without it
 - [x] Headless Firefox check through geckodriver (`scripts/browser-check.mjs`, run by `scripts/verify.sh` when available)
@@ -60,14 +60,14 @@ matrix and findings are updated, and the work is committed. Unknowns become entr
 - [x] `Caps::from_cookie_header(&str)` and `Caps::from_query(&str)` as the only entry points; the Axum extractor becomes a thin wrapper behind the `axum` feature
 - [x] Every component returns `Markup` that also implements `Render`; a `string` feature (or `.into_string()` docs) shows use without Maud templates
 - [x] `state::prg`, `flash` and `stream` compile without Axum: an `http` feature exposes `http::Response` builders, the `axum` feature wraps them
-- [x] Example `axum-nojs/examples/actix_server.rs` (or `hyper_server.rs`) rendering three components with the beacon route wired by hand
+- [x] Example `loco-ui/examples/actix_server.rs` (or `hyper_server.rs`) rendering three components with the beacon route wired by hand
 - [x] README: "Use with any server" section; CLAUDE.md workspace notes updated
 
-## M9 · `axum-nojs-caps` as its own crate
-- [x] Move `caps.rs` (bitset, `@supports` beacons, cookie parsing, beacon route) into `axum-nojs-caps/` in the workspace; `axum-nojs` depends on it and re-exports `Caps`, `Cap`
+## M9 · `loco-ui-caps` as its own crate
+- [x] Move `caps.rs` (bitset, `@supports` beacons, cookie parsing, beacon route) into `loco-ui-caps/` in the workspace; `loco-ui` depends on it and re-exports `Caps`, `Cap`
 - [x] Spec page `docs/caps.md`: how the beacons work, the first-view problem, what each flag tests, cookie format, how to add a flag
 - [x] Standalone example: a raw `hyper` handler that reads `Caps` and prints one line per flag
-- [x] `cargo publish --dry-run -p axum-nojs-caps` passes; README of the sub-crate written for a reader who has never seen axum-nojs
+- [x] `cargo publish --dry-run -p loco-ui-caps` passes; README of the sub-crate written for a reader who has never seen loco-ui
 
 ## M10 · Components admin panels need
 - [x] `table`: server-side sort (`?sort=col&dir=asc` links in `<th>`), column filter (`<form method=get>` with `<search>`), sticky header, `aria-sort`; swap root
@@ -84,15 +84,15 @@ matrix and findings are updated, and the work is committed. Unknowns become entr
 
 ## M12 · Theming guide
 - [x] `layout::Tokens` struct (`accent`, `bg`, `fg`, …, light and dark) with `Default` = ink and moss; `layout_with(&caps, title, theme, &tokens, body)` emits the overrides once per page
-- [x] `docs/theming.md`: every `--nojs-*` token, what it affects, contrast requirements, one worked example with a different palette
+- [x] `docs/theming.md`: every `--lui-*` token, what it affects, contrast requirements, one worked example with a different palette
 - [x] Demo `/theme-demo` (or a query flag on the index) rendering the same page under a second palette; Blitz screenshot pair `index-modern.png` vs `index-alt.png`
 - [x] Test: no colour literal outside `layout.rs` (grep for `#[0-9a-f]{3,6}` in component CSS)
 
 ## M13 · Publish
-- [x] `license`, `repository`, `readme`, `keywords`, `categories` in every publishable `Cargo.toml` (MIT; https://github.com/luis-serrano-l/axum-nojs)
-- [x] `CHANGELOG.md` with 0.1.0; version bump; `cargo publish --dry-run` for `axum-nojs-caps` then `axum-nojs`
-      (both crates are 0.1.0; `axum-nojs-caps` dry-runs clean; `axum-nojs` alone cannot until `axum-nojs-caps`
-      is on crates.io, so `cargo package --workspace --exclude demo --exclude axum-nojs-test`
+- [x] `license`, `repository`, `readme`, `keywords`, `categories` in every publishable `Cargo.toml` (MIT; https://github.com/luis-serrano-l/loco-ui)
+- [x] `CHANGELOG.md` with 0.1.0; version bump; `cargo publish --dry-run` for `loco-ui-caps` then `loco-ui`
+      (both crates are 0.1.0; `loco-ui-caps` dry-runs clean; `loco-ui` alone cannot until `loco-ui-caps`
+      is on crates.io, so `cargo package --workspace --exclude demo --exclude loco-ui-test`
       verifies both together)
 - [x] docs.rs metadata (`all-features`), crate-level README rendered on docs.rs checked with `cargo doc --no-deps`
 - [ ] The publish itself is an outward action: ask the owner, do not run `cargo publish` without a yes
@@ -101,19 +101,19 @@ matrix and findings are updated, and the work is committed. Unknowns become entr
 Every item must keep the no-script path intact: the markup is the same, the script only reads
 attributes. Blitz proves each route works without it; `scripts/browser-check.mjs` proves the
 script does its job.
-- [x] Partial swaps with explicit targets: `data-nojs-target="#id"` on a form or link swaps that
-  root instead of the closest one; `data-nojs-swap="inner|outer|append|prepend"` chooses how.
+- [x] Partial swaps with explicit targets: `data-lui-target="#id"` on a form or link swaps that
+  root instead of the closest one; `data-lui-swap="inner|outer|append|prepend"` chooses how.
   Without the script the same request is a full navigation to the same page.
-- [x] Out-of-band updates: a response may carry extra swap roots marked `data-nojs-oob`; the
+- [x] Out-of-band updates: a response may carry extra swap roots marked `data-lui-oob`; the
   script replaces each matching `id` anywhere in the page (flash banner, counter in the header)
   and drops them from the main swap. Without the script the full page already shows them.
-- [x] Request lifecycle feedback: `data-nojs-busy` class on the root while a request is in flight,
-  `aria-busy="true"`, submit buttons disabled, a `--nojs-busy` CSS hook; optional
-  `data-nojs-indicator="#id"` element shown while pending. Failed requests fall back to a normal
+- [x] Request lifecycle feedback: `data-lui-busy` class on the root while a request is in flight,
+  `aria-busy="true"`, submit buttons disabled, a `--lui-busy` CSS hook; optional
+  `data-lui-indicator="#id"` element shown while pending. Failed requests fall back to a normal
   navigation so the user always sees the server's answer.
-- [x] History and URL control: `data-nojs-push="false"` keeps the URL, `data-nojs-replace` uses
+- [x] History and URL control: `data-lui-push="false"` keeps the URL, `data-lui-replace` uses
   `replaceState`, and Back/Forward restore the swapped roots from a cached copy instead of a
-  reload; a `nojs:swap` custom event fires after every swap for anything that must react.
+  reload; a `lui:swap` custom event fires after every swap for anything that must react.
 - [x] Spec entry for the enhancement script updated, README "How the script works" section,
   Firefox checks for each attribute, FINDINGS on what the platform still cannot do.
 
@@ -121,7 +121,7 @@ script does its job.
 The components are too basic: each proves a platform feature but stops short of what an app
 needs from it. Make each one something a real page would reach for, without giving up what
 makes them simple: one function, one options struct, plain HTML you can `curl`, no script
-beyond `/nojs/enhance.js`, every state a URL or a form. One box per component; each box ends
+beyond `/lui/enhance.js`, every state a URL or a form. One box per component; each box ends
 with a demo route that shows the new behaviour, a Blitz assertion and (where the script is
 involved) a Firefox check.
 - [x] Dialog: sizes (`sm|md|lg`), a header with title and close, a footer slot for real actions
@@ -176,7 +176,7 @@ in FINDINGS.md (`hyperfine` against the demo, Firefox navigation timing from
   `performance.getEntriesByType("navigation")` for the same routes; numbers in FINDINGS.md.
 - [x] Cheap wins, server: `stylesheet()` built once (`OnceLock`) instead of per page; the
   `Tokens::css()` string cached; `Content-Length` on every response; `Cache-Control` with a
-  hash on `/nojs/caps` beacon images and `/nojs/enhance.js` verified; gzip/br on the demo through
+  hash on `/lui/caps` beacon images and `/lui/enhance.js` verified; gzip/br on the demo through
   `tower-http` `CompressionLayer`; release profile with `lto = "fat"`, `codegen-units = 1`,
   `panic = "abort"` for the demo binary.
 - [x] Cheap wins, page: the inline stylesheet minified (whitespace and comments stripped at
@@ -185,10 +185,10 @@ in FINDINGS.md (`hyperfine` against the demo, Firefox navigation timing from
   needed (no third party) and recorded as such; the caps cookie small enough to fit one
   `Set-Cookie`.
 - [x] Cheap wins, script: `enhance.js` requests carry `Accept: text/html` and the server's
-  fragment answer (`Nojs-Enhance: 1`) used on every swap route in the demo, not only `/swap`,
+  fragment answer (`Lui-Enhance: 1`) used on every swap route in the demo, not only `/swap`,
   so a swap moves a few hundred bytes instead of the page; `fetch` with `priority: "high"`
   for user actions; prefetch on `mouseenter`/`focus` for same-origin links inside a swap root
-  (`data-nojs-prefetch`), cached for a few seconds and reused by the click.
+  (`data-lui-prefetch`), cached for a few seconds and reused by the click.
 - [x] Speculation rules: a `<script type="speculationrules">` is a `<script>` tag and so out
   of bounds by CLAUDE.md; instead `<link rel="prefetch">` for the index's component links and
   `<link rel="prerender">`-free; record in FINDINGS what the platform cannot prefetch without
@@ -240,15 +240,15 @@ The owner looked at the demo after M17 and found the call sites still heavy (a 7
 line, `x_with(&ui, …, XOptions::default()…)`, `.state(&ui.state)` repeating `ui`, cookies parsed
 by hand). Chosen shape (asked and answered): methods on `Ui` returning builders that render in
 `html!` (`ui.dialog("Delete account").title(..).danger().confirm(..).body(html!{..})`), one
-`use axum_nojs::prelude::*`, no `_with` twins, no `XOptions`; handlers lose their cookie
+`use loco_ui::prelude::*`, no `_with` twins, no `XOptions`; handlers lose their cookie
 plumbing through `Saved<T>` and `ui.redirect(to).ok(..).save(&value)`.
 - [x] Core: `Ui` gains `page(title, body) -> Page` (an `IntoResponse` that writes back changed
   state and clears a shown flash, so no more `(ui, markup)`), `redirect(to) -> Redirect`
   (`.flash/.ok/.warn/.danger/.cookie`, `into_http`), `param`/`params` (decoded query, so
   components read their own input), `From<Caps>`, `Default`. `prg`/`prg_parts` removed.
-  `dialog` is no longer remembered in the `nojs-ui` cookie.
+  `dialog` is no longer remembered in the `lui-ui` cookie.
 - [x] `saved.rs` (`axum` feature, serde + serde_urlencoded): `Saved<T>` extractor, cookie
-  `nojs-<type-name>`, `Redirect::save`/`forget`.
+  `lui-<type-name>`, `Redirect::save`/`forget`.
 - [x] Every component converted to a builder with `impl Ui { fn x(..) }` in its own file:
   flash, toasts, breadcrumbs (`.link().here()`), theme_toggle, stat, skeleton, empty_state,
   counter (`.apply(op, typed)` for the handler), range/range_pair, color, select
@@ -265,16 +265,16 @@ plumbing through `Saved<T>` and `ui.redirect(to).ok(..).save(&value)`.
   `.rows()`, `.paged(total)`), palette (`.group/.command/.commands/.keywords`, `.exact()`),
   stream (`ui.stream`, `ui.slot`). lib.rs: `prelude`, slim re-exports, tests rewritten.
   Examples (render_page, axum_server, hyper_server) and the bench rewritten.
-- [x] `cargo test -p axum-nojs --all-features` green (38 unit, 54 doc), and the crate builds
+- [x] `cargo test -p loco-ui --all-features` green (38 unit, 54 doc), and the crate builds
   with no features and with `--features http`.
 - [x] Demo rewrite (`demo/src/lib.rs`): one prelude import, every route in the new form, each
   handler `Page`/`Redirect`, `Saved<Settings>`/`Saved<Count>`/`Saved<Signup>`/`Saved<Inputs>`
-  instead of hand-parsed cookies (cookie names change to `nojs-*`: check `axum-nojs-test`
+  instead of hand-parsed cookies (cookie names change to `lui-*`: check `loco-ui-test`
   and `scripts/browser-check.mjs` for the old `count`, `settings`, `inputs`, `wizard`, `notes`
   cookies), dialog page keeps `.id("confirm")` so `/dialog?dialog=confirm` in `PATHS` still
   works, table + CSV share one `fn files_table(ui)`, palette redirects via `.exact()`,
   wizard uses `.review()` and `Posted`. Goal: the demo visibly shorter; count lines before/after.
-- [x] Demo tests (`demo/src/lib.rs` tests), `axum-nojs-test` (Blitz) and
+- [x] Demo tests (`demo/src/lib.rs` tests), `loco-ui-test` (Blitz) and
   `scripts/browser-check.mjs` pass; look at `tests/shots/` (form select field and wizard
   review are new markup).
 - [x] Docs: README first example and "How to read this crate" (signatures section is stale:
@@ -294,10 +294,10 @@ gets a second visual pass.
   itself (`include_str!`) so the page and the code cannot drift (markers instead of the planned
   const, which would have been a second copy). Highlighted on the server by `highlight()`
   (keywords, strings, numbers, types, comments, macros, methods), coloured only with
-  `--nojs-*` tokens (`.nojs-snippet`, `.nojs-hl-*` in `layout.rs`); no script. A test checks
+  `--lui-*` tokens (`.lui-snippet`, `.lui-hl-*` in `layout.rs`); no script. A test checks
   every component page has a snippet and that the box shows exactly that code.
 - [x] Visual pass with the frontend-design skill. Plan: keep ink and moss (tokens only), spend
-  the boldness on one element, the plate: the live component on a stage (`--nojs-surface`)
+  the boldness on one element, the plate: the live component on a stage (`--lui-surface`)
   with the code box joined under it, one per page. Index rows became a two-column grid
   (name, then a plain-words line of what the component is for, then the chips); the same
   line is the lede under each component title; chips no longer break mid-word. Reviewed
@@ -306,8 +306,8 @@ gets a second visual pass.
   mistakes `white-space` for a colour.
 - [x] Replace the demo's hand-written `highlight()` with `syntect` (asked by the owner): a
   dependency of `demo` only (`default-syntaxes`, `regex-fancy`; no bundled themes, no
-  onig C build), never of `axum-nojs`. Its parser and Rust grammar decide the scopes; the
-  demo maps scope prefixes to the same seven `nojs-hl-*` classes coloured by `--nojs-*`
+  onig C build), never of `loco-ui`. Its parser and Rust grammar decide the scopes; the
+  demo maps scope prefixes to the same seven `lui-hl-*` classes coloured by `--lui-*`
   tokens, rather than `ClassedHTMLGenerator`, whose class-per-scope spans were about ten times
   the markup. Every snippet is highlighted once (`LazyLock`, warmed on a thread when the router
   is built; about 1 s in a debug build). Maud's `@if` shows `if` as a keyword and the `@` plain.
@@ -324,44 +324,44 @@ native elements shadcn replaces with React (`<dialog>`, `<details>`, `<select>`,
 Vercel Geist for dense tables and stats. Paid kits (Tailwind UI, Catalyst) are not copied.
 Done before M21 so the primitives are born in this look.
 - [x] Tokens: `Palette` gains the shadcn roles it lacks (`card`, `popover`, `secondary`,
-  `accent` as hover surface, `primary`/`on_primary`, `input`, `ring`), keeping `--nojs-*`
+  `accent` as hover surface, `primary`/`on_primary`, `input`, `ring`), keeping `--lui-*`
   names; `Tokens::default()` is shadcn's neutral (zinc) light and dark, primary near-black /
-  near-white. `radius` 0.5rem with derived `--nojs-radius-sm/-lg`. ok/warn/danger from Radix
+  near-white. `radius` 0.5rem with derived `--lui-radius-sm/-lg`. ok/warn/danger from Radix
   Colors steps 9/11. Docs and `docs/theming` updated; the "ink and moss" wording removed.
-  Done: the old brand token became `--nojs-primary`/`--nojs-on-primary` everywhere and
-  `--nojs-accent` is now the hover surface. Status colours use Radix step 11 (red/green/amber),
+  Done: the old brand token became `--lui-primary`/`--lui-on-primary` everywhere and
+  `--lui-accent` is now the hover surface. Status colours use Radix step 11 (red/green/amber),
   the text step, so each clears 4.5:1; danger buttons put `on-primary` on it (5.0 / 8.4).
-  `--nojs-radius-sm/-lg` are derived as radius ∓ 4px, so a radius needs a unit (`"0px"`).
+  `--lui-radius-sm/-lg` are derived as radius ∓ 4px, so a radius needs a unit (`"0px"`).
 - [x] Type: system stack only (`ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
   "Helvetica Neue", Arial, sans-serif`, mono `ui-monospace, SFMono-Regular, Menlo, Consolas`),
   shadcn's scale (text-sm 0.875rem body in controls, 1.25/1.5 line heights, 500/600 weights),
   `-webkit-font-smoothing: antialiased`, tabular numbers in tables and stats.
-  Done: the stacks are `--nojs-font-sans`/`--nojs-font-mono` on `:root` (base rules, not
+  Done: the stacks are `--lui-font-sans`/`--lui-font-mono` on `:root` (base rules, not
   `Tokens` fields); every component's sizes snapped to the scale (0.75/0.875/1/1.125/1.25/1.5/
   2.25rem) and 700 weights to 600.
 - [x] Base styles in `layout.rs`: shadcn heights and paddings (controls h-9 = 2.25rem, px-3/px-4),
-  1px `--nojs-input` borders, `shadow-xs` on controls, `shadow-lg` on dialog/popover,
-  focus-visible as a 3px `--nojs-ring` at 50% opacity, `aria-invalid` red ring, disabled at
-  50% opacity, hover as `--nojs-accent` surface. Native `<select>`, checkbox, radio, range,
+  1px `--lui-input` borders, `shadow-xs` on controls, `shadow-lg` on dialog/popover,
+  focus-visible as a 3px `--lui-ring` at 50% opacity, `aria-invalid` red ring, disabled at
+  50% opacity, hover as `--lui-accent` surface. Native `<select>`, checkbox, radio, range,
   date and `<details>` restyled to match (`appearance`, `accent-color`).
-  Done: `--nojs-shadow-xs/-lg` are emitted by `Tokens::css()` beside the radii (rgb literals
-  live there, not in component CSS); `--nojs-radius-sm` became radius − 2px so controls land
+  Done: `--lui-shadow-xs/-lg` are emitted by `Tokens::css()` beside the radii (rgb literals
+  live there, not in component CSS); `--lui-radius-sm` became radius − 2px so controls land
   on shadcn's 6px `rounded-md`. The plain button is shadcn's outline variant. The select
-  chevron is two gradients in `--nojs-muted` (no data-URI SVG, which would need a literal);
+  chevron is two gradients in `--lui-muted` (no data-URI SVG, which would need a literal);
   `select.rs` drops it where `appearance: base-select` draws its own picker icon.
 - [x] Every existing component's CSS re-tuned to these values (dialog, drawer as shadcn sheet,
   popover/menu as dropdown-menu, tabs as the muted pill list, accordion, toast as sonner-style
   cards, table, pager as pagination, badge-like chips, skeleton, palette as command).
-  Done: `Tokens::css()` also emits `--nojs-overlay` (black/50, as shadcn), used by every
-  backdrop; all floating layers take `--nojs-popover` and `--nojs-shadow-lg`. Tabs: each
-  summary paints its slice of the muted pill and `.nojs-tabs-mark` became the raised chip
+  Done: `Tokens::css()` also emits `--lui-overlay` (black/50, as shadcn), used by every
+  backdrop; all floating layers take `--lui-popover` and `--lui-shadow-lg`. Tabs: each
+  summary paints its slice of the muted pill and `.lui-tabs-mark` became the raised chip
   (the Blitz test now checks the chip, inset 3px). Toasts and flashes are neutral cards with
   a level dot. Link-as-button rules repeat the button values until M22 builds them on the
   primitive.
 - [x] The demo takes the same look (index, plate, code box); syntect classes recoloured.
   Done: index groups are grids of cards (the title link stretches over the card), "built on"
-  items are outline badges, the stage is a preview box over a `--nojs-surface` code block, and
-  the seven `nojs-hl-*` classes use danger/ok/warn/muted/fg (GitHub-like, still tokens only).
+  items are outline badges, the stage is a preview box over a `--lui-surface` code block, and
+  the seven `lui-hl-*` classes use danger/ok/warn/muted/fg (GitHub-like, still tokens only).
 - [x] Side-by-side check: for each component, a Firefox screenshot of the demo (light and dark,
   1280 and 420 wide) next to the shadcn docs page for the same component; mismatches fixed
   or noted. `tests/shots/` refreshed; the colour-literal test still passes.
@@ -388,9 +388,9 @@ layered design system: primitives → existing components rebuilt on them → fl
 - [x] `button.rs`: `ui.button(text)` with `.primary()/.danger()/.ghost()/.small()/.icon()`,
   `.submit()/.reset()`, `.command(cmd, target)` (invoker), `.popovertarget()`, `.form(id)`,
   `.name().value()`, `.disabled()`, `.loading(bool)`; `ui.link_button(text, href)` with the
-  same look. The global `button {}` CSS in `layout.rs` moves into `button::CSS` as `.nojs-button`.
-  Done: modifiers are `nojs-button-{primary,danger,ghost,small,icon}`; bare `button` and
-  `button.nojs-primary`/`.nojs-danger` keep the same rules (same specificity as before) so
+  same look. The global `button {}` CSS in `layout.rs` moves into `button::CSS` as `.lui-button`.
+  Done: modifiers are `lui-button-{primary,danger,ghost,small,icon}`; bare `button` and
+  `button.lui-primary`/`.lui-danger` keep the same rules (same specificity as before) so
   hand-written and not-yet-migrated buttons look unchanged until M22. The button submits by
   default and becomes `type="button"` with a command or popover target; without invoker
   commands a popover command falls back to `popovertarget`/`popovertargetaction`. Also
@@ -402,7 +402,7 @@ layered design system: primitives → existing components rebuilt on them → fl
   `ui.switch` (checkbox with `role=switch`).
   Done: the field renderer, `Field` and `FieldKind` moved out of `form.rs` into `input.rs`,
   and `ui.form` now renders its fields through it (one renderer, which is M22's second box
-  done early), with the `.nojs-field*` CSS. `ui.input` takes the type as a setter
+  done early), with the `.lui-field*` CSS. `ui.input` takes the type as a setter
   (`.email()`, `.password()` (never echoed back), `.number()`, `.pattern()`, `.textarea()`,
   `.file()`, `.date()`, `.time()`) plus `.id()`; `ui.checkbox`/`ui.switch` share the builder
   (`.checked(bool)`); `ui.radio_group(name, legend).option(value, label)` is a fieldset with
@@ -418,11 +418,11 @@ layered design system: primitives → existing components rebuilt on them → fl
   frame). Found on the way: a crate using `html!` from the prelude still needs its own `maud`
   dependency, since the macro expands to `maud::` paths; M24's docs must say so.
 - [x] Layout primitives: `ui.stack()`, `ui.cluster()`, `ui.grid(min)`, `ui.split()`, CSS-only,
-  gaps from `--nojs-space-*` tokens.
+  gaps from `--lui-space-*` tokens.
   Done: one file each (`stack.rs`, `cluster.rs`, `grid.rs`, `split.rs`); each takes its
   content as `Markup` (`ui.grid(min, content)`, `ui.split(side, main)`). `Tokens::css()`
-  derives `--nojs-space-{1,2,3,4,6,8}` (n × 4px by default, Tailwind's steps) and `.gap(n)`
-  adds a `nojs-gap-n` class from `layout.rs`; default gaps sit in `:where()` so the class
+  derives `--lui-space-{1,2,3,4,6,8}` (n × 4px by default, Tailwind's steps) and `.gap(n)`
+  adds a `lui-gap-n` class from `layout.rs`; default gaps sit in `:where()` so the class
   always wins. Extras: `cluster.between()/.end()`, `split.side_width()/.side_end()`. The grid
   minimum and split width travel as a custom property in a `style` attribute (a note for
   M26's CSP box: that needs `style-src-attr`, which the inline `<style>` already implies).
@@ -447,7 +447,7 @@ One change to the button restyles every dialog, pager and table.
   triggers, dialog/drawer open-cancel-close with `Icon::X`, counter ±/Reset/Set, "Load more",
   pagination links as ghost/outline link buttons, filter/Go/Show, bulk actions, wizard
   Back/Skip/Next, theme toggle group, colour swatches, empty-state actions, palette trigger);
-  `<summary>` fallbacks carry `class="nojs-button"`. Search/filter/number boxes are `Input`
+  `<summary>` fallbacks carry `class="lui-button"`. Search/filter/number boxes are `Input`
   (`.hide_label()` keeps the label as `aria-label`). `Button` now holds `Caps` rather than
   `&Ui` (components holding only caps build one with `Button::new`), and gained `.content()`,
   `.id/.role/.title/.style/.aria_haspopup/.pressed/.accesskey/.aria_keyshortcuts/.rel/.current`
@@ -465,10 +465,10 @@ One change to the button restyles every dialog, pager and table.
   Done: the native-control rules (inputs, selects, checkboxes, file, focus and disabled
   states) moved from `layout.rs` into `input.rs` and `button.rs`; the copies of the button look
   in dialog, drawer, pager, paged table, table, palette and popover are gone. Component-owned
-  controls got part classes (`nojs-color-input`, `nojs-range-input`, `nojs-counter-input`,
-  `nojs-table-filter-input`, `nojs-table-check`, `nojs-palette-input`, `nojs-select-filter`,
-  `nojs-combobox-input`, `nojs-paged-table-page`), so no component CSS targets bare `button` or
-  `input` any more; the wizard's and the dialog body's field rules became `.nojs-field` ones
+  controls got part classes (`lui-color-input`, `lui-range-input`, `lui-counter-input`,
+  `lui-table-filter-input`, `lui-table-check`, `lui-palette-input`, `lui-select-filter`,
+  `lui-combobox-input`, `lui-paged-table-page`), so no component CSS targets bare `button` or
+  `input` any more; the wizard's and the dialog body's field rules became `.lui-field` ones
   (the demo's dialog field is `ui.input` now).
   Measured against pre-M21 (`167dfd1`), release build, same machine:
   | | pre-M21 | before this box | after |
@@ -502,7 +502,7 @@ One change to the button restyles every dialog, pager and table.
   both sides, same size). Every page differs only in the theme toggle (small ghost buttons in
   the group); beyond that: counter (± icons, ghost "Reset"), dialog (the body field is
   `ui.input`, 7px tighter), toast (buttons in a cluster), wizard (field spacing from
-  `.nojs-field`), table ("Columns" with a chevron, ghost `⋯` row menus instead of "⋯ ▾"),
+  `.lui-field`), table ("Columns" with a chevron, ghost `⋯` row menus instead of "⋯ ▾"),
   popover (chevron icons on the triggers), palette (search icon in the trigger), dashboard (the
   empty-state link is an outline button). All intended; nothing else moved.
 
@@ -545,7 +545,7 @@ The showcase for "wait, this needs no JS?".
   `.preview(src)` and `.href(url)` for the file added last, and `.remove(action)` (a Remove
   button per file posting `<name>=<file>`). A dashed drop zone around the file input, then the
   Upload button, then the list. `enhance.js` sends a multipart form holding
-  `<progress data-nojs-progress>` through `XMLHttpRequest` to fill the bar (the served budget
+  `<progress data-lui-progress>` through `XMLHttpRequest` to fill the bar (the served budget
   goes from 10 to 11 KB, now 10,564 bytes). `Icon::File` added (29 icons). Demo `/upload`:
   per-visitor, capped, in memory; raster images inline, anything else as an attachment. The
   browser check uploads a real file in place.
@@ -576,11 +576,11 @@ The React idea worth keeping: a component model users extend, not a closed catal
   code runs with `cargo test`. The rules follow: extension trait, input from `ui`, primitives
   only, tokens only, an own class prefix, `Page::css`, one variant per request, swap roots,
   `Saved<T>` needs named fields, Blitz for tests, and `maud` as a direct dependency. Needed
-  two helpers from the next box, added here: `axum_nojs::slug` is public and `Page::css` exists.
+  two helpers from the next box, added here: `loco_ui::slug` is public and `Page::css` exists.
 - [x] Public helpers users need: `slug`, `enhance::swap_id`, `caps`, and a way to add CSS to
   `ui.page()` (`Ui::with_css` or `Page::css`).
-  Done: `axum_nojs::slug` and `Page::css` (with the guide, previous box); `enhance::swap_id`
-  and `axum_nojs::caps` were already public. Added `Ui::link_with(key, value)` and
+  Done: `loco_ui::slug` and `Page::css` (with the guide, previous box); `enhance::swap_id`
+  and `loco_ui::caps` were already public. Added `Ui::link_with(key, value)` and
   `Ui::link_without(key)` (made public, with a doctest): the "same page, one parameter
   changed" links the calendar and table use, which a user component needs just as much.
 - [x] A user-land `ui.pricing_card()` in the demo crate, built only from primitives.
@@ -623,17 +623,17 @@ Do not chase its breadth or wrap JS widgets. Win on what it cannot promise: zero
 script, proven in CI, with server-side flows included.
 - [x] Name: `maud-ui` rules out a generic `*-ui`; the differentiator belongs in the name.
   Proposed `nojs-ui` (+ `nojs-ui-caps`, `nojs-ui-test`, Axum stays the `axum` feature; free
-  on crates.io as of 2026-09-24), or keep `axum-nojs`. Ask the owner before renaming; the
-  `nojs-*` classes, `--nojs-*` tokens and `/nojs/` routes stay either way.
-  Answered 2026-09-24: keep `axum-nojs`. Loco support is a `loco` feature on the same crate
-  (M27), so no rename.
+  on crates.io as of 2026-09-24), or keep `axum-nojs`.
+  Answered 2026-09-24: keep `axum-nojs`. Reversed 2026-09-25: renamed to `loco-ui` (prefix
+  `lui-`, macro `lui!`), because "nojs" promised no JavaScript while an optional script ships;
+  history kept by moving the directories in a commit of their own.
 - [x] Measure and publish: bytes shipped per demo page (HTML, CSS, script = 0 required),
   `stylesheet()` size raw and gzip, next to maud-ui's numbers; a bench or test keeps them
   from regressing.
   Done: README "What a page weighs": stylesheet 57.6 KB (10.3 KB gzip), demo pages 62–80 KB
   (11.8–13.5 KB gzip) with the stylesheet inlined, 0 required script, the optional one 10.6 KB
   (3.6 KB gzip), beside maud-ui's 313 KB CSS / 89 KB script. Tests: `stylesheet()` under
-  64 KB (axum-nojs), every `PATHS` page under 96 KB in both caps variants (demo); the
+  64 KB (loco-ui), every `PATHS` page under 96 KB in both caps variants (demo); the
   shadow-DOM stream carries the stylesheet twice (117 KB), gets 128 KB, and is in FINDINGS.
 - [x] Strict CSP: the demo sends `Content-Security-Policy: script-src 'none'` (and `'self'`
   only when the enhancement script is on); a test asserts every route renders under it and
@@ -648,7 +648,7 @@ script, proven in CI, with server-side flows included.
 - [x] README badge line: "0 KB JavaScript required · verified by a script-less renderer (Blitz)
   in CI", linking the only-one-script test and the Blitz suite.
   Done: a text line under the title (no image badge: no third-party badge service), linking
-  `axum-nojs-test/tests/demo.rs` (Blitz) and `demo/src/lib.rs` (the only-one-script test), plus
+  `loco-ui-test/tests/demo.rs` (Blitz) and `demo/src/lib.rs` (the only-one-script test), plus
   "strict CSP". True as written: `.github/workflows/rust.yml` runs `cargo test --workspace`,
   which runs both.
 - [x] Comparison page in docs (`docs/comparison.md`): maud-ui, htmx + hand-written Maud,
@@ -740,13 +740,13 @@ Loco's default views are Tera templates and its scaffolds generate them, so the 
 wiring, generators and docs, not components. Check every Loco API named below against the
 loco-rs source (fetch it into `~/.cargo/registry` with a scratch crate) before relying on it.
 - [x] Decision: commit to Loco as the primary target? Owner only; if no, skip this milestone.
-  Answered 2026-09-24: yes, as a `loco` feature on `axum-nojs` (not a separate crate), and
+  Answered 2026-09-24: yes, as a `loco` feature on `loco-ui` (not a separate crate), and
   the crate keeps its name (M26).
 - [x] `loco` feature: an `Initializer` whose `after_routes` mounts
-  `/nojs/enhance.js` and the `/nojs/caps` beacon route, so an app adds one line to
+  `/lui/enhance.js` and the `/lui/caps` beacon route, so an app adds one line to
   `app.rs::initializers`.
-  Done: `axum-nojs/src/loco.rs`, feature `loco` (loco-rs 1.2, `default-features = false`,
-  plus `async-trait`, which Loco's trait uses). `Box::new(axum_nojs::loco::Initializer)`;
+  Done: `loco-ui/src/loco.rs`, feature `loco` (loco-rs 1.2, `default-features = false`,
+  plus `async-trait`, which Loco's trait uses). `Box::new(loco_ui::loco::Initializer)`;
   `after_routes` merges `caps::router()` and `enhance::router()` and adds the `slim` layer
   (not `csp`: the app owns its policy). `loco::mount(router)` does the same by hand; a test
   checks both routes answer. `verify.sh` and CI run clippy and the tests with `--features loco`.
@@ -759,7 +759,7 @@ loco-rs source (fetch it into `~/.cargo/registry` with a scratch crate) before r
 - [x] Validation errors: Loco models validate with the `validator` crate; a helper maps
   `ValidationErrors` into `Form::errors(..)`/`Input::error(..)` so server errors land on the
   right field.
-  Done: `axum_nojs::loco::FieldErrors`, `From` both `validator::ValidationErrors` and Loco's
+  Done: `loco_ui::loco::FieldErrors`, `From` both `validator::ValidationErrors` and Loco's
   `ModelValidationErrors`, plus `from_error(&loco_rs::Error)`; `.pairs()` for `Form::errors`,
   `.get(field)` for `Input::error`. First message per field; a rule without `message` gets a
   sentence from its code. Doctest: a `create` controller re-rendering the form. Gotchas noted
@@ -777,7 +777,7 @@ loco-rs source (fetch it into `~/.cargo/registry` with a scratch crate) before r
 - [x] Flash and PRG: `Redirect` + `ui.flash()` work with Loco's cookie setup (the private
   cookie key from `config/*.yaml` if we use signed cookies); no conflict with Loco's
   session or auth middleware.
-  Done: our cookies are unsigned (`nojs-*`), so no key is needed; Loco 1.2 core has no session
+  Done: our cookies are unsigned (`lui-*`), so no key is needed; Loco 1.2 core has no session
   middleware, and its JWT cookie is app-named. Test `flash_survives_locos_default_middleware`
   builds the router as Loco's boot does (routes, `default_middleware_stack`, `with_state`, our
   `after_routes`) with `tests_cfg::app::get_app_context` (dev-dependency `loco-rs` with
@@ -785,7 +785,7 @@ loco-rs source (fetch it into `~/.cargo/registry` with a scratch crate) before r
   served too. Documented: `secure_headers` `github` blocks the script on plain http; `owasp`'s
   `Clear-Site-Data: "cookies"` wipes every cookie per response.
 - [x] Views: document Maud views beside Loco's Tera default (a `views/` module of functions
-  returning `Markup`), and decide whether a Tera function bridge (`{{ nojs_button(..) }}`) is
+  returning `Markup`), and decide whether a Tera function bridge (`{{ lui_button(..) }}`) is
   worth it; default answer: no, Maud only, stated in the docs.
   Done: `docs/loco.md` (started here; the last box finishes it) has "Views: Maud, not Tera":
   a `src/views/notes.rs` of `fn(&Ui, data) -> Markup`, the controller calling it, Tera and
@@ -794,7 +794,7 @@ loco-rs source (fetch it into `~/.cargo/registry` with a scratch crate) before r
   would need `| safe`). The `loco` module doc has the same views module as a doctest.
 - [x] Generator: a scaffold override (`cargo loco generate override` templates, or our own
   template set) that emits Maud views built from `ui.*` for list/show/new/edit, PRG included.
-  Done: `axum-nojs/loco-templates/scaffold/api/{controller,dto}.t`, copied into an app's
+  Done: `loco-ui/loco-templates/scaffold/api/{controller,dto}.t`, copied into an app's
   `.loco-templates/` (Loco reads overrides there by the built-in file names). `controller.t`
   writes an HTML controller (list with `.paged`, show, new, create, edit, update, delete; PRG
   and flash; the form re-rendered with values and `FieldErrors` on bad input); `dto.t` writes
@@ -804,7 +804,7 @@ loco-rs source (fetch it into `~/.cargo/registry` with a scratch crate) before r
 - [x] `examples/loco-app`: a minimal Loco app (one model, CRUD, sign-in) with script off;
   Blitz renders its routes and the only-one-script test covers them.
   Done: trimmed from `loco new` (sqlite, no assets, blocking workers): users + sign up/in/out
-  as forms, the JWT in an `HttpOnly` `auth` cookie (`auth.jwt.location`), the axum-nojs
+  as forms, the JWT in an `HttpOnly` `auth` cookie (`auth.jwt.location`), the loco-ui
   initializer line, and `notes` from `cargo loco generate scaffold note title:string!
   body:text done:bool! due:date`. A workspace member, so `cargo test` and verify.sh run it.
   `tests/pages.rs` boots Loco's router: signed out → 401; sign-up/sign-in errors on the form;
@@ -831,12 +831,12 @@ M26 kept builders over `Props { .., ..Default::default() }` for good reasons (co
 `ui`, list adders with last-item modifiers, short calls stay short); nothing here undoes that:
 the attribute form must compile down to the same builder, so both forms stay one code path.
 - [x] Decision (owner): which attribute form. Options shown with the `/dialog` call and a
-  tabs strip built from data: A, a `nojs!` macro (Maud plus components); B, public fields plus
+  tabs strip built from data: A, a `lui!` macro (Maud plus components); B, public fields plus
   struct update (`Tabs { vertical: true, ..ui.tabs("demo") }`); C, builders only.
   Answered 2026-09-24: A. B was dropped because it reads longer than the dot form, freezes
   every internal field as public API (`#[non_exhaustive]` forbids struct update outside the
   crate) and brings back nested item structs. CLAUDE.md's "no macros beyond `html!`" becomes
-  "no macros beyond `html!` and `nojs!`".
+  "no macros beyond `html!` and `lui!`".
 - [x] One source of truth per component: a `PROPS: &[Prop]` const on each builder
   (`Prop { name, kind: Text | Switch | Condition | Number | Item | Modifier, default, attr,
   doc }`), where `attr` is the HTML attribute or element it maps to. The existing
@@ -851,11 +851,11 @@ the attribute form must compile down to the same builder, so both forms stay one
   (paragraph ↔ source) and `every_setter_is_in_props` (PROPS ↔ source: names, arguments,
   and a switch has none, a condition one `bool`). Both share one source reader. Bulk adders
   (`.options(iter)`, `.rows(iter)`) are values; items add exactly one thing.
-- [x] `axum-nojs-macros` (proc macro, re-exported as `axum_nojs::nojs` and in the prelude)
-  with `nojs!`, a superset of `html!` that expands to the builder chain, so the dot form and
+- [x] `loco-ui-macros` (proc macro, re-exported as `loco_ui::lui` and in the prelude)
+  with `lui!`, a superset of `html!` that expands to the builder chain, so the dot form and
   the attribute form are one code path. Target shape:
   ```rust
-  nojs! {
+  lui! {
       Dialog("Delete account") id="confirm" title="Delete account?" small danger
           confirm=("Delete account", "/dialog/delete") cancel="Keep it" {
           p { "This cannot be undone." }
@@ -882,20 +882,20 @@ the attribute form must compile down to the same builder, so both forms stay one
     `|| html!{..}` when the caller writes `lazy "Why" || { .. }`. A proc macro cannot read
     `PROPS` (a const in another crate), so the closure is marked in the markup, not looked up.
   - `@for`, `@if`, `@match` and `@let` among items expand to a fold over the builder, so items
-    built from data stay inline. Plain Maud elsewhere passes through untouched, so `nojs!` can
+    built from data stay inline. Plain Maud elsewhere passes through untouched, so `lui!` can
     replace `html!` in any route; a component's block that is not items becomes `.body(..)`.
-  - `ui` is taken from scope by that name (documented); `nojs!(ctx => ..)` names another.
+  - `ui` is taken from scope by that name (documented); `lui!(ctx => ..)` names another.
   - A misspelled prop is rustc's own method-not-found error ("did you mean `vertical`?"), so
     every expanded call must keep the span of the attribute it came from; a `trybuild` test
     pins the error text for a typo, a missing required argument and a wrong value type.
-  - Record in FINDINGS whatever rust-analyzer does and does not offer inside `nojs!`.
-  Done: `axum-nojs-macros` (proc-macro2 + quote, no syn), `pub use` as `axum_nojs::nojs` and in
+  - Record in FINDINGS whatever rust-analyzer does and does not offer inside `lui!`.
+  Done: `loco-ui-macros` (proc-macro2 + quote, no syn), `pub use` as `loco_ui::lui` and in
   the prelude; rules and syntax in its crate doc (with a doctest). Two rules were settled while
   building it: an item is a lowercase name followed by an argument (a literal or `(..)`; an
   item with none is `name()`), since in Maud an element name is never followed by one, which
   keeps `select`, `link`, `option`, `summary`, `time`, `header` usable both as items and as
   elements; and a component with no required arguments leaves out the parentheses
-  (`Card title="Plan" { .. }`). `axum-nojs/tests/nojs.rs` has one test per rule, each
+  (`Card title="Plan" { .. }`). `loco-ui/tests/lui.rs` has one test per rule, each
   comparing against the dot form: component and `;`, body block, every attribute form,
   items (arguments, modifiers, `||` closures, `()`, nested items continuing the chain in a
   kanban), `@for`/`@if`/`@else if`/`@else`/`@match`/`@let` among items, plain Maud passing
@@ -903,28 +903,28 @@ the attribute form must compile down to the same builder, so both forms stay one
   pins four errors: typo, missing argument, wrong type, markup mixed into items (our own
   message). rust-analyzer: FINDINGS, M28 (hover, go to definition and setter completion work).
 - [x] Both forms tested: a test renders each component once in the dot form and once in
-  `nojs!` and asserts identical HTML; doctests show both in every component header
+  `lui!` and asserts identical HTML; doctests show both in every component header
   (common call first, per convention 5).
   Done: all 41 component headers (every spec module with a `ui.<name>(..)`; `enhance`,
   `layout`, `caps`, `state` and `paged_table` have none) end their main doctest with a
-  `// The same in \`nojs!\`:` twin and `assert_eq!` on the HTML, so the doctests are the
-  per-component test; `every_component_header_shows_the_nojs_form` fails when one is
-  missing. Every component could be written in `nojs!` (the tooltip's trigger is a nested
-  `nojs!`, the stream twin is `Slot(..)`). Switches sit on the component as attributes; any
+  `// The same in \`lui!\`:` twin and `assert_eq!` on the HTML, so the doctests are the
+  per-component test; `every_component_header_shows_the_lui_form` fails when one is
+  missing. Every component could be written in `lui!` (the tooltip's trigger is a nested
+  `lui!`, the stream twin is `Slot(..)`). Switches sit on the component as attributes; any
   setter may also stand in an items block (`search "/shop";`) when a chain's order matters,
   now stated in the macro doc.
-- [x] Introspection: `axum_nojs::props()` lists every component with its `PROPS`; the M5 spec
+- [x] Introspection: `loco_ui::props()` lists every component with its `PROPS`; the M5 spec
   JSON (`spec/components.json`, `cargo run -p demo -- spec`) gains a `props` array per
   component; each demo component page shows a props table (name, kind, default, HTML
   attribute, doc) under its code snippet, generated from the same list; `Debug` on a builder
   prints only the props set away from their default.
-  Done: `axum_nojs::props()` returns every builder as a `props::Component` (module, builder,
-  constructors as written, `PROPS`), with `.nojs()` for its `nojs!` name; 44 builders, a
+  Done: `loco_ui::props()` returns every builder as a `props::Component` (module, builder,
+  constructors as written, `PROPS`), with `.lui()` for its `lui!` name; 44 builders, a
   test (`props_lists_every_builder_and_constructor`) fails on a builder or `ui.<name>(..)`
-  missing from it. `spec/components.json` gains `builders` per component (builder, nojs name,
+  missing from it. `spec/components.json` gains `builders` per component (builder, lui name,
   calls, and `props` with name, kind, args, default, attr, doc). Each demo page ends with a
   "Props" section: one `<details>` per builder its snippet calls (found from `ui.<name>(`,
-  `Type::new(` or the `nojs!` name), the first open, a table with the doc's backticks as
+  `Type::new(` or the `lui!` name), the first open, a table with the doc's backticks as
   `<code>`; test `component_pages_show_their_props`. Widening the setter scan to
   `pub const fn` found two setters no list had (`Row::key`, `SelectOption::icon`).
   Not done, by choice: a `Debug` that prints only changed props. The derived `Debug` prints
@@ -939,14 +939,14 @@ the attribute form must compile down to the same builder, so both forms stay one
   pages with htmx 2.0.11 in place of the script and the same answers). The script was behind
   on table sort (51 vs 41 ms p50) and pager (47 vs 22); the view transition around every swap
   cost about a frame. Now an answer within 150 ms swaps directly, slower ones morph, and a
-  root with `data-nojs-morph` (the kanban) always morphs: table 35 vs 41, tab 13 vs 14, pager
+  root with `data-lui-morph` (the kanban) always morphs: table 35 vs 41, tab 13 vs 14, pager
   32 vs 22 (p90 35 vs 35; traced to frame alignment, not script work, FINDINGS M28). Fragment
   answers (`slim`) and prefetch already existed; nothing to add there. Numbers in README
   "How fast an update lands".
-- [x] Demo: routes move to `nojs!` where it reads better (every snippet between the `// code:`
+- [x] Demo: routes move to `lui!` where it reads better (every snippet between the `// code:`
   markers, so each component page teaches the attribute form); the dot form stays where a route
   keeps a builder in a variable. Count route lines before and after.
-  Done: 41 `nojs!` blocks across the route files; every component page whose snippet can be
+  Done: 41 `lui!` blocks across the route files; every component page whose snippet can be
   written that way now teaches it, including the kanban and upload (items from data through
   `@for`, `@if let` and `x=[option]` instead of a mutable builder in a loop) and the
   "write your own" page (`PricingCard(..)` from its own `impl Ui` method). Kept in the dot
@@ -955,15 +955,15 @@ the attribute form must compile down to the same builder, so both forms stay one
   page's HTML is byte-identical outside the snippet box (48 exported pages diffed) except
   `/settings`, which gains a Form props table now that `Form(..)` is inside its snippet.
   Route lines 1791 → 1798: nested blocks take a line more, loops a few less.
-- [x] Docs: CLAUDE.md convention 5 and the macro rule (`nojs!`, `PROPS`), README first example,
+- [x] Docs: CLAUDE.md convention 5 and the macro rule (`lui!`, `PROPS`), README first example,
   `docs/ergonomics.md` before/after, `docs/comparison.md` (maud-ui's `Props` vs ours, now
   with names at the call site and a listable prop table, which maud-ui's docs say it lacks).
-  Done: CLAUDE.md convention 5 (the macro rule is now `html!` and `nojs!`; `PROPS`,
-  `props::COMPONENTS`, the header's `nojs!` twin and the tests that enforce them; demo
-  snippets in `nojs!` unless a builder is kept), the workspace layout lists
-  `axum-nojs-macros`; README's first example in `nojs!` (tested as `the_readme_example`) with
+  Done: CLAUDE.md convention 5 (the macro rule is now `html!` and `lui!`; `PROPS`,
+  `props::COMPONENTS`, the header's `lui!` twin and the tests that enforce them; demo
+  snippets in `lui!` unless a builder is kept), the workspace layout lists
+  `loco-ui-macros`; README's first example in `lui!` (tested as `the_readme_example`) with
   a paragraph on the attribute rules and `props()`; `docs/ergonomics.md` "M28" with the
-  kanban and dialog before/after and the counts; `docs/comparison.md` gains the `nojs!`
+  kanban and dialog before/after and the counts; `docs/comparison.md` gains the `lui!`
   button, names at the call site, and the listable props.
 
 
@@ -976,7 +976,7 @@ stars) and the kits worth copying: shadcn/ui and templUI (a CLI and registry), P
 component status, accessibility linting), GOV.UK Frontend (error summary, translatable
 strings), Basecoat and Oat (CSS-first, a list of what needs JS). The opening: according to
 Loco's generators reference, Loco 1.0 removed the `--html`/`--htmx` scaffolds in favour of a
-JSON API plus a React SPA, so server-rendered CRUD on Loco has no first-party answer. axum-nojs
+JSON API plus a React SPA, so server-rendered CRUD on Loco has no first-party answer. loco-ui
 already beats maud-ui on the guarantee (0 KB required, proven by Blitz, strict CSP) and on Loco
 wiring; it falls behind on install, ready-made pages, i18n and checked accessibility. Check
 every Loco API named below against loco-rs 1.2 before relying on it, as M27 did.
@@ -984,8 +984,8 @@ every Loco API named below against loco-rs 1.2 before relying on it, as M27 did.
 ### Loco adoption
 - [ ] Publish: the M13 box. Everything below matters less while install is a git dependency.
   Owner only.
-- [ ] One-command install: a subcommand (`cargo run -p axum-nojs --features loco -- install`,
-  or a small `cargo-nojs` binary) that writes `.loco-templates/`, adds the initializer line
+- [ ] One-command install: a subcommand (`cargo run -p loco-ui --features loco -- install`,
+  or a small `cargo-lui` binary) that writes `.loco-templates/`, adds the initializer line
   to `app.rs`, a `views/layout.rs` and the `views/mod.rs` entries; idempotent, and a test
   runs it on a fresh `loco new` copy and then `cargo check`s the result.
 - [ ] Auth generator (Phoenix's `phx.gen.auth` as the model): templates for sign-in, sign-up,
@@ -1019,28 +1019,28 @@ every Loco API named below against loco-rs 1.2 before relying on it, as M27 did.
   what was checked), and README's badge line adds "axe-clean".
 - [ ] Blocks, no script: app shell with sidebar, auth pages, settings page, record show/edit
   page, dashboard of stats, and error pages (404, 500) in Maud usable as Loco's fallback. One
-  file each under `axum-nojs/src/blocks/`, one demo route each, one Blitz test each.
+  file each under `loco-ui/src/blocks/`, one demo route each, one Blitz test each.
 - [ ] Server-rendered SVG charts (bar, line, sparkline): `ui.chart(..)` writes `<svg>` with
   `<title>`/`<desc>` and a visually hidden data table as the accessible fallback; theme
-  colours from `--nojs-*` tokens. No JS, which maud-ui and most kits need here.
+  colours from `--lui-*` tokens. No JS, which maud-ui and most kits need here.
 - [ ] Missing shadcn components: sidebar, navigation menu, description list, toggle group,
   context menu (a popover on a secondary button), input OTP (one field with
   `autocomplete="one-time-code"` and `inputmode="numeric"`). Each by the component
-  conventions, with PROPS, a `nojs!` twin and a demo route.
+  conventions, with PROPS, a `lui!` twin and a demo route.
 
 ### Developer experience
 - [ ] Playground per component (Lookbook, phoenix_storybook): each demo page's props table
   becomes a GET form, generated from `PROPS`, that re-renders the component with the chosen
-  props and shows the matching `nojs!` snippet. Works with script off; the enhancement script
+  props and shows the matching `lui!` snippet. Works with script off; the enhancement script
   swaps it in place.
 - [ ] Theme builder without script: `/theme` with colour inputs and a radius, posted to the
-  server, a live preview of a few components, and a `theme.css` download of the `--nojs-*`
+  server, a live preview of a few components, and a `theme.css` download of the `--lui-*`
   overrides (maud-ui's `/theme`, without its script). `docs/theming.md` links it.
 - [ ] Component status (Primer): `stable | beta` in `props::COMPONENTS`, shown on the demo
   page, the index and the spec JSON; README says what each status promises.
-- [ ] Copy-paste mode (shadcn, templUI), last: `cargo nojs add <component>` vendors a
+- [ ] Copy-paste mode (shadcn, templUI), last: `cargo lui add <component>` vendors a
   component's file into the app, from the spec JSON as the registry. Components read `ui`, so
-  first decide whether a vendored file keeps `use axum_nojs::…` for `Ui` or copies it; ask
+  first decide whether a vendored file keeps `use loco_ui::…` for `Ui` or copies it; ask
   the owner before starting.
 
 ### Positioning

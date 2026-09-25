@@ -21,7 +21,7 @@
 //! `:target` fallback.
 //!
 //! ```rust
-//! use axum_nojs::prelude::*;
+//! use loco_ui::prelude::*;
 //! let ui = Ui::from(Caps::all());
 //! let nav = html! { ul { li { a href="/" { "Home" } } } };
 //! // The id is the label's slug: this drawer is `#menu`.
@@ -30,9 +30,9 @@
 //! // `?dialog=menu` opens it from the server.
 //! let ui = Ui::from_request("/", "dialog=menu", "");
 //! let m = ui.drawer("Menu").title("Browse").sidebar().nav(nav.clone()).render().into_string();
-//! assert!(m.contains("nojs-drawer-sidebar") && m.contains(" open>"));
-//! // The same in `nojs!`:
-//! let same = nojs! { Drawer("Menu") title="Browse" sidebar nav=(nav); };
+//! assert!(m.contains("lui-drawer-sidebar") && m.contains(" open>"));
+//! // The same in `lui!`:
+//! let same = lui! { Drawer("Menu") title="Browse" sidebar nav=(nav); };
 //! assert_eq!(same.into_string(), m);
 //! ```
 
@@ -150,70 +150,70 @@ impl Render for Drawer<'_> {
         let title_id = format!("{id}-title");
         let open_href = format!("#{id}");
         html! {
-            div class={ "nojs-drawer" @if sidebar { " nojs-drawer-sidebar" } } {
+            div class={ "lui-drawer" @if sidebar { " lui-drawer-sidebar" } } {
                 @let menu = html! { (Icon::Menu) (label) };
                 @if invokers {
-                    (ui.button(label).class("nojs-drawer-open").content(menu).command("show-modal", id).aria_haspopup("dialog"))
+                    (ui.button(label).class("lui-drawer-open").content(menu).command("show-modal", id).aria_haspopup("dialog"))
                 } @else {
-                    (ui.link_button(label, &open_href).class("nojs-drawer-open").content(menu).role("button"))
+                    (ui.link_button(label, &open_href).class("lui-drawer-open").content(menu).role("button"))
                 }
-                dialog id=(id) class="nojs-drawer-panel" closedby="any" aria-labelledby=(title_id) open[open] {
-                    div class="nojs-drawer-head" {
-                        p id=(title_id) class="nojs-drawer-title" { (title) }
+                dialog id=(id) class="lui-drawer-panel" closedby="any" aria-labelledby=(title_id) open[open] {
+                    div class="lui-drawer-head" {
+                        p id=(title_id) class="lui-drawer-title" { (title) }
                         @let x = html! { (Icon::X) };
                         @if invokers {
-                            (ui.button("").ghost().small().icon().class("nojs-drawer-close").label("Close").content(x).command("close", id))
+                            (ui.button("").ghost().small().icon().class("lui-drawer-close").label("Close").content(x).command("close", id))
                         } @else {
-                            (ui.link_button("", "#").ghost().small().icon().class("nojs-drawer-close").label("Close").content(x))
+                            (ui.link_button("", "#").ghost().small().icon().class("lui-drawer-close").label("Close").content(x))
                         }
                     }
                     nav aria-labelledby=(title_id) { (nav) }
                 }
-                div class="nojs-drawer-content" { (body) }
+                div class="lui-drawer-content" { (body) }
             }
         }
     }
 }
 /// Styles for this component; included in [`crate::stylesheet`].
 pub const CSS: &str = r#"
-.nojs-drawer { display: grid; gap: calc(var(--nojs-space) * 2); }
-.nojs-drawer-open { justify-self: start; }
+.lui-drawer { display: grid; gap: calc(var(--lui-space) * 2); }
+.lui-drawer-open { justify-self: start; }
 /* shadcn Sheet, side="left": full height, max-w-sm, border on the open edge, shadow-lg. */
-.nojs-drawer-panel {
-  box-sizing: border-box; margin: 0; padding: calc(var(--nojs-space) * 2);
-  color: var(--nojs-fg); background: var(--nojs-popover); border: 0; border-inline-end: 1px solid var(--nojs-line);
+.lui-drawer-panel {
+  box-sizing: border-box; margin: 0; padding: calc(var(--lui-space) * 2);
+  color: var(--lui-fg); background: var(--lui-popover); border: 0; border-inline-end: 1px solid var(--lui-line);
 }
-.nojs-drawer-panel:modal, .nojs-drawer-panel:target {
+.lui-drawer-panel:modal, .lui-drawer-panel:target {
   display: block; position: fixed; inset: 0 auto 0 0; height: 100dvh; max-height: none; width: min(24rem, 75vw); z-index: 10;
-  padding: calc(var(--nojs-space) * 3); box-shadow: var(--nojs-shadow-lg);
+  padding: calc(var(--lui-space) * 3); box-shadow: var(--lui-shadow-lg);
   transition: translate 0.3s ease-in-out, display 0.3s allow-discrete, overlay 0.3s allow-discrete;
 }
-.nojs-drawer-panel:target { box-shadow: var(--nojs-shadow-lg), 0 0 0 100vmax var(--nojs-overlay); }
-@starting-style { .nojs-drawer-panel:modal { translate: -100% 0; } }
-.nojs-drawer-panel::backdrop { background: var(--nojs-overlay); }
-.nojs-drawer-panel:not(:modal):not(:target)[open] { position: static; width: auto; border: 1px solid var(--nojs-line); border-radius: var(--nojs-radius); }
-.nojs-drawer-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: calc(var(--nojs-space) * 2); }
-.nojs-drawer-title { margin: 0; font-weight: 600; }
-.nojs-drawer-close { opacity: 0.7; }
-.nojs-drawer-close:hover { opacity: 1; }
+.lui-drawer-panel:target { box-shadow: var(--lui-shadow-lg), 0 0 0 100vmax var(--lui-overlay); }
+@starting-style { .lui-drawer-panel:modal { translate: -100% 0; } }
+.lui-drawer-panel::backdrop { background: var(--lui-overlay); }
+.lui-drawer-panel:not(:modal):not(:target)[open] { position: static; width: auto; border: 1px solid var(--lui-line); border-radius: var(--lui-radius); }
+.lui-drawer-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: calc(var(--lui-space) * 2); }
+.lui-drawer-title { margin: 0; font-weight: 600; }
+.lui-drawer-close { opacity: 0.7; }
+.lui-drawer-close:hover { opacity: 1; }
 /* Links as shadcn sidebar menu buttons: text-sm, rounded-md, accent on hover and when current. */
-.nojs-drawer-panel ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.25rem; }
-.nojs-drawer-panel li a {
-  display: block; padding: 0.375rem 0.5rem; border-radius: var(--nojs-radius-sm);
-  font-size: 0.875rem; line-height: 1.25rem; color: var(--nojs-fg); text-decoration: none;
+.lui-drawer-panel ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.25rem; }
+.lui-drawer-panel li a {
+  display: block; padding: 0.375rem 0.5rem; border-radius: var(--lui-radius-sm);
+  font-size: 0.875rem; line-height: 1.25rem; color: var(--lui-fg); text-decoration: none;
 }
-.nojs-drawer-panel li a:hover { background: var(--nojs-accent); color: var(--nojs-on-accent); }
-.nojs-drawer-panel li a[aria-current] { background: var(--nojs-accent); color: var(--nojs-on-accent); font-weight: 500; }
-.nojs-drawer-content { min-width: 0; }
-@media (prefers-reduced-motion: reduce) { .nojs-drawer-panel:modal { transition: none; } }
+.lui-drawer-panel li a:hover { background: var(--lui-accent); color: var(--lui-on-accent); }
+.lui-drawer-panel li a[aria-current] { background: var(--lui-accent); color: var(--lui-on-accent); font-weight: 500; }
+.lui-drawer-content { min-width: 0; }
+@media (prefers-reduced-motion: reduce) { .lui-drawer-panel:modal { transition: none; } }
 @media (min-width: 60rem) {
-  .nojs-drawer-sidebar { grid-template-columns: 14rem 1fr; align-items: start; }
-  .nojs-drawer-sidebar > .nojs-drawer-open { display: none; }
-  .nojs-drawer-sidebar > .nojs-drawer-panel:not(:modal) {
-    display: block; position: sticky; top: calc(var(--nojs-space) * 2); width: auto; height: auto; box-shadow: none;
-    padding: var(--nojs-space); background: var(--nojs-surface);
-    border: 1px solid var(--nojs-line); border-radius: var(--nojs-radius); z-index: auto;
+  .lui-drawer-sidebar { grid-template-columns: 14rem 1fr; align-items: start; }
+  .lui-drawer-sidebar > .lui-drawer-open { display: none; }
+  .lui-drawer-sidebar > .lui-drawer-panel:not(:modal) {
+    display: block; position: sticky; top: calc(var(--lui-space) * 2); width: auto; height: auto; box-shadow: none;
+    padding: var(--lui-space); background: var(--lui-surface);
+    border: 1px solid var(--lui-line); border-radius: var(--lui-radius); z-index: auto;
   }
-  .nojs-drawer-sidebar .nojs-drawer-close { display: none; }
+  .lui-drawer-sidebar .lui-drawer-close { display: none; }
 }
 "#;

@@ -13,17 +13,17 @@
 //! **Fallback:** none needed.
 //!
 //! ```rust
-//! use axum_nojs::prelude::*;
+//! use loco_ui::prelude::*;
 //! let ui = Ui::from(Caps::all());
-//! let m = ui.breadcrumbs().link("Home", "/").link("Projects", "/projects").here("axum-nojs").render().into_string();
+//! let m = ui.breadcrumbs().link("Home", "/").link("Projects", "/projects").here("loco-ui").render().into_string();
 //! assert!(m.contains(r#"<a href="/projects">Projects</a>"#));
-//! assert!(m.contains(r#"aria-current="page">axum-nojs"#));
+//! assert!(m.contains(r#"aria-current="page">loco-ui"#));
 //! // More than four: the middle folds into <details>.
 //! let long = ui.breadcrumbs().link("Home", "/").link("A", "/a").link("B", "/a/b").link("C", "/a/b/c").here("Here");
 //! assert!(long.render().into_string().contains("<details"));
-//! // The same in `nojs!`:
-//! let same = nojs! { Breadcrumbs {
-//!     link "Home" "/"; link "Projects" "/projects"; here "axum-nojs";
+//! // The same in `lui!`:
+//! let same = lui! { Breadcrumbs {
+//!     link "Home" "/"; link "Projects" "/projects"; here "loco-ui";
 //! } };
 //! assert_eq!(same.into_string(), m);
 //! ```
@@ -89,11 +89,11 @@ impl Render for Breadcrumbs<'_> {
             (before, &before[..0], &before[..0])
         };
         html! {
-            nav class="nojs-breadcrumbs" aria-label="Breadcrumb" {
+            nav class="lui-breadcrumbs" aria-label="Breadcrumb" {
                 ol {
                     @for (label, href) in head { li { a href=(href) { (label) } } }
                     @if fold {
-                        li class="nojs-breadcrumbs-fold" {
+                        li class="lui-breadcrumbs-fold" {
                             details {
                                 summary aria-label={ "Show " (middle.len()) " more" } { "\u{2026}" }
                                 ol { @for (label, href) in middle { li { a href=(href) { (label) } } } }
@@ -109,22 +109,22 @@ impl Render for Breadcrumbs<'_> {
 }
 /// Styles for this component; included in [`crate::stylesheet`].
 pub const CSS: &str = r#"
-.nojs-breadcrumbs { font-size: 0.875rem; color: var(--nojs-muted); margin-bottom: calc(var(--nojs-space) * 2); }
-.nojs-breadcrumbs > ol { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.25rem 0; list-style: none; margin: 0; padding: 0; }
-.nojs-breadcrumbs > ol > li + li::before { content: "/"; margin-inline: 0.625rem; color: var(--nojs-muted); }
-.nojs-breadcrumbs a { color: var(--nojs-muted); text-decoration: none; transition: color 0.15s; }
-.nojs-breadcrumbs a:hover { color: var(--nojs-fg); }
-.nojs-breadcrumbs [aria-current] { color: var(--nojs-fg); font-weight: 400; }
-.nojs-breadcrumbs-fold { position: relative; }
-.nojs-breadcrumbs-fold details { display: inline-block; }
-.nojs-breadcrumbs-fold summary { display: inline; list-style: none; cursor: pointer; padding-inline: 0.25rem; border-radius: var(--nojs-radius-sm); }
-.nojs-breadcrumbs-fold summary::-webkit-details-marker { display: none; }
-.nojs-breadcrumbs-fold summary:hover { background: var(--nojs-accent); color: var(--nojs-on-accent); }
-.nojs-breadcrumbs-fold ol {
+.lui-breadcrumbs { font-size: 0.875rem; color: var(--lui-muted); margin-bottom: calc(var(--lui-space) * 2); }
+.lui-breadcrumbs > ol { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.25rem 0; list-style: none; margin: 0; padding: 0; }
+.lui-breadcrumbs > ol > li + li::before { content: "/"; margin-inline: 0.625rem; color: var(--lui-muted); }
+.lui-breadcrumbs a { color: var(--lui-muted); text-decoration: none; transition: color 0.15s; }
+.lui-breadcrumbs a:hover { color: var(--lui-fg); }
+.lui-breadcrumbs [aria-current] { color: var(--lui-fg); font-weight: 400; }
+.lui-breadcrumbs-fold { position: relative; }
+.lui-breadcrumbs-fold details { display: inline-block; }
+.lui-breadcrumbs-fold summary { display: inline; list-style: none; cursor: pointer; padding-inline: 0.25rem; border-radius: var(--lui-radius-sm); }
+.lui-breadcrumbs-fold summary::-webkit-details-marker { display: none; }
+.lui-breadcrumbs-fold summary:hover { background: var(--lui-accent); color: var(--lui-on-accent); }
+.lui-breadcrumbs-fold ol {
   position: absolute; z-index: 5; top: 100%; left: 0; margin: 0.25rem 0 0; padding: 0.25rem;
-  list-style: none; min-width: 10rem; background: var(--nojs-popover);
-  border: 1px solid var(--nojs-line); border-radius: var(--nojs-radius); box-shadow: var(--nojs-shadow-lg);
+  list-style: none; min-width: 10rem; background: var(--lui-popover);
+  border: 1px solid var(--lui-line); border-radius: var(--lui-radius); box-shadow: var(--lui-shadow-lg);
 }
-.nojs-breadcrumbs-fold ol a { display: block; padding: 0.375rem 0.5rem; border-radius: var(--nojs-radius-sm); color: var(--nojs-fg); }
-.nojs-breadcrumbs-fold ol a:hover { background: var(--nojs-accent); color: var(--nojs-on-accent); }
+.lui-breadcrumbs-fold ol a { display: block; padding: 0.375rem 0.5rem; border-radius: var(--lui-radius-sm); color: var(--lui-fg); }
+.lui-breadcrumbs-fold ol a:hover { background: var(--lui-accent); color: var(--lui-on-accent); }
 "#;

@@ -7,8 +7,8 @@ use axum::{
     response::{IntoResponse, Response},
     routing::{get, post},
 };
-use axum_nojs::Row;
-use axum_nojs::prelude::*;
+use loco_ui::Row;
+use loco_ui::prelude::*;
 use serde::{Deserialize, Serialize};
 
 pub(crate) fn routes() -> Router {
@@ -32,7 +32,7 @@ struct AppNotes(Vec<(String, String)>);
 
 fn signin_view(ui: &Ui, values: &[(String, String)], errors: &[(&str, &str)]) -> Page {
     // code: /app/signin
-    let form = nojs! {
+    let form = lui! {
         Form("/app/signin") submit="Sign in" values=(values) errors=(errors) {
             email "email" "Email" required placeholder="you@example.com";
             password "password" "Password" required
@@ -136,7 +136,7 @@ async fn notes_page(ui: Ui, Saved(session): Saved<Session>, Saved(notes): Saved<
         .paged(total)
         .edit("/app/notes/edit")
         .empty("No notes yet: add one above.");
-    let add = nojs! {
+    let add = lui! {
         Form("/app/notes") submit="Add note" {
             text "text" "New note" required maxlength=60 placeholder="Buy milk";
         }
@@ -149,7 +149,7 @@ async fn notes_page(ui: Ui, Saved(session): Saved<Session>, Saved(notes): Saved<
             (ui.flash())
             (ui.stack(html! {
                 (ui.cluster(html! {
-                    span class="nojs-note" { "Signed in as " strong { (session.email) } }
+                    span class="lui-note" { "Signed in as " strong { (session.email) } }
                     form method="post" action="/app/signout" { (ui.button("Sign out").ghost().small()) }
                 }).between())
                 (add)

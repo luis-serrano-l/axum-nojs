@@ -31,9 +31,9 @@ impl Hooks for App {
         create_app::<Self, Migrator>(mode, environment, config).await
     }
 
-    // The one line axum-nojs needs: the enhancement script and the capability beacon.
+    // The one line loco-ui needs: the enhancement script and the capability beacon.
     async fn initializers(_ctx: &AppContext) -> Result<Vec<Box<dyn Initializer>>> {
-        Ok(vec![Box::new(axum_nojs::loco::Initializer)])
+        Ok(vec![Box::new(loco_ui::loco::Initializer)])
     }
 
     fn routes(_ctx: &AppContext) -> AppRoutes {

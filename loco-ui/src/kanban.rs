@@ -16,7 +16,7 @@
 //! **Fallback:** without view transitions a card is simply in its new column after the move.
 //!
 //! ```rust
-//! use axum_nojs::prelude::*;
+//! use loco_ui::prelude::*;
 //! let ui = Ui::from(Caps::all());
 //! let board = ui.kanban("/board/move")
 //!     .column("todo", "To do").card("c1", "Write the docs")
@@ -26,8 +26,8 @@
 //! assert!(m.contains(r#"name="card" value="c1""#) && m.contains(r#"name="to" value="doing""#));
 //! assert!(m.contains("2 / 2") && !m.contains(r#"value="todo" aria-label="Move Write"#));
 //!
-//! // The same in `nojs!`:
-//! let same = nojs! { Kanban("/board/move") {
+//! // The same in `lui!`:
+//! let same = lui! { Kanban("/board/move") {
 //!     column "todo" "To do" { card "c1" "Write the docs"; }
 //!     column "doing" "Doing" limit=2 {
 //!         card "c2" "Calendar" note="M23";
@@ -143,30 +143,30 @@ impl Render for Kanban<'_> {
     fn render(&self) -> Markup {
         let caps = self.ui.caps;
         let vt = caps.has(Cap::ViewTransitions);
-        let root = enhance::swap_id("nojs-kanban", self.action);
+        let root = enhance::swap_id("lui-kanban", self.action);
         let cols = &self.columns;
         html! {
-            div id=(root) data-nojs="swap" data-nojs-morph class="nojs-kanban" {
+            div id=(root) data-lui="swap" data-lui-morph class="lui-kanban" {
                 @for (i, col) in cols.iter().enumerate() {
                     @let heading = format!("{root}-{}", slug(col.key));
                     @let over = col.limit.is_some_and(|l| col.cards.len() > l);
-                    section class="nojs-kanban-column" aria-labelledby=(heading) {
-                        header class="nojs-kanban-head" {
+                    section class="lui-kanban-column" aria-labelledby=(heading) {
+                        header class="lui-kanban-head" {
                             h3 id=(heading) { (col.title) }
-                            span class={ "nojs-kanban-count" @if over { " nojs-kanban-over" } } {
+                            span class={ "lui-kanban-count" @if over { " lui-kanban-over" } } {
                                 (col.cards.len()) @if let Some(l) = col.limit { " / " (l) }
-                                @if over { span class="nojs-sr" { ", over the limit" } }
+                                @if over { span class="lui-sr" { ", over the limit" } }
                             }
                         }
                         @if col.cards.is_empty() {
-                            p class="nojs-kanban-empty" { "No cards" }
+                            p class="lui-kanban-empty" { "No cards" }
                         } @else {
-                            ol class="nojs-kanban-cards" {
+                            ol class="lui-kanban-cards" {
                                 @for card in &col.cards {
-                                    li class="nojs-kanban-card" style=[vt.then(|| format!("view-transition-name: nojs-kanban-{}", slug(card.key)))] {
-                                        p class="nojs-kanban-title" { (card.title) }
-                                        @if let Some(n) = card.note { p class="nojs-kanban-note" { (n) } }
-                                        form method="post" action=(self.action) class="nojs-kanban-move" {
+                                    li class="lui-kanban-card" style=[vt.then(|| format!("view-transition-name: lui-kanban-{}", slug(card.key)))] {
+                                        p class="lui-kanban-title" { (card.title) }
+                                        @if let Some(n) = card.note { p class="lui-kanban-note" { (n) } }
+                                        form method="post" action=(self.action) class="lui-kanban-move" {
                                             input type="hidden" name="card" value=(card.key);
                                             @if let Some(prev) = i.checked_sub(1).and_then(|p| cols.get(p)) {
                                                 @let label = format!("Move {} to {}", card.title, prev.title);
@@ -191,25 +191,25 @@ impl Render for Kanban<'_> {
 /// Styles for this component; included in [`crate::stylesheet`]. Columns on the surface, cards
 /// as small shadcn cards; the board scrolls sideways when the columns do not fit.
 pub const CSS: &str = r#"
-.nojs-kanban {
-  display: grid; grid-auto-flow: column; grid-auto-columns: minmax(15rem, 1fr); gap: calc(var(--nojs-space) * 2);
+.lui-kanban {
+  display: grid; grid-auto-flow: column; grid-auto-columns: minmax(15rem, 1fr); gap: calc(var(--lui-space) * 2);
   overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 0.5rem;
 }
-.nojs-kanban-column {
+.lui-kanban-column {
   display: grid; align-content: start; gap: 0.5rem; padding: 0.75rem; scroll-snap-align: start;
-  background: var(--nojs-surface); border: 1px solid var(--nojs-line); border-radius: var(--nojs-radius-lg);
+  background: var(--lui-surface); border: 1px solid var(--lui-line); border-radius: var(--lui-radius-lg);
 }
-.nojs-kanban-head { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; padding: 0 0.25rem; }
-.nojs-kanban-head h3 { margin: 0; font-size: 0.875rem; font-weight: 600; }
-.nojs-kanban-count { font-size: 0.75rem; font-weight: 500; color: var(--nojs-muted); font-variant-numeric: tabular-nums; }
-.nojs-kanban-over { color: var(--nojs-danger); }
-.nojs-kanban-cards { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.5rem; }
-.nojs-kanban-card {
+.lui-kanban-head { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; padding: 0 0.25rem; }
+.lui-kanban-head h3 { margin: 0; font-size: 0.875rem; font-weight: 600; }
+.lui-kanban-count { font-size: 0.75rem; font-weight: 500; color: var(--lui-muted); font-variant-numeric: tabular-nums; }
+.lui-kanban-over { color: var(--lui-danger); }
+.lui-kanban-cards { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.5rem; }
+.lui-kanban-card {
   display: grid; grid-template-columns: 1fr auto; align-items: start; gap: 0.25rem 0.5rem; padding: 0.625rem 0.75rem;
-  background: var(--nojs-card); border: 1px solid var(--nojs-line); border-radius: var(--nojs-radius); box-shadow: var(--nojs-shadow-xs);
+  background: var(--lui-card); border: 1px solid var(--lui-line); border-radius: var(--lui-radius); box-shadow: var(--lui-shadow-xs);
 }
-.nojs-kanban-title { grid-column: 1; margin: 0; font-size: 0.875rem; font-weight: 500; }
-.nojs-kanban-note { grid-column: 1; margin: 0; font-size: 0.75rem; color: var(--nojs-muted); }
-.nojs-kanban-move { grid-column: 2; grid-row: 1 / span 2; display: flex; margin: -0.25rem -0.375rem 0 0; }
-.nojs-kanban-empty { margin: 0; padding: 1rem; text-align: center; font-size: 0.875rem; color: var(--nojs-muted); border: 1px dashed var(--nojs-line); border-radius: var(--nojs-radius); }
+.lui-kanban-title { grid-column: 1; margin: 0; font-size: 0.875rem; font-weight: 500; }
+.lui-kanban-note { grid-column: 1; margin: 0; font-size: 0.75rem; color: var(--lui-muted); }
+.lui-kanban-move { grid-column: 2; grid-row: 1 / span 2; display: flex; margin: -0.25rem -0.375rem 0 0; }
+.lui-kanban-empty { margin: 0; padding: 1rem; text-align: center; font-size: 0.875rem; color: var(--lui-muted); border: 1px dashed var(--lui-line); border-radius: var(--lui-radius); }
 "#;

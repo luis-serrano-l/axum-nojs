@@ -1,18 +1,18 @@
 //! The smallest Axum app that uses capability beacons and UI state:
-//! `cargo run -p axum-nojs --example axum_server --features axum`, then open http://127.0.0.1:3001.
+//! `cargo run -p loco-ui --example axum_server --features axum`, then open http://127.0.0.1:3001.
 //!
 //! First view: fallback markup, beacons fire. Reload: markup tailored to your browser.
 
 use axum::{Router, routing::get};
-use axum_nojs::{caps, enhance, prelude::*};
+use loco_ui::{caps, enhance, prelude::*};
 
 /// `Ui` is the browser's capabilities, the theme and the UI state in one extractor; the page
 /// it returns remembers the open tab.
 async fn index(ui: Ui) -> Page {
     ui.page(
-        "axum-nojs",
+        "loco-ui",
         html! {
-            h1 { "axum-nojs on Axum" }
+            h1 { "loco-ui on Axum" }
             p { "This browser supports: " @for n in ui.caps.names() { code { (n) } " " } }
             (ui.tabs("demo")
                 .tab("First", html! { p { "Tab state lives in the URL and a cookie." } })

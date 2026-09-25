@@ -1,6 +1,6 @@
 # loco-app
 
-A [Loco](https://loco.rs) app on axum-nojs: sign up, sign in, and notes with list, show, new,
+A [Loco](https://loco.rs) app on loco-ui: sign up, sign in, and notes with list, show, new,
 edit and delete, every page working with script off.
 
 ```sh
@@ -12,7 +12,7 @@ cargo test -p loco-app    # every page through Loco's router and Blitz
 `src/controllers/notes.rs` and `src/views/notes.rs` are generator output, not hand-written:
 
 ```sh
-cp -r ../../axum-nojs/loco-templates .loco-templates   # already here
+cp -r ../../loco-ui/loco-templates .loco-templates   # already here
 cargo loco generate scaffold note title:string! body:text done:bool! due:date
 ```
 

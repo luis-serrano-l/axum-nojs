@@ -8,8 +8,8 @@ use axum::{
     response::{IntoResponse, Response},
     routing::{get, post},
 };
-use axum_nojs::prelude::*;
-use axum_nojs::wizard::{Posted, Wizard};
+use loco_ui::prelude::*;
+use loco_ui::wizard::{Posted, Wizard};
 use serde::{Deserialize, Serialize};
 
 pub(crate) fn routes() -> Router {
@@ -25,10 +25,10 @@ async fn combobox_page(ui: Ui) -> Page {
     page(
         &ui,
         "Combobox",
-        nojs! {
+        lui! {
             (ui.flash())
             // One swap root around the form and its results: the script searches as you type.
-            div id="langs" data-nojs="swap" {
+            div id="langs" data-lui="swap" {
                 // code: /combobox
                 Combobox("q", "/combobox") multi create="/combobox/new"
                     label="Language" placeholder="Type a language" {
@@ -38,7 +38,7 @@ async fn combobox_page(ui: Ui) -> Page {
                 }
                 // end code
             }
-            p class="nojs-note" { "Pick several: each result adds a chip, each chip's \u{d7} removes it, and the chips ride along with the next search. Type a language that is not here to get a Create row." }
+            p class="lui-note" { "Pick several: each result adds a chip, each chip's \u{d7} removes it, and the chips ride along with the next search. Type a language that is not here to get a Create row." }
         },
     )
 }
@@ -171,7 +171,7 @@ async fn wizard_submit(
 fn form_view(ui: &Ui, values: &[(String, String)], errors: &[(&str, &str)]) -> Page {
     let inline = ui.param("layout") == Some("inline");
     // code: /form
-    let form = nojs! {
+    let form = lui! {
         Form("/form") submit="Sign up" values=(values) errors=(errors) inline[inline] {
             group "Account";
             text "name" "Name" required;
@@ -193,7 +193,7 @@ fn form_view(ui: &Ui, values: &[(String, String)], errors: &[(&str, &str)]) -> P
         html! {
             (ui.flash())
             p { "Labels " @if inline { "beside the fields. " a href="/form" { "Put them above" } } @else { "above the fields. " a href="/form?layout=inline" { "Put them beside" } } "." }
-            @if !errors.is_empty() { p class="nojs-error" { "Server-side checks failed. Browser validation passed, these rules only live on the server." } }
+            @if !errors.is_empty() { p class="lui-error" { "Server-side checks failed. Browser validation passed, these rules only live on the server." } }
             (form)
         },
     )
@@ -313,7 +313,7 @@ const COUNTRIES: [(&str, [Country; 7]); 3] = [
     ),
 ];
 
-/// Select, range and colour in one form, saved in `nojs-inputs`. The country filter is a GET
+/// Select, range and colour in one form, saved in `lui-inputs`. The country filter is a GET
 /// through the same form, so while filtering the values come from the query.
 async fn inputs_page(ui: Ui, Query(q): Query<Inputs>, Saved(saved): Saved<Inputs>) -> Page {
     let v = if ui.param("country-q").is_some() {
@@ -324,9 +324,9 @@ async fn inputs_page(ui: Ui, Query(q): Query<Inputs>, Saved(saved): Saved<Inputs
     page(
         &ui,
         "Select, range, colour",
-        nojs! {
+        lui! {
             (ui.flash())
-            form id="inputs" data-nojs="swap" class="nojs-form" method="post" action="/inputs" {
+            form id="inputs" data-lui="swap" class="lui-form" method="post" action="/inputs" {
                 // code: /inputs
                 Select("size", v.size.as_deref().unwrap_or("m")) options=(SIZES) label="Size";
                 Select("country", v.country.as_deref().unwrap_or("es")) groups=(COUNTRIES) search="/inputs" label="Country";
@@ -336,7 +336,7 @@ async fn inputs_page(ui: Ui, Query(q): Query<Inputs>, Saved(saved): Saved<Inputs
                 // end code
                 (ui.button("Save").primary())
             }
-            p class="nojs-note" { "Without the enhancement script the outputs and the swatch show the last saved values and update on submit, and the country filter needs its button." }
+            p class="lui-note" { "Without the enhancement script the outputs and the swatch show the last saved values and update on submit, and the country filter needs its button." }
         },
     )
 }
@@ -345,7 +345,7 @@ async fn inputs_page(ui: Ui, Query(q): Query<Inputs>, Saved(saved): Saved<Inputs
 async fn inputs_submit(ui: Ui, Form(f): Form<Inputs>) -> Redirect {
     let known = |v: &Option<String>, ok: &dyn Fn(&str) -> bool| v.clone().filter(|v| ok(v));
     let hex = |c: &str| c.len() == 7 && c.starts_with('#');
-    let (lo, hi) = axum_nojs::range::order(
+    let (lo, hi) = loco_ui::range::order(
         f.price_min.unwrap_or(20).clamp(0, 100),
         f.price_max.unwrap_or(80).clamp(0, 100),
     );

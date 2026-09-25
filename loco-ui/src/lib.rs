@@ -1,4 +1,4 @@
-//! # axum-nojs
+//! # loco-ui
 //!
 //! Interactive HTML components for Rust servers that work with JavaScript turned off.
 //!
@@ -11,7 +11,7 @@
 //! in place.
 //!
 //! ```rust
-//! use axum_nojs::prelude::*;
+//! use loco_ui::prelude::*;
 //!
 //! // In Axum, `ui: Ui` is an extractor; anywhere else, build it from the request.
 //! let ui = Ui::from_request("/", "", "");
@@ -26,7 +26,7 @@
 //! ```
 //!
 //! Each component emits only the markup that browser needs: the modern variant or the
-//! fallback, never both. See [`caps`] (the `axum-nojs-caps` crate) for how the server learns
+//! fallback, never both. See [`caps`] (the `loco-ui-caps` crate) for how the server learns
 //! it. One component lives in one file; each file starts with a doc header that lists the
 //! platform features it relies on, the browser baseline, and the fallback.
 //!
@@ -37,12 +37,12 @@
 //! `String` body in any server, a file). [`stylesheet`] is a `String` too.
 //!
 //! ```rust
-//! use axum_nojs::{prelude::*, stylesheet};
+//! use loco_ui::{prelude::*, stylesheet};
 //!
-//! let ui = Ui::from_request("/", "", "nojs-flash=Saved.");
+//! let ui = Ui::from_request("/", "", "lui-flash=Saved.");
 //! let body = ui.flash().render().into_string() + &ui.theme_toggle("/theme").render().into_string();
 //! let page = format!("<!DOCTYPE html><style>{}</style><main>{body}</main>", stylesheet());
-//! assert!(page.contains("class=\"nojs-theme\"") && page.contains("Saved."));
+//! assert!(page.contains("class=\"lui-theme\"") && page.contains("Saved."));
 //! assert!(!page.contains("<script"));
 //! ```
 
@@ -105,19 +105,19 @@ pub mod ui;
 pub mod upload;
 pub mod wizard;
 
-/// Server-side feature detection: the [`axum_nojs_caps`] crate, re-exported so `axum_nojs::caps`
+/// Server-side feature detection: the [`loco_ui_caps`] crate, re-exported so `loco_ui::caps`
 /// keeps working.
-pub use axum_nojs_caps as caps;
+pub use loco_ui_caps as caps;
 
-pub use axum_nojs_caps::{Cap, Caps};
+pub use loco_ui_caps::{Cap, Caps};
 /// Every builder with its constructors and setters: see [`props`](mod@props).
 pub fn props() -> &'static [props::Component] {
     props::COMPONENTS
 }
 
-/// Maud's `html!` with components written like elements: see [`axum_nojs_macros`].
-pub use axum_nojs_macros::nojs;
 pub use icon::Icon;
+/// Maud's `html!` with components written like elements: see [`loco_ui_macros`].
+pub use loco_ui_macros::lui;
 pub use popover::MenuItem;
 #[cfg(feature = "axum")]
 pub use saved::Saved;
@@ -133,11 +133,11 @@ pub use ui::{Page, Redirect, Ui};
 #[doc = include_str!("../../docs/components.md")]
 pub struct ComponentsGuide;
 
-/// Everything a handler needs, in one import: `use axum_nojs::prelude::*;`.
+/// Everything a handler needs, in one import: `use loco_ui::prelude::*;`.
 pub mod prelude {
     #[cfg(feature = "axum")]
     pub use crate::Saved;
-    pub use crate::nojs;
+    pub use crate::lui;
     pub use crate::{Cap, Caps, Icon, MenuItem, Page, Redirect, Theme, Ui};
     pub use maud::{Markup, Render, html};
 }
@@ -147,7 +147,7 @@ pub mod prelude {
 /// a caller does not care about from a label this way; so can yours.
 ///
 /// ```rust
-/// assert_eq!(axum_nojs::slug("Billing & plans"), "billing---plans");
+/// assert_eq!(loco_ui::slug("Billing & plans"), "billing---plans");
 /// ```
 pub fn slug(key: &str) -> String {
     key.chars()
@@ -161,28 +161,28 @@ pub fn slug(key: &str) -> String {
         .collect()
 }
 
-/// A control under its label in a `div.nojs-field`, as the form component lays out its
+/// A control under its label in a `div.lui-field`, as the form component lays out its
 /// fields; the control alone when there is no label. `id` is the control's id.
 pub(crate) fn labelled(label: Option<&str>, id: &str, control: maud::Markup) -> maud::Markup {
     match label {
         Some(text) => {
-            maud::html! { div class="nojs-field" { label for=(id) { (text) } (control) } }
+            maud::html! { div class="lui-field" { label for=(id) { (text) } (control) } }
         }
         None => control,
     }
 }
 
-/// The `nojs-gap-<n>` class for a layout primitive's `.gap(n)`: the step of the
-/// `--nojs-space-*` scale (0, 1, 2, 3, 4, 6, 8) nearest `n`, rounding down between two.
+/// The `lui-gap-<n>` class for a layout primitive's `.gap(n)`: the step of the
+/// `--lui-space-*` scale (0, 1, 2, 3, 4, 6, 8) nearest `n`, rounding down between two.
 pub(crate) fn gap_class(n: u8) -> &'static str {
     match n {
-        0 => "nojs-gap-0",
-        1 => "nojs-gap-1",
-        2 => "nojs-gap-2",
-        3 => "nojs-gap-3",
-        4 | 5 => "nojs-gap-4",
-        6 | 7 => "nojs-gap-6",
-        _ => "nojs-gap-8",
+        0 => "lui-gap-0",
+        1 => "lui-gap-1",
+        2 => "lui-gap-2",
+        3 => "lui-gap-3",
+        4 | 5 => "lui-gap-4",
+        6 | 7 => "lui-gap-6",
+        _ => "lui-gap-8",
     }
 }
 
@@ -258,7 +258,7 @@ pub fn minify_css(css: &str) -> String {
 }
 
 /// Every component's `CSS`, in the order the stylesheet includes them. Colours in here are
-/// `var(--nojs-*)` only; a test below checks that no literal slips in.
+/// `var(--lui-*)` only; a test below checks that no literal slips in.
 pub const COMPONENT_CSS: &[&str] = &[
     layout::CSS,
     button::CSS,
@@ -376,7 +376,7 @@ mod tests {
         assert_eq!(minify_css(min), min, "minifying twice changes nothing");
     }
 
-    /// Theming is tokens only: every colour in component CSS is a `var(--nojs-*)`, so a palette
+    /// Theming is tokens only: every colour in component CSS is a `var(--lui-*)`, so a palette
     /// passed to `layout_with` reaches everything. Literals live in `layout::Tokens` alone.
     #[test]
     fn no_colour_literal_outside_tokens() {
@@ -603,9 +603,9 @@ mod tests {
     }
 
     /// Every component's header shows it both ways: its doctest builds it with the dot form and
-    /// again with `nojs!`, and asserts the two render the same HTML.
+    /// again with `lui!`, and asserts the two render the same HTML.
     #[test]
-    fn every_component_header_shows_the_nojs_form() {
+    fn every_component_header_shows_the_lui_form() {
         // Spec entries with no `ui.<component>(..)` of their own.
         let without_builder = ["enhance", "layout", "caps", "state", "paged_table"];
         let mut missing = Vec::new();
@@ -620,13 +620,13 @@ mod tests {
                 .take_while(|l| l.starts_with("//!") || l.is_empty())
                 .collect::<Vec<_>>()
                 .join("\n");
-            if !(header.contains("nojs!") && header.contains("assert_eq!(")) {
+            if !(header.contains("lui!") && header.contains("assert_eq!(")) {
                 missing.push(spec.module);
             }
         }
         assert!(
             missing.is_empty(),
-            "headers without a `nojs!` twin: {missing:?}"
+            "headers without a `lui!` twin: {missing:?}"
         );
     }
 
@@ -724,7 +724,7 @@ mod tests {
     /// Buttons and inputs are styled in one place each: no other component's CSS selects a
     /// bare `button` or `input` (anywhere in a selector, `:is()` and `:where()` included), so
     /// a change to the primitive reaches every component. A component styles its own parts
-    /// by class (`.nojs-counter-input`, `.nojs-dialog-close`).
+    /// by class (`.lui-counter-input`, `.lui-dialog-close`).
     #[test]
     fn only_the_primitives_select_bare_buttons_and_inputs() {
         fn preludes(css: &str) -> Vec<String> {
@@ -753,9 +753,7 @@ mod tests {
             selects_bare(".x :is(button, a)", "button")
                 && selects_bare("input[type=range]", "input")
         );
-        assert!(
-            !selects_bare(".nojs-button", "button") && !selects_bare("[type=button]", "button")
-        );
+        assert!(!selects_bare(".lui-button", "button") && !selects_bare("[type=button]", "button"));
         for css in COMPONENT_CSS {
             if *css == button::CSS || *css == input::CSS {
                 continue;
@@ -774,7 +772,7 @@ mod tests {
     /// Every component nests in `html!` and converts to a plain `String`.
     #[test]
     fn components_render_and_stringify() {
-        let ui = Ui::from_request("/", "", "nojs-flash=hi");
+        let ui = Ui::from_request("/", "", "lui-flash=hi");
         let parts: [&dyn Render; 3] = [
             &ui.flash(),
             &ui.counter("/counter", 3),

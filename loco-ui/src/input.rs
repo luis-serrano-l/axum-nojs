@@ -19,12 +19,12 @@
 //! checkbox where `appearance: none` is not supported.
 //!
 //! ```rust
-//! use axum_nojs::prelude::*;
+//! use loco_ui::prelude::*;
 //! let ui = Ui::default();
 //! let name = ui.input("name", "Name").render().into_string();
 //! assert!(name.contains(r#"<label for="f-name">Name</label>"#) && name.contains(r#"type="text""#));
-//! // The same in `nojs!`:
-//! let same = nojs! { Input("name", "Name"); };
+//! // The same in `lui!`:
+//! let same = lui! { Input("name", "Name"); };
 //! assert_eq!(same.into_string(), name);
 //! // Setters as on form fields, and one per input type.
 //! let email = ui.input("email", "Email").email().required().value("ada@x.org")
@@ -479,15 +479,15 @@ impl Render for Field<'_> {
             let checked = matches!(f.value, "true" | "on" | "1");
             let switch = matches!(f.kind, FieldKind::Switch);
             return html! {
-                div class={ "nojs-field nojs-field-check" @if switch { " nojs-field-switch" } } {
+                div class={ "lui-field lui-field-check" @if switch { " lui-field-switch" } } {
                     label for=(id) {
                         input id=(id) name=(f.name) type="checkbox" value="true" checked[checked] required[f.required]
-                            role=[switch.then_some("switch")] class=[switch.then_some("nojs-switch")]
+                            role=[switch.then_some("switch")] class=[switch.then_some("lui-switch")]
                             aria-invalid=[invalid] aria-describedby=[described.as_deref()];
                         " " (f.label)
                     }
-                    @if let Some(h) = help { small id={ (id) "-help" } class="nojs-field-help" { (h) } }
-                    @if let Some(e) = f.error { p id={ (id) "-error" } class="nojs-error" role="alert" { (e) } }
+                    @if let Some(h) = help { small id={ (id) "-help" } class="lui-field-help" { (h) } }
+                    @if let Some(e) = f.error { p id={ (id) "-error" } class="lui-error" role="alert" { (e) } }
                 }
             };
         }
@@ -505,7 +505,7 @@ impl Render for Field<'_> {
             return control;
         }
         html! {
-            div class="nojs-field" {
+            div class="lui-field" {
                 label for=(id) { (f.label) @if f.required { " *" } }
                 @if let FieldKind::Textarea { rows } = f.kind {
                     textarea id=(id) name=(f.name) rows=(rows) required[f.required] maxlength=[f.maxlength] placeholder=[f.placeholder]
@@ -517,11 +517,11 @@ impl Render for Field<'_> {
                 } @else {
                     (control)
                 }
-                @if let Some(h) = help { small id={ (id) "-help" } class="nojs-field-help" { (h) } }
+                @if let Some(h) = help { small id={ (id) "-help" } class="lui-field-help" { (h) } }
                 @if let Some(max) = f.maxlength {
-                    output id={ (id) "-count" } for=(id) class="nojs-field-count" { (f.value.chars().count()) " / " (max) }
+                    output id={ (id) "-count" } for=(id) class="lui-field-count" { (f.value.chars().count()) " / " (max) }
                 }
-                @if let Some(e) = f.error { p id={ (id) "-error" } class="nojs-error" role="alert" { (e) } }
+                @if let Some(e) = f.error { p id={ (id) "-error" } class="lui-error" role="alert" { (e) } }
             }
         }
     }
@@ -619,7 +619,7 @@ impl Render for RadioGroup<'_> {
         let described: Vec<&str> = ids.iter().flatten().map(String::as_str).collect();
         let described = (!described.is_empty()).then(|| described.join(" "));
         html! {
-            fieldset class="nojs-field nojs-radio-group" aria-describedby=[described.as_deref()]
+            fieldset class="lui-field lui-radio-group" aria-describedby=[described.as_deref()]
                 aria-invalid=[self.error.map(|_| "true")] {
                 legend { (self.legend) @if self.required { " *" } }
                 @for (i, (value, label)) in self.options.iter().enumerate() {
@@ -630,8 +630,8 @@ impl Render for RadioGroup<'_> {
                         " " (label)
                     }
                 }
-                @if let Some(h) = self.help { small id={ (id) "-help" } class="nojs-field-help" { (h) } }
-                @if let Some(e) = self.error { p id={ (id) "-error" } class="nojs-error" role="alert" { (e) } }
+                @if let Some(h) = self.help { small id={ (id) "-help" } class="lui-field-help" { (h) } }
+                @if let Some(e) = self.error { p id={ (id) "-error" } class="lui-error" role="alert" { (e) } }
             }
         }
     }
@@ -639,60 +639,60 @@ impl Render for RadioGroup<'_> {
 
 /// Styles for this component; included in [`crate::stylesheet`].
 pub const CSS: &str = r#"
-/* Native controls, shadcn sizes: 2.25rem tall, px-3, a 1px --nojs-input border, shadow-xs.
+/* Native controls, shadcn sizes: 2.25rem tall, px-3, a 1px --lui-input border, shadow-xs.
    These bare element rules are the one place inputs are styled: a hand-written field and a
    component's control look the same. */
 input, select, textarea { font: inherit; font-size: 0.875rem; line-height: 1.25rem; color: inherit; }
 label { font-weight: 500; }
 input, select, textarea {
   min-height: 2.25rem; padding: 0.375rem 0.75rem; min-width: 0;
-  background: transparent; border: 1px solid var(--nojs-input); border-radius: var(--nojs-radius-sm);
-  box-shadow: var(--nojs-shadow-xs); transition: border-color 0.15s, box-shadow 0.15s;
+  background: transparent; border: 1px solid var(--lui-input); border-radius: var(--lui-radius-sm);
+  box-shadow: var(--lui-shadow-xs); transition: border-color 0.15s, box-shadow 0.15s;
 }
 textarea { min-height: 4rem; }
-input::placeholder, textarea::placeholder { color: var(--nojs-muted); }
+input::placeholder, textarea::placeholder { color: var(--lui-muted); }
 /* Native select: no OS chrome, a chevron drawn from two gradients in the muted colour. */
 select {
   appearance: none; padding-right: 2rem;
-  background-image: linear-gradient(45deg, transparent 50%, var(--nojs-muted) 50%), linear-gradient(135deg, var(--nojs-muted) 50%, transparent 50%);
+  background-image: linear-gradient(45deg, transparent 50%, var(--lui-muted) 50%), linear-gradient(135deg, var(--lui-muted) 50%, transparent 50%);
   background-position: right 1rem center, right 0.75rem center; background-size: 0.25rem 0.25rem; background-repeat: no-repeat;
 }
 select[multiple], select[size] { padding-right: 0.75rem; background-image: none; }
-input:is([type=checkbox], [type=radio]) { width: 1rem; height: 1rem; min-height: 0; padding: 0; margin: 0; accent-color: var(--nojs-primary); vertical-align: -0.15em; }
-input[type=range] { min-height: 0; padding: 0; border: 0; box-shadow: none; accent-color: var(--nojs-primary); }
+input:is([type=checkbox], [type=radio]) { width: 1rem; height: 1rem; min-height: 0; padding: 0; margin: 0; accent-color: var(--lui-primary); vertical-align: -0.15em; }
+input[type=range] { min-height: 0; padding: 0; border: 0; box-shadow: none; accent-color: var(--lui-primary); }
 input[type=color] { padding: 0.25rem; }
 input[type=file] { padding-block: 0.25rem; }
-input::file-selector-button { font: inherit; font-weight: 500; color: var(--nojs-fg); background: transparent; border: 0; padding: 0 0.5rem 0 0; }
-:is(input, select, textarea):focus-visible { border-color: var(--nojs-ring); }
+input::file-selector-button { font: inherit; font-weight: 500; color: var(--lui-fg); background: transparent; border: 0; padding: 0 0.5rem 0 0; }
+:is(input, select, textarea):focus-visible { border-color: var(--lui-ring); }
 :is(input, select, textarea):disabled { opacity: 0.5; cursor: not-allowed; }
-.nojs-field { display: grid; gap: 0.5rem; }
-.nojs-field label { font-size: 0.875rem; line-height: 1; font-weight: 500; }
-.nojs-field-check label, .nojs-radio-group label { display: flex; align-items: center; gap: 0.5rem; }
+.lui-field { display: grid; gap: 0.5rem; }
+.lui-field label { font-size: 0.875rem; line-height: 1; font-weight: 500; }
+.lui-field-check label, .lui-radio-group label { display: flex; align-items: center; gap: 0.5rem; }
 /* :where keeps this at one class, so a component inside a field (colour, range) sizes itself. */
-.nojs-field :where(input:not([type=file], [type=color], [type=range], [type=checkbox], [type=radio]), textarea) { width: 100%; box-sizing: border-box; }
-.nojs-field textarea { resize: vertical; field-sizing: content; min-height: 3lh; max-height: 20lh; font: inherit; }
-.nojs-field-help { color: var(--nojs-muted); font-size: 0.875rem; }
-.nojs-field-count { justify-self: end; color: var(--nojs-muted); font-size: 0.75rem; font-variant-numeric: tabular-nums; }
-.nojs-field :is(input, textarea):user-invalid, .nojs-field [aria-invalid=true] { border-color: var(--nojs-danger); }
-.nojs-field [aria-invalid=true] ~ label, .nojs-field:has([aria-invalid=true]) > label { color: var(--nojs-danger); }
-.nojs-error { color: var(--nojs-danger); margin: 0; font-size: 0.875rem; }
-.nojs-radio-group { margin: 0; padding: 0; border: 0; gap: 0.75rem; }
-.nojs-radio-group legend { padding: 0; margin-bottom: 0.75rem; font-size: 0.875rem; font-weight: 500; }
-.nojs-radio-group[aria-invalid=true] legend { color: var(--nojs-danger); }
-/* shadcn Switch: a 2rem by 1.15rem pill in --nojs-input, the primary colour when on, a
+.lui-field :where(input:not([type=file], [type=color], [type=range], [type=checkbox], [type=radio]), textarea) { width: 100%; box-sizing: border-box; }
+.lui-field textarea { resize: vertical; field-sizing: content; min-height: 3lh; max-height: 20lh; font: inherit; }
+.lui-field-help { color: var(--lui-muted); font-size: 0.875rem; }
+.lui-field-count { justify-self: end; color: var(--lui-muted); font-size: 0.75rem; font-variant-numeric: tabular-nums; }
+.lui-field :is(input, textarea):user-invalid, .lui-field [aria-invalid=true] { border-color: var(--lui-danger); }
+.lui-field [aria-invalid=true] ~ label, .lui-field:has([aria-invalid=true]) > label { color: var(--lui-danger); }
+.lui-error { color: var(--lui-danger); margin: 0; font-size: 0.875rem; }
+.lui-radio-group { margin: 0; padding: 0; border: 0; gap: 0.75rem; }
+.lui-radio-group legend { padding: 0; margin-bottom: 0.75rem; font-size: 0.875rem; font-weight: 500; }
+.lui-radio-group[aria-invalid=true] legend { color: var(--lui-danger); }
+/* shadcn Switch: a 2rem by 1.15rem pill in --lui-input, the primary colour when on, a
    thumb in the page background (on-primary when on) that slides across. */
-input.nojs-switch {
+input.lui-switch {
   appearance: none; position: relative; flex: none; width: 2rem; height: 1.15rem; margin: 0;
-  border: 1px solid transparent; border-radius: 9999px; background: var(--nojs-input);
-  box-shadow: var(--nojs-shadow-xs); cursor: pointer; transition: background-color 0.15s;
+  border: 1px solid transparent; border-radius: 9999px; background: var(--lui-input);
+  box-shadow: var(--lui-shadow-xs); cursor: pointer; transition: background-color 0.15s;
 }
-input.nojs-switch::before {
+input.lui-switch::before {
   content: ""; position: absolute; top: 50%; left: 1px; width: 1rem; height: 1rem;
-  border-radius: 50%; background: var(--nojs-bg); translate: 0 -50%; transition: translate 0.15s;
+  border-radius: 50%; background: var(--lui-bg); translate: 0 -50%; transition: translate 0.15s;
 }
-input.nojs-switch:checked { background: var(--nojs-primary); }
-input.nojs-switch:checked::before { translate: calc(2rem - 1rem - 4px) -50%; background: var(--nojs-on-primary); }
-@media (prefers-reduced-motion: reduce) { input.nojs-switch, input.nojs-switch::before { transition: none; } }
+input.lui-switch:checked { background: var(--lui-primary); }
+input.lui-switch:checked::before { translate: calc(2rem - 1rem - 4px) -50%; background: var(--lui-on-primary); }
+@media (prefers-reduced-motion: reduce) { input.lui-switch, input.lui-switch::before { transition: none; } }
 "#;
 
 #[cfg(test)]

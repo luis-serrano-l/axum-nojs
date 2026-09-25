@@ -4,7 +4,7 @@
 //! the counter's number, the settings a form saved, what a wizard has collected so far.
 //!
 //! `Saved<T>` is an extractor: it reads the cookie named after the type (`Settings` lives in
-//! `nojs-settings`) and falls back to `T::default()` when the cookie is missing or no longer
+//! `lui-settings`) and falls back to `T::default()` when the cookie is missing or no longer
 //! parses. [`Redirect::save`] writes it back with the answer to a form post, and
 //! [`Redirect::forget`] removes it. The value is form-encoded, so it holds plain fields
 //! (strings, numbers, booleans, options), or a newtype over a list of `(key, value)` pairs
@@ -12,7 +12,7 @@
 //!
 //! ```rust,no_run
 //! use axum::Form;
-//! use axum_nojs::prelude::*;
+//! use loco_ui::prelude::*;
 //! use serde::{Deserialize, Serialize};
 //!
 //! #[derive(Default, Deserialize, Serialize)]
@@ -50,8 +50,8 @@ use crate::ui::Redirect;
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Saved<T>(pub T);
 
-/// `nojs-` and the type's name in kebab case: `Settings` is `nojs-settings`, `WizardData`
-/// is `nojs-wizard-data`.
+/// `lui-` and the type's name in kebab case: `Settings` is `lui-settings`, `WizardData`
+/// is `lui-wizard-data`.
 pub fn cookie_name<T>() -> String {
     let full = std::any::type_name::<T>();
     let name = full
@@ -61,7 +61,7 @@ pub fn cookie_name<T>() -> String {
         .rsplit("::")
         .next()
         .unwrap_or(full);
-    let mut out = String::from("nojs");
+    let mut out = String::from("lui");
     for c in name.chars() {
         if c.is_ascii_uppercase() || !out.ends_with(|p: char| p.is_ascii_alphanumeric()) {
             out.push('-');
@@ -162,7 +162,7 @@ mod tests {
 
     #[tokio::test]
     async fn a_saved_value_comes_back_on_the_next_request() {
-        assert_eq!(cookie_name::<WizardData>(), "nojs-wizard-data");
+        assert_eq!(cookie_name::<WizardData>(), "lui-wizard-data");
         let value = WizardData {
             name: "Ada L".into(),
             notify: true,
@@ -184,7 +184,7 @@ mod tests {
             .unwrap();
         assert_eq!(back, value);
         let (mut bare, ()) = Request::builder()
-            .header("cookie", "nojs-wizard-data=%%%")
+            .header("cookie", "lui-wizard-data=%%%")
             .body(())
             .unwrap()
             .into_parts();
@@ -198,7 +198,7 @@ mod tests {
         );
         let pairs: Vec<(String, String)> = vec![("topics".into(), "rust, html".into())];
         assert!(
-            Ui::default().redirect("/").save(&pairs).set_cookies()[0].starts_with("nojs-vec="),
+            Ui::default().redirect("/").save(&pairs).set_cookies()[0].starts_with("lui-vec="),
             "a list of pairs saves"
         );
         #[derive(Debug, Default, Deserialize, Serialize, PartialEq)]
@@ -212,7 +212,7 @@ mod tests {
             .save(&notes)
             .set_cookies()
             .remove(0);
-        assert!(set.starts_with("nojs-notes="), "{set}");
+        assert!(set.starts_with("lui-notes="), "{set}");
         let (mut parts, ()) = Request::builder()
             .header("cookie", set.split(';').next().unwrap())
             .body(())

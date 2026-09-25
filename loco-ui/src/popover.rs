@@ -24,7 +24,7 @@
 //! script; Tab always works.
 //!
 //! ```rust
-//! use axum_nojs::prelude::*;
+//! use loco_ui::prelude::*;
 //! let ui = Ui::from(Caps::all());
 //! // The id is the label's slug: this menu is `#account`.
 //! let m = ui.menu("Account").link("Profile", "/profile").link("Sign out", "/logout");
@@ -42,8 +42,8 @@
 //! let html = m.render().into_string();
 //! assert!(html.contains("<form method=\"post\" action=\"/logout\""));
 //! assert!(html.contains("position-area: bottom span-left") && html.contains(r#"id="account-theme""#));
-//! // The same in `nojs!`:
-//! let same = nojs! { Menu("Account") align_end {
+//! // The same in `lui!`:
+//! let same = lui! { Menu("Account") align_end {
 //!     heading "Signed in as Ada";
 //!     link "Profile" "/profile" icon="@" shortcut="g p";
 //!     link "Billing" "/billing" disabled;
@@ -84,9 +84,9 @@ impl Placement {
 
     fn class(self) -> &'static str {
         match self {
-            Placement::BottomStart => "nojs-popover-start",
-            Placement::BottomEnd => "nojs-popover-end",
-            Placement::Right => "nojs-popover-right",
+            Placement::BottomStart => "lui-popover-start",
+            Placement::BottomEnd => "lui-popover-end",
+            Placement::Right => "lui-popover-right",
         }
     }
 }
@@ -134,7 +134,7 @@ impl<'a> MenuItem<'a> {
         Self::new(Kind::Action(action), text)
     }
 
-    /// Destructive: coloured with `--nojs-danger`.
+    /// Destructive: coloured with `--lui-danger`.
     pub const fn danger(mut self) -> Self {
         self.danger = true;
         self
@@ -273,7 +273,7 @@ impl<'a> Menu<'a> {
         self.last(|it| it.disabled = true)
     }
 
-    /// The item is destructive: coloured with `--nojs-danger`.
+    /// The item is destructive: coloured with `--lui-danger`.
     pub fn danger(self) -> Self {
         self.last(|it| it.danger = true)
     }
@@ -339,23 +339,23 @@ pub(crate) fn menu(
         trigger
     };
     let summary_class = if compact {
-        "nojs-button nojs-button-ghost nojs-button-small nojs-button-icon"
+        "lui-button lui-button-ghost lui-button-small lui-button-icon"
     } else {
-        "nojs-button"
+        "lui-button"
     };
     html! {
         @if !popover {
-            details class={ "nojs-popover nojs-popover-details " (placement.class()) } id=(id) {
+            details class={ "lui-popover lui-popover-details " (placement.class()) } id=(id) {
                 summary class=(summary_class) aria-haspopup="menu" aria-label=[compact.then_some(label)] { (face) }
                 nav { (list) }
             }
         } @else if anchor {
-            div class={ "nojs-popover nojs-popover-anchored " (placement.class()) } style={ "anchor-name: --" (id) } {
+            div class={ "lui-popover lui-popover-anchored " (placement.class()) } style={ "anchor-name: --" (id) } {
                 (trigger)
                 nav id=(id) popover style={ "position-anchor: --" (id) "; position-area: " (placement.area()) } { (list) }
             }
         } @else {
-            div class={ "nojs-popover " (placement.class()) } {
+            div class={ "lui-popover " (placement.class()) } {
                 (trigger)
                 nav id=(id) popover { (list) }
             }
@@ -365,27 +365,23 @@ pub(crate) fn menu(
 
 fn item(menu_id: &str, it: &MenuItem, popover: bool, anchor: bool) -> Markup {
     let class = format!(
-        "nojs-popover-item{}{}",
-        if it.danger {
-            " nojs-popover-danger"
-        } else {
-            ""
-        },
+        "lui-popover-item{}{}",
+        if it.danger { " lui-popover-danger" } else { "" },
         if it.disabled {
-            " nojs-popover-disabled"
+            " lui-popover-disabled"
         } else {
             ""
         }
     );
     let inner = html! {
-        @if let Some(i) = it.icon { span class="nojs-popover-icon" aria-hidden="true" { (i) } }
-        span class="nojs-popover-text" { (it.text) }
-        @if let Some(k) = it.shortcut { kbd class="nojs-popover-kbd" { (k) } }
+        @if let Some(i) = it.icon { span class="lui-popover-icon" aria-hidden="true" { (i) } }
+        span class="lui-popover-text" { (it.text) }
+        @if let Some(k) = it.shortcut { kbd class="lui-popover-kbd" { (k) } }
     };
     html! {
         @match it.kind {
-            Kind::Heading => li role="presentation" class="nojs-popover-heading" { (it.text) },
-            Kind::Separator => li role="separator" class="nojs-popover-sep" {},
+            Kind::Heading => li role="presentation" class="lui-popover-heading" { (it.text) },
+            Kind::Separator => li role="separator" class="lui-popover-sep" {},
             Kind::Link(href) => li role="none" {
                 @if it.disabled {
                     a class=(class) role="menuitem" aria-disabled="true" { (inner) }
@@ -398,20 +394,20 @@ fn item(menu_id: &str, it: &MenuItem, popover: bool, anchor: bool) -> Markup {
                     button type="submit" class=(class) role="menuitem" disabled[it.disabled] { (inner) }
                 }
             },
-            Kind::Submenu(ref items) => li role="none" class="nojs-popover-sub" {
+            Kind::Submenu(ref items) => li role="none" class="lui-popover-sub" {
                 @let sub_id = format!("{menu_id}-{}", slug(it.text));
                 @let list = html! { ul role="menu" { @for it in items { (item(&sub_id, it, popover, anchor)) } } };
                 @if !popover {
-                    details class="nojs-popover-details nojs-popover-right" id=(sub_id) {
+                    details class="lui-popover-details lui-popover-right" id=(sub_id) {
                         summary class=(class) role="menuitem" aria-haspopup="menu" { (inner) " \u{25b8}" }
                         nav { (list) }
                     }
                 } @else if anchor {
                     button type="button" class=(class) role="menuitem" aria-haspopup="menu" popovertarget=(sub_id) style={ "anchor-name: --" (sub_id) } { (inner) " \u{25b8}" }
-                    nav id=(sub_id) popover class="nojs-popover-subnav" style={ "position-anchor: --" (sub_id) "; position-area: right span-bottom" } { (list) }
+                    nav id=(sub_id) popover class="lui-popover-subnav" style={ "position-anchor: --" (sub_id) "; position-area: right span-bottom" } { (list) }
                 } @else {
                     button type="button" class=(class) role="menuitem" aria-haspopup="menu" popovertarget=(sub_id) { (inner) " \u{25b8}" }
-                    nav id=(sub_id) popover class="nojs-popover-subnav" { (list) }
+                    nav id=(sub_id) popover class="lui-popover-subnav" { (list) }
                 }
             },
         }
@@ -420,46 +416,46 @@ fn item(menu_id: &str, it: &MenuItem, popover: bool, anchor: bool) -> Markup {
 
 /// Styles for this component; included in [`crate::stylesheet`].
 pub const CSS: &str = r#"
-.nojs-popover { display: inline-block; position: relative; }
+.lui-popover { display: inline-block; position: relative; }
 /* shadcn DropdownMenu: popover surface, p-1, rounded-md, shadow; items text-sm, rounded-sm,
    accent on hover and focus. */
-.nojs-popover nav {
+.lui-popover nav {
   padding: 0.25rem; min-width: 14rem;
-  background: var(--nojs-popover); color: var(--nojs-fg);
-  border: 1px solid var(--nojs-line); border-radius: var(--nojs-radius);
-  box-shadow: var(--nojs-shadow-lg);
+  background: var(--lui-popover); color: var(--lui-fg);
+  border: 1px solid var(--lui-line); border-radius: var(--lui-radius);
+  box-shadow: var(--lui-shadow-lg);
 }
-.nojs-popover-anchored > nav, .nojs-popover-details > nav, .nojs-popover-subnav { margin: 0; }
-.nojs-popover-anchored > nav { margin-top: 4px; }
+.lui-popover-anchored > nav, .lui-popover-details > nav, .lui-popover-subnav { margin: 0; }
+.lui-popover-anchored > nav { margin-top: 4px; }
 /* Popover without anchor positioning: the UA centres it in the viewport; keep that. */
-.nojs-popover ul { list-style: none; margin: 0; padding: 0; }
-.nojs-popover form { margin: 0; }
-.nojs-popover-item {
-  display: flex; align-items: center; gap: var(--nojs-space); width: 100%; min-height: 0; box-sizing: border-box;
+.lui-popover ul { list-style: none; margin: 0; padding: 0; }
+.lui-popover form { margin: 0; }
+.lui-popover-item {
+  display: flex; align-items: center; gap: var(--lui-space); width: 100%; min-height: 0; box-sizing: border-box;
   padding: 0.375rem 0.5rem; color: inherit; text-decoration: none; text-align: left; font: inherit;
   font-size: 0.875rem; line-height: 1.25rem; font-weight: 400;
-  background: none; border: 0; border-radius: var(--nojs-radius-sm); box-shadow: none; cursor: pointer; justify-content: flex-start;
+  background: none; border: 0; border-radius: var(--lui-radius-sm); box-shadow: none; cursor: pointer; justify-content: flex-start;
 }
-.nojs-popover-item:hover, .nojs-popover-item:focus-visible { background: var(--nojs-accent); color: var(--nojs-on-accent); outline: none; }
-.nojs-popover-icon { width: 1rem; text-align: center; color: var(--nojs-muted); }
-.nojs-popover-text { flex: 1; }
-.nojs-popover-kbd { font: inherit; font-size: 0.75rem; letter-spacing: 0.1em; color: var(--nojs-muted); background: none; border: 0; padding: 0; margin-left: auto; }
-.nojs-popover-danger { color: var(--nojs-danger); }
-.nojs-popover-danger:hover, .nojs-popover-danger:focus-visible { color: var(--nojs-danger); background: color-mix(in srgb, var(--nojs-danger) 10%, transparent); }
-.nojs-popover-danger .nojs-popover-icon { color: inherit; }
-.nojs-popover-disabled { opacity: 0.5; cursor: default; }
-.nojs-popover-disabled:hover { background: none; color: inherit; }
-.nojs-popover-heading { padding: 0.375rem 0.5rem; font-size: 0.875rem; font-weight: 500; color: var(--nojs-fg); }
-.nojs-popover-sep { margin: 0.25rem -0.25rem; border-top: 1px solid var(--nojs-line); }
-.nojs-popover-sub { position: relative; }
-/* <details> fallback: the summary is a .nojs-button, the menu absolutely positioned by placement. */
-.nojs-popover-details > summary { list-style: none; }
-.nojs-popover-details > summary::-webkit-details-marker { display: none; }
-.nojs-popover-details > nav { position: absolute; z-index: 10; }
-.nojs-popover-start.nojs-popover-details > nav { top: 100%; left: 0; margin-top: 4px; }
-.nojs-popover-end.nojs-popover-details > nav { top: 100%; right: 0; margin-top: 4px; }
-.nojs-popover-right.nojs-popover-details > nav { top: 0; left: 100%; margin-left: 4px; }
-.nojs-popover-sub > .nojs-popover-details > summary {
-  display: flex; min-height: 0; padding: 0.375rem 0.5rem; font-weight: 400; border: 0; border-radius: var(--nojs-radius-sm); background: none; box-shadow: none;
+.lui-popover-item:hover, .lui-popover-item:focus-visible { background: var(--lui-accent); color: var(--lui-on-accent); outline: none; }
+.lui-popover-icon { width: 1rem; text-align: center; color: var(--lui-muted); }
+.lui-popover-text { flex: 1; }
+.lui-popover-kbd { font: inherit; font-size: 0.75rem; letter-spacing: 0.1em; color: var(--lui-muted); background: none; border: 0; padding: 0; margin-left: auto; }
+.lui-popover-danger { color: var(--lui-danger); }
+.lui-popover-danger:hover, .lui-popover-danger:focus-visible { color: var(--lui-danger); background: color-mix(in srgb, var(--lui-danger) 10%, transparent); }
+.lui-popover-danger .lui-popover-icon { color: inherit; }
+.lui-popover-disabled { opacity: 0.5; cursor: default; }
+.lui-popover-disabled:hover { background: none; color: inherit; }
+.lui-popover-heading { padding: 0.375rem 0.5rem; font-size: 0.875rem; font-weight: 500; color: var(--lui-fg); }
+.lui-popover-sep { margin: 0.25rem -0.25rem; border-top: 1px solid var(--lui-line); }
+.lui-popover-sub { position: relative; }
+/* <details> fallback: the summary is a .lui-button, the menu absolutely positioned by placement. */
+.lui-popover-details > summary { list-style: none; }
+.lui-popover-details > summary::-webkit-details-marker { display: none; }
+.lui-popover-details > nav { position: absolute; z-index: 10; }
+.lui-popover-start.lui-popover-details > nav { top: 100%; left: 0; margin-top: 4px; }
+.lui-popover-end.lui-popover-details > nav { top: 100%; right: 0; margin-top: 4px; }
+.lui-popover-right.lui-popover-details > nav { top: 0; left: 100%; margin-left: 4px; }
+.lui-popover-sub > .lui-popover-details > summary {
+  display: flex; min-height: 0; padding: 0.375rem 0.5rem; font-weight: 400; border: 0; border-radius: var(--lui-radius-sm); background: none; box-shadow: none;
 }
 "#;

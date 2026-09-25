@@ -1,9 +1,9 @@
-# axum-nojs
+# loco-ui
 
-**[Live demo](https://luis-serrano-l.github.io/axum-nojs/)** (every component, static snapshot on
-GitHub Pages) · **[Source on GitHub](https://github.com/luis-serrano-l/axum-nojs)**
+**[Live demo](https://luis-serrano-l.github.io/loco-ui/)** (every component, static snapshot on
+GitHub Pages) · **[Source on GitHub](https://github.com/luis-serrano-l/loco-ui)**
 
-**0 KB JavaScript required** · verified in CI by a script-less renderer ([Blitz](axum-nojs-test/tests/demo.rs)) and
+**0 KB JavaScript required** · verified in CI by a script-less renderer ([Blitz](loco-ui-test/tests/demo.rs)) and
 [a test that allows one optional script and nothing inline](demo/src/tests.rs) · strict CSP
 
 **The no-JS UI kit for Rust servers.** Buttons, forms, dialogs, tables, a calendar, uploads and
@@ -16,7 +16,7 @@ Each layer is built only from the ones below it: components from primitives, wid
 components and primitives, and yours from any of them (`docs/components.md`), so one change to
 the button restyles every dialog, table and form, including yours.
 
-| | axum-nojs | Leptos, Dioxus | htmx + hand-written Maud |
+| | loco-ui | Leptos, Dioxus | htmx + hand-written Maud |
 |---|---|---|---|
 | Where the UI runs | server, HTML out | Rust compiled to WebAssembly in the browser, rendered first on the server | server |
 | JavaScript needed for it to work | none: one optional 11 KB script | the WASM bundle and its JS glue, to hydrate | the htmx library, for every `hx-` attribute |
@@ -32,7 +32,7 @@ refresh per action, where it gives the same components with nothing to hydrate.
 
 Every component starts from `ui`, the one value a handler extracts, and renders where `html!`
 splices it. Interactivity comes from the HTML/CSS platform and ordinary form round trips. One
-optional 11 KB script (`/nojs/enhance.js`) makes the same markup update in place; see "How the
+optional 11 KB script (`/lui/enhance.js`) makes the same markup update in place; see "How the
 script works" below. Every page works identically with the script blocked; that is the only
 `<script>` tag allowed, and a test enforces it.
 
@@ -40,16 +40,16 @@ script works" below. Every page works identically with the script blocked; that 
 
 ```rust
 use axum::{Form, Router, routing::get};
-use axum_nojs::prelude::*;
+use loco_ui::prelude::*;
 use serde::{Deserialize, Serialize};
 
 #[derive(Default, Deserialize, Serialize)]
 struct Settings { name: String }
 
 // `Ui` is what the server knows about this browser, its theme and the page's UI state.
-// `nojs!` is Maud's `html!` with components written like elements.
+// `lui!` is Maud's `html!` with components written like elements.
 async fn show(ui: Ui, Saved(s): Saved<Settings>) -> Page {
-    ui.page("Account", nojs! {
+    ui.page("Account", lui! {
         Flash;
         Form("/account") submit="Save" { text "name" "Name" required value=(&s.name); }
         Dialog("Delete account") danger confirm=("Delete", "/account/delete") {
@@ -65,22 +65,22 @@ async fn save(ui: Ui, Form(s): Form<Settings>) -> Redirect {
 
 let app = Router::new()
     .route("/account", get(show).post(save))
-    .merge(axum_nojs::caps::router())     // the beacons that tell the server what the browser supports
-    .merge(axum_nojs::enhance::router()); // the optional script
+    .merge(loco_ui::caps::router())     // the beacons that tell the server what the browser supports
+    .merge(loco_ui::enhance::router()); // the optional script
 ```
 
-Each element is the builder a route could also chain by hand, and `nojs!` expands to exactly
+Each element is the builder a route could also chain by hand, and `lui!` expands to exactly
 that: `Form("/account") submit="Save" { text "name" "Name" required; }` is
 `ui.form("/account").submit("Save").text("name", "Name").required()`. Attributes are setters
 (`x="v"`, a bare `x` switches on, `x[cond]` only when `cond`, `x=[option]` only for `Some`),
 items take their modifiers as attributes, and `@for`/`@if` build items from data. A typo is
 rustc's own "no method named `requird` … did you mean `required`" at the attribute.
-`axum_nojs::props()` lists every component's setters with kind, arguments, default and the
+`loco_ui::props()` lists every component's setters with kind, arguments, default and the
 HTML attribute they set; the demo shows them as a table on each page.
 
-With `axum-nojs = { features = ["axum"] }`. Without Axum, `Ui::from_request(path, query,
+With `loco-ui = { features = ["axum"] }`. Without Axum, `Ui::from_request(path, query,
 cookies)` or `Ui::from(Caps::all())` gives the same builders and `.render().into_string()` the
-HTML; `axum-nojs/examples/hyper_server.rs` shows a raw hyper server.
+HTML; `loco-ui/examples/hyper_server.rs` shows a raw hyper server.
 
 ## Run the demo
 
@@ -98,9 +98,9 @@ A component page shows the live component with the code that drew it joined unde
 lines between `// code: <href>` and `// end code` in `demo/src/routes/`, cut from those files at
 compile time so the page and the code cannot drift, and highlighted on the server by
 [syntect](https://crates.io/crates/syntect), a dependency of the demo only, coloured with the
-`--nojs-*` tokens. To show more of a handler, move its markers.
+`--lui-*` tokens. To show more of a handler, move its markers.
 
-`axum-nojs-test` renders every route through [Blitz](https://github.com/DioxusLabs/blitz)
+`loco-ui-test` renders every route through [Blitz](https://github.com/DioxusLabs/blitz)
 (Stylo + Taffy + vello_cpu, no script engine) and writes a PNG per route and capability level
 to `tests/shots/`, which is also the proof that every route works with no script. What Blitz
 cannot render is listed with issue links in `FINDINGS.md`. `scripts/browser-check.mjs` drives
@@ -115,7 +115,7 @@ thin wrapper over plain functions on strings, so any server can do the same in a
 | You need | Without a framework | With `--features http` | With `--features axum` |
 |---|---|---|---|
 | What the browser supports | `Caps::from_query(query)` then `Caps::from_cookie_header(cookies)` | same | `caps: Caps` extractor |
-| The beacon route `GET /nojs/caps?flag=x` | `caps::beacon_cookie(query)` → 204 + `Set-Cookie`, or 404 | same | `caps::router()` |
+| The beacon route `GET /lui/caps?flag=x` | `caps::beacon_cookie(query)` → 204 + `Set-Cookie`, or 404 | same | `caps::router()` |
 | Caps, theme, tab/accordion/dialog state, query | `Ui::from_request(path, query, cookies)` | same | `ui: Ui` extractor |
 | A whole page | `ui.page(title, body).into_string()`, `page.set_cookies()` | same | return the `Page` |
 | Post/Redirect/Get with a flash | `ui.redirect(to).ok(msg)`: `.location()`, `.set_cookies()` | `.into_http()` → `http::Response<B>` | return the `Redirect` |
@@ -123,7 +123,7 @@ thin wrapper over plain functions on strings, so any server can do the same in a
 | Out-of-order streaming | | `Streamed::into_stream()` → chunks | `impl IntoResponse for Streamed` |
 | The optional script | serve `enhance::JS` at `enhance::SCRIPT_PATH` | same | `enhance::router()` |
 
-`axum-nojs/examples/hyper_server.rs` is the whole of it on raw hyper: three components, the
+`loco-ui/examples/hyper_server.rs` is the whole of it on raw hyper: three components, the
 beacon route, a POST answered with PRG, the script served by hand. `.into_string()` on any
 component gives the HTML to another template engine.
 
@@ -135,12 +135,12 @@ controllers then take `ui: Ui` like any Axum handler and return `Result<Page>` o
 
 ```rust
 async fn initializers(_ctx: &AppContext) -> Result<Vec<Box<dyn Initializer>>> {
-    Ok(vec![Box::new(axum_nojs::loco::Initializer)])
+    Ok(vec![Box::new(loco_ui::loco::Initializer)])
 }
 ```
 
 `loco::FieldErrors` puts Loco's validation messages on the form fields, `loco::Submitted`
-parses a posted form field by field, and `axum-nojs/loco-templates/` makes
+parses a posted form field by field, and `loco-ui/loco-templates/` makes
 `cargo loco generate scaffold` write an HTML controller and Maud views (Post/Redirect/Get,
 paging, validation) instead of a JSON API. Sign-in works without script by pointing Loco's
 JWT at a cookie. [`examples/loco-app`](examples/loco-app) is a generated app, tested through
@@ -149,9 +149,9 @@ sign-in, the generator and the Loco settings that affect pages.
 
 ## How to read this crate
 
-- One component = one file in `axum-nojs/src/`. Each starts with a `//!` header: what it does,
+- One component = one file in `loco-ui/src/`. Each starts with a `//!` header: what it does,
   the platform features it uses (with browser baseline), the fallback, a usage example.
-- One import, `use axum_nojs::prelude::*`. Every component is a method on `Ui` returning a
+- One import, `use loco_ui::prelude::*`. Every component is a method on `Ui` returning a
   builder: required arguments in the call, everything else a chained setter named after what
   it changes (`ui.dialog("Delete account").title("Delete account?").danger()`). Setters such as
   `.required()`, `.icon()`, `.badge()` apply to the item added last (a field, a menu item, a
@@ -160,7 +160,7 @@ sign-in, the generator and the Loco settings that affect pages.
 - Primitives come first: `ui.button`/`ui.link_button`, `ui.input`/`ui.checkbox`/`ui.switch`/
   `ui.radio_group`, `ui.badge`, `ui.card`, `Icon` (29 Lucide shapes as inline SVG),
   `ui.avatar`, and the layouts `ui.stack`, `ui.cluster`, `ui.grid(min, ..)`, `ui.split(side,
-  main)` with `.gap(n)` on a `--nojs-space-*` scale. Components are built from them (`ui.form`
+  main)` with `.gap(n)` on a `--lui-space-*` scale. Components are built from them (`ui.form`
   renders its fields through `input.rs`), and so can yours: `docs/components.md` writes one in
   about 30 lines (an extension trait on `Ui`, `impl Render`, a CSS const passed to
   `Page::css`), and its code runs as a doctest.
@@ -168,13 +168,13 @@ sign-in, the generator and the Loco settings that affect pages.
   capability, and each component emits only the variant that browser needs (see `/caps`).
   `?caps=popover,anchor` on any URL forces a set. The protocol is three plain functions
   (`Caps::from_cookie_header`, `Caps::from_query`, `caps::beacon_cookie`); Axum only wraps them.
-- Output HTML is semantic with one `nojs-<component>` class per root. `curl` any page and read it.
-- CSS lives beside its component as `const CSS`. Theming is via `--nojs-*` custom properties only
+- Output HTML is semantic with one `lui-<component>` class per root. `curl` any page and read it.
+- CSS lives beside its component as `const CSS`. Theming is via `--lui-*` custom properties only
   (shadcn/ui's roles: `bg`, `fg`, `muted`, `line`, `surface`, `card`, `popover`, `secondary`,
   `accent`, `on-accent`, `primary`, `on-primary`, `input`, `ring`, `danger`, `ok`, `warn`, `radius`, `space`;
   the default is shadcn's neutral zinc theme, with system fonts and Radix step-11 status colours).
-  `Tokens::css()` also derives `--nojs-radius-sm`/`-lg`, `--nojs-shadow-xs`/`-lg` and
-  `--nojs-overlay` from them; `--nojs-font-sans` and `--nojs-font-mono` can be overridden on `:root`.
+  `Tokens::css()` also derives `--lui-radius-sm`/`-lg`, `--lui-shadow-xs`/`-lg` and
+  `--lui-overlay` from them; `--lui-font-sans` and `--lui-font-mono` can be overridden on `:root`.
   `layout::Tokens` holds them for light and dark, `ui.page(..).tokens(&t)` applies another set
   once per page, and `docs/theming.md` says what each one affects and which pairs must keep contrast.
   `/?palette=linen` in the demo is the same index under a second palette.
@@ -193,7 +193,7 @@ stylesheet, so there is no second request for CSS, and no script is required.
 | A demo page, stylesheet included (`/dialog` … `/calendar`) | 62–80 KB | 11.8–13.5 KB |
 | `/stream` with declarative shadow DOM (the stylesheet twice: once for the shadow root) | 117 KB | 20.4 KB |
 | JavaScript required | 0 | 0 |
-| The optional script, `/nojs/enhance.js` (cached forever) | 10.6 KB | 3.6 KB |
+| The optional script, `/lui/enhance.js` (cached forever) | 10.6 KB | 3.6 KB |
 
 For comparison, `maud-ui` 0.20.3 (the same stack and look) ships 313 KB of CSS (44 KB gzipped)
 and needs an 89 KB script (24 KB gzipped) plus htmx. Two tests keep these numbers honest: the
@@ -207,14 +207,14 @@ click to the frame that shows the new state, in headless Firefox against the rel
 the same machine, beside htmx 2.0.11 swapping the same server answer into the same element
 (`scripts/bench-swap.mjs`, 30 runs each, median / 90th percentile, ms):
 
-| Update | axum-nojs script | htmx 2 |
+| Update | loco-ui script | htmx 2 |
 |---|---|---|
 | Sort a table (26 KB answer) | 35 / 50 | 41 / 51 |
 | Open a tab | 13 / 18 | 14 / 26 |
 | Load more rows (4 KB answer) | 32 / 35 | 22 / 35 |
 
 An answer that arrives within 150 ms lands at once; a slower one morphs in a view transition
-(a root marked `data-nojs-morph`, like the kanban board, always morphs). Without the script
+(a root marked `data-lui-morph`, like the kanban board, always morphs). Without the script
 each of these is an ordinary page load of the same URL.
 
 ## Strict Content-Security-Policy
@@ -227,7 +227,7 @@ default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src
 object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'
 ```
 
-`script-src 'self'` allows exactly one file, `/nojs/enhance.js`; there are no inline scripts,
+`script-src 'self'` allows exactly one file, `/lui/enhance.js`; there are no inline scripts,
 `on*` handlers or `javascript:` URLs (a test checks every route). A page built with
 `Page::without_script()` has no script tag at all and gets `script-src 'none'`
 (`enhance::CSP_NO_SCRIPT`); in the demo, add `?script=off` to any page. Styles need
@@ -237,24 +237,24 @@ grid's minimum width, a view-transition name) travel in `style` attributes. The 
 
 ## How the script works
 
-`/nojs/enhance.js` is one file, plain ES2020, served with a content hash so it caches forever
+`/lui/enhance.js` is one file, plain ES2020, served with a content hash so it caches forever
 and compatible with `script-src 'self'`. It never changes what the server sends: it reads a
-few `data-nojs-*` attributes and does in place what the browser would have done as a full
+few `data-lui-*` attributes and does in place what the browser would have done as a full
 navigation. Without it every attribute is inert and every control is a normal form or link.
 
 | Attribute | On | What the script does | Without the script |
 |---|---|---|---|
-| `id` + `data-nojs="swap"` | a root element | Forms and links inside it are fetched; the element of the same `id` in the answer replaces the root. Flash, `<title>`, `data-theme` and the URL follow. Requests on one root are queued. | Normal navigation to the same URL. |
-| `data-nojs-target="#id"` | a form or link, or an ancestor | Swaps that root instead of the closest one, so a control can sit anywhere. | Same navigation. |
-| `data-nojs-swap="outer\|inner\|append\|prepend"` | with `data-nojs-target` | How the answer lands: replace the root, replace its children, add at the end or the start. | Same navigation; the full page already shows the result. |
-| `data-nojs-oob="outer\|inner\|…"` | an element in the answer | Replaces the element of the same `id` anywhere in the page and is dropped from the main swap. | The full page shows it in place. |
-| `Nojs-Enhance: 1` | the request header | Sent on every enhanced request, so a handler may answer with only the fragment it needs to (`/swap` does). | Not sent; the handler returns the page. |
-| `data-nojs-busy` + `aria-busy="true"` | set by the script on the root and the form | Present while a request is in flight; submit buttons are disabled meanwhile; `[data-nojs-busy]` fades to `--nojs-busy` (0.6). | Never set. |
-| `data-nojs-indicator="#id"` | a form or link | The named element (authored with `hidden`) is shown while the request runs. | Stays hidden. |
-| `data-nojs-push="false"` | a form or link | The URL does not change. Links push a history entry by default, forms replace it. | Normal navigation. |
-| `data-nojs-replace` | a form or link | `replaceState` instead of `pushState`. | Normal navigation. |
+| `id` + `data-lui="swap"` | a root element | Forms and links inside it are fetched; the element of the same `id` in the answer replaces the root. Flash, `<title>`, `data-theme` and the URL follow. Requests on one root are queued. | Normal navigation to the same URL. |
+| `data-lui-target="#id"` | a form or link, or an ancestor | Swaps that root instead of the closest one, so a control can sit anywhere. | Same navigation. |
+| `data-lui-swap="outer\|inner\|append\|prepend"` | with `data-lui-target` | How the answer lands: replace the root, replace its children, add at the end or the start. | Same navigation; the full page already shows the result. |
+| `data-lui-oob="outer\|inner\|…"` | an element in the answer | Replaces the element of the same `id` anywhere in the page and is dropped from the main swap. | The full page shows it in place. |
+| `Lui-Enhance: 1` | the request header | Sent on every enhanced request, so a handler may answer with only the fragment it needs to (`/swap` does). | Not sent; the handler returns the page. |
+| `data-lui-busy` + `aria-busy="true"` | set by the script on the root and the form | Present while a request is in flight; submit buttons are disabled meanwhile; `[data-lui-busy]` fades to `--lui-busy` (0.6). | Never set. |
+| `data-lui-indicator="#id"` | a form or link | The named element (authored with `hidden`) is shown while the request runs. | Stays hidden. |
+| `data-lui-push="false"` | a form or link | The URL does not change. Links push a history entry by default, forms replace it. | Normal navigation. |
+| `data-lui-replace` | a form or link | `replaceState` instead of `pushState`. | Normal navigation. |
 | Back and Forward | | Each swap stores a copy of every root in the history entry; Back and Forward restore from it with no request. Entries without a copy are re-fetched. | Normal history. |
-| `nojs:swap` | a bubbling `CustomEvent` on the swapped root | `detail` is `{ id, url, mode }`, for anything that must react; no listener ships with the crate. | Never fires. |
+| `lui:swap` | a bubbling `CustomEvent` on the swapped root | `detail` is `{ id, url, mode }`, for anything that must react; no listener ships with the crate. | Never fires. |
 
 A request that fails (network down, the answer has no element of that `id`) becomes the
 navigation the browser would have made, so the server's answer is always seen. The script also
@@ -265,14 +265,14 @@ Firefox; the Blitz suite proves every route with no script engine at all.
 
 ## Feature matrix
 
-Generated from `axum_nojs::spec::SPECS` by `cargo run -p demo -- spec write` (a test fails if it
+Generated from `loco_ui::spec::SPECS` by `cargo run -p demo -- spec write` (a test fails if it
 drifts). Versions are the first release of each engine with the feature, from MDN
 browser-compat-data; `no` means unshipped, so that browser gets the fallback.
 
 <!-- matrix:start -->
 | Component | Platform features | Chrome / Firefox / Safari | Fallback | Needs JS? |
 |---|---|---|---|---|
-| Enhancement script | `fetch`, `history.pushState`, `document.startViewTransition`, `CustomEvent` | 42 / 39 / 10.1; 5 / 4 / 5; 111 / 144 / 18; 15 / 11 / 6 | none needed: without the script every form and link is a normal navigation and every data-nojs-* attribute is inert | No |
+| Enhancement script | `fetch`, `history.pushState`, `document.startViewTransition`, `CustomEvent` | 42 / 39 / 10.1; 5 / 4 / 5; 111 / 144 / 18; 15 / 11 / 6 | none needed: without the script every form and link is a normal navigation and every data-lui-* attribute is inert | No |
 | Layout | `@view-transition`, `prefers-color-scheme`, `custom properties` | 126 / no / 18.2; 76 / 67 / 12.1; 49 / 31 / 9.1 | plain navigations (root never cross-fades); colours still switch by media query and data-theme | No |
 | Capability beacons | `@supports`, `selector()`, `background images`, `cookies` | 28 / 22 / 9; 83 / 69 / 14.1; 1 / 1 / 1; 1 / 1 / 1 | unknown browser gets every fallback; the first view always does | No |
 | Button | `invoker commands`, `popovertarget`, `aria-busy`, `prefers-reduced-motion` | 135 / 144 / 26.2; 114 / 125 / 17; 1 / 1 / 1; 74 / 63 / 10.1 | a popover command becomes popovertarget; other commands need the component's own fallback | No |
@@ -347,30 +347,30 @@ reacts per keystroke, it is not.
 ## Layout
 
 ```
-axum-nojs/src/lib.rs        crate docs, re-exports, stylesheet()
-axum-nojs-caps/src/lib.rs          Caps bitset, @supports beacons, cookie parsing, /nojs/caps route (own crate)
-axum-nojs-caps/examples/hyper.rs   the beacons on raw hyper, one line per flag
-axum-nojs/src/layout.rs     page shell + base CSS + beacons
-axum-nojs/src/stream.rs     Streamed response: DSD slots out of order, in-order fallback (http feature)
-axum-nojs/src/state.rs      UiState (query + cookie), the flash cookie
-axum-nojs/src/ui.rs         Ui: caps, theme and UiState in one extractor; ui.flash(), ui.layout()
-axum-nojs/src/flash.rs      one-shot status banners: levels, stacked, dismiss, auto-hide
-axum-nojs/src/select.rs     <select> with <selectedcontent> where supported
-axum-nojs/src/range.rs      <input type=range> with ticks and a server-rendered <output>
-axum-nojs/src/color.rs      <input type=color> with a swatch of the saved value
-axum-nojs/src/spec.rs       SPECS: features, per-browser baselines, fallback, needs_js
-axum-nojs/examples/         render_page (no server), axum_server (--features axum), hyper_server (--features http)
+loco-ui/src/lib.rs        crate docs, re-exports, stylesheet()
+loco-ui-caps/src/lib.rs          Caps bitset, @supports beacons, cookie parsing, /lui/caps route (own crate)
+loco-ui-caps/examples/hyper.rs   the beacons on raw hyper, one line per flag
+loco-ui/src/layout.rs     page shell + base CSS + beacons
+loco-ui/src/stream.rs     Streamed response: DSD slots out of order, in-order fallback (http feature)
+loco-ui/src/state.rs      UiState (query + cookie), the flash cookie
+loco-ui/src/ui.rs         Ui: caps, theme and UiState in one extractor; ui.flash(), ui.layout()
+loco-ui/src/flash.rs      one-shot status banners: levels, stacked, dismiss, auto-hide
+loco-ui/src/select.rs     <select> with <selectedcontent> where supported
+loco-ui/src/range.rs      <input type=range> with ticks and a server-rendered <output>
+loco-ui/src/color.rs      <input type=color> with a swatch of the saved value
+loco-ui/src/spec.rs       SPECS: features, per-browser baselines, fallback, needs_js
+loco-ui/examples/         render_page (no server), axum_server (--features axum), hyper_server (--features http)
 spec/components.json        generated from SPECS (cargo run -p demo -- spec write)
 docs/state.md               how state works with no script
 docs/caps.md                how the beacons work, cookie format, the first view, adding a flag
-docs/theming.md             every --nojs-* token, contrast pairs, a second palette as a Tokens value
+docs/theming.md             every --lui-* token, contrast pairs, a second palette as a Tokens value
 docs/components.md          write your own component from the primitives (a doctest)
 docs/comparison.md          against maud-ui, htmx + Maud, Leptos and Dioxus; builders against Props
 docs/audiences.md           who it is for (public services, strict CSP, low bandwidth, Tor, internal tools) and the proof each relies on
 docs/layers.svg             the layers diagram at the top of this file
 docs/ergonomics.md          audit of every call site and how M17 makes them shorter
 docs/latency.md             what made pages faster, what did not, and the order to apply it to your server
-axum-nojs/src/<name>.rs     one component each: dialog, popover, tabs, accordion, table, paged_table, wizard,
+loco-ui/src/<name>.rs     one component each: dialog, popover, tabs, accordion, table, paged_table, wizard,
                             combobox, pager, form, counter, theme, toast, breadcrumbs, skeleton,
                             empty_state, stat, drawer, palette (command palette)
 demo/src/lib.rs             PATHS and router(), which merges each group's routes()
@@ -380,11 +380,11 @@ demo/src/code.rs            the code under each component page: SOURCES, snippet
 demo/src/tests.rs           the no-script test, strict CSP, snippets, state round trips
 demo/src/snapshot.rs        the static snapshot for GitHub Pages (scripts/snapshot.sh)
 .github/workflows/pages.yml builds the snapshot and deploys it to GitHub Pages
-axum-nojs/loco-templates/   Loco scaffold overrides: HTML controller + Maud views, Post/Redirect/Get
+loco-ui/loco-templates/   Loco scaffold overrides: HTML controller + Maud views, Post/Redirect/Get
 examples/loco-app/          Loco app (sign-in, scaffolded notes); tests/pages.rs: one script, Blitz shots loco-*.png
-axum-nojs-test/src/lib.rs   Page: render a route through Blitz, assert layout, screenshot
-axum-nojs-test/tests/       every route rendered and captured; layout assertions
-axum-nojs-test/examples/probe.rs   render any HTML file through Blitz, print boxes
+loco-ui-test/src/lib.rs   Page: render a route through Blitz, assert layout, screenshot
+loco-ui-test/tests/       every route rendered and captured; layout assertions
+loco-ui-test/examples/probe.rs   render any HTML file through Blitz, print boxes
 tests/shots/                PNG per route and capability level, from Blitz
 scripts/verify.sh           the full verification pass
 FINDINGS.md                 what works, what needs a fallback, what is impossible without JS

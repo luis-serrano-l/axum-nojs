@@ -2,7 +2,7 @@
 
 use crate::site::page;
 use axum::{Form, Router, routing::get};
-use axum_nojs::prelude::*;
+use loco_ui::prelude::*;
 use serde::Deserialize;
 
 pub(crate) fn routes() -> Router {
@@ -16,8 +16,8 @@ async fn feedback_page(ui: Ui) -> Page {
     page(
         &ui,
         "Alerts, progress and tooltips",
-        nojs! {
-            Stack(nojs! {
+        lui! {
+            Stack(lui! {
                 // code: /feedback
                 Alert("Heads up") description="Deploys pause at 18:00 on Fridays.";
                 Alert("Payment failed") danger description="The card was declined. Try another one.";
@@ -25,14 +25,14 @@ async fn feedback_page(ui: Ui) -> Page {
                 Progress(62, 100) label="Uploading photos";
                 Progress(0, 0) label="Waiting for the server";
                 Meter(83, 0, 100) label="Disk used" low=60 high=80 optimum=0;
-                Cluster(nojs! {
-                    Tooltip("Copy the link", nojs! { Button("") icon label="Copy" content=(html! { (Icon::Copy) }); });
+                Cluster(lui! {
+                    Tooltip("Copy the link", lui! { Button("") icon label="Copy" content=(html! { (Icon::Copy) }); });
                     Separator vertical;
-                    Tooltip("Opens in a new tab", nojs! { LinkButton("Docs", "/"); }) below;
+                    Tooltip("Opens in a new tab", lui! { LinkButton("Docs", "/"); }) below;
                 });
                 Separator label="or";
                 // end code
-                p class="nojs-note" { "Hover or tab to the buttons for their tooltips. The meter turns amber past 60 and red past 80 because its best value is 0." }
+                p class="lui-note" { "Hover or tab to the buttons for their tooltips. The meter turns amber past 60 and red past 80 because its best value is 0." }
             }) gap=6;
         },
     )
@@ -43,9 +43,9 @@ async fn toast_page(ui: Ui) -> Page {
     page(
         &ui,
         "Toasts",
-        nojs! {
+        lui! {
             p { "Each button posts, the server redirects back, and the answer shows in the corner. Calm ones fade after five seconds (hover to keep them); errors stay until dismissed." }
-            form method="post" action="/toast" class="nojs-cluster" {
+            form method="post" action="/toast" class="lui-cluster" {
                 (ui.button("Send invite").primary().name("kind").value("ok"))
                 (ui.button("Copy link").name("kind").value("warn"))
                 (ui.button("Sync now").name("kind").value("danger"))
@@ -86,8 +86,8 @@ async fn dashboard_page(ui: Ui) -> Page {
     page(
         &ui,
         "Stats and empty states",
-        nojs! {
-            div class="nojs-stat-grid" {
+        lui! {
+            div class="lui-stat-grid" {
                 // code: /dashboard
                 Stat("Visitors", "12,480") delta="+8.2%" note="last 7 days";
                 Stat("Orders", if none { "0" } else { "3" }) delta=(if none { "-3" } else { "0" });
@@ -105,7 +105,7 @@ async fn dashboard_page(ui: Ui) -> Page {
                 // end code
             } @else {
                 ul { li { "#1042, Ada Lovelace, 3 items" } li { "#1041, Grace Hopper, 1 item" } li { "#1040, Alan Turing, 2 items" } }
-                p class="nojs-note" { a href="/dashboard?orders=none" { "See the empty state" } }
+                p class="lui-note" { a href="/dashboard?orders=none" { "See the empty state" } }
             }
         },
     )

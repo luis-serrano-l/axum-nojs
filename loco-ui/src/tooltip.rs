@@ -15,16 +15,16 @@
 //! **Fallback:** none needed.
 //!
 //! ```rust
-//! use axum_nojs::prelude::*;
+//! use loco_ui::prelude::*;
 //! let ui = Ui::default();
 //! let m = ui.tooltip("Copy the link", html! { (ui.button("").icon().ghost().label("Copy").content(html! { (Icon::Copy) })) });
 //! let m = m.render().into_string();
 //! assert!(m.contains(r#"role="tooltip""#) && m.contains("Copy the link"));
-//! assert!(m.contains(r#"aria-describedby="nojs-tooltip-copy-the-link""#));
+//! assert!(m.contains(r#"aria-describedby="lui-tooltip-copy-the-link""#));
 //! let below = ui.tooltip("Saved", html! { span { "3" } }).below().render().into_string();
-//! assert!(below.contains("nojs-tooltip-below"));
-//! // The same in `nojs!`:
-//! let same = nojs! { Tooltip("Copy the link", nojs! {
+//! assert!(below.contains("lui-tooltip-below"));
+//! // The same in `lui!`:
+//! let same = lui! { Tooltip("Copy the link", lui! {
 //!     Button("") icon ghost label="Copy" content=(html! { (Icon::Copy) });
 //! }); };
 //! assert_eq!(same.into_string(), m);
@@ -54,7 +54,7 @@ impl Tooltip<'_> {
             .doc("Show the text under the trigger instead of above it."),
         Prop::new("id", PropKind::Value, "id: &'a str")
             .attr("id")
-            .doc("The tooltip's id, `nojs-tooltip-<slug of the text>` by default."),
+            .doc("The tooltip's id, `lui-tooltip-<slug of the text>` by default."),
     ];
 }
 
@@ -77,7 +77,7 @@ impl<'a> Tooltip<'a> {
         self
     }
 
-    /// The tooltip's id, `nojs-tooltip-<slug of the text>` by default.
+    /// The tooltip's id, `lui-tooltip-<slug of the text>` by default.
     pub fn id(mut self, id: &'a str) -> Self {
         self.id = Some(id);
         self
@@ -87,7 +87,7 @@ impl<'a> Tooltip<'a> {
 impl Render for Tooltip<'_> {
     fn render(&self) -> Markup {
         let id = self.id.map_or_else(
-            || format!("nojs-tooltip-{}", slug(self.text)),
+            || format!("lui-tooltip-{}", slug(self.text)),
             str::to_string,
         );
         // The trigger is caller markup: its first element gets `aria-describedby` by string,
@@ -98,9 +98,9 @@ impl Render for Tooltip<'_> {
             usize::from(self.trigger.0.starts_with('<')),
         );
         html! {
-            span class={ "nojs-tooltip" @if self.below { " nojs-tooltip-below" } } {
+            span class={ "lui-tooltip" @if self.below { " lui-tooltip-below" } } {
                 (PreEscaped(trigger))
-                span id=(id) role="tooltip" class="nojs-tooltip-text" { (self.text) }
+                span id=(id) role="tooltip" class="lui-tooltip-text" { (self.text) }
             }
         }
     }
@@ -109,16 +109,16 @@ impl Render for Tooltip<'_> {
 /// Styles for this component; included in [`crate::stylesheet`]. shadcn Tooltip: the primary
 /// colour as the background, text-xs, rounded-md, px-3 py-1.5.
 pub const CSS: &str = r#"
-.nojs-tooltip { position: relative; display: inline-flex; }
-.nojs-tooltip-text {
+.lui-tooltip { position: relative; display: inline-flex; }
+.lui-tooltip-text {
   position: absolute; z-index: 30; left: 50%; bottom: calc(100% + 6px); translate: -50% 0;
   width: max-content; max-width: 16rem; padding: 0.375rem 0.75rem; pointer-events: none;
   font-size: 0.75rem; line-height: 1rem; font-weight: 400; text-align: center;
-  color: var(--nojs-on-primary); background: var(--nojs-primary); border-radius: var(--nojs-radius-sm);
+  color: var(--lui-on-primary); background: var(--lui-primary); border-radius: var(--lui-radius-sm);
   opacity: 0; visibility: hidden; transition: opacity 0.15s, visibility 0.15s;
 }
-.nojs-tooltip-below .nojs-tooltip-text { bottom: auto; top: calc(100% + 6px); }
-.nojs-tooltip:hover .nojs-tooltip-text, .nojs-tooltip:focus-within .nojs-tooltip-text { opacity: 1; visibility: visible; }
-@media (hover: none) { .nojs-tooltip:hover:not(:focus-within) .nojs-tooltip-text { opacity: 0; visibility: hidden; } }
-@media (prefers-reduced-motion: reduce) { .nojs-tooltip-text { transition: none; } }
+.lui-tooltip-below .lui-tooltip-text { bottom: auto; top: calc(100% + 6px); }
+.lui-tooltip:hover .lui-tooltip-text, .lui-tooltip:focus-within .lui-tooltip-text { opacity: 1; visibility: visible; }
+@media (hover: none) { .lui-tooltip:hover:not(:focus-within) .lui-tooltip-text { opacity: 0; visibility: hidden; } }
+@media (prefers-reduced-motion: reduce) { .lui-tooltip-text { transition: none; } }
 "#;

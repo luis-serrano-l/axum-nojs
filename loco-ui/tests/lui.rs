@@ -1,7 +1,7 @@
-//! `nojs!` expands to the builder chain a route would write by hand: one test per rule, each
+//! `lui!` expands to the builder chain a route would write by hand: one test per rule, each
 //! comparing the two forms' HTML.
 
-use axum_nojs::prelude::*;
+use loco_ui::prelude::*;
 
 fn ui() -> Ui {
     Ui::from_request("/", "", "")
@@ -17,7 +17,7 @@ fn same(a: Markup, b: Markup) {
 fn a_component_is_its_ui_method() {
     let ui = ui();
     same(
-        nojs! {
+        lui! {
             h1.title { "Empty" }
             EmptyState("Nothing yet");
             DatePicker("due", "Due");
@@ -35,7 +35,7 @@ fn a_component_is_its_ui_method() {
 fn a_block_of_markup_is_the_body() {
     let ui = ui();
     same(
-        nojs! {
+        lui! {
             Card title="Plan" { p { "Pro" } }
             Dialog("Delete account") small danger confirm=("Delete", "/delete") {
                 p { "This cannot be undone." }
@@ -60,7 +60,7 @@ fn attributes_are_setters() {
     let (some, none): (Option<&str>, Option<&str>) = (Some("Why?"), None);
     let max = 40;
     same(
-        nojs! {
+        lui! {
             Input("a", "A") maxlength=(max) required autofocus[yes] search[no] help=[some] error=[none];
             Counter("/count", 3) min=-5 step=(2);
             Pager("/p", 3) per_page=2 rows=|i| { p { "Row " (i) } }
@@ -80,7 +80,7 @@ fn items_are_adders_with_their_modifiers() {
     let ui = ui();
     let title = "Use";
     same(
-        nojs! {
+        lui! {
             Tabs("demo") select_below {
                 tab "Install" { p { "cargo add" } }
                 tab (title) badge=3 { p { "Call it." } }
@@ -139,7 +139,7 @@ fn control_flow_among_items() {
         tabs.tab("Total", html! { "4" })
     };
     same(
-        nojs! {
+        lui! {
             Tabs("p") {
                 @for (name, open) in projects {
                     @if open > 2 {
@@ -170,7 +170,7 @@ fn plain_maud_passes_through() {
     let who: Option<&str> = ["Ada"].first().copied();
     let on = true;
     same(
-        nojs! {
+        lui! {
             @match who {
                 Some(name) => p { "Hi " (name) },
                 None => p { "Hi" },
@@ -191,23 +191,23 @@ fn plain_maud_passes_through() {
     );
 }
 
-/// `nojs!(ctx => ..)` names the `Ui` when it is not called `ui`.
+/// `lui!(ctx => ..)` names the `Ui` when it is not called `ui`.
 #[test]
 fn another_name_for_ui() {
     let ctx = ui();
     same(
-        nojs!(ctx => Badge("Hi") danger;),
+        lui!(ctx => Badge("Hi") danger;),
         html! { (ctx.badge("Hi").danger()) },
     );
 }
 
-/// README's first example, in `nojs!` and by hand, renders the same.
+/// README's first example, in `lui!` and by hand, renders the same.
 #[test]
 fn the_readme_example() {
-    let ui = Ui::from_request("/account", "", "nojs-flash=Saved.");
+    let ui = Ui::from_request("/account", "", "lui-flash=Saved.");
     let name = String::from("Ada");
     same(
-        nojs! {
+        lui! {
             Flash;
             Form("/account") submit="Save" { text "name" "Name" required value=(&name); }
             Dialog("Delete account") danger confirm=("Delete", "/account/delete") {

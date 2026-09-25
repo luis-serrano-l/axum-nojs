@@ -11,7 +11,7 @@
 //! **Fallback:** none needed.
 //!
 //! ```rust
-//! use axum_nojs::prelude::*;
+//! use loco_ui::prelude::*;
 //! let ui = Ui::from(Caps::all());
 //! assert!(ui.empty_state("No files yet").render().into_string().contains("No files yet"));
 //! let m = ui.empty_state("No results for \u{201c}zzz\u{201d}")
@@ -21,8 +21,8 @@
 //!     .post("Create a file", "/files/new");
 //! let m = m.render().into_string();
 //! assert!(m.contains(r#"href="/table""#) && m.contains(r#"action="/files/new""#));
-//! // The same in `nojs!`:
-//! let same = nojs! {
+//! // The same in `lui!`:
+//! let same = lui! {
 //!     EmptyState("No results for \u{201c}zzz\u{201d}") icon="\u{1f50d}"
 //!         text=(html! { "Check the spelling or clear the filter." }) {
 //!         link "Clear the filter" "/table";
@@ -103,12 +103,12 @@ impl<'a> EmptyState<'a> {
 impl Render for EmptyState<'_> {
     fn render(&self) -> Markup {
         html! {
-            div class="nojs-empty" {
-                @if let Some(i) = self.icon { span class="nojs-empty-icon" aria-hidden="true" { (i) } }
-                p class="nojs-empty-title" { (self.title) }
-                @if let Some(t) = &self.text { p class="nojs-empty-text" { (t) } }
+            div class="lui-empty" {
+                @if let Some(i) = self.icon { span class="lui-empty-icon" aria-hidden="true" { (i) } }
+                p class="lui-empty-title" { (self.title) }
+                @if let Some(t) = &self.text { p class="lui-empty-text" { (t) } }
                 @if self.link.is_some() || self.post.is_some() {
-                    div class="nojs-empty-actions" {
+                    div class="lui-empty-actions" {
                         @if let Some((label, action)) = self.post {
                             form method="post" action=(action) { (Button::new(Caps::NONE, label).primary()) }
                         }
@@ -121,14 +121,14 @@ impl Render for EmptyState<'_> {
 }
 /// Styles for this component; included in [`crate::stylesheet`].
 pub const CSS: &str = r#"
-.nojs-empty {
-  display: grid; justify-items: center; gap: var(--nojs-space); text-align: center;
-  padding: calc(var(--nojs-space) * 6) calc(var(--nojs-space) * 3);
-  border: 1px dashed var(--nojs-line); border-radius: var(--nojs-radius-lg);
+.lui-empty {
+  display: grid; justify-items: center; gap: var(--lui-space); text-align: center;
+  padding: calc(var(--lui-space) * 6) calc(var(--lui-space) * 3);
+  border: 1px dashed var(--lui-line); border-radius: var(--lui-radius-lg);
 }
-.nojs-empty-icon { display: grid; place-items: center; width: 2.5rem; height: 2.5rem; font-size: 1.25rem; line-height: 1; border-radius: var(--nojs-radius-sm); background: var(--nojs-secondary); }
-.nojs-empty-title { margin: 0; font-size: 1.125rem; font-weight: 500; letter-spacing: -0.0125em; }
-.nojs-empty-text { margin: 0; color: var(--nojs-muted); max-width: 24rem; font-size: 0.875rem; }
-.nojs-empty-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: calc(var(--nojs-space) * 2); margin-top: var(--nojs-space); }
-.nojs-empty-actions form { margin: 0; }
+.lui-empty-icon { display: grid; place-items: center; width: 2.5rem; height: 2.5rem; font-size: 1.25rem; line-height: 1; border-radius: var(--lui-radius-sm); background: var(--lui-secondary); }
+.lui-empty-title { margin: 0; font-size: 1.125rem; font-weight: 500; letter-spacing: -0.0125em; }
+.lui-empty-text { margin: 0; color: var(--lui-muted); max-width: 24rem; font-size: 0.875rem; }
+.lui-empty-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: calc(var(--lui-space) * 2); margin-top: var(--lui-space); }
+.lui-empty-actions form { margin: 0; }
 "#;

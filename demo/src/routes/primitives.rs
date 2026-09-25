@@ -2,7 +2,7 @@
 
 use crate::site::page;
 use axum::{Router, routing::get};
-use axum_nojs::prelude::*;
+use loco_ui::prelude::*;
 
 pub(crate) fn routes() -> Router {
     Router::new()
@@ -17,10 +17,10 @@ async fn button_page(ui: Ui) -> Page {
     page(
         &ui,
         "Buttons and badges",
-        nojs! {
-            Stack(nojs! {
+        lui! {
+            Stack(lui! {
                 // code: /button
-                Cluster(nojs! {
+                Cluster(lui! {
                     Button("Save") primary loading=(loading);
                     Button("Cancel");
                     Button("Delete") danger;
@@ -29,13 +29,13 @@ async fn button_page(ui: Ui) -> Page {
                     Button("\u{2026}") icon ghost label="More";
                     LinkButton("Read the docs", "/");
                 });
-                Cluster(nojs! {
+                Cluster(lui! {
                     Badge("New"); Badge("Draft") secondary; Badge("Failed") danger;
                     Badge("rust") outline; Badge("Paid") ok; Badge("Pending") warn;
                 });
-                Cluster(nojs! { @for icon in Icon::ALL { Icon(icon) label=(icon.name()); } }) gap=3;
+                Cluster(lui! { @for icon in Icon::ALL { Icon(icon) label=(icon.name()); } }) gap=3;
                 // end code
-                p class="nojs-note" { "The server decides a button is loading: " a href=(if loading { "/button" } else { "/button?loading=1" }) { @if loading { "stop" } @else { "start" } } "." }
+                p class="lui-note" { "The server decides a button is loading: " a href=(if loading { "/button" } else { "/button?loading=1" }) { @if loading { "stop" } @else { "start" } } "." }
             });
         },
     )
@@ -47,8 +47,8 @@ async fn field_page(ui: Ui) -> Page {
     page(
         &ui,
         "Fields",
-        nojs! {
-            form class="nojs-stack" method="get" action="/field" {
+        lui! {
+            form class="lui-stack" method="get" action="/field" {
                 // code: /field
                 Input("name", "Name") placeholder="Ada Lovelace" help="As it should appear on invoices.";
                 Input("email", "Email") email required value=(email)
@@ -75,17 +75,17 @@ async fn card_page(ui: Ui) -> Page {
     page(
         &ui,
         "Cards and avatars",
-        nojs! {
+        lui! {
             // code: /card
-            Grid("16rem", nojs! {
+            Grid("16rem", lui! {
                 Card title="Team" description="3 people can edit this project."
-                    header=(nojs! { Badge("Pro") secondary; })
-                    body=(nojs! { Stack(nojs! { @for (name, role) in team {
-                        Cluster(nojs! { Avatar(name); span { (name) } Badge(role) outline; });
+                    header=(lui! { Badge("Pro") secondary; })
+                    body=(lui! { Stack(lui! { @for (name, role) in team {
+                        Cluster(lui! { Avatar(name); span { (name) } Badge(role) outline; });
                     } }) gap=3; })
-                    footer=(nojs! { Button("Invite") primary; Button("Manage") ghost; });
+                    footer=(lui! { Button("Invite") primary; Button("Manage") ghost; });
                 Card title="Storage" description="Resets on the 1st."
-                    footer=(nojs! { LinkButton("Upgrade", "/card"); }) {
+                    footer=(lui! { LinkButton("Upgrade", "/card"); }) {
                     p { "3.2 GB of 5 GB used." }
                 }
             });
@@ -95,14 +95,14 @@ async fn card_page(ui: Ui) -> Page {
 }
 
 async fn layout_page(ui: Ui) -> Page {
-    let tile = |t: &str| html! { div class="nojs-layout-tile" { (t) } };
+    let tile = |t: &str| html! { div class="lui-layout-tile" { (t) } };
     page(
         &ui,
         "Layout",
-        nojs! {
+        lui! {
             // code: /layout
-            Stack(nojs! {
-                Cluster(nojs! { h3 { "Cluster" } Cluster(nojs! { Button("Export"); Button("New") primary; }); }) between;
+            Stack(lui! {
+                Cluster(lui! { h3 { "Cluster" } Cluster(lui! { Button("Export"); Button("New") primary; }); }) between;
                 Grid("8rem", html! { @for t in ["Grid", "fills", "the row", "then", "wraps"] { (tile(t)) } }) gap=2;
                 Split(html! { (tile("Split: side")) }, html! { (tile("main, stacks under the side when narrow")) })
                     side_width="12rem";

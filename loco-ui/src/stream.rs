@@ -26,7 +26,7 @@
 //! twice in DSD mode, once in `<head>` for the slotted chunks and once in the shadow tree.
 //!
 //! ```rust
-//! use axum_nojs::prelude::*;
+//! use loco_ui::prelude::*;
 //! let ui = Ui::from(Caps::all());
 //! let page = ui.stream("Feed", html! {
 //!     h1 { "Feed" }
@@ -35,8 +35,8 @@
 //! .fill("news", async { html! { p { "Fresh news." } } });
 //! assert!(page.out_of_order());
 //!
-//! // The same slot in `nojs!`:
-//! let same = nojs! { Slot("news", (html! { p { "Loading news…" } })); };
+//! // The same slot in `lui!`:
+//! let same = lui! { Slot("news", (html! { p { "Loading news…" } })); };
 //! let slot = ui.slot("news", html! { p { "Loading news…" } });
 //! assert_eq!(same.into_string(), slot.into_string());
 //! ```
@@ -72,7 +72,7 @@ impl Ui {
 }
 
 fn marker(id: &str) -> String {
-    format!("<!--nojs-slot:{id}-->")
+    format!("<!--lui-slot:{id}-->")
 }
 
 /// A page whose slow sections arrive later. Build with [`Ui::stream`], add sections with
@@ -181,13 +181,13 @@ impl Streamed {
         let mut fills: HashMap<String, Fill> = self.fills.into_iter().collect();
         let mut pieces: Vec<Piece> = Vec::new();
         let mut rest = self.prefix.as_str();
-        while let Some(start) = rest.find("<!--nojs-slot:") {
+        while let Some(start) = rest.find("<!--lui-slot:") {
             let end = rest[start..]
                 .find("-->")
                 .map(|e| start + e + 3)
                 .unwrap_or(rest.len());
             pieces.push(Piece::Text(rest[..start].to_string()));
-            let id = &rest[start + "<!--nojs-slot:".len()..end - 3];
+            let id = &rest[start + "<!--lui-slot:".len()..end - 3];
             if let Some(fut) = fills.remove(id) {
                 pieces.push(Piece::Fill(fut));
             }
@@ -232,6 +232,6 @@ impl axum::response::IntoResponse for Streamed {
 
 /// Styles for this component; included in [`crate::stylesheet`].
 pub const CSS: &str = r#"
-.nojs-stream-pending { color: var(--nojs-muted); font-style: italic; }
-.nojs-stream-section { border: 1px solid var(--nojs-line); border-radius: var(--nojs-radius-lg); padding: 1.5rem; margin-bottom: calc(var(--nojs-space) * 2); background: var(--nojs-card); box-shadow: var(--nojs-shadow-xs); }
+.lui-stream-pending { color: var(--lui-muted); font-style: italic; }
+.lui-stream-section { border: 1px solid var(--lui-line); border-radius: var(--lui-radius-lg); padding: 1.5rem; margin-bottom: calc(var(--lui-space) * 2); background: var(--lui-card); box-shadow: var(--lui-shadow-xs); }
 "#;

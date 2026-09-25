@@ -17,7 +17,7 @@
 //!
 //! **Dismiss:** a link back to the page (`.dismiss()`). Reading the flash already
 //! queued the cookie's deletion on that response, so following the link renders the page
-//! without it; with `/nojs/enhance.js` inside a swap root it updates in place.
+//! without it; with `/lui/enhance.js` inside a swap root it updates in place.
 //!
 //! **What it does not do without script:** it cannot vanish in place when dismissed; the
 //! dismiss link is a navigation.
@@ -25,21 +25,21 @@
 //! **Fallback:** without CSS animations the message stays; nothing else differs.
 //!
 //! ```rust
-//! use axum_nojs::prelude::*;
-//! let ui = Ui::from_request("/settings", "", "nojs-flash=Saved.");
+//! use loco_ui::prelude::*;
+//! let ui = Ui::from_request("/settings", "", "lui-flash=Saved.");
 //! let m = ui.flash().render().into_string();
-//! assert!(m.contains("nojs-flash-info") && m.contains("Saved."));
+//! assert!(m.contains("lui-flash-info") && m.contains("Saved."));
 //! assert_eq!(Ui::default().flash().render().into_string(), "", "no message, no banner");
 //!
 //! // What `ui.redirect("/settings").ok("Saved.").danger("Avatar too large.")` sends, shown
 //! // with a dismiss link and auto-hide.
-//! let ui = Ui::from_request("/settings", "", "nojs-flash=ok%3ASaved.%0Adanger%3AAvatar%20too%20large.");
+//! let ui = Ui::from_request("/settings", "", "lui-flash=ok%3ASaved.%0Adanger%3AAvatar%20too%20large.");
 //! let m = ui.flash().dismiss().auto_hide().render().into_string();
-//! assert!(m.contains(r#"role="alert""#) && m.contains("nojs-flash-auto"));
+//! assert!(m.contains(r#"role="alert""#) && m.contains("lui-flash-auto"));
 //! assert_eq!(m.matches(r#"href="/settings""#).count(), 2);
 //!
-//! // The same in `nojs!`:
-//! let same = nojs! { Flash dismiss auto_hide; };
+//! // The same in `lui!`:
+//! let same = lui! { Flash dismiss auto_hide; };
 //! assert_eq!(same.into_string(), m);
 //! ```
 
@@ -63,7 +63,7 @@ pub enum Level {
 }
 
 impl Level {
-    /// The prefix used in the cookie text and the class suffix (`nojs-flash-ok`).
+    /// The prefix used in the cookie text and the class suffix (`lui-flash-ok`).
     pub fn as_str(self) -> &'static str {
         match self {
             Level::Info => "info",
@@ -161,14 +161,14 @@ impl Render for Flash<'_> {
         let dismiss = self.dismiss.then(|| self.ui.state.path());
         html! {
             @if !messages.is_empty() {
-                div class="nojs-flash" {
+                div class="lui-flash" {
                     @for (level, message) in &messages {
                         @let hide = self.auto_hide && matches!(level, Level::Info | Level::Ok);
-                        p class={ "nojs-flash-item nojs-flash-" (level.as_str()) @if hide { " nojs-flash-auto" } }
+                        p class={ "lui-flash-item lui-flash-" (level.as_str()) @if hide { " lui-flash-auto" } }
                             role=(if *level == Level::Danger { "alert" } else { "status" }) {
-                            span class="nojs-flash-text" { (message) }
+                            span class="lui-flash-text" { (message) }
                             @if let Some(href) = dismiss {
-                                " " a class="nojs-flash-dismiss" href=(href) aria-label={ "Dismiss: " (message) } { "Dismiss" }
+                                " " a class="lui-flash-dismiss" href=(href) aria-label={ "Dismiss: " (message) } { "Dismiss" }
                             }
                         }
                     }
@@ -179,28 +179,28 @@ impl Render for Flash<'_> {
 }
 /// Styles for this component; included in [`crate::stylesheet`].
 pub const CSS: &str = r#"
-.nojs-flash { display: grid; gap: calc(var(--nojs-space) * 1); margin-block: calc(var(--nojs-space) * 2); }
-.nojs-flash-item {
-  --nojs-flash-tone: var(--nojs-primary);
+.lui-flash { display: grid; gap: calc(var(--lui-space) * 1); margin-block: calc(var(--lui-space) * 2); }
+.lui-flash-item {
+  --lui-flash-tone: var(--lui-primary);
   display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between;
-  gap: calc(var(--nojs-space) * 1) calc(var(--nojs-space) * 2); margin: 0;
-  padding: 0.75rem 1rem; border-radius: var(--nojs-radius); font-size: 0.875rem;
-  background: var(--nojs-card); border: 1px solid var(--nojs-line); color: var(--nojs-fg);
+  gap: calc(var(--lui-space) * 1) calc(var(--lui-space) * 2); margin: 0;
+  padding: 0.75rem 1rem; border-radius: var(--lui-radius); font-size: 0.875rem;
+  background: var(--lui-card); border: 1px solid var(--lui-line); color: var(--lui-fg);
 }
 /* shadcn Alert: a neutral card; the level is a dot in its colour, and danger colours the text. */
-.nojs-flash-item::before { content: ""; flex: none; align-self: center; width: 0.5rem; height: 0.5rem; margin-right: -0.5rem; border-radius: 50%; background: var(--nojs-flash-tone); }
-.nojs-flash-item > :first-child { flex: 1; }
-.nojs-flash-info { --nojs-flash-tone: var(--nojs-muted); }
-.nojs-flash-ok { --nojs-flash-tone: var(--nojs-ok); }
-.nojs-flash-warn { --nojs-flash-tone: var(--nojs-warn); }
-.nojs-flash-danger { --nojs-flash-tone: var(--nojs-danger); color: var(--nojs-danger); }
-.nojs-flash-dismiss { color: var(--nojs-muted); font-size: 0.875rem; }
-.nojs-flash-dismiss:hover { color: var(--nojs-fg); }
-.nojs-flash-auto { animation: nojs-flash-hide 0.4s ease-in 6s forwards; }
-@keyframes nojs-flash-hide {
+.lui-flash-item::before { content: ""; flex: none; align-self: center; width: 0.5rem; height: 0.5rem; margin-right: -0.5rem; border-radius: 50%; background: var(--lui-flash-tone); }
+.lui-flash-item > :first-child { flex: 1; }
+.lui-flash-info { --lui-flash-tone: var(--lui-muted); }
+.lui-flash-ok { --lui-flash-tone: var(--lui-ok); }
+.lui-flash-warn { --lui-flash-tone: var(--lui-warn); }
+.lui-flash-danger { --lui-flash-tone: var(--lui-danger); color: var(--lui-danger); }
+.lui-flash-dismiss { color: var(--lui-muted); font-size: 0.875rem; }
+.lui-flash-dismiss:hover { color: var(--lui-fg); }
+.lui-flash-auto { animation: lui-flash-hide 0.4s ease-in 6s forwards; }
+@keyframes lui-flash-hide {
   to { opacity: 0; visibility: hidden; height: 0; padding-block: 0; margin-block: -0.5rem 0; border-width: 0; }
 }
-@media (prefers-reduced-motion: reduce) { .nojs-flash-auto { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .lui-flash-auto { animation: none; } }
 "#;
 
 #[cfg(test)]
@@ -227,12 +227,12 @@ mod tests {
 
     #[test]
     fn danger_is_an_alert_and_never_auto_hides() {
-        let ui = Ui::from_request("/", "", "nojs-flash=danger:Failed.");
+        let ui = Ui::from_request("/", "", "lui-flash=danger:Failed.");
         let m = ui.flash().auto_hide().render().into_string();
         assert!(
             m.contains(r#"role="alert""#)
-                && !m.contains("nojs-flash-auto")
-                && !m.contains("nojs-flash-dismiss")
+                && !m.contains("lui-flash-auto")
+                && !m.contains("lui-flash-dismiss")
         );
     }
 }

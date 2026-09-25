@@ -31,7 +31,7 @@
 //! fallback closes through its links alone. Focus is not trapped in the fallback.
 //!
 //! ```rust
-//! use axum_nojs::prelude::*;
+//! use loco_ui::prelude::*;
 //! let ui = Ui::from(Caps::all());
 //! let hi = ui.dialog("Say hi").body(html! { p { "Hello." } });
 //! assert!(hi.render().into_string().contains(r#"commandfor="say-hi""#), "the id is the trigger's slug");
@@ -51,11 +51,11 @@
 //!         label { "Reason " input name="reason"; }
 //!     });
 //! let html = m.render().into_string();
-//! assert!(html.contains("<dialog id=\"confirm\" class=\"nojs-dialog-sm\" closedby=\"closerequest\" aria-labelledby=\"confirm-title\" open>"));
+//! assert!(html.contains("<dialog id=\"confirm\" class=\"lui-dialog-sm\" closedby=\"closerequest\" aria-labelledby=\"confirm-title\" open>"));
 //! assert!(html.contains("<form method=\"post\" action=\"/account/delete\""));
 //! assert!(html.contains("name=\"returns_to\" value=\"/settings\""));
-//! // The same in `nojs!`:
-//! let same = nojs! { Dialog("Delete account") id="confirm" title="Delete account?" small danger
+//! // The same in `lui!`:
+//! let same = lui! { Dialog("Delete account") id="confirm" title="Delete account?" small danger
 //!     confirm=("Delete", "/account/delete") returns_to="/settings" cancel="Keep it"
 //!     closedby="closerequest" open=(true) {
 //!     p { "This cannot be undone." }
@@ -87,9 +87,9 @@ enum DialogSize {
 impl DialogSize {
     fn class(self) -> &'static str {
         match self {
-            DialogSize::Sm => "nojs-dialog-sm",
-            DialogSize::Md => "nojs-dialog-md",
-            DialogSize::Lg => "nojs-dialog-lg",
+            DialogSize::Sm => "lui-dialog-sm",
+            DialogSize::Md => "lui-dialog-md",
+            DialogSize::Lg => "lui-dialog-lg",
         }
     }
 }
@@ -273,44 +273,44 @@ impl Render for Dialog<'_> {
         let title_id = format!("{id}-title");
         let open_href = format!("#{id}");
         html! {
-            div class={ "nojs-dialog" @if danger { " nojs-dialog-danger" } } {
+            div class={ "lui-dialog" @if danger { " lui-dialog-danger" } } {
                 @if invokers {
                     (ui.button(trigger).command("show-modal", id).aria_haspopup("dialog"))
                 } @else {
-                    (ui.link_button(trigger, &open_href).class("nojs-dialog-open").role("button"))
+                    (ui.link_button(trigger, &open_href).class("lui-dialog-open").role("button"))
                 }
                 dialog id=(id) class=(size.class()) closedby=(closedby) aria-labelledby=[title.map(|_| &title_id)] open[open] {
-                    @if let Some(t) = title { h2 id=(title_id) class="nojs-dialog-title" { (t) } }
+                    @if let Some(t) = title { h2 id=(title_id) class="lui-dialog-title" { (t) } }
                     @if let Some((label, action)) = confirm {
-                        form method="post" action=(action) class="nojs-dialog-form" {
-                            div class="nojs-dialog-body" { (body) }
+                        form method="post" action=(action) class="lui-dialog-form" {
+                            div class="lui-dialog-body" { (body) }
                             @if let Some(to) = returns_to { input type="hidden" name="returns_to" value=(to); }
-                            div class="nojs-dialog-actions" {
+                            div class="lui-dialog-actions" {
                                 @if invokers {
                                     (ui.button(cancel).command("close", id))
                                 } @else {
-                                    (ui.link_button(cancel, "#").class("nojs-dialog-cancel").role("button"))
+                                    (ui.link_button(cancel, "#").class("lui-dialog-cancel").role("button"))
                                 }
                                 @if danger { (ui.button(label).danger()) } @else { (ui.button(label).primary()) }
                             }
                         }
                     } @else {
-                        div class="nojs-dialog-body" { (body) }
+                        div class="lui-dialog-body" { (body) }
                         @if invokers {
-                            form method="dialog" class="nojs-dialog-actions" {
+                            form method="dialog" class="lui-dialog-actions" {
                                 (ui.button(close).primary())
                             }
                         } @else {
-                            p class="nojs-dialog-actions" { (ui.link_button(close, "#").primary().role("button")) }
+                            p class="lui-dialog-actions" { (ui.link_button(close, "#").primary().role("button")) }
                         }
                     }
                     // Last in the markup so the dialog's focusing steps skip it for the first field.
                     @if title.is_some() {
                         @let x = html! { (Icon::X) };
                         @if invokers {
-                            (ui.button("").ghost().small().icon().class("nojs-dialog-close").label("Close").content(x).command("close", id))
+                            (ui.button("").ghost().small().icon().class("lui-dialog-close").label("Close").content(x).command("close", id))
                         } @else {
-                            (ui.link_button("", "#").ghost().small().icon().class("nojs-dialog-close").label("Close").content(x))
+                            (ui.link_button("", "#").ghost().small().icon().class("lui-dialog-close").label("Close").content(x))
                         }
                     }
                 }
@@ -321,40 +321,40 @@ impl Render for Dialog<'_> {
 
 /// Styles for this component; included in [`crate::stylesheet`].
 pub const CSS: &str = r#"
-.nojs-dialog { display: inline-flex; flex-wrap: wrap; gap: var(--nojs-space); align-items: center; }
-/* shadcn Dialog: popover surface, rounded-lg, p-6, shadow-lg, the --nojs-overlay backdrop. */
-.nojs-dialog dialog {
-  background: var(--nojs-popover); color: var(--nojs-fg);
-  border: 1px solid var(--nojs-line); border-radius: var(--nojs-radius);
-  padding: calc(var(--nojs-space) * 3); width: calc(100% - 2rem); box-shadow: var(--nojs-shadow-lg);
+.lui-dialog { display: inline-flex; flex-wrap: wrap; gap: var(--lui-space); align-items: center; }
+/* shadcn Dialog: popover surface, rounded-lg, p-6, shadow-lg, the --lui-overlay backdrop. */
+.lui-dialog dialog {
+  background: var(--lui-popover); color: var(--lui-fg);
+  border: 1px solid var(--lui-line); border-radius: var(--lui-radius);
+  padding: calc(var(--lui-space) * 3); width: calc(100% - 2rem); box-shadow: var(--lui-shadow-lg);
 }
 /* Server-opened (non-modal) dialogs sit in the flow; positioned so the close control anchors. */
-.nojs-dialog dialog:not(:modal):not(:target) { position: relative; }
-.nojs-dialog-sm { max-width: 20rem; }
-.nojs-dialog-md { max-width: 32rem; }
-.nojs-dialog-lg { max-width: 42rem; }
-.nojs-dialog dialog::backdrop { background: var(--nojs-overlay); }
-.nojs-dialog dialog h2 { margin-top: 0; }
-.nojs-dialog-title { font-size: 1.125rem; line-height: 1.75rem; font-weight: 600; margin: 0 2rem var(--nojs-space) 0; }
-.nojs-dialog-danger .nojs-dialog-title { color: var(--nojs-danger); }
-.nojs-dialog-body { font-size: 0.875rem; color: var(--nojs-muted); }
-.nojs-dialog-body > :last-child { margin-bottom: 0; }
-.nojs-dialog-body label { color: var(--nojs-fg); }
-.nojs-dialog-actions { display: flex; flex-wrap: wrap-reverse; justify-content: flex-end; gap: var(--nojs-space); margin: calc(var(--nojs-space) * 3) 0 0; }
+.lui-dialog dialog:not(:modal):not(:target) { position: relative; }
+.lui-dialog-sm { max-width: 20rem; }
+.lui-dialog-md { max-width: 32rem; }
+.lui-dialog-lg { max-width: 42rem; }
+.lui-dialog dialog::backdrop { background: var(--lui-overlay); }
+.lui-dialog dialog h2 { margin-top: 0; }
+.lui-dialog-title { font-size: 1.125rem; line-height: 1.75rem; font-weight: 600; margin: 0 2rem var(--lui-space) 0; }
+.lui-dialog-danger .lui-dialog-title { color: var(--lui-danger); }
+.lui-dialog-body { font-size: 0.875rem; color: var(--lui-muted); }
+.lui-dialog-body > :last-child { margin-bottom: 0; }
+.lui-dialog-body label { color: var(--lui-fg); }
+.lui-dialog-actions { display: flex; flex-wrap: wrap-reverse; justify-content: flex-end; gap: var(--lui-space); margin: calc(var(--lui-space) * 3) 0 0; }
 /* The close control is a small ghost icon button in the corner, 70% opacity until hovered. */
-.nojs-dialog-close { position: absolute; top: calc(var(--nojs-space) * 1.5); right: calc(var(--nojs-space) * 1.5); opacity: 0.7; }
-.nojs-dialog-close:hover { opacity: 1; }
+.lui-dialog-close { position: absolute; top: calc(var(--lui-space) * 1.5); right: calc(var(--lui-space) * 1.5); opacity: 0.7; }
+.lui-dialog-close:hover { opacity: 1; }
 
 /* Narrow screens: the footer stacks, full width, confirm on top (shadcn's flex-col-reverse). */
 @media (max-width: 40rem) {
-  .nojs-dialog-actions { flex-direction: column-reverse; align-items: stretch; }
-  .nojs-dialog-actions > * { width: 100%; }
+  .lui-dialog-actions { flex-direction: column-reverse; align-items: stretch; }
+  .lui-dialog-actions > * { width: 100%; }
 }
 
 /* :target fallback: a dialog that is the URL fragment renders as a fixed overlay. */
-.nojs-dialog dialog:target {
+.lui-dialog dialog:target {
   display: block; position: fixed; inset: 0; margin: auto; height: fit-content; z-index: 10;
-  box-shadow: var(--nojs-shadow-lg), 0 0 0 100vmax var(--nojs-overlay);
+  box-shadow: var(--lui-shadow-lg), 0 0 0 100vmax var(--lui-overlay);
 }
 "#;
 

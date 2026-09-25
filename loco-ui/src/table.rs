@@ -42,7 +42,7 @@
 //! the links to ask for something else. That is what keeps it usable with `curl`.
 //!
 //! ```rust
-//! use axum_nojs::{prelude::*, table::Row};
+//! use loco_ui::{prelude::*, table::Row};
 //! // The URL says: sorted by name, filtered to "a", only two columns shown.
 //! let ui = Ui::from_request("/table", "sort=name&dir=asc&q=a&cols=name,size", "");
 //! // `sortable`, `numeric` and `width` apply to the column added last.
@@ -62,11 +62,11 @@
 //!     .menu([MenuItem::link("Open", "/files/a.txt"), MenuItem::action("Delete", "/files/a.txt/delete").danger()]);
 //! let html = files.rows([row.clone()]).render().into_string();
 //! assert!(html.contains("aria-sort=\"ascending\""));
-//! assert!(html.contains("<input type=\"checkbox\" class=\"nojs-table-check\" name=\"row\" value=\"a.txt\" form=\"nojs-table-files-bulk\""));
+//! assert!(html.contains("<input type=\"checkbox\" class=\"lui-table-check\" name=\"row\" value=\"a.txt\" form=\"lui-table-files-bulk\""));
 //! assert!(html.contains("href=\"/table.csv?sort=name&amp;dir=asc&amp;q=a&amp;cols=name%2Csize\""));
 //! assert!(!html.contains("<td>—</td>"), "a hidden column's cells are not rendered (its name stays in the chooser)");
-//! // The same in `nojs!`:
-//! let same = nojs! { Table("files", "/table") choose_columns csv="/table.csv" empty="No files yet." {
+//! // The same in `lui!`:
+//! let same = lui! { Table("files", "/table") choose_columns csv="/table.csv" empty="No files yet." {
 //!     column "name" "Name" sortable;
 //!     column "size" "Size" sortable numeric width="6rem";
 //!     column "note" "Note";
@@ -420,13 +420,13 @@ pub(crate) fn table_in(
         loading,
         edit,
     } = options;
-    let root = enhance::swap_id("nojs-table", id);
+    let root = enhance::swap_id("lui-table", id);
     let edit_id = format!("{root}-edit");
     let filter_id = format!("{root}-q");
     let bulk_id = format!("{root}-bulk");
     let vt = caps
         .has(Cap::ViewTransitions)
-        .then(|| format!("view-transition-name: nojs-table-{id}"));
+        .then(|| format!("view-transition-name: lui-table-{id}"));
     let shown = |c: &Column| cols.is_none_or(|v| v.contains(&c.key));
     let visible: Vec<(usize, &Column)> = columns
         .iter()
@@ -489,89 +489,89 @@ pub(crate) fn table_in(
         + usize::from(has_menu)
         + usize::from(edit.is_some());
     html! {
-        div id=(root) data-nojs=[swap.then_some("swap")] class="nojs-table" {
-            div class="nojs-table-toolbar" {
-                search class="nojs-table-filter" {
+        div id=(root) data-lui=[swap.then_some("swap")] class="lui-table" {
+            div class="lui-table-toolbar" {
+                search class="lui-table-filter" {
                     form method="get" action=(href) {
                         @if let Some((key, desc)) = sort {
                             input type="hidden" name="sort" value=(key);
                             input type="hidden" name="dir" value=(if desc { "desc" } else { "asc" });
                         }
                         @for (k, v) in &carried { @if *k != "q" { input type="hidden" name=(k) value=(v); } }
-                        (Input::search_box("q", "Filter rows", filter).id(&filter_id).placeholder("Filter rows…").autocomplete("off").class("nojs-table-filter-input"))
+                        (Input::search_box("q", "Filter rows", filter).id(&filter_id).placeholder("Filter rows…").autocomplete("off").class("lui-table-filter-input"))
                         (Button::new(*caps, "Filter"))
                         @if !filter.is_empty() {
-                            a class="nojs-table-clear" href={ (href) (query(sort, &carried.iter().copied().filter(|(k, _)| *k != "q").collect::<Vec<_>>())) } { "Clear" }
+                            a class="lui-table-clear" href={ (href) (query(sort, &carried.iter().copied().filter(|(k, _)| *k != "q").collect::<Vec<_>>())) } { "Clear" }
                         }
                     }
                 }
                 @if choose_columns || cols.is_some() {
-                    details class="nojs-table-cols" {
-                        summary class="nojs-button" { "Columns" (Icon::ChevronDown) }
+                    details class="lui-table-cols" {
+                        summary class="lui-button" { "Columns" (Icon::ChevronDown) }
                         ul {
                             @for c in columns {
                                 @let on = shown(c);
                                 li { a href=(cols_link(c.key)) aria-pressed=(on) {
-                                    span class="nojs-table-cols-mark" aria-hidden="true" { @if on { "\u{2611}" } @else { "\u{2610}" } } " " (c.label)
+                                    span class="lui-table-cols-mark" aria-hidden="true" { @if on { "\u{2611}" } @else { "\u{2610}" } } " " (c.label)
                                 } }
                             }
                         }
                     }
                 }
                 @if let Some(base) = csv {
-                    a class="nojs-table-csv" href={ (base) (query(sort, &carried)) } download { "Download CSV" }
+                    a class="lui-table-csv" href={ (base) (query(sort, &carried)) } download { "Download CSV" }
                 }
             }
             table {
                 colgroup {
-                    @if bulk.is_some() { col class="nojs-table-select-col"; }
+                    @if bulk.is_some() { col class="lui-table-select-col"; }
                     @for (_, c) in &visible { col style=[c.width.map(|w| format!("width: {w}"))]; }
-                    @if edit.is_some() { col class="nojs-table-edit-col"; }
-                    @if has_menu { col class="nojs-table-menu-col"; }
+                    @if edit.is_some() { col class="lui-table-edit-col"; }
+                    @if has_menu { col class="lui-table-menu-col"; }
                 }
                 thead { tr {
-                    @if bulk.is_some() { th scope="col" class="nojs-table-select" { span class="nojs-sr" { "Select" } } }
+                    @if bulk.is_some() { th scope="col" class="lui-table-select" { span class="lui-sr" { "Select" } } }
                     @for (_, col) in &visible {
                         @let sorted = sort.filter(|(k, _)| *k == col.key);
                         @let aria = sorted.map(|(_, d)| if d { "descending" } else { "ascending" });
-                        th scope="col" aria-sort=[aria] class={ @if sorted.is_some() { "nojs-table-sorted" } @if col.numeric { " nojs-table-num" } } {
+                        th scope="col" aria-sort=[aria] class={ @if sorted.is_some() { "lui-table-sorted" } @if col.numeric { " lui-table-num" } } {
                             @if col.sortable {
                                 @let next_desc = matches!(sorted, Some((_, false)));
                                 @let pairs: Vec<(&str, &str)> = carried.clone();
                                 a href={ (href) (query(Some((col.key, next_desc)), &pairs)) } {
                                     (col.label)
-                                    @match sorted { Some((_, true)) => span class="nojs-table-arrow" { "▼" }, Some((_, false)) => span class="nojs-table-arrow" { "▲" }, None => {} }
+                                    @match sorted { Some((_, true)) => span class="lui-table-arrow" { "▼" }, Some((_, false)) => span class="lui-table-arrow" { "▲" }, None => {} }
                                 }
                             } @else { (col.label) }
                         }
                     }
-                    @if edit.is_some() { th scope="col" class="nojs-table-edit" { span class="nojs-sr" { "Edit" } } }
-                    @if has_menu { th scope="col" class="nojs-table-menu" { span class="nojs-sr" { "Actions" } } }
+                    @if edit.is_some() { th scope="col" class="lui-table-edit" { span class="lui-sr" { "Edit" } } }
+                    @if has_menu { th scope="col" class="lui-table-menu" { span class="lui-sr" { "Actions" } } }
                 } }
                 tbody style=[vt] aria-busy=[loading.then_some("true")] {
                     @if loading {
-                        @for _ in 0..3 { tr class="nojs-table-skeleton" { @for _ in 0..span { td { span {} } } } }
+                        @for _ in 0..3 { tr class="lui-table-skeleton" { @for _ in 0..span { td { span {} } } } }
                     } @else if rows.is_empty() {
-                        tr { td colspan=(span) class="nojs-table-empty" { (empty) } }
+                        tr { td colspan=(span) class="lui-table-empty" { (empty) } }
                     }
                     @for row in rows.iter().filter(|_| !loading) {
                     @let editing = edit.is_some_and(|e| e.key.is_some() && e.key == row.key);
-                    tr class=[editing.then_some("nojs-table-editing")] {
+                    tr class=[editing.then_some("lui-table-editing")] {
                         @if bulk.is_some() {
-                            td class="nojs-table-select" {
-                                @if let Some(k) = row.key { input type="checkbox" class="nojs-table-check" name="row" value=(k) form=(bulk_id) aria-label={ "Select " (k) }; }
+                            td class="lui-table-select" {
+                                @if let Some(k) = row.key { input type="checkbox" class="lui-table-check" name="row" value=(k) form=(bulk_id) aria-label={ "Select " (k) }; }
                             }
                         }
                         @for (n, (i, col)) in visible.iter().enumerate() {
                             @let cell = row.cells.get(*i);
-                            td class=[col.numeric.then_some("nojs-table-num")] {
+                            td class=[col.numeric.then_some("lui-table-num")] {
                                 @if editing && col.editable {
-                                    (Input::text_box(col.key, col.label, row.values.get(*i).copied().unwrap_or("")).form(&edit_id).class("nojs-table-edit-input"))
+                                    (Input::text_box(col.key, col.label, row.values.get(*i).copied().unwrap_or("")).form(&edit_id).class("lui-table-edit-input"))
                                 } @else {
                                 @match (n, &row.detail) {
-                                    (0, Some(detail)) => details class="nojs-table-detail" {
+                                    (0, Some(detail)) => details class="lui-table-detail" {
                                         summary { @if let Some(c) = cell { (c) } }
-                                        div class="nojs-table-detail-body" { (detail) }
+                                        div class="lui-table-detail-body" { (detail) }
                                     },
                                     _ => @if let Some(c) = cell { (c) },
                                 }
@@ -579,7 +579,7 @@ pub(crate) fn table_in(
                             }
                         }
                         @if let Some(e) = edit {
-                            td class="nojs-table-edit" {
+                            td class="lui-table-edit" {
                                 @if editing {
                                     (Button::new(*caps, "Save").primary().small().form(&edit_id))
                                     (Button::link(*caps, "Cancel", e.done).ghost().small())
@@ -590,7 +590,7 @@ pub(crate) fn table_in(
                             }
                         }
                         @if has_menu {
-                            td class="nojs-table-menu" {
+                            td class="lui-table-menu" {
                                 @if let (Some(k), false) = (row.key, row.menu.is_empty()) {
                                     (menu(caps, &format!("{root}-{}", slug(k)), "Row actions", &row.menu, Placement::BottomEnd, true))
                                 }
@@ -600,13 +600,13 @@ pub(crate) fn table_in(
                 }
             }
             @if let (Some(e), Some(key)) = (edit, edit.and_then(|e| e.key)) {
-                form method="post" action=(e.action) id=(edit_id) class="nojs-table-edit-form" {
+                form method="post" action=(e.action) id=(edit_id) class="lui-table-edit-form" {
                     input type="hidden" name="key" value=(key);
                     input type="hidden" name="returns_to" value=(e.done);
                 }
             }
             @if let Some((action, buttons)) = bulk {
-                form method="post" action=(action) id=(bulk_id) class="nojs-table-bulk" {
+                form method="post" action=(action) id=(bulk_id) class="lui-table-bulk" {
                     span { "With the selected rows:" }
                     @for (value, label) in buttons { (Button::new(*caps, label).small().name("action").value(value)) }
                 }
@@ -906,54 +906,54 @@ impl std::fmt::Display for Encoded<'_> {
 pub const CSS: &str = r#"
 /* shadcn Data Table: a toolbar (filter input, outline buttons), a bordered rounded frame
    round the table, text-sm cells, muted/50 row hover, a DropdownMenu for columns. */
-.nojs-table-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--nojs-space); margin-bottom: calc(var(--nojs-space) * 2); }
-.nojs-table-filter { flex: 1; min-width: 14rem; }
-.nojs-table-filter form { display: flex; gap: var(--nojs-space); align-items: center; }
-.nojs-table-filter-input { flex: 1; min-width: 8rem; max-width: 24rem; }
-.nojs-table-clear, .nojs-table-csv { color: var(--nojs-muted); font-size: 0.875rem; }
-.nojs-table-clear:hover, .nojs-table-csv:hover { color: var(--nojs-fg); }
-.nojs-table-cols { position: relative; font-size: 0.875rem; }
-.nojs-table-cols summary { list-style: none; }
-.nojs-table-cols summary::-webkit-details-marker { display: none; }
-.nojs-table-cols ul {
+.lui-table-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--lui-space); margin-bottom: calc(var(--lui-space) * 2); }
+.lui-table-filter { flex: 1; min-width: 14rem; }
+.lui-table-filter form { display: flex; gap: var(--lui-space); align-items: center; }
+.lui-table-filter-input { flex: 1; min-width: 8rem; max-width: 24rem; }
+.lui-table-clear, .lui-table-csv { color: var(--lui-muted); font-size: 0.875rem; }
+.lui-table-clear:hover, .lui-table-csv:hover { color: var(--lui-fg); }
+.lui-table-cols { position: relative; font-size: 0.875rem; }
+.lui-table-cols summary { list-style: none; }
+.lui-table-cols summary::-webkit-details-marker { display: none; }
+.lui-table-cols ul {
   position: absolute; right: 0; z-index: 2; margin: 0.25rem 0 0; padding: 0.25rem; list-style: none; min-width: 10rem;
-  background: var(--nojs-popover); border: 1px solid var(--nojs-line); border-radius: var(--nojs-radius); box-shadow: var(--nojs-shadow-lg);
+  background: var(--lui-popover); border: 1px solid var(--lui-line); border-radius: var(--lui-radius); box-shadow: var(--lui-shadow-lg);
 }
-.nojs-table-cols li { max-width: none; }
-.nojs-table-cols a { display: flex; gap: 0.5rem; padding: 0.375rem 0.5rem; border-radius: var(--nojs-radius-sm); color: inherit; text-decoration: none; }
-.nojs-table-cols a:hover { background: var(--nojs-accent); color: var(--nojs-on-accent); }
-.nojs-table-cols-mark { color: var(--nojs-fg); }
-.nojs-table > table { border: 1px solid var(--nojs-line); border-radius: var(--nojs-radius); }
-.nojs-table table { table-layout: auto; border-collapse: separate; border-spacing: 0; }
-.nojs-table tbody tr:last-child > * { border-bottom: 0; }
-.nojs-table thead th { position: sticky; top: 0; background: var(--nojs-bg); z-index: 1; }
-.nojs-table thead th:first-child { border-top-left-radius: var(--nojs-radius); }
-.nojs-table thead th:last-child { border-top-right-radius: var(--nojs-radius); }
-.nojs-table th a { color: inherit; text-decoration: none; display: inline-flex; align-items: center; gap: 0.25rem; }
-.nojs-table th a:hover { color: var(--nojs-fg); }
-.nojs-table th.nojs-table-sorted { color: var(--nojs-fg); }
-.nojs-table-arrow { font-size: 0.75em; margin-left: 0.25em; }
+.lui-table-cols li { max-width: none; }
+.lui-table-cols a { display: flex; gap: 0.5rem; padding: 0.375rem 0.5rem; border-radius: var(--lui-radius-sm); color: inherit; text-decoration: none; }
+.lui-table-cols a:hover { background: var(--lui-accent); color: var(--lui-on-accent); }
+.lui-table-cols-mark { color: var(--lui-fg); }
+.lui-table > table { border: 1px solid var(--lui-line); border-radius: var(--lui-radius); }
+.lui-table table { table-layout: auto; border-collapse: separate; border-spacing: 0; }
+.lui-table tbody tr:last-child > * { border-bottom: 0; }
+.lui-table thead th { position: sticky; top: 0; background: var(--lui-bg); z-index: 1; }
+.lui-table thead th:first-child { border-top-left-radius: var(--lui-radius); }
+.lui-table thead th:last-child { border-top-right-radius: var(--lui-radius); }
+.lui-table th a { color: inherit; text-decoration: none; display: inline-flex; align-items: center; gap: 0.25rem; }
+.lui-table th a:hover { color: var(--lui-fg); }
+.lui-table th.lui-table-sorted { color: var(--lui-fg); }
+.lui-table-arrow { font-size: 0.75em; margin-left: 0.25em; }
 /* Code in a cell is plain monospace text, so a long path wraps without a broken box. */
-.nojs-table td code { background: none; border: 0; padding: 0; }
-.nojs-table-num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
-.nojs-table-select { width: 2.5rem; text-align: center; }
-.nojs-table-menu { width: 3.5rem; text-align: center; text-wrap: nowrap; }
-.nojs-table-edit-col { width: 10rem; }
-.nojs-table-edit { white-space: nowrap; text-align: right; }
-.nojs-table-edit .nojs-button + .nojs-button { margin-left: 0.25rem; }
-.nojs-table-edit-input { width: 100%; box-sizing: border-box; min-height: 2rem; padding-block: 0.25rem; }
-.nojs-table-check { margin: 0; }
-.nojs-table-empty { color: var(--nojs-muted); text-align: center; padding: 1.5rem; height: 6rem; }
-.nojs-table-detail summary { cursor: pointer; list-style: none; font-weight: 400; }
-.nojs-table-detail summary::-webkit-details-marker { display: none; }
-.nojs-table-detail summary::before { content: "\25B8"; color: var(--nojs-muted); margin-right: 0.4em; }
-.nojs-table-detail[open] summary::before { content: "\25BE"; }
-.nojs-table-detail-body { margin: 0.5rem 0 0.25rem 1.2em; font-size: 0.875rem; color: var(--nojs-muted); }
-.nojs-table-detail-body > :last-child { margin-bottom: 0; }
-.nojs-table-bulk { display: flex; flex-wrap: wrap; align-items: center; gap: var(--nojs-space); margin-top: calc(var(--nojs-space) * 2); font-size: 0.875rem; color: var(--nojs-muted); }
-.nojs-table-skeleton td span { display: block; height: 1rem; margin: 0.125rem 0; border-radius: var(--nojs-radius-sm); background: var(--nojs-accent); animation: nojs-table-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
-@keyframes nojs-table-pulse { 50% { opacity: 0.5; } }
-@media (prefers-reduced-motion: reduce) { .nojs-table-skeleton td span { animation: none; } }
+.lui-table td code { background: none; border: 0; padding: 0; }
+.lui-table-num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.lui-table-select { width: 2.5rem; text-align: center; }
+.lui-table-menu { width: 3.5rem; text-align: center; text-wrap: nowrap; }
+.lui-table-edit-col { width: 10rem; }
+.lui-table-edit { white-space: nowrap; text-align: right; }
+.lui-table-edit .lui-button + .lui-button { margin-left: 0.25rem; }
+.lui-table-edit-input { width: 100%; box-sizing: border-box; min-height: 2rem; padding-block: 0.25rem; }
+.lui-table-check { margin: 0; }
+.lui-table-empty { color: var(--lui-muted); text-align: center; padding: 1.5rem; height: 6rem; }
+.lui-table-detail summary { cursor: pointer; list-style: none; font-weight: 400; }
+.lui-table-detail summary::-webkit-details-marker { display: none; }
+.lui-table-detail summary::before { content: "\25B8"; color: var(--lui-muted); margin-right: 0.4em; }
+.lui-table-detail[open] summary::before { content: "\25BE"; }
+.lui-table-detail-body { margin: 0.5rem 0 0.25rem 1.2em; font-size: 0.875rem; color: var(--lui-muted); }
+.lui-table-detail-body > :last-child { margin-bottom: 0; }
+.lui-table-bulk { display: flex; flex-wrap: wrap; align-items: center; gap: var(--lui-space); margin-top: calc(var(--lui-space) * 2); font-size: 0.875rem; color: var(--lui-muted); }
+.lui-table-skeleton td span { display: block; height: 1rem; margin: 0.125rem 0; border-radius: var(--lui-radius-sm); background: var(--lui-accent); animation: lui-table-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+@keyframes lui-table-pulse { 50% { opacity: 0.5; } }
+@media (prefers-reduced-motion: reduce) { .lui-table-skeleton td span { animation: none; } }
 "#;
 
 #[cfg(test)]
@@ -1040,9 +1040,9 @@ mod tests {
                 .bulk("/b", &[("x", "X")]),
         )
         .into_string();
-        assert!(m.contains("aria-busy=\"true\"") && m.contains("nojs-table-skeleton"));
-        assert!(m.contains("<form method=\"post\" action=\"/b\" id=\"nojs-table-t-bulk\""));
-        assert!(m.contains("<button type=\"submit\" class=\"nojs-button nojs-button-small\" name=\"action\" value=\"x\">X</button>"), "{m}");
+        assert!(m.contains("aria-busy=\"true\"") && m.contains("lui-table-skeleton"));
+        assert!(m.contains("<form method=\"post\" action=\"/b\" id=\"lui-table-t-bulk\""));
+        assert!(m.contains("<button type=\"submit\" class=\"lui-button lui-button-small\" name=\"action\" value=\"x\">X</button>"), "{m}");
         assert_eq!(slug("src/a.txt"), "src-a-txt");
     }
 }

@@ -1,6 +1,6 @@
 <svg viewBox="0 0 1280 840" width="1280" height="840" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="layers-title layers-desc">
-  <title id="layers-title">axum-nojs, in layers</title>
-  <desc id="layers-desc">Layer stack of axum-nojs: the HTML and CSS platform at the bottom, then primitives such as buttons and inputs, components such as dialogs and tables built from them, widgets such as the calendar and kanban board, and at the top components you write in your own crate; everything renders on the server with no JavaScript required.</desc>
+  <title id="layers-title">loco-ui, in layers</title>
+  <desc id="layers-desc">Layer stack of loco-ui: the HTML and CSS platform at the bottom, then primitives such as buttons and inputs, components such as dialogs and tables built from them, widgets such as the calendar and kanban board, and at the top components you write in your own crate; everything renders on the server with no JavaScript required.</desc>
   <defs>
     <marker id="layers-arrow" markerWidth="12" markerHeight="10" refX="11" refY="5" orient="auto">
       <polygon points="0 0, 12 5, 0 10" fill="#4f5d75"/>
@@ -16,7 +16,7 @@
   <rect width="100%" height="100%" fill="#f5f5f5"/>
 
   <!-- Heading -->
-  <text x="200" y="72" class="eyebrow">AXUM-NOJS · EACH LAYER IS BUILT FROM THE ONES BELOW</text>
+  <text x="200" y="72" class="eyebrow">LOCO-UI · EACH LAYER IS BUILT FROM THE ONES BELOW</text>
 
   <!-- Direction indicator in the left margin (drawn before the bands) -->
   <line x1="124" y1="672" x2="124" y2="136" stroke="#4f5d75" stroke-width="2" marker-end="url(#layers-arrow)"/>
@@ -60,5 +60,5 @@
   <!-- Bottom strip: the one sentence the picture leaves out -->
   <line x1="200" y1="716" x2="1240" y2="716" stroke="rgba(45,49,66,0.12)" stroke-width="1"/>
   <text x="200" y="760" class="note">Every layer renders on the server and works with JavaScript off.</text>
-  <text x="200" y="796" class="note">One optional script, /nojs/enhance.js, updates the same markup in place.</text>
+  <text x="200" y="796" class="note">One optional script, /lui/enhance.js, updates the same markup in place.</text>
 </svg>

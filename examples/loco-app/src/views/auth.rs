@@ -1,4 +1,4 @@
-use axum_nojs::prelude::*;
+use loco_ui::prelude::*;
 
 pub fn signin(ui: &Ui, values: &[(String, String)], errors: &[(&str, &str)]) -> Markup {
     html! {

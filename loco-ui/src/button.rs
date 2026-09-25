@@ -20,12 +20,12 @@
 //! no attribute fallback; the dialog component uses a `:target` link there instead.
 //!
 //! ```rust
-//! use axum_nojs::prelude::*;
+//! use loco_ui::prelude::*;
 //! let ui = Ui::from(Caps::all());
 //! let save = ui.button("Save").primary().render().into_string();
-//! assert!(save.contains(r#"class="nojs-button nojs-button-primary""#) && save.contains(r#"type="submit""#));
-//! // The same in `nojs!`:
-//! let same = nojs! { Button("Save") primary; };
+//! assert!(save.contains(r#"class="lui-button lui-button-primary""#) && save.contains(r#"type="submit""#));
+//! // The same in `lui!`:
+//! let same = lui! { Button("Save") primary; };
 //! assert_eq!(same.into_string(), save);
 //! // A small ghost icon button that toggles a popover, and a link that looks like a button.
 //! let more = ui.button("\u{22ef}").ghost().small().icon().label("More").command("toggle-popover", "menu");
@@ -220,13 +220,13 @@ impl<'a> Button<'a> {
         }
     }
 
-    /// The main action of a form or page: filled with `--nojs-primary`.
+    /// The main action of a form or page: filled with `--lui-primary`.
     pub fn primary(mut self) -> Self {
         self.tone = Tone::Primary;
         self
     }
 
-    /// Destroys or removes something: filled with `--nojs-danger`.
+    /// Destroys or removes something: filled with `--lui-danger`.
     pub fn danger(mut self) -> Self {
         self.tone = Tone::Danger;
         self
@@ -402,18 +402,18 @@ impl<'a> Button<'a> {
     }
 
     fn classes(&self) -> String {
-        let mut c = String::from("nojs-button");
+        let mut c = String::from("lui-button");
         match self.tone {
             Tone::Outline => {}
-            Tone::Primary => c.push_str(" nojs-button-primary"),
-            Tone::Danger => c.push_str(" nojs-button-danger"),
-            Tone::Ghost => c.push_str(" nojs-button-ghost"),
+            Tone::Primary => c.push_str(" lui-button-primary"),
+            Tone::Danger => c.push_str(" lui-button-danger"),
+            Tone::Ghost => c.push_str(" lui-button-ghost"),
         }
         if self.small {
-            c.push_str(" nojs-button-small");
+            c.push_str(" lui-button-small");
         }
         if self.icon {
-            c.push_str(" nojs-button-icon");
+            c.push_str(" lui-button-icon");
         }
         if let Some(extra) = self.class {
             c.push(' ');
@@ -439,7 +439,7 @@ impl Render for Button<'_> {
         let a = &self.attrs;
         let text = html! { @if let Some(m) = &self.content { (m) } @else { (self.text) } };
         let spinner =
-            html! { @if self.loading { span class="nojs-button-spinner" aria-hidden="true" {} } };
+            html! { @if self.loading { span class="lui-button-spinner" aria-hidden="true" {} } };
         if let Some(href) = self.href {
             let off = self.disabled || self.loading;
             return html! {
@@ -482,38 +482,38 @@ impl Render for Button<'_> {
 }
 
 /// Styles for this component; included in [`crate::stylesheet`]. Bare `button` keeps the
-/// outline look (and `button.nojs-primary`/`.nojs-danger` their fills) so a hand-written
+/// outline look (and `button.lui-primary`/`.lui-danger` their fills) so a hand-written
 /// button in a page matches; components build theirs with [`Ui::button`].
 pub const CSS: &str = r#"
-button, .nojs-button {
+button, .lui-button {
   display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
   min-height: 2.25rem; padding: 0.375rem 1rem; white-space: nowrap; cursor: pointer;
   font-family: inherit; font-size: 0.875rem; line-height: 1.25rem; font-weight: 500; color: inherit;
-  background: var(--nojs-bg); border: 1px solid var(--nojs-input); border-radius: var(--nojs-radius-sm);
-  box-shadow: var(--nojs-shadow-xs); transition: background-color 0.15s, color 0.15s, box-shadow 0.15s;
+  background: var(--lui-bg); border: 1px solid var(--lui-input); border-radius: var(--lui-radius-sm);
+  box-shadow: var(--lui-shadow-xs); transition: background-color 0.15s, color 0.15s, box-shadow 0.15s;
 }
-.nojs-button { color: var(--nojs-fg); text-decoration: none; box-sizing: border-box; }
-button:hover, .nojs-button:hover { background: var(--nojs-accent); color: var(--nojs-on-accent); }
-button.nojs-primary, .nojs-button.nojs-button-primary { background: var(--nojs-primary); color: var(--nojs-on-primary); border-color: transparent; }
-button.nojs-primary:hover, .nojs-button.nojs-button-primary:hover { background: color-mix(in srgb, var(--nojs-primary) 90%, transparent); color: var(--nojs-on-primary); }
-button.nojs-danger, .nojs-button.nojs-button-danger { background: var(--nojs-danger); color: var(--nojs-on-primary); border-color: transparent; }
-button.nojs-danger:hover, .nojs-button.nojs-button-danger:hover { background: color-mix(in srgb, var(--nojs-danger) 90%, transparent); color: var(--nojs-on-primary); }
-.nojs-button.nojs-button-ghost { background: transparent; border-color: transparent; box-shadow: none; }
-.nojs-button.nojs-button-ghost:hover { background: var(--nojs-accent); }
-.nojs-button.nojs-button-small { min-height: 2rem; padding: 0.25rem 0.75rem; gap: 0.375rem; }
-.nojs-button.nojs-button-icon { width: 2.25rem; min-width: 2.25rem; padding: 0; }
-.nojs-button.nojs-button-icon.nojs-button-small { width: 2rem; min-width: 2rem; }
-button:focus-visible, .nojs-button:focus-visible { border-color: var(--nojs-ring); }
+.lui-button { color: var(--lui-fg); text-decoration: none; box-sizing: border-box; }
+button:hover, .lui-button:hover { background: var(--lui-accent); color: var(--lui-on-accent); }
+button.lui-primary, .lui-button.lui-button-primary { background: var(--lui-primary); color: var(--lui-on-primary); border-color: transparent; }
+button.lui-primary:hover, .lui-button.lui-button-primary:hover { background: color-mix(in srgb, var(--lui-primary) 90%, transparent); color: var(--lui-on-primary); }
+button.lui-danger, .lui-button.lui-button-danger { background: var(--lui-danger); color: var(--lui-on-primary); border-color: transparent; }
+button.lui-danger:hover, .lui-button.lui-button-danger:hover { background: color-mix(in srgb, var(--lui-danger) 90%, transparent); color: var(--lui-on-primary); }
+.lui-button.lui-button-ghost { background: transparent; border-color: transparent; box-shadow: none; }
+.lui-button.lui-button-ghost:hover { background: var(--lui-accent); }
+.lui-button.lui-button-small { min-height: 2rem; padding: 0.25rem 0.75rem; gap: 0.375rem; }
+.lui-button.lui-button-icon { width: 2.25rem; min-width: 2.25rem; padding: 0; }
+.lui-button.lui-button-icon.lui-button-small { width: 2rem; min-width: 2rem; }
+button:focus-visible, .lui-button:focus-visible { border-color: var(--lui-ring); }
 button:disabled { opacity: 0.5; cursor: not-allowed; }
-.nojs-button[aria-disabled=true] { opacity: 0.5; cursor: not-allowed; pointer-events: none; }
-.nojs-button[aria-busy=true] { cursor: progress; }
-.nojs-button-spinner {
+.lui-button[aria-disabled=true] { opacity: 0.5; cursor: not-allowed; pointer-events: none; }
+.lui-button[aria-busy=true] { cursor: progress; }
+.lui-button-spinner {
   width: 1rem; height: 1rem; flex: none; border-radius: 50%;
   border: 2px solid currentColor; border-right-color: transparent;
-  animation: nojs-spin 0.6s linear infinite;
+  animation: lui-spin 0.6s linear infinite;
 }
-@keyframes nojs-spin { to { transform: rotate(1turn); } }
-@media (prefers-reduced-motion: reduce) { .nojs-button-spinner { animation-duration: 1.5s; } }
+@keyframes lui-spin { to { transform: rotate(1turn); } }
+@media (prefers-reduced-motion: reduce) { .lui-button-spinner { animation-duration: 1.5s; } }
 "#;
 
 #[cfg(test)]
@@ -561,7 +561,7 @@ mod tests {
             .disabled();
         let b = b.render().into_string();
         for part in [
-            "nojs-button-danger",
+            "lui-button-danger",
             r#"form="f""#,
             r#"name="op""#,
             r#"value="rm""#,
@@ -573,10 +573,10 @@ mod tests {
         let r = ui
             .button("Undo")
             .reset()
-            .class("nojs-x")
+            .class("lui-x")
             .render()
             .into_string();
-        assert!(r.contains(r#"type="reset""#) && r.contains("nojs-button nojs-x"));
+        assert!(r.contains(r#"type="reset""#) && r.contains("lui-button lui-x"));
         let off = ui
             .link_button("Next", "/p/2")
             .disabled()

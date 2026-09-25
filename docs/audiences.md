@@ -1,6 +1,6 @@
 # Who this is for
 
-axum-nojs makes one promise: every page works with JavaScript off, and CI proves it with a
+loco-ui makes one promise: every page works with JavaScript off, and CI proves it with a
 renderer that has no script engine. Each audience below relies on a different part of that
 promise; each section says which, and where the proof lives.
 
@@ -17,7 +17,7 @@ Validation is done on the server and the messages come back beside the fields
 optional script only swaps the same markup in place.
 
 **The proof:** Blitz renders every demo route with no script engine
-(`axum-nojs-test/tests/demo.rs`), and `a_whole_app_flow_with_no_script` signs in, adds,
+(`loco-ui-test/tests/demo.rs`), and `a_whole_app_flow_with_no_script` signs in, adds,
 edits and deletes with no script at all.
 
 ## Strict Content-Security-Policy

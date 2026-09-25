@@ -1,16 +1,16 @@
-//! # nojs!
+//! # lui!
 //!
 //! Maud's `html!` with components written like elements. Everything that is plain Maud passes
 //! through untouched; a capitalized name is a component, and it expands to the same builder
-//! chain a route would write by hand, so `nojs!` and the dot form are one code path.
+//! chain a route would write by hand, so `lui!` and the dot form are one code path.
 //!
 //! ```rust
-//! use axum_nojs::prelude::*;
+//! use loco_ui::prelude::*;
 //!
 //! let ui = Ui::from_request("/", "", "");
 //! let narrow = true;
 //! let projects = [("Site", 3), ("App", 0)];
-//! let page = nojs! {
+//! let page = lui! {
 //!     h1 { "Projects" }
 //!     Tabs("projects") vertical[narrow] {
 //!         @for (name, open) in projects {
@@ -49,7 +49,7 @@
 //!   (`search "/shop";`, `inline();`), for the rare chain whose order matters.
 //! - **`@for`, `@if` / `@else`, `@match` and `@let`** work among items as they do in Maud, so
 //!   items built from data stay inline.
-//! - **`ui`** is taken from the scope by that name; `nojs!(ctx => ..)` names another.
+//! - **`ui`** is taken from the scope by that name; `lui!(ctx => ..)` names another.
 //!
 //! A misspelled attribute is rustc's own error at that attribute ("no method named `vertcal`
 //! … a method with a similar name exists: `vertical`"), since every expanded call keeps the
@@ -60,7 +60,7 @@ use quote::{quote, quote_spanned};
 
 /// Maud's `html!` with components written like elements; see the crate documentation.
 #[proc_macro]
-pub fn nojs(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
+pub fn lui(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let mut tokens: Vec<TokenTree> = TokenStream::from(input).into_iter().collect();
     let mut ui = Ident::new("ui", Span::call_site());
     if let [
@@ -91,7 +91,7 @@ struct Cx {
 
 /// The builder variable of an expansion; hygienic, so it never meets a caller's name.
 fn b() -> Ident {
-    Ident::new("__nojs_builder", Span::mixed_site())
+    Ident::new("__lui_builder", Span::mixed_site())
 }
 
 fn punct(t: Option<&TokenTree>, c: char) -> bool {
@@ -367,7 +367,7 @@ impl Cx {
                     i = next;
                     match value {
                         Value::Optional(option) => {
-                            let v = Ident::new("__nojs_value", Span::mixed_site());
+                            let v = Ident::new("__lui_value", Span::mixed_site());
                             steps.push(quote!(let #b = match #option {
                                 ::core::option::Option::Some(#v) => #b.#name(#v),
                                 ::core::option::Option::None => #b,

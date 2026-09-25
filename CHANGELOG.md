@@ -1,27 +1,27 @@
 # Changelog
 
-All notable changes to `axum-nojs` and `axum-nojs-caps`. Both crates share a version. The format
+All notable changes to `loco-ui` and `loco-ui-caps`. Both crates share a version. The format
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); the project uses
 [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-### `axum-nojs`
+### `loco-ui`
 
 - Latency: `stylesheet()` built once and minified (`minify_css`); `enhance::slim` middleware
-  answers an enhanced request without the inline stylesheet and sets `Vary: Nojs-Enhance, Cookie`
+  answers an enhanced request without the inline stylesheet and sets `Vary: Lui-Enhance, Cookie`
   (`enhance::slim_html` without a framework); the script sends `Accept: text/html`, fetches
-  user actions with `priority: "high"`, prefetches links under `data-nojs-prefetch` on hover or
+  user actions with `priority: "high"`, prefetches links under `data-lui-prefetch` on hover or
   focus and reuses the answer for a click within five seconds; `enhance::served()` is the
   script without comment lines and indentation, and the 10 KB budget applies to it.
-- Enhancement script: `data-nojs-target`, `data-nojs-swap`, `data-nojs-oob`, the `Nojs-Enhance: 1`
-  request header, busy state (`data-nojs-busy`, `aria-busy`, disabled submit buttons,
-  `data-nojs-indicator`, `--nojs-busy`), failed requests fall back to a navigation,
-  `data-nojs-push="false"`, `data-nojs-replace`, Back/Forward restore from history state,
-  `nojs:swap` event. Size limit raised to 10 KB.
+- Enhancement script: `data-lui-target`, `data-lui-swap`, `data-lui-oob`, the `Lui-Enhance: 1`
+  request header, busy state (`data-lui-busy`, `aria-busy`, disabled submit buttons,
+  `data-lui-indicator`, `--lui-busy`), failed requests fall back to a navigation,
+  `data-lui-push="false"`, `data-lui-replace`, Back/Forward restore from history state,
+  `lui:swap` event. Size limit raised to 10 KB.
 - `dialog`: `title` with a close control, `size` (`DialogSize::Sm|Md|Lg`), `danger`,
   `confirm(label, action)` footer as a real `<form method="post">`, `returns_to`,
-  `cancel_label`, `closedby`. `button.nojs-danger` in the base styles.
+  `cancel_label`, `closedby`. `button.lui-danger` in the base styles.
 - `popover_menu` takes `&[MenuItem]` and `PopoverOptions`: links, post-form actions, headings,
   separators, nested submenus, icons, shortcut labels, disabled and danger items,
   `Placement::BottomStart|BottomEnd|Right`. The enhancement script walks an open menu with the
@@ -51,23 +51,23 @@ follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); the project us
   bounds, a number field posting `op=set`, and `CounterOptions::apply` for the handler.
 - `range::range_pair` (two thumbs on one track, `<name>_min`/`<name>_max`) and `range::order`.
 - `color` takes `ColorOptions` (`presets` posting `<name>-preset`, `alpha` slider posting
-  `<name>-alpha`); `color::hex_alpha`. The swatch paints through `--nojs-color-value`.
+  `<name>-alpha`); `color::hex_alpha`. The swatch paints through `--lui-color-value`.
 - `select` takes `&[select::Group]` of `SelectOption` (`icon`, `content`) and `SelectOptions`
   (`search(action, query)`, `search_over`): optgroups, icons, and a GET filter box over 15
-  options. The root is now a `span.nojs-select` around the `<select id=name>`.
+  options. The root is now a `span.lui-select` around the `<select id=name>`.
 - Enhancement script: honours a submitter's `formmethod` and `formaction`; a search box
   followed by a submit button filters through it.
 - **Breaking:** `counter`, `color` and `select` signatures changed.
 - `flash` takes `FlashOptions` (`dismiss(href)`, `auto_hide`): levels `info|ok|warn|danger`
   from a `level:` prefix per line (`flash::stack`, `flash::parse`, `flash::Level`), several
   messages stacked, `role="alert"` for danger, a CSS fade for info and ok that reduced motion
-  turns off. `--nojs-warn` token (`Palette::warn`). **Breaking:** `flash` gained an argument;
+  turns off. `--lui-warn` token (`Palette::warn`). **Breaking:** `flash` gained an argument;
   `Palette` gained a field.
 - New components: `toasts` (`ToastOptions`; the flash cookie in a fixed corner stack that
   fades, pauses on hover, danger stays), `breadcrumbs` (folds the middle of a long trail
   into `<details>`), `skeleton` (`SkeletonOptions`; shimmer bars with `aria-busy`, used as the
   streamed slot placeholder in the demo), `empty_state` (`EmptyOptions`: icon, text, link,
-  post), `stat` (`StatOptions`, `Trend`; `.nojs-stat-grid`), `drawer` (`DrawerOptions`;
+  post), `stat` (`StatOptions`, `Trend`; `.lui-stat-grid`), `drawer` (`DrawerOptions`;
   sidebar above 60rem, modal drawer below, `:target` fallback) and `command_palette`
   (`palette::Command`, `PaletteOptions`, `palette::exact`, `palette::matches`; popover +
   datalist + GET, `accesskey`).
@@ -95,29 +95,29 @@ follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); the project us
 
 First release. Nothing here is published to crates.io yet.
 
-### `axum-nojs-caps`
+### `loco-ui-caps`
 
 - `Caps` / `Cap` bitset of what a browser supports, learned with no script: `@supports` beacons
-  in the page load one image each, the `/nojs/caps?flag=x` route sets one cookie per capability.
+  in the page load one image each, the `/lui/caps?flag=x` route sets one cookie per capability.
 - Plain functions for any server: `Caps::from_cookie_header`, `Caps::from_query` (`?caps=a,b`
   forces a set), `beacon_cookie`, `beacons`, `beacon_css`.
 - `axum` feature: `Caps` extractor and `router()` for the beacon route.
 - `examples/hyper.rs`: the whole protocol on raw hyper.
 
-### `axum-nojs`
+### `loco-ui`
 
 - Components, each one file with a doc header (platform features with browser baselines,
   fallback, doctest) and its CSS beside it: `dialog`, `popover_menu`, `tabs`, `accordion`,
   `combobox`, `pager`, `form`, `counter`, `theme_toggle`, `flash`, `select`, `range`, `color`,
   `table`, `paged_table`, `wizard`, `slot` (streaming).
 - Every page works with script disabled. One optional script, `enhance::JS` at
-  `/nojs/enhance.js`, makes forms and links inside a swap root (`id` + `data-nojs="swap"`) update in
+  `/lui/enhance.js`, makes forms and links inside a swap root (`id` + `data-lui="swap"`) update in
   place; a test proves no route ships any other `<script>`.
 - `layout` page shell with cross-document view transitions, light/dark through
   `prefers-color-scheme` and `data-theme`; `layout::Tokens` (light and dark `Palette`, radius,
-  space) and `layout_with` for another palette; every component colour is a `--nojs-*` token.
+  space) and `layout_with` for another palette; every component colour is a `--lui-*` token.
 - `UiState`: tabs, accordions, dialogs and wizard steps as `?tab.x=n`-style query keys mirrored
-  in one `nojs-ui` cookie; `prg_parts` / `prg` for Post/Redirect/Get with a one-shot flash.
+  in one `lui-ui` cookie; `prg_parts` / `prg` for Post/Redirect/Get with a one-shot flash.
 - `Streamed`: out-of-order streaming through declarative shadow DOM slots, in-order fallback
   chosen from `Caps`.
 - Options structs with `Default` and builder setters (`DialogOptions`, `PagerOptions`,
@@ -132,7 +132,7 @@ First release. Nothing here is published to crates.io yet.
 
 ### Test harness (not published)
 
-- `axum-nojs-test`: every demo route rendered through Blitz, layout assertions and a PNG per
+- `loco-ui-test`: every demo route rendered through Blitz, layout assertions and a PNG per
   route and capability level under `tests/shots/`.
 - `scripts/browser-check.mjs`: headless Firefox through geckodriver proves the enhancement
   script does its job; `scripts/verify.sh` runs everything.

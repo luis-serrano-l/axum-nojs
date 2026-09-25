@@ -27,7 +27,7 @@
 //! ArrowDown/ArrowUp walk the input and the results.
 //!
 //! ```rust
-//! use axum_nojs::prelude::*;
+//! use loco_ui::prelude::*;
 //! // The text is `?q=` and the selection `?sel=`, read from the request.
 //! let ui = Ui::from_request("/langs", "q=ru&sel=Zig", "");
 //! let m = ui.combobox("q", "/langs")
@@ -42,8 +42,8 @@
 //! assert!(html.contains("name=\"sel\" value=\"Zig\""), "the selection rides along with the next search");
 //! assert!(html.contains("href=\"/langs?q=ru&amp;sel=Zig&amp;sel=Rust\""), "a result adds itself");
 //! assert!(html.contains("href=\"/langs?q=ru\" aria-label=\"Remove Zig\""), "a chip removes itself");
-//! // The same in `nojs!`:
-//! let same = nojs! { Combobox("q", "/langs") group=("Systems", ["Rust", "Zig"])
+//! // The same in `lui!`:
+//! let same = lui! { Combobox("q", "/langs") group=("Systems", ["Rust", "Zig"])
 //!     options=(["Ruby"]) multi create="/langs/new" label="Language"
 //!     placeholder="Type a language"; };
 //! assert_eq!(same.into_string(), html);
@@ -218,12 +218,12 @@ impl Render for Combobox<'_> {
         };
         let nothing = results.is_empty() && !query.is_empty();
         html! {
-            search class="nojs-combobox" {
+            search class="lui-combobox" {
                 form method="get" action=(action) {
                     @if !selected.is_empty() {
-                        ul class="nojs-combobox-chips" aria-label="Selected" {
+                        ul class="lui-combobox-chips" aria-label="Selected" {
                             @for v in &selected {
-                                li class="nojs-combobox-chip" {
+                                li class="lui-combobox-chip" {
                                     (v)
                                     input type="hidden" name="sel" value=(v);
                                     a href=(remove(v)) aria-label={ "Remove " (v) } { "\u{d7}" }
@@ -231,7 +231,7 @@ impl Render for Combobox<'_> {
                             }
                         }
                     }
-                    (Input::search_box(name, label, query).id(&input_id).list(&list_id).aria_controls(&results_id).placeholder(placeholder).autocomplete("off").class("nojs-combobox-input"))
+                    (Input::search_box(name, label, query).id(&input_id).list(&list_id).aria_controls(&results_id).placeholder(placeholder).autocomplete("off").class("lui-combobox-input"))
                     datalist id=(list_id) {
                         @for (group, values) in suggestions {
                             @match group {
@@ -242,22 +242,22 @@ impl Render for Combobox<'_> {
                     }
                     (ui.button("Search").primary())
                 }
-                div id=(results_id) class="nojs-combobox-results" aria-live="polite" {
+                div id=(results_id) class="lui-combobox-results" aria-live="polite" {
                     @if !results.is_empty() {
-                        p class="nojs-combobox-status" { (results.len()) @if results.len() == 1 { " match" } @else { " matches" } }
+                        p class="lui-combobox-status" { (results.len()) @if results.len() == 1 { " match" } @else { " matches" } }
                         ul role="listbox" aria-label="Results" aria-multiselectable=[multi.then_some("true")] {
                             @for r in &results {
                                 @let picked = selected.contains(r);
                                 li role="option" aria-selected=(picked) {
-                                    @if picked { (r) span class="nojs-combobox-picked" { " selected" } }
+                                    @if picked { (r) span class="lui-combobox-picked" { " selected" } }
                                     @else { a href=(add(r)) { (r) } }
                                 }
                             }
                         }
                     } @else if nothing {
-                        p class="nojs-combobox-status" { "No matches." }
+                        p class="lui-combobox-status" { "No matches." }
                         @if let Some(to) = create {
-                            form method="post" action=(to) class="nojs-combobox-create" {
+                            form method="post" action=(to) class="lui-combobox-create" {
                                 @for v in &selected { input type="hidden" name="sel" value=(v); }
                                 input type="hidden" name="name" value=(query);
                                 (ui.button("Create").content(html! { (Icon::Plus) "Create \u{201c}" (query) "\u{201d}" }))
@@ -271,28 +271,28 @@ impl Render for Combobox<'_> {
 }
 /// Styles for this component; included in [`crate::stylesheet`].
 pub const CSS: &str = r#"
-.nojs-combobox form { display: flex; flex-wrap: wrap; gap: var(--nojs-space); align-items: center; }
-.nojs-combobox-input { flex: 1; min-width: 10rem; }
-.nojs-combobox-chips { display: contents; }
+.lui-combobox form { display: flex; flex-wrap: wrap; gap: var(--lui-space); align-items: center; }
+.lui-combobox-input { flex: 1; min-width: 10rem; }
+.lui-combobox-chips { display: contents; }
 /* Picked values are shadcn secondary badges with a remove link. */
-.nojs-combobox-chip {
+.lui-combobox-chip {
   display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.125rem 0.25rem 0.125rem 0.5rem;
-  border: 1px solid transparent; border-radius: var(--nojs-radius-sm); background: var(--nojs-secondary);
+  border: 1px solid transparent; border-radius: var(--lui-radius-sm); background: var(--lui-secondary);
   font-size: 0.75rem; line-height: 1rem; font-weight: 500;
 }
-.nojs-combobox-chip a { color: var(--nojs-muted); text-decoration: none; padding: 0 0.25rem; border-radius: var(--nojs-radius-sm); line-height: 1rem; }
-.nojs-combobox-chip a:hover { color: var(--nojs-fg); background: var(--nojs-bg); }
+.lui-combobox-chip a { color: var(--lui-muted); text-decoration: none; padding: 0 0.25rem; border-radius: var(--lui-radius-sm); line-height: 1rem; }
+.lui-combobox-chip a:hover { color: var(--lui-fg); background: var(--lui-bg); }
 /* Results are a Command list: a bordered rounded box of items with accent hover. */
-.nojs-combobox-results { margin: var(--nojs-space) 0 calc(var(--nojs-space) * 2); }
-.nojs-combobox-status { margin: 0 0 var(--nojs-space); font-size: 0.875rem; color: var(--nojs-muted); }
-.nojs-combobox-results [role=listbox] {
-  list-style: none; margin: 0; padding: 0.25rem; background: var(--nojs-popover);
-  border: 1px solid var(--nojs-line); border-radius: var(--nojs-radius); box-shadow: var(--nojs-shadow-xs);
+.lui-combobox-results { margin: var(--lui-space) 0 calc(var(--lui-space) * 2); }
+.lui-combobox-status { margin: 0 0 var(--lui-space); font-size: 0.875rem; color: var(--lui-muted); }
+.lui-combobox-results [role=listbox] {
+  list-style: none; margin: 0; padding: 0.25rem; background: var(--lui-popover);
+  border: 1px solid var(--lui-line); border-radius: var(--lui-radius); box-shadow: var(--lui-shadow-xs);
 }
-.nojs-combobox-results [role=option] { max-width: none; font-size: 0.875rem; }
-.nojs-combobox-results [role=option] a { display: block; padding: 0.375rem 0.5rem; border-radius: var(--nojs-radius-sm); text-decoration: none; color: inherit; }
-.nojs-combobox-results [role=option] a:hover, .nojs-combobox-results [role=option] a:focus-visible { background: var(--nojs-accent); color: var(--nojs-on-accent); outline: none; }
-.nojs-combobox-results [role=option][aria-selected=true] { padding: 0.375rem 0.5rem; color: var(--nojs-muted); }
-.nojs-combobox-picked { font-size: 0.875rem; }
-.nojs-combobox-create { display: inline-block; }
+.lui-combobox-results [role=option] { max-width: none; font-size: 0.875rem; }
+.lui-combobox-results [role=option] a { display: block; padding: 0.375rem 0.5rem; border-radius: var(--lui-radius-sm); text-decoration: none; color: inherit; }
+.lui-combobox-results [role=option] a:hover, .lui-combobox-results [role=option] a:focus-visible { background: var(--lui-accent); color: var(--lui-on-accent); outline: none; }
+.lui-combobox-results [role=option][aria-selected=true] { padding: 0.375rem 0.5rem; color: var(--lui-muted); }
+.lui-combobox-picked { font-size: 0.875rem; }
+.lui-combobox-create { display: inline-block; }
 "#;

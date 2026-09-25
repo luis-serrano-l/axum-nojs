@@ -1,4 +1,4 @@
-//! # axum-nojs-test
+//! # loco-ui-test
 //!
 //! Render an Axum route, load the HTML into Blitz (Stylo styles + Taffy layout, no browser),
 //! and assert on what a user would see: elements exist, are visible, have a bounding box, a
@@ -10,9 +10,9 @@
 //!
 //! ```no_run
 //! # async fn demo() {
-//! use axum_nojs_test::Page;
+//! use loco_ui_test::Page;
 //! let mut page = Page::render(demo::router(), "/dialog", "").await;
-//! assert!(page.is_visible(".nojs-dialog-open"));
+//! assert!(page.is_visible(".lui-dialog-open"));
 //! page.screenshot("target/shots/dialog.png").unwrap();
 //! # }
 //! ```

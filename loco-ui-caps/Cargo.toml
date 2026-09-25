@@ -1,17 +1,17 @@
 [package]
-name = "axum-nojs-caps"
+name = "loco-ui-caps"
 version = "0.1.0"
 edition = "2024"
 description = "Server-side browser feature detection with no JavaScript: @supports beacons set one cookie per capability"
 readme = "README.md"
 license = "MIT"
-repository = "https://github.com/luis-serrano-l/axum-nojs"
-keywords = ["feature-detection", "supports", "cookie", "axum", "no-js"]
+repository = "https://github.com/luis-serrano-l/loco-ui"
+keywords = ["feature-detection", "supports", "cookie", "axum", "loco"]
 categories = ["web-programming", "web-programming::http-server"]
 
 [features]
 default = []
-# Axum glue: `Caps` extractor and the `/nojs/caps` beacon route.
+# Axum glue: `Caps` extractor and the `/lui/caps` beacon route.
 axum = ["dep:axum"]
 
 [dependencies]

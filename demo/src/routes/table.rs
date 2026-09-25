@@ -6,8 +6,8 @@ use axum::{
     response::IntoResponse,
     routing::{get, post},
 };
-use axum_nojs::prelude::*;
-use axum_nojs::{Row, table::Table};
+use loco_ui::prelude::*;
+use loco_ui::{Row, table::Table};
 use serde::{Deserialize, Serialize};
 
 pub(crate) fn routes() -> Router {
@@ -92,7 +92,7 @@ impl Kinds {
 async fn table_page(ui: Ui, Saved(kinds): Saved<Kinds>) -> Page {
     let t = files_table(&ui);
     let files = files(&t);
-    let rows = files.iter().map(|f| Row::new([html! { code { (f.0) } }, html! { (axum_nojs::paged_table::thousands(f.1 as usize / 1024)) " KB" }, html! { (kinds.of(&f.0, f.2)) }])
+    let rows = files.iter().map(|f| Row::new([html! { code { (f.0) } }, html! { (loco_ui::paged_table::thousands(f.1 as usize / 1024)) " KB" }, html! { (kinds.of(&f.0, f.2)) }])
         .key(&f.0)
         .values(["", "", kinds.of(&f.0, f.2)])
         .detail(html! { p { "A " (f.2) " of " (f.1) " bytes, in " code { (f.0.split('/').next().unwrap_or("")) } "." } })

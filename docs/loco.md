@@ -1,9 +1,9 @@
-# axum-nojs on Loco
+# loco-ui on Loco
 
 [Loco](https://loco.rs) is a Rails-style framework on Axum, so a Loco controller is an Axum
 handler and takes `ui: Ui` like any other. The `loco` feature adds the one piece of wiring
-Loco needs, a form helper and a scaffold. The API reference is the `axum_nojs::loco` module
-docs, whose examples are compiled and run by `cargo test -p axum-nojs --features loco --doc
+Loco needs, a form helper and a scaffold. The API reference is the `loco_ui::loco` module
+docs, whose examples are compiled and run by `cargo test -p loco-ui --features loco --doc
 loco`. [`examples/loco-app`](../examples/loco-app) is all of it in one app: sign-in and a
 notes model, every page working with script off, tested through Loco's own router and Blitz.
 
@@ -11,7 +11,7 @@ notes model, every page working with script off, tested through Loco's own route
 
 ```toml
 # Cargo.toml of the Loco app (the crate is not on crates.io yet: use git or a path)
-axum-nojs = { git = "https://github.com/luis-serrano-l/axum-nojs", features = ["loco"] }
+loco-ui = { git = "https://github.com/luis-serrano-l/loco-ui", features = ["loco"] }
 maud = "0.27" # `html!` expands to `maud::` paths, so the app names it too
 ```
 
@@ -20,12 +20,12 @@ maud = "0.27" # `html!` expands to `maud::` paths, so the app names it too
 ```rust
 // src/app.rs, in `impl Hooks for App`
 async fn initializers(_ctx: &AppContext) -> Result<Vec<Box<dyn Initializer>>> {
-    Ok(vec![Box::new(axum_nojs::loco::Initializer)])
+    Ok(vec![Box::new(loco_ui::loco::Initializer)])
 }
 ```
 
-It mounts the enhancement script (`/nojs/enhance.js`) and the capability beacon
-(`/nojs/caps`) beside the app's routes, plus the layer that drops the stylesheet from
+It mounts the enhancement script (`/lui/enhance.js`) and the capability beacon
+(`/lui/caps`) beside the app's routes, plus the layer that drops the stylesheet from
 enhanced responses. Without it pages still work: the script 404s and every visitor gets the
 baseline variant.
 
@@ -37,7 +37,7 @@ differently. Mutations are forms that post and redirect (Post/Redirect/Get), wit
 message for the next page:
 
 ```rust
-use axum_nojs::prelude::*;
+use loco_ui::prelude::*;
 use loco_rs::prelude::*;
 
 async fn show(ui: Ui, State(ctx): State<AppContext>, Path(id): Path<i64>) -> Result<Page> {
@@ -58,7 +58,7 @@ pub fn routes() -> Routes {
 }
 ```
 
-The flash and the UI state are unsigned `nojs-*` cookies, so there is no key to configure and
+The flash and the UI state are unsigned `lui-*` cookies, so there is no key to configure and
 no clash with Loco's JWT cookie. Paging with SeaORM (`paginate`, `num_items`, `fetch_page`
 into `.paged(total)`) is a doctest in the module docs.
 
@@ -75,7 +75,7 @@ field. Two ways to get the messages:
   "Check this field." as they go. The scaffold uses this.
 
 ```rust
-use axum_nojs::{loco::Submitted, prelude::*};
+use loco_ui::{loco::Submitted, prelude::*};
 use loco_rs::prelude::*;
 
 async fn create(
@@ -130,11 +130,11 @@ page from anywhere a visitor may arrive signed out.
 
 ## The generator
 
-`axum-nojs/loco-templates/` overrides Loco's scaffold so that `cargo loco generate scaffold`
+`loco-ui/loco-templates/` overrides Loco's scaffold so that `cargo loco generate scaffold`
 writes an HTML controller and Maud views instead of a JSON API and DTOs:
 
 ```sh
-cp -r path/to/axum-nojs/axum-nojs/loco-templates .loco-templates
+cp -r path/to/loco-ui/loco-ui/loco-templates .loco-templates
 cargo loco generate scaffold note title:string! body:text done:bool! due:date
 cargo fmt
 ```
@@ -156,19 +156,19 @@ a text field parsed with `FromStr`. Array columns are not supported.
 - The `owasp` preset sends `Clear-Site-Data: "cache","cookies","storage"` on every response,
   which wipes the flash, the theme and the sign-in cookie on each page. Use `github`, or
   override that header.
-- axum-nojs's strict `csp` layer is not added for you; add
-  `axum::middleware::from_fn(axum_nojs::enhance::csp)` in `after_routes` to use it.
+- loco-ui's strict `csp` layer is not added for you; add
+  `axum::middleware::from_fn(loco_ui::enhance::csp)` in `after_routes` to use it.
 
 ## Views: Maud, not Tera
 
 Loco's generators write Tera templates under `assets/views/` and render them with
-`format::render().view(&v, "notes/list.html", data!({..}))`. With axum-nojs the views are Rust:
+`format::render().view(&v, "notes/list.html", data!({..}))`. With loco-ui the views are Rust:
 a `src/views/` module of plain functions that take `&Ui` and the data and return `Markup`. A
 controller calls one and returns the page.
 
 ```rust
 // src/views/notes.rs
-use axum_nojs::{prelude::*, table::Row};
+use loco_ui::{prelude::*, table::Row};
 use crate::models::_entities::notes;
 
 pub fn list(ui: &Ui, rows: &[notes::Model], total: usize) -> Markup {
@@ -198,10 +198,10 @@ async fn list(ui: Ui, State(ctx): State<AppContext>) -> Result<Page> {
 Tera and Maud views live side by side: each controller picks how it renders, so an existing
 app can move one controller at a time. The two need nothing from each other.
 
-**No Tera bridge.** A Tera function such as `{{ nojs_button(label="Save") }}` was considered
+**No Tera bridge.** A Tera function such as `{{ lui_button(label="Save") }}` was considered
 and left out:
 
-- A component starts from `ui`: the browser's capabilities, the query and the `nojs-ui` state
+- A component starts from `ui`: the browser's capabilities, the query and the `lui-ui` state
   (which tab is open, the page size, the flash). A Tera function gets only JSON arguments, so
   every template would have to pass that state through by hand, and a forgotten argument
   renders the wrong variant silently.

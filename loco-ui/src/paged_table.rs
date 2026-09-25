@@ -24,13 +24,13 @@
 //! **Fallback:** none needed. Every control is a link or a form.
 //!
 //! **Server state:** the page size is `per.<id>`, a state key, so the size a visitor picked
-//! is remembered in the `nojs-ui` cookie and read back through `state.per_page(id)`. Every
+//! is remembered in the `lui-ui` cookie and read back through `state.per_page(id)`. Every
 //! page link still names it, so a shared URL shows the same rows for everyone.
 //!
 //! ```rust
-//! use axum_nojs::{prelude::*, table::Row};
+//! use loco_ui::{prelude::*, table::Row};
 //! // The URL's sort, filter and page, and the page size the visitor picked before.
-//! let ui = Ui::from_request("/table", "sort=name&dir=desc&q=a&page=20", "nojs-ui=per.files=25");
+//! let ui = Ui::from_request("/table", "sort=name&dir=desc&q=a&page=20", "lui-ui=per.files=25");
 //! let files = ui.table("files", "/table").column("name", "Name").sortable().column("note", "Note");
 //! assert_eq!((files.page(), files.per_page()), (20, 25), "what a database query needs");
 //! // Only this page's rows, and the total after filtering.
@@ -116,7 +116,7 @@ impl<'a> PagedTableOptions<'a> {
         self
     }
 
-    /// Name the page-size parameter `per.<id>` so the `nojs-ui` cookie remembers it, and read
+    /// Name the page-size parameter `per.<id>` so the `lui-ui` cookie remembers it, and read
     /// the remembered size back.
     pub fn state(mut self, state: &'a UiState) -> Self {
         self.state = Some(state);
@@ -222,17 +222,17 @@ pub(crate) fn paged_table_with(
         n,
     };
     let keep = [(per_key.as_str(), per.as_str())];
-    let jump_id = format!("{}-page", enhance::swap_id("nojs-paged-table", id));
+    let jump_id = format!("{}-page", enhance::swap_id("lui-paged-table", id));
     let page_text = page.to_string();
     html! {
-        div id=(enhance::swap_id("nojs-paged-table", id)) data-nojs="swap" class="nojs-paged-table" {
+        div id=(enhance::swap_id("lui-paged-table", id)) data-lui="swap" class="lui-paged-table" {
             (table_in(caps, id, href, columns, rows, TableOptions { sort, filter, keep: &keep, ..inner }, false))
-            nav class="nojs-paged-table-nav" aria-label="Pages" {
-                output class="nojs-paged-table-range" { (Thousands(first)) "–" (Thousands(last)) " of " (Thousands(total)) }
-                ul class="nojs-paged-table-pages" {
+            nav class="lui-paged-table-nav" aria-label="Pages" {
+                output class="lui-paged-table-range" { (Thousands(first)) "–" (Thousands(last)) " of " (Thousands(total)) }
+                ul class="lui-paged-table-pages" {
                     @if page > 1 {
                         @let (first, prev) = (link(1).to_string(), link(page - 1).to_string());
-                        li { (page_button(caps, &first, "First", false).class("nojs-paged-table-end")) }
+                        li { (page_button(caps, &first, "First", false).class("lui-paged-table-end")) }
                         li { (page_button(caps, &prev, "Previous", false).rel("prev").content(html! { (Icon::ChevronLeft) "Previous" })) }
                     }
                     @for slot in window(page, pages) {
@@ -241,25 +241,25 @@ pub(crate) fn paged_table_with(
                                 @let h = link(n).to_string();
                                 (page_button(caps, &h, "", n == page).current(n == page).content(html! { (Thousands(n)) }))
                             },
-                            None => li class="nojs-paged-table-gap" aria-hidden="true" { "…" },
+                            None => li class="lui-paged-table-gap" aria-hidden="true" { "…" },
                         }
                     }
                     @if page < pages {
                         @let (next, last) = (link(page + 1).to_string(), link(pages).to_string());
                         li { (page_button(caps, &next, "Next", false).rel("next").content(html! { "Next" (Icon::ChevronRight) })) }
-                        li { (page_button(caps, &last, "Last", false).class("nojs-paged-table-end")) }
+                        li { (page_button(caps, &last, "Last", false).class("lui-paged-table-end")) }
                     }
                 }
                 @if pages > 1 {
-                    form method="get" action=(href) class="nojs-paged-table-jump" {
+                    form method="get" action=(href) class="lui-paged-table-jump" {
                         @for (k, v) in carried("") { input type="hidden" name=(k) value=(v); }
                         span { "Page" }
-                        (Input::number_within("page", "Page", Some(1), Some(pages as i64)).hide_label().class("nojs-paged-table-page").inputmode("numeric").id(&jump_id).value(&page_text))
+                        (Input::number_within("page", "Page", Some(1), Some(pages as i64)).hide_label().class("lui-paged-table-page").inputmode("numeric").id(&jump_id).value(&page_text))
                         span { "of " (Thousands(pages)) }
                         (Button::new(*caps, "Go"))
                     }
                 }
-                form method="get" action=(href) class="nojs-paged-table-per" {
+                form method="get" action=(href) class="lui-paged-table-per" {
                     @for (k, v) in carried(&per_key) { input type="hidden" name=(k) value=(v); }
                     label { "Rows per page "
                         select name=(per_key) {
@@ -348,14 +348,14 @@ impl fmt::Display for PageLink<'_> {
 /// Styles for this component; included in [`crate::stylesheet`].
 pub const CSS: &str = r#"
 /* shadcn Pagination: ghost page links, the current one an outline button, h-9 squares. */
-.nojs-paged-table-nav { display: flex; flex-wrap: wrap; align-items: center; gap: var(--nojs-space) calc(var(--nojs-space) * 2); margin-top: calc(var(--nojs-space) * 2); font-size: 0.875rem; color: var(--nojs-muted); }
-.nojs-paged-table-pages { display: flex; flex-wrap: wrap; gap: 0.25rem; list-style: none; margin: 0; padding: 0; }
-.nojs-paged-table-pages .nojs-button { min-width: 2.25rem; padding-inline: 0.625rem; }
-.nojs-paged-table-gap { align-self: center; padding: 0 0.25rem; }
-.nojs-paged-table-jump, .nojs-paged-table-per { display: flex; align-items: center; gap: var(--nojs-space); }
-.nojs-paged-table-jump { margin-left: auto; }
-.nojs-paged-table-page { width: 5em; }
-@media (max-width: 40rem) { .nojs-paged-table-jump { margin-left: 0; } }
+.lui-paged-table-nav { display: flex; flex-wrap: wrap; align-items: center; gap: var(--lui-space) calc(var(--lui-space) * 2); margin-top: calc(var(--lui-space) * 2); font-size: 0.875rem; color: var(--lui-muted); }
+.lui-paged-table-pages { display: flex; flex-wrap: wrap; gap: 0.25rem; list-style: none; margin: 0; padding: 0; }
+.lui-paged-table-pages .lui-button { min-width: 2.25rem; padding-inline: 0.625rem; }
+.lui-paged-table-gap { align-self: center; padding: 0 0.25rem; }
+.lui-paged-table-jump, .lui-paged-table-per { display: flex; align-items: center; gap: var(--lui-space); }
+.lui-paged-table-jump { margin-left: auto; }
+.lui-paged-table-page { width: 5em; }
+@media (max-width: 40rem) { .lui-paged-table-jump { margin-left: 0; } }
 "#;
 
 #[cfg(test)]
@@ -390,7 +390,7 @@ mod tests {
         .into_string();
         assert!(empty.contains("0–0 of 0") && !empty.contains("rel="));
         assert!(
-            !empty.contains("nojs-paged-table-jump"),
+            !empty.contains("lui-paged-table-jump"),
             "no jump form for a single page"
         );
     }

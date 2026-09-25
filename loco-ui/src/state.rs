@@ -5,7 +5,7 @@
 //! [`UiState`] is a small string map with five kinds of keys: `tab.<name>` (open tab index),
 //! `open.<group>` (open accordion indexes, a comma list), `step.<wizard>` (current wizard step),
 //! `per.<table>` (rows per page of a paged table) and `dialog` (id of a dialog to render open). It is
-//! read from the query string first and a `nojs-ui` cookie second, so a link can change one key
+//! read from the query string first and a `lui-ui` cookie second, so a link can change one key
 //! while everything else is remembered. In Axum it is an extractor, and returning it as part
 //! of the response writes the cookie back when the query changed something.
 //!
@@ -14,7 +14,7 @@
 //! **Fallback:** none needed. Without cookies, state still travels in links on the same page.
 //!
 //! **Post/Redirect/Get:** [`crate::Ui::redirect`] answers a form POST with a redirect and a
-//! one-shot `nojs-flash` cookie; the next page renders it with `ui.flash()` and, as a
+//! one-shot `lui-flash` cookie; the next page renders it with `ui.flash()` and, as a
 //! [`crate::Page`], clears it.
 //!
 //! **Any server.** The protocol is plain strings: [`UiState::from_request`] reads path, query
@@ -22,14 +22,14 @@
 //! back. The `axum` feature adds the extractor and the `IntoResponseParts` impl on top.
 //!
 //! ```rust
-//! use axum_nojs::UiState;
+//! use loco_ui::UiState;
 //! let state = UiState::parse("/settings", "tab.settings=1&page=3", "open.faq=2");
 //! assert_eq!(state.tab("settings"), 1);
 //! assert_eq!(state.open("faq"), Some(2));
 //! assert_eq!(state.link("tab.settings", "0"), "/settings?open.faq=2&tab.settings=0");
 //!
 //! // By hand, from a raw request: the cookie header carries both state and flash.
-//! let state = UiState::from_request("/settings", "tab.settings=1", "nojs-ui=open.faq=2; nojs-flash=Saved.");
+//! let state = UiState::from_request("/settings", "tab.settings=1", "lui-ui=open.faq=2; lui-flash=Saved.");
 //! assert_eq!(state.flash(), Some("Saved."));
 //! assert_eq!(state.set_cookies().len(), 2); // remember tab.settings, clear the flash
 
@@ -39,12 +39,12 @@ use std::borrow::Cow;
 use std::collections::BTreeMap;
 
 /// Name of the cookie that remembers UI state between page views.
-pub const UI_COOKIE: &str = "nojs-ui";
+pub const UI_COOKIE: &str = "lui-ui";
 
 /// Name of the one-shot cookie carrying a flash message across a redirect.
-pub const FLASH_COOKIE: &str = "nojs-flash";
+pub const FLASH_COOKIE: &str = "lui-flash";
 
-/// UI state for one request: query string merged over the `nojs-ui` cookie.
+/// UI state for one request: query string merged over the `lui-ui` cookie.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct UiState {
     path: String,
@@ -114,7 +114,7 @@ pub(crate) fn encode(s: &str) -> String {
 }
 
 impl UiState {
-    /// Build from the request path, its raw query string and the raw `nojs-ui` cookie value.
+    /// Build from the request path, its raw query string and the raw `lui-ui` cookie value.
     pub fn parse(path: &str, query: &str, cookie: &str) -> UiState {
         UiState {
             path: path.to_string(),
@@ -125,7 +125,7 @@ impl UiState {
     }
 
     /// Build from a raw request: path, query string and the whole `Cookie:` header value
-    /// (several headers joined with `; `). Reads both the `nojs-ui` and the `nojs-flash` cookie.
+    /// (several headers joined with `; `). Reads both the `lui-ui` and the `lui-flash` cookie.
     pub fn from_request(path: &str, query: &str, cookie_header: &str) -> UiState {
         let cookie = |name: &str| {
             cookie_header
@@ -153,7 +153,7 @@ impl UiState {
         out
     }
 
-    /// Attach the flash message read from the `nojs-flash` cookie.
+    /// Attach the flash message read from the `lui-flash` cookie.
     pub fn with_flash(mut self, flash: Option<String>) -> UiState {
         self.flash = flash.filter(|f| !f.is_empty());
         self
@@ -204,7 +204,7 @@ impl UiState {
             .unwrap_or(0)
     }
 
-    /// Whether `key` comes from the `nojs-ui` cookie alone, not from this request's query: the
+    /// Whether `key` comes from the `lui-ui` cookie alone, not from this request's query: the
     /// visitor came back without a link naming it (a new tab, a bookmark of the bare path).
     pub fn remembered(&self, key: &str) -> bool {
         !self.from_query.contains_key(key) && self.from_cookie.contains_key(key)
@@ -256,7 +256,7 @@ impl UiState {
             .any(|(k, v)| k != "dialog" && self.from_cookie.get(k) != Some(v))
     }
 
-    /// Value for the `nojs-ui` cookie: the merged state, or `None` when nothing changed.
+    /// Value for the `lui-ui` cookie: the merged state, or `None` when nothing changed.
     pub fn cookie_value(&self) -> Option<String> {
         self.changed().then(|| {
             let kept = self.entries().into_iter().filter(|(k, _)| *k != "dialog");
@@ -360,17 +360,17 @@ mod tests {
         let s = UiState::from_request(
             "/p",
             "tab.a=2",
-            "theme=dark; nojs-ui=tab.a=1; nojs-flash=Saved%20it",
+            "theme=dark; lui-ui=tab.a=1; lui-flash=Saved%20it",
         );
         assert_eq!(s.flash(), Some("Saved it"));
         let cookies = s.set_cookies();
         assert_eq!(
             cookies[0],
-            "nojs-ui=tab.a=2; Path=/; Max-Age=2592000; SameSite=Lax"
+            "lui-ui=tab.a=2; Path=/; Max-Age=2592000; SameSite=Lax"
         );
-        assert!(cookies[1].starts_with("nojs-flash=; ") && cookies[1].contains("Max-Age=0"));
+        assert!(cookies[1].starts_with("lui-flash=; ") && cookies[1].contains("Max-Age=0"));
         assert!(
-            UiState::from_request("/p", "", "nojs-ui=tab.a=1")
+            UiState::from_request("/p", "", "lui-ui=tab.a=1")
                 .set_cookies()
                 .is_empty()
         );
