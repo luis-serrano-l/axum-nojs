@@ -11,6 +11,11 @@
 //! only the thumbs take it (`::-webkit-slider-thumb`, `::-moz-range-thumb`), so either thumb
 //! can be dragged. Each has its own `<output>`.
 //!
+//! **Accessibility:** native range inputs, each named (the pair's thumbs as "Minimum" and
+//! "Maximum"); the value is shown in an `<output>`. Checked by axe-core in headless Firefox on
+//! every demo route, both capability variants, light and dark (no serious or critical
+//! violation).
+//!
 //! **What it does not do without script:** show the value while dragging (the `<output>` holds
 //! the value the server last saw), or stop the two thumbs of a pair crossing; the server
 //! reorders them with [`order`].

@@ -9,12 +9,17 @@
 //! - `<input list>` + `<datalist>` (baseline 2020) gives native type-ahead from a fixed list
 //!   the server already knows; `<optgroup>` inside it (Chrome 20, Firefox 4, Safari 12.1)
 //!   groups the suggestions where the browser draws them grouped.
-//! - `<search>` element (baseline 2023) for semantics; `role="listbox"` / `role="option"` on
-//!   the result list and `aria-live="polite"` on the results, so a swapped result list is
-//!   announced.
+//! - `<search>` element (baseline 2023) for semantics; the results are a plain list of links
+//!   (a `listbox` of options cannot hold links, and without script it could not be operated
+//!   as one), named "Results", with `aria-live="polite"` so a swapped list is announced.
 //! - Submitting the form (Enter or the button) re-renders with the server's results. Every
 //!   result is a link that adds it to the selection (or replaces it, unless `multi`), every
 //!   chip has a link that removes it, and the "create" row is a plain post form.
+//!
+//! **Accessibility:** a `<search>` form: a labelled search input with a datalist, results a
+//! plain list of links named "Results" in an `aria-live` region, chips removable by named
+//! links. Checked by axe-core in headless Firefox on every demo route, both capability
+//! variants, light and dark (no serious or critical violation).
 //!
 //! **What it does not do without script:** filter as you type against the server or move
 //! through results with arrow keys and a live `aria-activedescendant`; suggestions come from
@@ -246,10 +251,10 @@ impl Render for Combobox<'_> {
                 div id=(results_id) class="lui-combobox-results" aria-live="polite" {
                     @if !results.is_empty() {
                         p class="lui-combobox-status" { (crate::palette::count(ui, results.len())) }
-                        ul role="listbox" aria-label=(ui.text(Text::Results)) aria-multiselectable=[multi.then_some("true")] {
+                        ul class="lui-combobox-list" aria-label=(ui.text(Text::Results)) {
                             @for r in &results {
                                 @let picked = selected.contains(r);
-                                li role="option" aria-selected=(picked) {
+                                li class=[picked.then_some("lui-combobox-chosen")] {
                                     @if picked { (r) span class="lui-combobox-picked" { (ui.text(Text::IsSelected)) } }
                                     @else { a href=(add(r)) { (r) } }
                                 }
@@ -286,14 +291,14 @@ pub const CSS: &str = r#"
 /* Results are a Command list: a bordered rounded box of items with accent hover. */
 .lui-combobox-results { margin: var(--lui-space) 0 calc(var(--lui-space) * 2); }
 .lui-combobox-status { margin: 0 0 var(--lui-space); font-size: 0.875rem; color: var(--lui-muted); }
-.lui-combobox-results [role=listbox] {
+.lui-combobox-list {
   list-style: none; margin: 0; padding: 0.25rem; background: var(--lui-popover);
   border: 1px solid var(--lui-line); border-radius: var(--lui-radius); box-shadow: var(--lui-shadow-xs);
 }
-.lui-combobox-results [role=option] { max-width: none; font-size: 0.875rem; }
-.lui-combobox-results [role=option] a { display: block; padding: 0.375rem 0.5rem; border-radius: var(--lui-radius-sm); text-decoration: none; color: inherit; }
-.lui-combobox-results [role=option] a:hover, .lui-combobox-results [role=option] a:focus-visible { background: var(--lui-accent); color: var(--lui-on-accent); outline: none; }
-.lui-combobox-results [role=option][aria-selected=true] { padding: 0.375rem 0.5rem; color: var(--lui-muted); }
+.lui-combobox-list > li { max-width: none; font-size: 0.875rem; }
+.lui-combobox-list a { display: block; padding: 0.375rem 0.5rem; border-radius: var(--lui-radius-sm); text-decoration: none; color: inherit; }
+.lui-combobox-list a:hover, .lui-combobox-list a:focus-visible { background: var(--lui-accent); color: var(--lui-on-accent); outline: none; }
+.lui-combobox-list > .lui-combobox-chosen { padding: 0.375rem 0.5rem; color: var(--lui-muted); }
 .lui-combobox-picked { font-size: 0.875rem; }
 .lui-combobox-create { display: inline-block; }
 "#;

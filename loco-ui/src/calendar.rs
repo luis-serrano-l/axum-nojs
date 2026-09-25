@@ -10,6 +10,12 @@
 //! (Chrome 105, Firefox 121, Safari 15.4) to draw the picked radio's day. The month shown
 //! travels in `?month.<name>=YYYY-MM`, the picked day in `?<name>=YYYY-MM-DD`.
 //!
+//! **Accessibility:** a `<table>` with column headers (`abbr` holds the full weekday); each day
+//! is a link or radio whose hidden text says the whole date, today is `aria-current="date"`,
+//! the month title is `aria-live`; arrow keys are not wired (Tab moves through days). Checked
+//! by axe-core in headless Firefox on every demo route, both capability variants, light and
+//! dark (no serious or critical violation).
+//!
 //! **What it does not do without script:** change month without a page load (the enhancement
 //! script swaps the calendar in place: it is a swap root), or move between days with the arrow
 //! keys (Tab goes through them in order). In radio mode a month link leaves the page, so a
@@ -388,7 +394,10 @@ impl Calendar<'_> {
         let tip = (!events.is_empty()).then(|| events.join(", "));
         let face = html! {
             span aria-hidden="true" { (d.day) }
-            span class="lui-sr" { (d.spoken(self.ui.strings)) @for e in &events { ", " (e) } }
+            span class="lui-sr" {
+                (d.spoken(self.ui.strings)) @for e in &events { ", " (e) }
+                @if picked && !self.radio { (self.ui.text(Text::IsSelected)) }
+            }
             @if !events.is_empty() {
                 span class="lui-calendar-dots" aria-hidden="true" { @for _ in events.iter().take(3) { span {} } }
             }
@@ -407,7 +416,7 @@ impl Calendar<'_> {
                     span class=(class) aria-disabled="true" title=[tip] { (face) }
                 } @else {
                     a class=(class) href=(self.ui.link_with(self.name, &value)) title=[tip]
-                        aria-current=[current] aria-pressed=[picked.then_some("true")] { (face) }
+                        aria-current=[current] { (face) }
                 }
             }
         }

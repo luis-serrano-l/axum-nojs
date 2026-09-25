@@ -44,6 +44,13 @@ jobs:
         cargo test -p loco-ui --features loco loco
         cargo test -p loco-ui --features loco --doc loco
         cargo test -p loco-ui --test install -- --include-ignored
+    # The enhancement script in headless Firefox, then axe-core on every route (fails on any
+    # serious or critical violation). The runner image has Firefox and geckodriver.
+    - name: Browser check and accessibility
+      run: |
+        cargo build -p demo
+        npm install --prefix scripts --no-audit --no-fund
+        node scripts/browser-check.mjs
     - name: Rustdoc
       run: cargo doc --no-deps -p loco-ui-caps -p loco-ui-macros -p loco-ui --all-features
       env:

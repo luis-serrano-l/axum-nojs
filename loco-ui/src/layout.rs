@@ -395,7 +395,7 @@ tbody tr:hover { background: color-mix(in srgb, var(--lui-accent) 50%, transpare
    in ok, numbers and types in warn, comments muted, macros bold. */
 .lui-hl-k { color: var(--lui-danger); }
 .lui-hl-s { color: var(--lui-ok); }
-.lui-hl-n, .lui-hl-t { color: var(--lui-warn); }
+.lui-hl-n, .lui-hl-t { color: color-mix(in srgb, var(--lui-warn) 70%, var(--lui-fg)); }
 .lui-hl-c { color: var(--lui-muted); font-style: italic; }
 .lui-hl-m { color: var(--lui-fg); font-weight: 600; }
 .lui-hl-f { color: var(--lui-fg); }

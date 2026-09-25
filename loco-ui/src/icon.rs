@@ -7,6 +7,10 @@
 //! **Platform features:** inline `<svg>` (no icon font, no request, no sprite); an icon is
 //! `aria-hidden` unless it is given a `.label()`, which makes it `role="img"` with that name.
 //!
+//! **Accessibility:** decorative icons are `aria-hidden`; a meaningful one is `role="img"` with
+//! `aria-label`. Checked by axe-core in headless Firefox on every demo route, both capability
+//! variants, light and dark (no serious or critical violation).
+//!
 //! **What it does not do without script:** nothing is missing.
 //!
 //! **Fallback:** none needed.

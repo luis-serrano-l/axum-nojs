@@ -15,6 +15,11 @@
 //!   the new tab, across documents through the layout's `@view-transition` rule and in place
 //!   with the enhancement script.
 //!
+//! **Accessibility:** each tab is a `<summary>` holding a link (one tab stop, Enter follows
+//! it); the narrow-screen select is named "Tab"; not the ARIA tablist pattern, which needs
+//! script (FINDINGS). Checked by axe-core in headless Firefox on every demo route, both
+//! capability variants, light and dark (no serious or critical violation).
+//!
 //! **What it does not do without script:** arrow keys between tabs (the WAI-ARIA tabs pattern);
 //! each tab is a `<summary>` reached by Tab.
 //!
@@ -247,7 +252,7 @@ pub const CSS: &str = r#"
    one is a raised chip on the page background. Each summary paints its slice of the pill. */
 .lui-tabs:not(.lui-accordion) summary {
   order: 0; position: relative; list-style: none; cursor: pointer; padding: 3px;
-  background: var(--lui-secondary); color: var(--lui-muted);
+  background: var(--lui-secondary); color: color-mix(in srgb, var(--lui-muted) 70%, var(--lui-fg));
 }
 .lui-tabs:not(.lui-accordion):not(.lui-tabs-vertical) > details:first-of-type > summary { border-radius: var(--lui-radius) 0 0 var(--lui-radius); }
 .lui-tabs:not(.lui-accordion):not(.lui-tabs-vertical) > details:last-of-type > summary { border-radius: 0 var(--lui-radius) var(--lui-radius) 0; }

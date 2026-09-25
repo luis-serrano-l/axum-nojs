@@ -18,6 +18,10 @@
 //! same form inside. A browser without `<datalist>` shows a plain search box; the results
 //! page still works.
 //!
+//! **Accessibility:** a labelled search field with `aria-keyshortcuts`, results in a section
+//! named by its heading, every command a link. Checked by axe-core in headless Firefox on every
+//! demo route, both capability variants, light and dark (no serious or critical violation).
+//!
 //! **What it does not do without script:** arrow-key navigation through a live results list
 //! and the global Ctrl+K shortcut (the access key stands in for it).
 //!
@@ -290,7 +294,7 @@ pub const CSS: &str = r#"
 .lui-palette-open::-webkit-details-marker { display: none; }
 .lui-palette-kbd {
   font-family: var(--lui-font-mono); font-size: 0.75rem; font-weight: 500; padding: 0 0.375rem; line-height: 1.25rem;
-  color: var(--lui-muted); background: var(--lui-secondary); border: 1px solid var(--lui-line); border-radius: var(--lui-radius-sm);
+  color: var(--lui-fg); background: var(--lui-secondary); border: 1px solid var(--lui-line); border-radius: var(--lui-radius-sm);
 }
 .lui-palette-panel {
   box-sizing: border-box; width: min(32rem, calc(100vw - 2rem)); padding: 0.25rem;

@@ -6,6 +6,10 @@
 //! CSS custom properties. The toggle is a `<form method="post">`; the server stores the choice
 //! in a cookie and sets `data-theme` on `<html>`.
 //!
+//! **Accessibility:** three native buttons with `aria-pressed` on the current theme. Checked by
+//! axe-core in headless Firefox on every demo route, both capability variants, light and dark
+//! (no serious or critical violation).
+//!
 //! **What it does not do without script:** follow a change of the OS preference while a cookie
 //! choice is set; the cookie wins until reset to auto.
 //!

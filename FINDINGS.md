@@ -740,3 +740,34 @@ the decimal. Now each has its control (docs/loco.md has the table). What was fou
   --assets serverside` or `none`).
 - Blitz paints the task form's select and the date and date-time values blank (the `<select>`
   and date entries above); the HTML is asserted instead.
+
+### M29 · axe-core over every route
+
+`scripts/browser-check.mjs` injects axe-core 4.12.1 (a test-only npm package under `scripts/`,
+never served) into every `PATHS` route in headless Firefox, with the modern and the old
+capability cookies, light and dark: 136 page views. The first run found, and this milestone
+fixed:
+
+- Scrollable code and props tables were not reachable by keyboard: they take `tabindex="0"`
+  and a name (demo).
+- Contrast under AA: the ok and warn badges, the number and type colours of the code
+  highlighter, the palette's `kbd`, and the text of unselected tabs, each on its tint. Each
+  now mixes its tone with `--lui-fg`, so it darkens in light and lightens in dark.
+- `aria-pressed` on the calendar's picked day, a link: not allowed there. The picked state is
+  now in the day's hidden text.
+- The combobox's results were a `listbox` of `option`s holding links (nested interactive). A
+  listbox cannot be operated without script anyway; they are a plain list of links named
+  "Results".
+
+Let through, with the reason, and nothing else:
+
+- `nested-interactive` on a `<summary>` that holds a link: the tabs, accordion and settings
+  design, where the link fills the summary so a no-script click goes to the server and the
+  open section is in the URL. A screen reader hears a disclosure button containing a link.
+  Moving to the ARIA tabs pattern would need script, which is the one thing this library
+  does not require.
+- `button-name` on the `<button><selectedcontent>` of a customisable select: Firefox does not
+  support it (so it never gets that variant for real) and shows it empty only because the
+  check forces the capability cookie.
+
+24 findings of minor or moderate impact are counted, not failed.

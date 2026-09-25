@@ -347,7 +347,7 @@ pub(crate) fn shell(ui: &Ui, title: &str, body: Markup) -> Markup {
             figure class="lui-snippet" {
                 @if let Some((_, path, code, _)) = CODE.iter().find(|h| h.0 == c.0) {
                     figcaption { span { (path) } span { "The code behind the component above" } }
-                    pre { code { (maud::PreEscaped(code)) } }
+                    pre tabindex="0" aria-label=(path) { code { (maud::PreEscaped(code)) } }
                 }
             }
         }
@@ -376,7 +376,7 @@ fn props(builders: &[&loco_ui::props::Component]) -> Markup {
                         span { (b.props.len()) @if b.props.len() == 1 { " prop" } @else { " props" } }
                     }
                     @if !b.props.is_empty() {
-                        div class="lui-props-scroll" { table {
+                        div class="lui-props-scroll" tabindex="0" role="region" aria-label={ (b.builder) " props" } { table {
                             thead { tr { th { "Prop" } th { "Kind" } th { "Arguments" } th { "Default" } th { "HTML" } th { "What it does" } } }
                             tbody { @for p in b.props { tr {
                                 td { code { (p.name) } }

@@ -10,6 +10,12 @@
 //! (Chrome 114, Firefox 125, Safari 17). A loading button is `disabled` and `aria-busy`, with a
 //! CSS-only spinner that slows down under `prefers-reduced-motion`.
 //!
+//! **Accessibility:** a native `<button>` or `<a>` (Enter and Space, or Enter for a link); an
+//! icon button carries `aria-label`, a busy one `aria-busy` and `aria-disabled`, a toggle
+//! `aria-pressed`, a menu trigger `aria-haspopup`. Checked by axe-core in headless Firefox on
+//! every demo route, both capability variants, light and dark (no serious or critical
+//! violation).
+//!
 //! **What it does not do without script:** turn itself into a loading button while its form
 //! posts; the server sets `.loading(true)` on the page it renders (the enhancement script
 //! marks a posting form `aria-busy` on its own).

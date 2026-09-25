@@ -10,6 +10,10 @@
 //! are `<button name="<name>-preset" value="#rrggbb">`: one click posts the form with that
 //! colour. Opacity is an `<input type="range">` named `<name>-alpha` (0 to 100).
 //!
+//! **Accessibility:** a native colour input with its label; presets are named buttons in a
+//! labelled group with `aria-pressed`. Checked by axe-core in headless Firefox on every demo
+//! route, both capability variants, light and dark (no serious or critical violation).
+//!
 //! **What it does not do without script:** a live preview of the chosen colour before the form
 //! is sent, and an eyedropper.
 //!

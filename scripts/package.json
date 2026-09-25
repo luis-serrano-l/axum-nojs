@@ -1,0 +1,7 @@
+{
+  "private": true,
+  "description": "Test-only tools for scripts/browser-check.mjs; nothing here is served.",
+  "devDependencies": {
+    "axe-core": "4.12.1"
+  }
+}

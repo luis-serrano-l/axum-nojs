@@ -23,6 +23,11 @@
 //!   messages, and an [error summary](crate::error_summary) at the top that links to each
 //!   field in error and takes the focus.
 //!
+//! **Accessibility:** labelled fields grouped in `<fieldset>`/`<legend>`, native constraint
+//! validation, and an error summary that takes the focus when the server sends the form back.
+//! Checked by axe-core in headless Firefox on every demo route, both capability variants, light
+//! and dark (no serious or critical violation).
+//!
 //! **What it does not do without script:** validate against the server as you type, or warn
 //! about unsaved changes on leaving the page.
 //!

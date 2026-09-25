@@ -9,6 +9,11 @@
 //! like a chosen one, with no script; `<progress>` (baseline 2013) for the upload bar;
 //! `loading="lazy"` thumbnails; Post/Redirect/Get after the upload and after each removal.
 //!
+//! **Accessibility:** a native file input inside its label (Enter or Space opens the picker), a
+//! labelled upload button, and remove buttons named with the file. Checked by axe-core in
+//! headless Firefox on every demo route, both capability variants, light and dark (no serious
+//! or critical violation).
+//!
 //! **What it does not do without script:** show the upload's progress (the enhancement script
 //! sends the form through `XMLHttpRequest` and fills the `<progress data-lui-progress>` bar;
 //! without it the browser shows its own loading indicator), preview a file before it is sent,

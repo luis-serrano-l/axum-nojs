@@ -1088,11 +1088,23 @@ every Loco API named below against loco-rs 1.2 before relying on it, as M27 did.
   English/Español switch beside the theme toggle; demo test for cookie, header and switch.
   Not covered: the form messages of `Valid`/`Submitted` (English, set your own in
   `#[validate(message)]`) and the site header line in `layout::header`.
-- [ ] Automated accessibility: run axe-core inside `scripts/browser-check.mjs` over every
+- [x] Automated accessibility: run axe-core inside `scripts/browser-check.mjs` over every
   `PATHS` route, both caps variants, light and dark (axe is injected by the test driver only,
   never served, so the one-script rule holds); CI fails on any violation of serious or
   critical impact. Each component header gains an **Accessibility** line (roles, keyboard,
   what was checked), and README's badge line adds "axe-clean".
+  Done: axe-core 4.12.1 as a test-only npm package (`scripts/package.json`, lock committed,
+  `node_modules` ignored), injected by the driver into 34 routes × modern/old caps ×
+  light/dark = 136 page views; serious or critical fails. CI gains a "Browser check and
+  accessibility" step (the runner image has Firefox and geckodriver); verify.sh installs axe
+  when missing. Fixed: keyboard access to scrollable code and props tables (demo), contrast
+  of ok/warn badges, highlighter colours, palette `kbd` and unselected tabs (tones mixed with
+  `--lui-fg`), `aria-pressed` on a calendar link (now hidden text), the combobox's
+  listbox-of-links (now a plain list). Two patterns let through with reasons in FINDINGS:
+  links filling a `<summary>` (the no-script tabs/accordion design) and the customisable
+  select's button that only a forced cookie shows Firefox. 44 component headers have an
+  **Accessibility** line (test `every_component_header_has_an_accessibility_line`); README
+  says axe-clean.
 - [ ] Blocks, no script: app shell with sidebar, auth pages, settings page, record show/edit
   page, dashboard of stats, and error pages (404, 500) in Maud usable as Loco's fallback. One
   file each under `loco-ui/src/blocks/`, one demo route each, one Blitz test each.

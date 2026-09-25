@@ -8,6 +8,10 @@
 //! it with `aria-describedby` so a screen reader says it too. `@media (hover: none)` (Chrome
 //! 41, Firefox 64, Safari 9) keeps it off touch screens, where hover does not exist.
 //!
+//! **Accessibility:** `role="tooltip"` joined to its trigger by `aria-describedby`; shown on
+//! hover and on keyboard focus. Checked by axe-core in headless Firefox on every demo route,
+//! both capability variants, light and dark (no serious or critical violation).
+//!
 //! **What it does not do without script:** open after a delay, close on Escape while the
 //! pointer stays over it, or flip to fit the viewport. `popover="hint"` with hover triggers
 //! would do some of this, but it is Chromium-only and needs script to open on hover.

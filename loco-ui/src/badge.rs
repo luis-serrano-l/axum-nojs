@@ -6,6 +6,10 @@
 //! **Platform features:** a `<span>` (or an `<a>` with `.href()`); nothing interactive of its
 //! own.
 //!
+//! **Accessibility:** plain text in a `<span>`; the tone colours are mixed with the text colour
+//! so they pass AA on their tint. Checked by axe-core in headless Firefox on every demo route,
+//! both capability variants, light and dark (no serious or critical violation).
+//!
 //! **What it does not do without script:** nothing is missing.
 //!
 //! **Fallback:** none needed.
@@ -132,7 +136,8 @@ a.lui-badge:hover { background: color-mix(in srgb, var(--lui-primary) 90%, trans
 .lui-badge.lui-badge-danger { background: var(--lui-danger); color: var(--lui-on-primary); }
 .lui-badge.lui-badge-outline { background: transparent; color: var(--lui-fg); border-color: var(--lui-line); }
 a.lui-badge:is(.lui-badge-secondary, .lui-badge-outline):hover { background: var(--lui-accent); }
-.lui-badge.lui-badge-ok { background: color-mix(in srgb, var(--lui-ok) 15%, transparent); color: var(--lui-ok); }
-.lui-badge.lui-badge-warn { background: color-mix(in srgb, var(--lui-warn) 15%, transparent); color: var(--lui-warn); }
+/* The tone mixed with the text colour: darker on light, lighter on dark, AA on its tint. */
+.lui-badge.lui-badge-ok { background: color-mix(in srgb, var(--lui-ok) 15%, transparent); color: color-mix(in srgb, var(--lui-ok) 75%, var(--lui-fg)); }
+.lui-badge.lui-badge-warn { background: color-mix(in srgb, var(--lui-warn) 15%, transparent); color: color-mix(in srgb, var(--lui-warn) 70%, var(--lui-fg)); }
 .lui-badge .lui-icon { width: 0.75rem; height: 0.75rem; }
 "#;

@@ -10,6 +10,10 @@
 //! `interpolate-size: allow-keywords` (Chrome 129 only) animate the height between `0` and
 //! `auto`; without `interpolate-size` the panel snaps.
 //!
+//! **Accessibility:** `<details>`/`<summary>`: Enter or Space opens a section, each title is a
+//! link to its state; icons are `aria-hidden`. Checked by axe-core in headless Firefox on every
+//! demo route, both capability variants, light and dark (no serious or critical violation).
+//!
 //! **What it does not do without script:** arrow keys between summaries (the WAI-ARIA accordion
 //! pattern).
 //!

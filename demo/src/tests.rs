@@ -158,7 +158,8 @@ async fn every_component_page_shows_its_code() {
         let pre = html
             .split("class=\"lui-snippet\"")
             .nth(1)
-            .and_then(|s| s.split("<pre>").nth(1))
+            .and_then(|s| s.split("<pre").nth(1))
+            .and_then(|s| s.split_once('>').map(|(_, rest)| rest))
             .and_then(|s| s.split("</pre>").next());
         let text: String = pre
             .expect("{href}: no snippet box")

@@ -6,6 +6,10 @@
 //! **Platform features:** plain `<div>`s and a heading; the header is a grid, so an action
 //! put in `.header(..)` sits at the top right beside the title.
 //!
+//! **Accessibility:** a `<div>` of ordinary markup; its title is an `<h3>`, so it shows in the
+//! outline. Checked by axe-core in headless Firefox on every
+//! demo route, both capability variants, light and dark (no serious or critical violation).
+//!
 //! **What it does not do without script:** nothing is missing.
 //!
 //! **Fallback:** none needed.

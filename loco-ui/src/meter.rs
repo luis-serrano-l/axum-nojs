@@ -8,6 +8,10 @@
 //! `::-webkit-meter-*` and `::-moz-meter-bar` pseudo-elements map those to `--lui-ok`,
 //! `--lui-warn` and `--lui-danger`.
 //!
+//! **Accessibility:** a native `<meter>` with its label. Checked by axe-core in headless
+//! Firefox on every demo route, both capability variants, light and dark (no serious or
+//! critical violation).
+//!
 //! **What it does not do without script:** update live.
 //!
 //! **Fallback:** without the pseudo-elements a browser draws its own meter, in its own colours.

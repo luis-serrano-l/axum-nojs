@@ -8,6 +8,10 @@
 //! `::-moz-progress-bar` pseudo-elements draw it in the shadcn shape. An indeterminate bar is
 //! a `<progress>` with no value.
 //!
+//! **Accessibility:** a native `<progress>` with its label. Checked by axe-core in headless
+//! Firefox on every demo route, both capability variants, light and dark (no serious or
+//! critical violation).
+//!
 //! **What it does not do without script:** move on its own; the value is what the server knew
 //! when it rendered the page (a streamed page or the enhancement script can send a newer one).
 //!

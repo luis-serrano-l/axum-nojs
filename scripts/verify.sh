@@ -43,6 +43,8 @@ fi
 
 echo "== enhancement script in headless Firefox"
 if command -v geckodriver >/dev/null && command -v node >/dev/null; then
+  # axe-core for the accessibility pass (test-only, never served).
+  [ -d scripts/node_modules/axe-core ] || npm install --prefix scripts --no-audit --no-fund
   node scripts/browser-check.mjs
 else
   echo "skipped: geckodriver or node not installed"

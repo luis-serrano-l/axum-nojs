@@ -14,6 +14,11 @@
 //!   is that stream for any server (`http` feature); the `axum` feature turns it into a
 //!   response with `IntoResponse`.
 //!
+//! **Accessibility:** the page is complete HTML in document order however the slots arrive;
+//! placeholders are ordinary text until filled. Checked by axe-core in headless Firefox on
+//! every demo route, both capability variants, light and dark (no serious or critical
+//! violation).
+//!
 //! **What it does not do without script:** fill slots out of order where declarative shadow DOM
 //! streaming is missing; the fallback keeps document order.
 //!

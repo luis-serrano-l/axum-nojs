@@ -303,7 +303,7 @@ document.addEventListener("keydown", function (e) {
   var box = e.target.closest(".lui-popover"), menu = e.target.closest(".lui-popover nav"), items;
   if (!menu && box) menu = box.querySelector("nav:popover-open, details[open] > nav");
   var combo = e.target.closest(".lui-combobox");
-  if (combo) items = Array.prototype.slice.call(combo.querySelectorAll("input[type=search], [role=option] a[href]"));
+  if (combo) items = Array.prototype.slice.call(combo.querySelectorAll("input[type=search], .lui-combobox-list a[href]"));
   else if (menu) items = Array.prototype.filter.call(menu.querySelectorAll("a[href], button:not(:disabled), summary"), function (el) {
     return el.closest("nav") === menu;
   });

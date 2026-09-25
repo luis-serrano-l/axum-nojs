@@ -265,12 +265,12 @@ async fn combobox_chips_results_and_create_row() {
         "grouped suggestions"
     );
     assert_eq!(
-        page.count("[role=listbox] [role=option]"),
+        page.count(".lui-combobox-list > li"),
         2,
         "Rust and Ruby match"
     );
     assert!(
-        page.exists("[role=option] a[href='/combobox?q=ru&sel=Zig&sel=Rust']"),
+        page.exists(".lui-combobox-list a[href='/combobox?q=ru&sel=Zig&sel=Rust']"),
         "a result adds itself after the selection"
     );
     assert!(page.exists("#q-results[aria-live=polite]"));
@@ -304,7 +304,7 @@ async fn combobox_chips_results_and_create_row() {
     assert!(none.is_visible("form.lui-combobox-create button"));
     let picked = Page::render(demo::router(), "/combobox?q=zig&sel=Zig", MODERN).await;
     assert!(
-        picked.exists("[role=option][aria-selected=true]") && !picked.exists("[role=option] a"),
+        picked.exists(".lui-combobox-chosen") && !picked.exists(".lui-combobox-chosen a"),
         "an already selected result is not a link"
     );
 }

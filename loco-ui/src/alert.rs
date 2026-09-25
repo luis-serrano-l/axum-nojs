@@ -7,6 +7,10 @@
 //! **Platform features:** a `role="alert"` box for the danger tone (read out when the page
 //! loads) and `role="status"` for the others; the icon is decorative.
 //!
+//! **Accessibility:** `role="alert"` for the danger tone, `role="status"` for the others; the
+//! icon is decorative. Checked by axe-core in headless Firefox on every demo route, both
+//! capability variants, light and dark (no serious or critical violation).
+//!
 //! **What it does not do without script:** nothing is missing.
 //!
 //! **Fallback:** none needed.

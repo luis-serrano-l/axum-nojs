@@ -10,6 +10,11 @@
 //! value can be typed into an `<input type="number">` with `min`, `max`, `step` (baseline 2015), posted
 //! with `op=set`; the browser refuses a typed value off the bounds or the step.
 //!
+//! **Accessibility:** native buttons named "increment" and "decrement" (disabled at the
+//! bounds), a labelled number field, the bounds in text. Checked by axe-core in headless
+//! Firefox on every demo route, both capability variants, light and dark (no serious or
+//! critical violation).
+//!
 //! **What it does not do without script:** change the number without a round trip; each step is
 //! a POST and a redirect.
 //!

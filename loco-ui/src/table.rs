@@ -27,6 +27,11 @@
 //! - `aria-busy` on a loading body, drawn as skeleton bars, for a table filled by a later
 //!   stream chunk.
 //!
+//! **Accessibility:** a `<table>` with `scope="col"` headers, `aria-sort` on the sorted one,
+//! labelled filter and page-size controls, visually hidden names for the select, edit and
+//! actions columns. Checked by axe-core in headless Firefox on every demo route, both
+//! capability variants, light and dark (no serious or critical violation).
+//!
 //! **What it does not do without script:** resize or reorder columns, or keep row selection
 //! across sorts.
 //!

@@ -595,6 +595,31 @@ mod tests {
         capitalised || sentence || aside
     }
 
+    /// Every component header says what it offers assistive tech and that axe checked it.
+    #[test]
+    fn every_component_header_has_an_accessibility_line() {
+        let mut missing = Vec::new();
+        for path in library_sources() {
+            if path.ends_with("loco.rs") {
+                continue; // Loco glue, not a component
+            }
+            let source = std::fs::read_to_string(&path).unwrap();
+            let header: String = source
+                .lines()
+                .take_while(|l| l.starts_with("//!"))
+                .collect();
+            if header.contains("**What it does not do without script:**")
+                && !header.contains("**Accessibility:**")
+            {
+                missing.push(path.file_name().unwrap().to_string_lossy().to_string());
+            }
+        }
+        assert!(
+            missing.is_empty(),
+            "no **Accessibility:** line: {missing:?}"
+        );
+    }
+
     /// The library's own files, `src/*.rs` (not `src/bin/`, the installer).
     fn library_sources() -> Vec<std::path::PathBuf> {
         let dir = concat!(env!("CARGO_MANIFEST_DIR"), "/src");

@@ -9,6 +9,11 @@
 //! places it under the button; inside, the [`crate::calendar`] in radio mode. `.native()` is
 //! `<input type="date">` with `min`/`max` (Chrome 20, Firefox 57, Safari 14.1).
 //!
+//! **Accessibility:** a button naming the picked date that opens the calendar popover, the days
+//! a radio group labelled by the field's legend; Escape closes the popover. Checked by axe-core
+//! in headless Firefox on every demo route, both capability variants, light and dark (no
+//! serious or critical violation).
+//!
 //! **What it does not do without script:** write the picked day onto the button before the form
 //! is sent (the button shows the saved value; the picked day is filled in the calendar), or
 //! change month without a page load. A month link comes back with the calendar laid out in the

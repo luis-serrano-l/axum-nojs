@@ -10,6 +10,11 @@
 //! screen; `view-transition-name` per card (Chrome 111, Firefox 144, Safari 18) so, with the
 //! enhancement script, a moved card slides to its new column.
 //!
+//! **Accessibility:** each column is a `<section>` labelled by its heading; every card moves
+//! with named buttons ("Move … to …") instead of drag and drop. Checked by axe-core in headless
+//! Firefox on every demo route, both capability variants, light and dark (no serious or
+//! critical violation).
+//!
 //! **What it does not do without script:** drag and drop, or reorder cards within a column
 //! (the server decides the order: a moved card goes last in its new column).
 //!

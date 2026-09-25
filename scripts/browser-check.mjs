@@ -1,8 +1,13 @@
 #!/usr/bin/env node
-// Drives headless Firefox through geckodriver (plain WebDriver over HTTP, no packages) to
-// prove the enhancement script does its job: actions happen in place, with no navigation.
-// Usage: node scripts/browser-check.mjs   (needs target/debug/demo built, geckodriver, firefox)
+// Drives headless Firefox through geckodriver (plain WebDriver over HTTP) to prove the
+// enhancement script does its job: actions happen in place, with no navigation. Then runs
+// axe-core over every PATHS route, both capability variants, light and dark; any violation of
+// serious or critical impact fails. axe is injected by this driver into the page under test,
+// never served by the demo, so the one-script rule holds.
+// Usage: npm install --prefix scripts; node scripts/browser-check.mjs
+//        (needs target/debug/demo built, geckodriver, firefox)
 import { spawn } from "node:child_process";
+import { readFileSync } from "node:fs";
 import { setTimeout as sleep } from "node:timers/promises";
 
 // Own ports, so a demo you are looking at on 3000 is left alone.
@@ -99,7 +104,7 @@ try {
   // Combobox: results as you type, focus kept.
   await go("/combobox");
   await type("input[type=search]", "ru");
-  await until(async () => (await js("return [...document.querySelectorAll('#langs [role=option]')].map(l => l.textContent).join()")) === "Rust,Ruby", "search results");
+  await until(async () => (await js("return [...document.querySelectorAll('#langs .lui-combobox-list li')].map(l => l.textContent).join()")) === "Rust,Ruby", "search results");
   assert(await js("return document.activeElement.name") === "q", "combobox: focus stays in the input");
   await js("document.activeElement.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }))");
   assert(await js("return document.activeElement.textContent") === "Rust", "combobox: ArrowDown moves from the input to the first result");
@@ -363,6 +368,54 @@ try {
   assert(await js("return document.documentElement.dataset.theme") === "dark", "index: the cached copy follows the theme cookie");
   await click(".lui-theme button[value=auto]");
   await until(async () => (await js("return document.documentElement.dataset.theme")) === "auto", "theme back");
+
+  // Accessibility: axe-core on every route, as each visitor variant sees it.
+  // Runs in the page: load axe, check, answer the violations. Two patterns are let through
+  // (FINDINGS, M29): a link filling a <summary>, the no-script tab and accordion design; and
+  // the <button><selectedcontent> of a customisable select, which Firefox cannot fill and only
+  // gets here because the check forces the capability cookie.
+  function audit(source, done) {
+    (0, eval)(source);
+    axe.run(document, { resultTypes: ["violations"] }).then((r) => done(r.violations.map((v) => {
+      const nodes = v.nodes.filter((n) => !(v.id === "nested-interactive" && /^<summary/.test(n.html))
+        && !(v.id === "button-name" && /<selectedcontent/.test(n.html)));
+      return nodes.length ? { id: v.id, impact: v.impact, help: v.help, nodes: nodes.slice(0, 3).map((n) => n.target.join(" ")) } : null;
+    }).filter(Boolean)), (e) => done([{ id: "axe-error", impact: "critical", help: String(e), nodes: [] }]));
+  }
+  const axe = readFileSync(new URL("./node_modules/axe-core/axe.min.js", import.meta.url), "utf8");
+  const lib = readFileSync(new URL("../demo/src/lib.rs", import.meta.url), "utf8");
+  const paths = [...lib.slice(lib.indexOf("pub const PATHS")).split("];")[0].matchAll(/"([^"]+)"/g)].map((m) => m[1]);
+  const caps = {
+    modern: "lui-cap-probed=1; lui-cap-invokers=1; lui-cap-anchor=1; lui-cap-details_content=1; lui-cap-view_transitions=1; lui-cap-popover=1; lui-cap-light_dark=1; lui-cap-streaming_dsd=1; lui-cap-base_select=1",
+    old: "lui-cap-probed=1",
+  };
+  const setCookies = async (pairs) => {
+    await wd("DELETE", S + "/cookie");
+    for (const pair of pairs.split("; ")) {
+      const [name, value] = pair.split("=");
+      await wd("POST", S + "/cookie", { cookie: { name, value, path: "/" } });
+    }
+  };
+  let serious = [], minor = 0;
+  for (const [variant, cookie] of Object.entries(caps)) {
+    for (const theme of ["light", "dark"]) {
+      await go("/caps");
+      await setCookies(`${cookie}; theme=${theme}`);
+      for (const path of paths) {
+        await go(path);
+        const found = await wd("POST", S + "/execute/async", {
+          args: [axe],
+          script: "(" + audit + ")(arguments[0], arguments[arguments.length - 1]);",
+        });
+        for (const v of found) {
+          if (v.impact === "serious" || v.impact === "critical") serious.push(`${path} [${variant}, ${theme}] ${v.impact} ${v.id}: ${v.help} at ${v.nodes.join(", ")}`);
+          else minor++;
+        }
+      }
+    }
+  }
+  if (serious.length) console.error(serious.join("\n"));
+  assert(serious.length === 0, `axe: no serious or critical violations on ${paths.length} routes x 2 caps x 2 themes (${minor} minor or moderate)`);
 } catch (e) {
   console.error("FAIL: " + e.message);
   await wd("DELETE", S).catch(() => {});

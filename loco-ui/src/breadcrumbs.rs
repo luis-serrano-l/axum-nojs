@@ -7,6 +7,11 @@
 //! item marked `aria-current="page"`; separators drawn by CSS `::before` so screen readers do
 //! not read them; the folded middle is a `<details>` element.
 //!
+//! **Accessibility:** a `<nav>` named "Breadcrumb" with an ordered list; the current page has
+//! `aria-current="page"`; folded steps sit in a named `<details>`. Checked by axe-core in
+//! headless Firefox on every demo route, both capability variants, light and dark (no serious
+//! or critical violation).
+//!
 //! **What it does not do without script:** collapse to fit the width as it changes; the fold is
 //! decided by item count on the server.
 //!

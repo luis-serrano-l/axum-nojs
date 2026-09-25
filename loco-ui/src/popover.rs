@@ -12,6 +12,11 @@
 //!   (Chrome 125, Firefox 147, Safari 26) to place the menu under its button, at its end, or
 //!   to its right (`.align_end()`, `.open_right()`).
 //!
+//! **Accessibility:** a `popover` menu: `aria-haspopup="menu"` on the trigger, `role="menu"`
+//! and `menuitem` on the items, Escape and a click outside close it; the script adds arrow
+//! keys. Checked by axe-core in headless Firefox on every demo route, both capability variants,
+//! light and dark (no serious or critical violation).
+//!
 //! **What it does not do without script:** position itself against the opener where anchor
 //! positioning is missing; it is centred instead.
 //!

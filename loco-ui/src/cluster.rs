@@ -6,6 +6,10 @@
 //! **Platform features:** `flex-wrap` with `gap` (Chrome 84, Firefox 63, Safari 14.1), so a
 //! wrapped line keeps the same spacing and no child carries a margin.
 //!
+//! **Accessibility:** layout only: no roles, reading order is source order. Checked by axe-core
+//! in headless Firefox on every demo route, both capability variants, light and dark (no
+//! serious or critical violation).
+//!
 //! **What it does not do without script:** nothing is missing.
 //!
 //! **Fallback:** none needed.

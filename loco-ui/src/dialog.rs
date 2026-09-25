@@ -14,6 +14,11 @@
 //! - Focus: the close control sits last in the markup, so the dialog's own focusing steps land
 //!   on the first field in the body, then on the confirm button.
 //!
+//! **Accessibility:** a native `<dialog>` opened modally: focus moves in, Escape closes, the
+//! page behind is inert; named by its title through `aria-labelledby`. Checked by axe-core in
+//! headless Firefox on every demo route, both capability variants, light and dark (no serious
+//! or critical violation).
+//!
 //! **What it does not do without script:** return focus to the opener in the `:target`
 //! fallback, trap focus there, or post a form and close without reloading.
 //!
