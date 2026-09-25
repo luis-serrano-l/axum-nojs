@@ -79,6 +79,42 @@
 //! # assert_eq!(FieldErrors::from(&e).get("title"), Some("Give the note a title."));
 //! ```
 //!
+//! Views are Rust, not Tera: a `views` module of functions taking `&Ui` and the data and
+//! returning `Markup`, which a controller wraps in `ui.page(..)`. Tera views keep working
+//! beside them. `docs/loco.md` says why there is no Tera function bridge.
+//!
+//! ```rust
+//! use axum_nojs::prelude::*;
+//! use loco_rs::prelude::*;
+//! # pub struct Note { pub id: i32, pub title: String }
+//!
+//! mod views {
+//!     pub mod notes {
+//!         use axum_nojs::{prelude::*, table::Row};
+//!         use crate::Note; // `crate::models::_entities::notes::Model` in a Loco app
+//!
+//!         pub fn list(ui: &Ui, rows: &[Note], total: usize) -> Markup {
+//!             let table = ui.table("notes", "/notes").column("title", "Title").sortable();
+//!             let rows = rows.iter().map(|n| Row::new([html! { a href={ "/notes/" (n.id) } { (n.title) } }]));
+//!             html! {
+//!                 (ui.flash())
+//!                 (table.rows(rows).paged(total))
+//!                 (ui.link_button("New note", "/notes/new"))
+//!             }
+//!         }
+//!     }
+//! }
+//!
+//! async fn list(ui: Ui) -> Result<Page> {
+//!     let rows = vec![Note { id: 1, title: "First".into() }]; // the paging query below
+//!     Ok(ui.page("Notes", views::notes::list(&ui, &rows, 1)))
+//! }
+//! # fn main() {
+//! # let html = views::notes::list(&Ui::default(), &[Note { id: 1, title: "First".into() }], 1).into_string();
+//! # assert!(html.contains(r#"<a href="/notes/1">First</a>"#), "{html}");
+//! # }
+//! ```
+//!
 //! Paging with SeaORM (Loco's ORM): the table reads `?page=`, the page size (`per.<id>`), the
 //! sort and the filter from the request, and SeaORM's paginator asks the database for that
 //! page and the count, never every row. `.paged(total)` then draws the pager:

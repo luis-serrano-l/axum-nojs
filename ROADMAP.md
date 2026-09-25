@@ -784,9 +784,14 @@ loco-rs source (fetch it into `~/.cargo/registry` with a scratch crate) before r
   `testing`), then POST → 303 + flash cookie → GET shows the flash and clears it; the script is
   served too. Documented: `secure_headers` `github` blocks the script on plain http; `owasp`'s
   `Clear-Site-Data: "cookies"` wipes every cookie per response.
-- [ ] Views: document Maud views beside Loco's Tera default (a `views/` module of functions
+- [x] Views: document Maud views beside Loco's Tera default (a `views/` module of functions
   returning `Markup`), and decide whether a Tera function bridge (`{{ nojs_button(..) }}`) is
   worth it; default answer: no, Maud only, stated in the docs.
+  Done: `docs/loco.md` (started here; the last box finishes it) has "Views: Maud, not Tera":
+  a `src/views/notes.rs` of `fn(&Ui, data) -> Markup`, the controller calling it, Tera and
+  Maud side by side per controller. Decision: no Tera bridge (a Tera function gets JSON, not
+  `ui`'s caps and state; typed builder chains would become unchecked keyword arguments; output
+  would need `| safe`). The `loco` module doc has the same views module as a doctest.
 - [ ] Generator: a scaffold override (`cargo loco generate override` templates, or our own
   template set) that emits Maud views built from `ui.*` for list/show/new/edit, PRG included.
 - [ ] `examples/loco-app`: a minimal Loco app (one model, CRUD, sign-in) with script off;

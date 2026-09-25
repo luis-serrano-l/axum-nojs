@@ -111,7 +111,7 @@ thin wrapper over plain functions on strings, so any server can do the same in a
 
 On [Loco](https://loco.rs), `--features loco` adds `axum_nojs::loco::Initializer`: one line
 in `App::initializers` mounts the script and the beacon route, and controllers take `ui: Ui`
-like any Axum handler.
+like any Axum handler. See [`docs/loco.md`](docs/loco.md).
 
 `axum-nojs/examples/hyper_server.rs` is the whole of it on raw hyper: three components, the
 beacon route, a POST answered with PRG, the script served by hand. `.into_string()` on any
