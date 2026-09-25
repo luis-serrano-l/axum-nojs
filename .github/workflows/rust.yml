@@ -43,6 +43,7 @@ jobs:
         cargo test --workspace
         cargo test -p loco-ui --features loco loco
         cargo test -p loco-ui --features loco --doc loco
+        cargo test -p loco-ui --test install -- --include-ignored
     - name: Rustdoc
       run: cargo doc --no-deps -p loco-ui-caps -p loco-ui-macros -p loco-ui --all-features
       env:

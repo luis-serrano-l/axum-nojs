@@ -114,8 +114,10 @@ search as you type, in-place table sort, wizard steps, live range output, theme)
 
 ## Use with Loco
 
-On [Loco](https://loco.rs), turn on the `loco` feature and add one line to `App::initializers`;
-controllers then take `ui: Ui` like any Axum handler and return `Result<Page>` or
+On [Loco](https://loco.rs), `cargo lui install` (from `cargo install --git
+https://github.com/luis-serrano-l/loco-ui loco-ui --bin cargo-lui`) sets an app up in one
+command: the dependency with the `loco` feature, the scaffold templates, a layout view and
+this line in `App::initializers`; controllers then take `ui: Ui` like any Axum handler and return `Result<Page>` or
 `Result<Redirect>`:
 
 ```rust

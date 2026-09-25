@@ -25,6 +25,8 @@ cargo test --workspace
 # `examples/loco-app` turns `loco` on for the workspace run; these check the crate on its own.
 cargo test -p loco-ui --features loco loco
 cargo test -p loco-ui --features loco --doc loco
+# `cargo lui install` on a fresh `loco new` copy, then `cargo check` of the result.
+cargo test -p loco-ui --test install -- --include-ignored
 
 echo "== rustdoc (deny warnings, all features)"
 RUSTDOCFLAGS="-D warnings" cargo doc --no-deps -p loco-ui-caps -p loco-ui-macros -p loco-ui --all-features

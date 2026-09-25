@@ -984,10 +984,21 @@ every Loco API named below against loco-rs 1.2 before relying on it, as M27 did.
 ### Loco adoption
 - [ ] Publish: the M13 box. Everything below matters less while install is a git dependency.
   Owner only.
-- [ ] One-command install: a subcommand (`cargo run -p loco-ui --features loco -- install`,
+- [x] One-command install: a subcommand (`cargo run -p loco-ui --features loco -- install`,
   or a small `cargo-lui` binary) that writes `.loco-templates/`, adds the initializer line
   to `app.rs`, a `views/layout.rs` and the `views/mod.rs` entries; idempotent, and a test
   runs it on a fresh `loco new` copy and then `cargo check`s the result.
+  Done: `cargo-lui`, a standard-library-only binary in `loco-ui` (`src/bin/cargo-lui.rs`;
+  `cargo install --git .. loco-ui --bin cargo-lui`, then `cargo lui install [APP_DIR]`, or
+  `cargo run -p loco-ui -- install APP_DIR` from a checkout). It writes the two scaffold
+  templates (embedded with `include_str!`), `src/views/layout.rs` (`page(ui, title, body)`,
+  a header then the view) plus `pub mod layout;`, puts the initializer first in
+  `fn initializers`' `vec![..]`, and adds `loco-ui` (git, or `--dep-path`) and `maud` under
+  `[dependencies]`. A second run prints `unchanged` for all six; an edited file is `kept`
+  unless `--force`. `tests/install.rs` runs it on `tests/fresh-loco-app` (`loco new` 1.2.0,
+  sqlite, blocking, no assets; trimmed to `Cargo.toml`, `Cargo.lock`, `src/`, `migration/`,
+  excluded from the package), and an `--ignored` test `cargo check`s the result (about a
+  minute cold), run by verify.sh and CI.
 - [ ] Auth generator (Phoenix's `phx.gen.auth` as the model): templates for sign-in, sign-up,
   forgot and reset password, email verification and magic link, as no-script forms with
   the JWT in an `HttpOnly` cookie (the `examples/loco-app` pattern); `examples/loco-app` is

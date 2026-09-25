@@ -414,10 +414,8 @@ mod tests {
     /// holds.
     #[test]
     fn every_builder_is_clone_and_debug() {
-        let dir = concat!(env!("CARGO_MANIFEST_DIR"), "/src");
         let mut missing = Vec::new();
-        for entry in std::fs::read_dir(dir).unwrap() {
-            let path = entry.unwrap().path();
+        for path in library_sources() {
             let source = std::fs::read_to_string(&path).unwrap();
             let mut attrs = String::new();
             for line in source.lines().map(str::trim) {
@@ -452,6 +450,15 @@ mod tests {
     /// A builder with a `**Setters.**` paragraph, read from the source: its name, doc, the
     /// file's source and every setter (`pub fn` taking `self` and returning `Self`) of its
     /// `impl` blocks as (name, arguments after `self`).
+    /// The library's own files, `src/*.rs` (not `src/bin/`, the installer).
+    fn library_sources() -> Vec<std::path::PathBuf> {
+        let dir = concat!(env!("CARGO_MANIFEST_DIR"), "/src");
+        let entries = std::fs::read_dir(dir).unwrap().map(|e| e.unwrap().path());
+        entries
+            .filter(|p| p.extension().is_some_and(|x| x == "rs"))
+            .collect()
+    }
+
     struct Builder {
         name: String,
         doc: String,
@@ -460,10 +467,9 @@ mod tests {
     }
 
     fn builders() -> Vec<Builder> {
-        let dir = concat!(env!("CARGO_MANIFEST_DIR"), "/src");
         let mut found = Vec::new();
-        for entry in std::fs::read_dir(dir).unwrap() {
-            let source = std::fs::read_to_string(entry.unwrap().path()).unwrap();
+        for path in library_sources() {
+            let source = std::fs::read_to_string(path).unwrap();
             let lines: Vec<&str> = source.lines().collect();
             for (i, line) in lines.iter().enumerate() {
                 let Some(rest) = line.strip_prefix("pub struct ") else {
@@ -570,9 +576,8 @@ mod tests {
                 missing.push(b.name);
             }
         }
-        let dir = concat!(env!("CARGO_MANIFEST_DIR"), "/src");
-        for entry in std::fs::read_dir(dir).unwrap() {
-            let source = std::fs::read_to_string(entry.unwrap().path()).unwrap();
+        for path in library_sources() {
+            let source = std::fs::read_to_string(path).unwrap();
             for block in source.split("\nimpl Ui {\n").skip(1) {
                 let block = &block[..block.find("\n}\n").unwrap_or(block.len())];
                 for sig in block.split("pub fn ").skip(1) {

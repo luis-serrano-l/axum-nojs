@@ -9,6 +9,19 @@ notes model, every page working with script off, tested through Loco's own route
 
 ## Install
 
+One command sets a Loco app up: it adds the two dependencies below, the initializer line,
+the scaffold templates and a `src/views/layout.rs` (a page with a header, registered in
+`src/views/mod.rs`). Running it again changes nothing, and a file you edited is kept
+(`--force` overwrites the templates and the layout).
+
+```sh
+cargo install --git https://github.com/luis-serrano-l/loco-ui loco-ui --bin cargo-lui
+cargo lui install            # in the app's directory, or `cargo lui install path/to/app`
+```
+
+`loco-ui/tests/install.rs` runs it on a fresh `loco new` app and `cargo check`s the result.
+By hand, the same steps are the rest of this page:
+
 ```toml
 # Cargo.toml of the Loco app (the crate is not on crates.io yet: use git or a path)
 loco-ui = { git = "https://github.com/luis-serrano-l/loco-ui", features = ["loco"] }
@@ -134,7 +147,7 @@ page from anywhere a visitor may arrive signed out.
 writes an HTML controller and Maud views instead of a JSON API and DTOs:
 
 ```sh
-cp -r path/to/loco-ui/loco-ui/loco-templates .loco-templates
+cargo lui install   # or: cp -r path/to/loco-ui/loco-ui/loco-templates .loco-templates
 cargo loco generate scaffold note title:string! body:text done:bool! due:date
 cargo fmt
 ```

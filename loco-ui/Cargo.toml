@@ -8,6 +8,8 @@ license = "MIT"
 repository = "https://github.com/luis-serrano-l/loco-ui"
 keywords = ["maud", "ssr", "components", "axum"]
 categories = ["web-programming", "template-engine", "gui"]
+# The `loco new` copy `tests/install.rs` runs the installer on.
+exclude = ["tests/fresh-loco-app"]
 
 [features]
 default = []
