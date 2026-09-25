@@ -33,6 +33,15 @@ scripts/look.sh                    # Firefox shots of every page (light/dark, 12
 scripts/verify.sh                  # everything above plus a <script> grep and the browser check; run before committing
 ```
 
+Never format Rust by hand: write the code in any layout, then run `cargo fmt --all` (verify.sh
+fails on `cargo fmt --all --check`). Do not spend edits or tokens on line breaks, wrapping or
+indentation that rustfmt decides.
+
+Delete screenshots once you have looked at them: `target/look/`, `target/shots/`,
+`target/readme-shot/` and any shots in the scratchpad (`rm -rf` them after the check). The
+PNGs under `tests/shots/` and `docs/` are tracked: never delete those, and commit a changed one
+only when the change is intended (otherwise `git checkout -- tests/shots`).
+
 ## Workspace layout
 
 - `loco-ui-caps/` – the detection crate: `Caps`/`Cap` bitset, `@supports` beacons, cookie and
