@@ -70,7 +70,7 @@ impl ToggleGroup<'_> {
             .attr("checked")
             .doc("Press this option (again for more with `.multi()`); the query's own values by default."),
         Prop::new("multi", PropKind::Switch, "")
-            .attr("type=\"checkbox\"")
+            .attr("type")
             .doc("Several options may be pressed (checkboxes, not radios)."),
     ];
 }

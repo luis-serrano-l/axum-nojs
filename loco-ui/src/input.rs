@@ -173,8 +173,12 @@ impl Input<'_> {
     /// Every setter with its kind, arguments, default and the HTML attribute it sets; listed by
     /// [`crate::props()`] and kept in step with the setters by a test.
     pub const PROPS: &'static [Prop] = &[
-        Prop::new("email", PropKind::Switch, "").doc("`type=\"email\"`."),
-        Prop::new("password", PropKind::Switch, "").doc("`type=\"password\"`."),
+        Prop::new("email", PropKind::Switch, "")
+            .attr("type")
+            .doc("`type=\"email\"`."),
+        Prop::new("password", PropKind::Switch, "")
+            .attr("type")
+            .doc("`type=\"password\"`."),
         Prop::new("number", PropKind::Value, "min: i64, max: i64")
             .doc("A whole number from `min` to `max`, inclusive."),
         Prop::new(
@@ -213,7 +217,9 @@ impl Input<'_> {
         Prop::new("placeholder", PropKind::Value, "placeholder: &'a str")
             .attr("placeholder")
             .doc("Placeholder text."),
-        Prop::new("search", PropKind::Switch, "").doc("`type=\"search\"`."),
+        Prop::new("search", PropKind::Switch, "")
+            .attr("type")
+            .doc("`type=\"search\"`."),
         Prop::new("hide_label", PropKind::Switch, "")
             .doc("Only the control, the label kept as its `aria-label`."),
         Prop::new("list", PropKind::Value, "id: &'a str")

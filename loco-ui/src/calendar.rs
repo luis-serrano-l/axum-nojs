@@ -200,7 +200,7 @@ impl Calendar<'_> {
             .doc("The first day that can be picked (`YYYY-MM-DD`)."),
         Prop::new("max", PropKind::Value, "date: &str")
             .doc("The last day that can be picked (`YYYY-MM-DD`)."),
-        Prop::new("disabled", PropKind::Value, "off: fn(Date) -> bool").attr("disabled")
+        Prop::new("disabled", PropKind::Value, "off: fn(Date) -> bool")
             .doc("Days for which `off` returns true cannot be picked."),
         Prop::new("event", PropKind::Item, "date: &str, text: &'a str")
             .doc("A dot under the day `date` (`YYYY-MM-DD`), with `text` for screen readers and as the day's tooltip."),

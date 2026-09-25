@@ -80,7 +80,6 @@ impl Range<'_> {
             .attr("step")
             .doc("Distance between allowed values (at least 1)."),
         Prop::new("label", PropKind::Value, "label: &'a str")
-            .attr("label")
             .doc("A `<label>` above the slider, in a `div.lui-field` like a form field."),
     ];
 }

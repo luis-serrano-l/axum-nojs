@@ -55,7 +55,7 @@ impl Breadcrumbs<'_> {
     pub const PROPS: &'static [Prop] = &[
         Prop::new("link", PropKind::Item, "label: &'a str, href: &'a str")
             .doc("One step from the root towards this page."),
-        Prop::new("here", PropKind::Value, "label: &'a str")
+        Prop::new("here", PropKind::Item, "label: &'a str")
             .doc("The current page, last in the trail and not a link."),
     ];
 }

@@ -59,14 +59,14 @@
             { "name": "ghost", "kind": "switch", "args": "", "default": "off", "attr": "", "doc": "No border or fill until hovered." },
             { "name": "small", "kind": "switch", "args": "", "default": "off", "attr": "", "doc": "2rem tall instead of 2.25rem." },
             { "name": "icon", "kind": "switch", "args": "", "default": "off", "attr": "", "doc": "Square, for a glyph or an icon." },
-            { "name": "submit", "kind": "switch", "args": "", "default": "off", "attr": "", "doc": "`type=\"submit\"`, the default unless a command or popover target is set." },
-            { "name": "reset", "kind": "switch", "args": "", "default": "off", "attr": "", "doc": "`type=\"reset\"`." },
+            { "name": "submit", "kind": "switch", "args": "", "default": "off", "attr": "type", "doc": "`type=\"submit\"`, the default unless a command or popover target is set." },
+            { "name": "reset", "kind": "switch", "args": "", "default": "off", "attr": "type", "doc": "`type=\"reset\"`." },
             { "name": "command", "kind": "value", "args": "command: &'a str, target: &'a str", "default": "", "attr": "command", "doc": "An invoker command (`command`, `commandfor`)." },
             { "name": "popovertarget", "kind": "value", "args": "id: &'a str", "default": "", "attr": "popovertarget", "doc": "Toggle the popover with this id (`popovertarget`)." },
             { "name": "form", "kind": "value", "args": "id: &'a str", "default": "", "attr": "form", "doc": "Submit the form with this id, wherever the button sits in the page (`form=`)." },
             { "name": "name", "kind": "value", "args": "name: &'a str", "default": "", "attr": "name", "doc": "Sent as `name=value` with the form when this button submits it." },
             { "name": "value", "kind": "value", "args": "value: &'a str", "default": "", "attr": "value", "doc": "The submitted `value` that goes with `name`." },
-            { "name": "label", "kind": "value", "args": "label: &'a str", "default": "", "attr": "", "doc": "`aria-label`." },
+            { "name": "label", "kind": "value", "args": "label: &'a str", "default": "", "attr": "aria-label", "doc": "`aria-label`." },
             { "name": "class", "kind": "value", "args": "class: &'a str", "default": "", "attr": "class", "doc": "One more class after the button's own, for a component's part name." },
             { "name": "disabled", "kind": "switch", "args": "", "default": "off", "attr": "disabled", "doc": "Greyed out and not clickable." },
             { "name": "loading", "kind": "condition", "args": "on: bool", "default": "off", "attr": "", "doc": "A spinner before the text, `disabled` and `aria-busy`, while `on`." },
@@ -76,14 +76,14 @@
             { "name": "title", "kind": "value", "args": "title: &'a str", "default": "", "attr": "title", "doc": "`title`." },
             { "name": "style", "kind": "value", "args": "style: impl Into<String>", "default": "", "attr": "style", "doc": "Inline `style`, for a per-element custom property or anchor name." },
             { "name": "aria_haspopup", "kind": "value", "args": "kind: &'a str", "default": "", "attr": "aria-haspopup", "doc": "`aria-haspopup` (`\"menu\"`, `\"dialog\"`)." },
-            { "name": "pressed", "kind": "condition", "args": "on: bool", "default": "off", "attr": "", "doc": "`aria-pressed`, for a toggle button." },
+            { "name": "pressed", "kind": "condition", "args": "on: bool", "default": "off", "attr": "aria-pressed", "doc": "`aria-pressed`, for a toggle button." },
             { "name": "accesskey", "kind": "value", "args": "key: &'a str", "default": "", "attr": "accesskey", "doc": "`accesskey`." },
             { "name": "aria_keyshortcuts", "kind": "value", "args": "keys: &'a str", "default": "", "attr": "aria-keyshortcuts", "doc": "`aria-keyshortcuts`, the shortcut spelled out for assistive technology." },
             { "name": "formmethod", "kind": "value", "args": "method: &'a str", "default": "", "attr": "formmethod", "doc": "`formmethod`." },
             { "name": "formaction", "kind": "value", "args": "action: &'a str", "default": "", "attr": "formaction", "doc": "`formaction`." },
             { "name": "formnovalidate", "kind": "switch", "args": "", "default": "off", "attr": "formnovalidate", "doc": "`formnovalidate`." },
             { "name": "rel", "kind": "value", "args": "rel: &'a str", "default": "", "attr": "rel", "doc": "`rel` of a link (`\"prev\"`, `\"next\"`)." },
-            { "name": "current", "kind": "condition", "args": "on: bool", "default": "off", "attr": "", "doc": "`aria-current=\"page\"`." },
+            { "name": "current", "kind": "condition", "args": "on: bool", "default": "off", "attr": "aria-current", "doc": "`aria-current=\"page\"`." },
             { "name": "shimmer", "kind": "switch", "args": "", "default": "off", "attr": "", "doc": "A light sweeps across the button, over its own background." }
           ]
         }
@@ -111,8 +111,8 @@
           "status": "stable",
           "calls": ["ui.input(name: &str, label: &str)", "ui.checkbox(name: &str, label: &str)", "ui.switch(name: &str, label: &str)"],
           "props": [
-            { "name": "email", "kind": "switch", "args": "", "default": "off", "attr": "", "doc": "`type=\"email\"`." },
-            { "name": "password", "kind": "switch", "args": "", "default": "off", "attr": "", "doc": "`type=\"password\"`." },
+            { "name": "email", "kind": "switch", "args": "", "default": "off", "attr": "type", "doc": "`type=\"email\"`." },
+            { "name": "password", "kind": "switch", "args": "", "default": "off", "attr": "type", "doc": "`type=\"password\"`." },
             { "name": "number", "kind": "value", "args": "min: i64, max: i64", "default": "", "attr": "", "doc": "A whole number from `min` to `max`, inclusive." },
             { "name": "pattern", "kind": "value", "args": "pattern: &'a str, hint: &'a str", "default": "", "attr": "pattern", "doc": "Text that must match `pattern`." },
             { "name": "textarea", "kind": "number", "args": "rows: u8", "default": "", "attr": "", "doc": "Multi-line text, `rows` high." },
@@ -128,7 +128,7 @@
             { "name": "checked", "kind": "condition", "args": "checked: bool", "default": "off", "attr": "checked", "doc": "Tick the checkbox or switch." },
             { "name": "error", "kind": "value", "args": "message: &'a str", "default": "", "attr": "", "doc": "A server message under the field." },
             { "name": "placeholder", "kind": "value", "args": "placeholder: &'a str", "default": "", "attr": "placeholder", "doc": "Placeholder text." },
-            { "name": "search", "kind": "switch", "args": "", "default": "off", "attr": "", "doc": "`type=\"search\"`." },
+            { "name": "search", "kind": "switch", "args": "", "default": "off", "attr": "type", "doc": "`type=\"search\"`." },
             { "name": "hide_label", "kind": "switch", "args": "", "default": "off", "attr": "", "doc": "Only the control, the label kept as its `aria-label`." },
             { "name": "list", "kind": "value", "args": "id: &'a str", "default": "", "attr": "list", "doc": "`list`." },
             { "name": "autocomplete", "kind": "value", "args": "value: &'a str", "default": "", "attr": "autocomplete", "doc": "`autocomplete` (`\"off\"`, `\"email\"`, `\"new-password\"`)." },
@@ -373,7 +373,7 @@
             { "name": "today", "kind": "value", "args": "date: &str", "default": "", "attr": "", "doc": "The date to mark as today (`YYYY-MM-DD`), instead of the server's clock in UTC." },
             { "name": "min", "kind": "value", "args": "date: &str", "default": "", "attr": "", "doc": "The first day that can be picked (`YYYY-MM-DD`)." },
             { "name": "max", "kind": "value", "args": "date: &str", "default": "", "attr": "", "doc": "The last day that can be picked (`YYYY-MM-DD`)." },
-            { "name": "disabled", "kind": "value", "args": "off: fn(Date) -> bool", "default": "", "attr": "disabled", "doc": "Days for which `off` returns true cannot be picked." },
+            { "name": "disabled", "kind": "value", "args": "off: fn(Date) -> bool", "default": "", "attr": "", "doc": "Days for which `off` returns true cannot be picked." },
             { "name": "event", "kind": "item", "args": "date: &str, text: &'a str", "default": "", "attr": "", "doc": "A dot under the day `date` (`YYYY-MM-DD`), with `text` for screen readers and as the day's tooltip." },
             { "name": "sunday_first", "kind": "switch", "args": "", "default": "off", "attr": "", "doc": "Weeks start on Sunday instead of Monday." },
             { "name": "radio", "kind": "switch", "args": "", "default": "off", "attr": "", "doc": "Each day is a radio button named after the calendar, to post inside a form, instead of a link." },
@@ -405,7 +405,7 @@
             { "name": "min", "kind": "value", "args": "date: &'a str", "default": "", "attr": "min", "doc": "The first day that can be picked, `YYYY-MM-DD`." },
             { "name": "max", "kind": "value", "args": "date: &'a str", "default": "", "attr": "max", "doc": "The last day that can be picked, `YYYY-MM-DD`." },
             { "name": "disabled", "kind": "value", "args": "off: fn(Date) -> bool", "default": "", "attr": "", "doc": "Days for which `off` returns true cannot be picked (the native control ignores this)." },
-            { "name": "required", "kind": "switch", "args": "", "default": "off", "attr": "", "doc": "A day must be picked before the form submits." },
+            { "name": "required", "kind": "switch", "args": "", "default": "off", "attr": "required", "doc": "A day must be picked before the form submits." },
             { "name": "native", "kind": "switch", "args": "", "default": "off", "attr": "", "doc": "The browser's own `<input type=\"date\">` instead of the calendar." }
           ]
         }
@@ -558,7 +558,7 @@
             { "name": "results", "kind": "value", "args": "results: impl IntoIterator<Item = &'a str>", "default": "", "attr": "", "doc": "The server's own results for the query." },
             { "name": "multi", "kind": "switch", "args": "", "default": "off", "attr": "", "doc": "Results add to the selection instead of replacing it." },
             { "name": "create", "kind": "value", "args": "action: &'a str", "default": "", "attr": "", "doc": "A \"Create\" row posting to `action` when the query matches nothing." },
-            { "name": "label", "kind": "value", "args": "label: &'a str", "default": "Search", "attr": "label", "doc": "Accessible name of the input." },
+            { "name": "label", "kind": "value", "args": "label: &'a str", "default": "Search", "attr": "aria-label", "doc": "Accessible name of the input." },
             { "name": "placeholder", "kind": "value", "args": "placeholder: &'a str", "default": "Type to search…", "attr": "", "doc": "Placeholder of the input." }
           ]
         }
@@ -865,7 +865,7 @@
             { "name": "groups", "kind": "value", "args": "groups: impl IntoIterator<Item = (&'a str, G)>", "default": "", "attr": "", "doc": "Several labelled groups at once." },
             { "name": "search", "kind": "value", "args": "action: &'a str", "default": "", "attr": "", "doc": "A filter box submitting `<name>-q` to `action` with GET." },
             { "name": "search_over", "kind": "number", "args": "n: usize", "default": "15", "attr": "", "doc": "Show the filter box above this many options (default 15)." },
-            { "name": "label", "kind": "value", "args": "label: &'a str", "default": "", "attr": "label", "doc": "A `<label>` above the select, in a `div.lui-field` like a form field." }
+            { "name": "label", "kind": "value", "args": "label: &'a str", "default": "", "attr": "", "doc": "A `<label>` above the select, in a `div.lui-field` like a form field." }
           ]
         },
         {
@@ -901,7 +901,7 @@
             { "name": "min", "kind": "number", "args": "min: i64", "default": "0", "attr": "min", "doc": "Lowest value." },
             { "name": "max", "kind": "number", "args": "max: i64", "default": "100", "attr": "max", "doc": "Highest value." },
             { "name": "step", "kind": "number", "args": "step: i64", "default": "1", "attr": "step", "doc": "Distance between allowed values (at least 1)." },
-            { "name": "label", "kind": "value", "args": "label: &'a str", "default": "", "attr": "label", "doc": "A `<label>` above the slider, in a `div.lui-field` like a form field." }
+            { "name": "label", "kind": "value", "args": "label: &'a str", "default": "", "attr": "", "doc": "A `<label>` above the slider, in a `div.lui-field` like a form field." }
           ]
         }
       ]
@@ -1154,7 +1154,7 @@
           "calls": ["ui.breadcrumbs()"],
           "props": [
             { "name": "link", "kind": "item", "args": "label: &'a str, href: &'a str", "default": "", "attr": "", "doc": "One step from the root towards this page." },
-            { "name": "here", "kind": "value", "args": "label: &'a str", "default": "", "attr": "", "doc": "The current page, last in the trail and not a link." }
+            { "name": "here", "kind": "item", "args": "label: &'a str", "default": "", "attr": "", "doc": "The current page, last in the trail and not a link." }
           ]
         }
       ]
@@ -1352,7 +1352,7 @@
             { "name": "item", "kind": "item", "args": "value: &'a str, text: &'a str", "default": "", "attr": "value", "doc": "An option posting `value`, shown as `text`." },
             { "name": "icon", "kind": "modifier", "args": "icon: Icon", "default": "", "attr": "", "doc": "The option added last shows this icon, its text becoming a hidden label." },
             { "name": "value", "kind": "value", "args": "value: &'a str", "default": "", "attr": "checked", "doc": "Press this option (again for more with `.multi()`); the query's own values by default." },
-            { "name": "multi", "kind": "switch", "args": "", "default": "off", "attr": "type=\"checkbox\"", "doc": "Several options may be pressed (checkboxes, not radios)." }
+            { "name": "multi", "kind": "switch", "args": "", "default": "off", "attr": "type", "doc": "Several options may be pressed (checkboxes, not radios)." }
           ]
         }
       ]
@@ -1455,7 +1455,7 @@
             { "name": "command", "kind": "item", "args": "label: &'a str, href: &'a str", "default": "", "attr": "", "doc": "A destination." },
             { "name": "commands", "kind": "value", "args": "commands: impl IntoIterator<Item = (&'a str, &'a str)>", "default": "", "attr": "", "doc": "Several `(label, href)` destinations at once." },
             { "name": "keywords", "kind": "modifier", "args": "keywords: &'a str", "default": "", "attr": "", "doc": "Extra words that find the command added last, space-separated." },
-            { "name": "group", "kind": "value", "args": "heading: &'a str", "default": "", "attr": "", "doc": "List the commands added after this under a heading." },
+            { "name": "group", "kind": "item", "args": "heading: &'a str", "default": "", "attr": "", "doc": "List the commands added after this under a heading." },
             { "name": "label", "kind": "value", "args": "label: &'a str", "default": "Search", "attr": "", "doc": "The opener's label (default \"Search\")." },
             { "name": "key", "kind": "value", "args": "key: char", "default": "", "attr": "", "doc": "The access key (default `k`)." },
             { "name": "id", "kind": "value", "args": "id: &'a str", "default": "palette", "attr": "id", "doc": "The palette's id instead of `palette`." }

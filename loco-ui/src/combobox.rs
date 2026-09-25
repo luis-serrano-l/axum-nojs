@@ -107,7 +107,7 @@ impl Combobox<'_> {
             .doc("A \"Create\" row posting to `action` when the query matches nothing."),
         Prop::new("label", PropKind::Value, "label: &'a str")
             .default("Search")
-            .attr("label")
+            .attr("aria-label")
             .doc("Accessible name of the input."),
         Prop::new("placeholder", PropKind::Value, "placeholder: &'a str")
             .default("Type to search…")

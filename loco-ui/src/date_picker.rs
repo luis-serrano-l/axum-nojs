@@ -80,6 +80,7 @@ impl DatePicker<'_> {
             "Days for which `off` returns true cannot be picked (the native control ignores this).",
         ),
         Prop::new("required", PropKind::Switch, "")
+            .attr("required")
             .doc("A day must be picked before the form submits."),
         Prop::new("native", PropKind::Switch, "")
             .doc("The browser's own `<input type=\"date\">` instead of the calendar."),

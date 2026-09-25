@@ -654,6 +654,35 @@ mod tests {
         files
     }
 
+    /// `source` with every `#[deprecated]` function made private, so the scrapers below see
+    /// only the names a caller should use: an old name kept for one release is neither a
+    /// setter to list in `PROPS` nor a constructor.
+    fn undeprecated(source: &str) -> String {
+        let mut out = String::with_capacity(source.len());
+        let mut deprecated = false;
+        for line in source.lines() {
+            let trimmed = line.trim_start();
+            if trimmed.starts_with("#[deprecated") {
+                deprecated = true;
+            }
+            if deprecated
+                && (trimmed.starts_with("pub fn ") || trimmed.starts_with("pub const fn "))
+            {
+                out.push_str(&line.replacen("pub ", "", 1));
+                deprecated = false;
+            } else {
+                out.push_str(line);
+            }
+            out.push('\n');
+        }
+        out
+    }
+
+    /// A library file with its deprecated functions made private (see [`undeprecated`]).
+    fn read_source(path: impl AsRef<std::path::Path>) -> String {
+        undeprecated(&std::fs::read_to_string(path).unwrap())
+    }
+
     struct Builder {
         name: String,
         doc: String,
@@ -664,7 +693,7 @@ mod tests {
     fn builders() -> Vec<Builder> {
         let mut found = Vec::new();
         for path in library_sources() {
-            let source = std::fs::read_to_string(path).unwrap();
+            let source = read_source(path);
             let lines: Vec<&str> = source.lines().collect();
             for (i, line) in lines.iter().enumerate() {
                 let Some(rest) = line.strip_prefix("pub struct ") else {
@@ -772,7 +801,7 @@ mod tests {
             }
         }
         for path in library_sources() {
-            let source = std::fs::read_to_string(path).unwrap();
+            let source = read_source(path);
             for block in source.split("\nimpl Ui {\n").skip(1) {
                 let block = &block[..block.find("\n}\n").unwrap_or(block.len())];
                 for sig in block.split("pub fn ").skip(1) {
@@ -907,6 +936,536 @@ mod tests {
         assert!(
             wrong.is_empty(),
             "PROPS out of step with the setters: {wrong:#?}"
+        );
+    }
+
+    /// The arguments of a setter or constructor as `(name, type)` pairs, split at the commas
+    /// outside `<..>`, `(..)` and `[..]`, with lifetimes dropped from the types.
+    fn arguments(args: &str) -> Vec<(String, String)> {
+        let mut parts = Vec::new();
+        let (mut depth, mut start) = (0i32, 0);
+        for (i, c) in args.char_indices() {
+            match c {
+                '<' | '(' | '[' => depth += 1,
+                '>' if !args[..i].ends_with('-') => depth -= 1,
+                ')' | ']' => depth -= 1,
+                ',' if depth == 0 => {
+                    parts.push(&args[start..i]);
+                    start = i + 1;
+                }
+                _ => {}
+            }
+        }
+        parts.push(&args[start..]);
+        parts
+            .into_iter()
+            .map(str::trim)
+            .filter(|p| !p.is_empty())
+            .map(|p| {
+                let (name, ty) = p.split_once(": ").unwrap_or(("", p));
+                let ty = ty
+                    .trim()
+                    .replace("'a ", "")
+                    .replace("'_ ", "")
+                    .replace(" + 'a", "")
+                    .replace("<'a>", "")
+                    .replace("<'_>", "");
+                (name.trim().to_string(), ty)
+            })
+            .collect()
+    }
+
+    /// Names two or more builders use for setters of a different shape, each with the reason.
+    const SAME_NAME_OTHER_SHAPE: &[(&str, &str)] = &[
+        (
+            "text",
+            "Form adds a text field (name, label); Marquee adds a line of text",
+        ),
+        (
+            "email",
+            "Form's field adders take the field's name and label, then Input's arguments",
+        ),
+        (
+            "password",
+            "Form's field adders take the field's name and label",
+        ),
+        (
+            "number",
+            "Form's field adders take the field's name and label, then min and max",
+        ),
+        (
+            "pattern",
+            "Form's field adders take the field's name and label, then the pattern",
+        ),
+        (
+            "textarea",
+            "Form's field adders take the field's name and label, then the rows",
+        ),
+        (
+            "date",
+            "Form's field adders take the field's name and label, then min and max",
+        ),
+        (
+            "time",
+            "Form's field adders take the field's name and label, then min and max",
+        ),
+        (
+            "datetime",
+            "Form's field adders take the field's name and label, then min and max",
+        ),
+        (
+            "file",
+            "a file field (Input, Form) or an uploaded file with its size (Upload)",
+        ),
+        (
+            "submit",
+            "Button's switch sets `type=\"submit\"`; Form's value is its button's text",
+        ),
+        (
+            "search",
+            "Input's switch sets `type=\"search\"`; Select's value is its filter's action",
+        ),
+        (
+            "min",
+            "a date (`YYYY-MM-DD`) on the date controls, a number on the numeric ones",
+        ),
+        (
+            "max",
+            "a date (`YYYY-MM-DD`) on the date controls, a number on the numeric ones",
+        ),
+        (
+            "step",
+            "a wizard's step (title and body), or the `step` of a numeric control",
+        ),
+        (
+            "rows",
+            "Table's rows from data; Pager's closure renders the rows of a page",
+        ),
+        (
+            "values",
+            "Form and Wizard take the POST body; a table Row its cells as text",
+        ),
+        (
+            "item",
+            "an item is what its component lists: a titled section, a term, a marquee entry",
+        ),
+        (
+            "group",
+            "a heading before the items that follow, or Select's and Combobox's `<optgroup>`",
+        ),
+        (
+            "options",
+            "Select takes rich options or tuples; Combobox plain suggestions",
+        ),
+        (
+            "link",
+            "EmptyState holds one link, the list builders add one per call",
+        ),
+        // Renamed in M32 (the next commit).
+        (
+            "icon",
+            "M32: Button's switch becomes `icon_only`, the others take any icon",
+        ),
+        (
+            "disabled",
+            "M32: the calendars' predicate becomes `disabled_dates`",
+        ),
+        ("heading", "M32: Menu's heading becomes `group`"),
+        ("key", "M32: Palette's key becomes `accesskey`"),
+        ("badge", "M32: both badges take `impl Display`"),
+        ("command", "M32: Palette's command becomes `link`"),
+    ];
+
+    /// Setters that take a whole list in one call instead of an adder per item, each with the
+    /// reason.
+    const LIST_IN_ONE_CALL: &[(&str, &str)] = &[
+        (
+            "options",
+            "a select's options come from data (a slice, a query), tuples welcome",
+        ),
+        ("group", "an `<optgroup>` is given with its options"),
+        (
+            "groups",
+            "Select's groups from data, as (label, options) pairs",
+        ),
+        (
+            "select",
+            "Form's select field takes its options like `ui.select`",
+        ),
+        (
+            "results",
+            "the server's matches for the query, a slice by nature",
+        ),
+        ("presets", "a fixed palette of colours"),
+        (
+            "values",
+            "Form and Wizard: the POST body is not in `Ui`, so the route passes it in",
+        ),
+        (
+            "errors",
+            "Form and Wizard: the validation errors come from the POST handler",
+        ),
+        ("rows", "a table's rows come from a slice of records"),
+        (
+            "bulk",
+            "the buttons of one bulk-action form, as (label, value) pairs",
+        ),
+        (
+            "menu",
+            "a table row's menu, given whole (the row is itself an item of the table)",
+        ),
+        (
+            "submenu",
+            "a nested menu is given whole, as an item of its parent",
+        ),
+        (
+            "panel",
+            "a navigation panel is given whole, as an item of the bar",
+        ),
+        (
+            "commands",
+            "M32: renamed `links`, a palette's destinations from data",
+        ),
+        ("items", "M32: ContextMenu gets Menu's adders"),
+    ];
+
+    /// `x` beside `xs` on one builder: the plural feeds a slice the caller already holds.
+    const TWINS: &[(&str, &str)] = &[
+        (
+            "Form::values",
+            "the POST body beside `.value(..)` for one field",
+        ),
+        (
+            "Form::errors",
+            "the POST errors beside `.error(..)` for one field",
+        ),
+        (
+            "Select::groups",
+            "groups from data beside `.group(..)` for one",
+        ),
+        (
+            "Palette::commands",
+            "M32: renamed `links`, beside `.link(..)`",
+        ),
+    ];
+
+    /// Setters whose name is not the HTML attribute they set, each with the reason.
+    const NAMED_OTHERWISE: &[(&str, &str)] = &[
+        (
+            "Button::submit",
+            "the switch is named after the `type` it sets",
+        ),
+        (
+            "Button::reset",
+            "the switch is named after the `type` it sets",
+        ),
+        (
+            "Input::email",
+            "the switch is named after the `type` it sets",
+        ),
+        (
+            "Input::password",
+            "the switch is named after the `type` it sets",
+        ),
+        (
+            "Input::search",
+            "the switch is named after the `type` it sets",
+        ),
+        (
+            "ToggleGroup::multi",
+            "M32: renamed `multiple`; checkboxes instead of radios",
+        ),
+        ("Button::label", "M32: renamed `aria_label`"),
+        (
+            "Button::pressed",
+            "`.pressed(on)` for a toggle, as `aria-pressed` says",
+        ),
+        (
+            "Button::current",
+            "`.current(on)` for the page's own link, as `aria-current` says",
+        ),
+        (
+            "Combobox::label",
+            "a form control's name is its label; here visually hidden",
+        ),
+        ("Marquee::duration", "a custom property in `style`"),
+        (
+            "InputOtp::length",
+            "the number of digits, which sets `maxlength`",
+        ),
+        ("NavMenu::link", "an adder of a link: text and `href`"),
+        ("Sidebar::link", "an adder of a link: text and `href`"),
+        ("ErrorPage::home", "the way home, a link's `href`"),
+        ("RecordPage::edit", "the edit link's `href`"),
+        ("RecordPage::back", "the back link's `href`"),
+        ("RecordPage::delete", "the delete form's `action`"),
+        (
+            "ToggleGroup::item",
+            "an adder: the option's `value` and text",
+        ),
+        (
+            "ToggleGroup::value",
+            "the option with this value is `checked`",
+        ),
+    ];
+
+    /// Constructors whose arguments break the order (text first, or `name` then its label;
+    /// an id is a setter), each with the reason.
+    const CONSTRUCTOR_ORDER: &[(&str, &str)] = &[
+        (
+            "ui.upload",
+            "the action first, like every form-posting widget; the name of its field second",
+        ),
+        (
+            "ui.table",
+            "the id keys the table's query parameters, so two tables never share them",
+        ),
+        (
+            "ui.wizard",
+            "the id keys the wizard's step parameter, so two wizards never share it",
+        ),
+        (
+            "SelectOption::new",
+            "value then text, as in `<option value>` and the `(value, text)` tuples",
+        ),
+    ];
+
+    /// Modules that derive ids with `slug` yet need no `.id(..)`, each with the reason.
+    const SLUG_WITHOUT_ID: &[(&str, &str)] = &[
+        (
+            "table",
+            "the table's id is its constructor's first argument",
+        ),
+        (
+            "kanban",
+            "the root's id comes from the action, the columns' from their keys",
+        ),
+        (
+            "blocks/settings_page",
+            "section anchors from their titles, linked from its own nav",
+        ),
+        ("meter", "M32: gets `.id(..)`"),
+        ("progress", "M32: gets `.id(..)`"),
+        ("nav_menu", "M32: gets `.id(..)`"),
+        ("sidebar", "M32: gets `.id(..)`"),
+    ];
+
+    /// Public `_with` functions that are not twins of a plainer one, each with the reason.
+    const WITH_NAMES: &[(&str, &str)] = &[
+        (
+            "link_with",
+            "this page's URL with one parameter set, the pair of `link_without`",
+        ),
+        (
+            "layout_with",
+            "M32: deprecated for `ui.page(..).tokens(..)`",
+        ),
+    ];
+
+    /// Every attribute a `PROPS` entry may name.
+    const ATTRIBUTES: &[&str] = &[
+        "accept",
+        "accesskey",
+        "action",
+        "aria-controls",
+        "aria-current",
+        "aria-haspopup",
+        "aria-keyshortcuts",
+        "aria-label",
+        "aria-pressed",
+        "autocomplete",
+        "autofocus",
+        "checked",
+        "class",
+        "closedby",
+        "command",
+        "disabled",
+        "form",
+        "formaction",
+        "formmethod",
+        "formnovalidate",
+        "high",
+        "href",
+        "id",
+        "inputmode",
+        "list",
+        "low",
+        "max",
+        "maxlength",
+        "min",
+        "multiple",
+        "name",
+        "open",
+        "optimum",
+        "pattern",
+        "placeholder",
+        "popovertarget",
+        "rel",
+        "required",
+        "role",
+        "src",
+        "step",
+        "style",
+        "title",
+        "type",
+        "value",
+    ];
+
+    /// The conventions of CLAUDE.md that `props()` can show, checked over every builder: what
+    /// each kind of setter takes, one shape per name, adders rather than lists, an `.id()`
+    /// wherever an id is derived, setters named after their attribute, and the order of a
+    /// constructor's arguments. A deviation is fixed, or allow-listed above with its reason
+    /// (and in docs/api.md, "Kept, because").
+    #[test]
+    fn props_follow_the_conventions() {
+        use crate::props::PropKind::{self, *};
+        let listed = |list: &[(&str, &str)], key: &str| list.iter().any(|(k, _)| *k == key);
+        let number = |t: &str| ["i64", "u64", "usize", "u8", "u32", "f64"].contains(&t);
+        // A setter's shape: its kind (a modifier counted as the kind its arguments make it)
+        // and its argument types.
+        let shape = |p: &crate::props::Prop| {
+            let types: Vec<String> = arguments(p.args).into_iter().map(|(_, t)| t).collect();
+            let kind = match p.kind {
+                Modifier if types.is_empty() => Switch,
+                Modifier if types == ["bool"] => Condition,
+                Modifier if types.len() == 1 && number(&types[0]) => Number,
+                Modifier => Value,
+                k => k,
+            };
+            (kind, types)
+        };
+        let mut wrong = Vec::new();
+        type Shape = (PropKind, Vec<String>);
+        let mut shapes: Vec<(&str, &str, Shape)> = Vec::new();
+        for c in crate::props() {
+            let names: Vec<&str> = c.props.iter().map(|p| p.name).collect();
+            for p in c.props {
+                let at = format!("{}::{}", c.builder, p.name);
+                let args = arguments(p.args);
+                // 1. A switch takes nothing, a condition one `bool`.
+                match p.kind {
+                    Switch if !args.is_empty() => {
+                        wrong.push(format!("{at}: a switch with arguments"))
+                    }
+                    Condition if args.len() != 1 || args[0].1 != "bool" => {
+                        wrong.push(format!("{at}: a condition takes one bool"))
+                    }
+                    _ => {}
+                }
+                // 2. A `bool` argument only where a route decides from a condition.
+                if !matches!(p.kind, Condition | Modifier) && args.iter().any(|(_, t)| t == "bool")
+                {
+                    wrong.push(format!("{at}: a bool outside a condition"));
+                }
+                // 3. Off until called.
+                if matches!(p.kind, Switch | Condition) && p.default != "off" {
+                    wrong.push(format!("{at}: on by default"));
+                }
+                // 6. No `_with` names, no `x` beside `xs` unless listed.
+                if p.name.ends_with("_with") {
+                    wrong.push(format!("{at}: a `_with` name"));
+                }
+                if let Some(one) = p.name.strip_suffix('s')
+                    && names.contains(&one)
+                    && !listed(TWINS, &at)
+                {
+                    wrong.push(format!("{at}: beside `.{one}(..)`"));
+                }
+                // A list given at once only where listed.
+                let list = args
+                    .iter()
+                    .any(|(_, t)| t.contains("IntoIterator") || t.starts_with("&["));
+                if list && !listed(LIST_IN_ONE_CALL, p.name) {
+                    wrong.push(format!("{at}: a list in one call"));
+                }
+                // 8. A real attribute, and the setter's own name unless listed.
+                if !p.attr.is_empty() {
+                    if !ATTRIBUTES.contains(&p.attr) {
+                        wrong.push(format!("{at}: `{}` is not an attribute", p.attr));
+                    }
+                    if p.attr != p.name.replace('_', "-") && !listed(NAMED_OTHERWISE, &at) {
+                        wrong.push(format!("{at}: sets `{}`", p.attr));
+                    }
+                }
+                shapes.push((c.builder, p.name, shape(p)));
+            }
+            // 4. A modifier needs an item to modify.
+            let has = |k| c.props.iter().any(|p| p.kind == k);
+            if has(Modifier) && !has(Item) {
+                wrong.push(format!("{}: modifiers without an item", c.builder));
+            }
+            // Constructors: text first, or `name` then its label; an id is a setter.
+            for call in c.calls {
+                let open = call.find('(').unwrap();
+                if listed(CONSTRUCTOR_ORDER, &call[..open]) {
+                    continue;
+                }
+                let args = arguments(&call[open + 1..call.rfind(')').unwrap()]);
+                let names: Vec<&str> = args.iter().map(|(n, _)| n.as_str()).collect();
+                let text = ["text", "label", "title", "legend", "trigger"];
+                if let Some(at) = names.iter().position(|n| text.contains(n))
+                    && !(at == 0 || (at == 1 && names[0] == "name"))
+                {
+                    wrong.push(format!("{call}: its text is not first"));
+                }
+                if names.iter().skip(1).any(|n| *n == "name") {
+                    wrong.push(format!("{call}: `name` is not first"));
+                }
+                if names.contains(&"id") {
+                    wrong.push(format!("{call}: an id in the call, not a setter"));
+                }
+            }
+        }
+        // 5. One name, one shape, across builders.
+        for (i, (builder, name, s)) in shapes.iter().enumerate() {
+            let first = shapes[..i].iter().find(|(_, n, _)| n == name);
+            if let Some((other, _, t)) = first
+                && s != t
+                && !listed(SAME_NAME_OTHER_SHAPE, name)
+            {
+                wrong.push(format!(
+                    "`.{name}`: {builder} takes {:?} {:?}, {other} {:?} {:?}",
+                    s.0, s.1, t.0, t.1
+                ));
+            }
+        }
+        // 7. A module that derives an id with `slug` lets the caller set it.
+        let mut modules: Vec<&str> = crate::props().iter().map(|c| c.module).collect();
+        modules.dedup();
+        for module in modules {
+            let path = format!("{}/src/{module}.rs", env!("CARGO_MANIFEST_DIR"));
+            let source = std::fs::read_to_string(path).unwrap();
+            let code = source.split("#[cfg(test)]\nmod tests").next().unwrap();
+            let mut props = crate::props().iter().filter(|c| c.module == module);
+            if code.contains("slug(")
+                && !listed(SLUG_WITHOUT_ID, module)
+                && !props.any(|c| c.props.iter().any(|p| p.name == "id"))
+            {
+                wrong.push(format!(
+                    "{module}: derives an id with `slug` but has no `.id(..)`"
+                ));
+            }
+        }
+        // 6. No public `_with` function or `Options` struct.
+        for path in library_sources() {
+            for line in read_source(&path).lines() {
+                let line = line.trim_start();
+                let name =
+                    |rest: &str| rest.split(['(', '<', ' ', '{']).next().unwrap().to_string();
+                let with = line
+                    .strip_prefix("pub fn ")
+                    .is_some_and(|r| name(r).ends_with("_with") && !listed(WITH_NAMES, &name(r)));
+                let options = line
+                    .strip_prefix("pub struct ")
+                    .is_some_and(|r| name(r).ends_with("Options"));
+                if with || options {
+                    wrong.push(format!("{}: `{line}`", path.display()));
+                }
+            }
+        }
+        assert!(
+            wrong.is_empty(),
+            "deviations from the conventions: {wrong:#?}"
         );
     }
 

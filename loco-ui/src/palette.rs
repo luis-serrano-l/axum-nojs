@@ -114,7 +114,7 @@ impl Palette<'_> {
         .doc("Several `(label, href)` destinations at once."),
         Prop::new("keywords", PropKind::Modifier, "keywords: &'a str")
             .doc("Extra words that find the command added last, space-separated."),
-        Prop::new("group", PropKind::Value, "heading: &'a str")
+        Prop::new("group", PropKind::Item, "heading: &'a str")
             .doc("List the commands added after this under a heading."),
         Prop::new("label", PropKind::Value, "label: &'a str")
             .default("Search")

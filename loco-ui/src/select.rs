@@ -177,7 +177,6 @@ impl Select<'_> {
             .default("15")
             .doc("Show the filter box above this many options (default 15)."),
         Prop::new("label", PropKind::Value, "label: &'a str")
-            .attr("label")
             .doc("A `<label>` above the select, in a `div.lui-field` like a form field."),
     ];
 }

@@ -117,8 +117,10 @@ impl Button<'_> {
         Prop::new("icon", PropKind::Switch, "")
             .doc("Square, for a glyph or an icon."),
         Prop::new("submit", PropKind::Switch, "")
+            .attr("type")
             .doc("`type=\"submit\"`, the default unless a command or popover target is set."),
         Prop::new("reset", PropKind::Switch, "")
+            .attr("type")
             .doc("`type=\"reset\"`."),
         Prop::new("command", PropKind::Value, "command: &'a str, target: &'a str").attr("command")
             .doc("An invoker command (`command`, `commandfor`)."),
@@ -131,6 +133,7 @@ impl Button<'_> {
         Prop::new("value", PropKind::Value, "value: &'a str").attr("value")
             .doc("The submitted `value` that goes with `name`."),
         Prop::new("label", PropKind::Value, "label: &'a str")
+            .attr("aria-label")
             .doc("`aria-label`."),
         Prop::new("class", PropKind::Value, "class: &'a str").attr("class")
             .doc("One more class after the button's own, for a component's part name."),
@@ -151,6 +154,7 @@ impl Button<'_> {
         Prop::new("aria_haspopup", PropKind::Value, "kind: &'a str").attr("aria-haspopup")
             .doc("`aria-haspopup` (`\"menu\"`, `\"dialog\"`)."),
         Prop::new("pressed", PropKind::Condition, "on: bool")
+            .attr("aria-pressed")
             .doc("`aria-pressed`, for a toggle button."),
         Prop::new("accesskey", PropKind::Value, "key: &'a str").attr("accesskey")
             .doc("`accesskey`."),
@@ -165,6 +169,7 @@ impl Button<'_> {
         Prop::new("rel", PropKind::Value, "rel: &'a str").attr("rel")
             .doc("`rel` of a link (`\"prev\"`, `\"next\"`)."),
         Prop::new("current", PropKind::Condition, "on: bool")
+            .attr("aria-current")
             .doc("`aria-current=\"page\"`."),
         Prop::new("shimmer", PropKind::Switch, "")
             .doc("A light sweeps across the button, over its own background."),
