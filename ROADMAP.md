@@ -1299,3 +1299,22 @@ with their names, and for the grouping and navigation to move into a sidebar.
   current one marked (`aria-current="page"`). It is a plain `<nav>` with links; on narrow
   screens it collapses into a `<details>` above the content. No script, and a Blitz shot at
   1280 and 420 wide.
+
+## M32 · Is the API easy, simple and consistent?
+The owner asked on 2026-09-25 to verify that using the components is easy, simple and
+consistent.
+
+- [ ] Audit every builder in `props::COMPONENTS` against the conventions in CLAUDE.md:
+  required arguments in the call (text first), everything else a setter, setter names that
+  follow the HTML attribute, no-argument setters switching something on, `bool` setters only
+  for conditions, adders plus last-item modifiers for lists, ids derived from the label. A
+  test lists each deviation (from `props()` and the spec JSON), and each one is fixed or
+  written down in `docs/api.md` with the reason.
+- [ ] Same idea, same name: one word per concept across components (`.label` vs `.title`,
+  `.open` vs `.expanded`, `.danger` vs `.destructive`, `.size`, `.icon`, `.href`); renames keep
+  the old name as `#[deprecated]` for one release.
+- [ ] Try it cold: write three small pages (a settings form, a table with filters, a dashboard)
+  in `lui!` and as builder chains using only the docs, and note every place that needed the
+  source, a second try or a workaround; fix those, or add a doc line where the fix is a doc.
+- [ ] `docs/api.md`: the rules a caller can rely on, one page, with a before/after for each
+  fix from this milestone.
