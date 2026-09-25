@@ -167,7 +167,7 @@ impl Page {
             HEIGHT,
         );
         // vello_cpu hands back premultiplied RGBA; PNG wants straight alpha.
-        for px in buf.chunks_exact_mut(4) {
+        for px in buf.as_chunks_mut::<4>().0 {
             let a = px[3] as u32;
             if a != 0 && a != 255 {
                 for c in &mut px[..3] {
