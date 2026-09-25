@@ -247,6 +247,11 @@ pub const SPECS: &[ComponentSpec] = &[
             f("command=\"show-modal\"", b("135", "144", "26.2")),
             f("<form method=\"dialog\">", b("37", "98", "15.4")),
             f("closedby", b("134", "141", "26")),
+            f("@starting-style", b("117", "129", "17.5")),
+            f(
+                "transition-behavior: allow-discrete",
+                b("117", "129", "17.4"),
+            ),
         ],
         fallback: "link to #id opens it through a :target rule, chosen server-side; the confirm footer is a plain form either way",
         needs_js: NeedsJs::No,
@@ -257,6 +262,11 @@ pub const SPECS: &[ComponentSpec] = &[
         features: &[
             f("popover", b("114", "125", "17")),
             f("anchor-name", b("125", "147", "26")),
+            f("@starting-style", b("117", "129", "17.5")),
+            f(
+                "transition-behavior: allow-discrete",
+                b("117", "129", "17.4"),
+            ),
         ],
         fallback: "no anchor: UA-centred popover; no popover: <details> dropdown (submenus nested); actions are plain post forms either way",
         needs_js: NeedsJs::No,
@@ -544,6 +554,7 @@ pub const SPECS: &[ComponentSpec] = &[
             f("role=\"alert\"", ALWAYS),
             f("@keyframes", b("43", "16", "9")),
             f("prefers-reduced-motion", b("74", "63", "10.1")),
+            f("@starting-style", b("117", "129", "17.5")),
         ],
         fallback: "without CSS animations toasts stay until the next page",
         needs_js: NeedsJs::No,
@@ -665,6 +676,10 @@ pub const SPECS: &[ComponentSpec] = &[
             f("command=\"show-modal\"", b("135", "144", "26.2")),
             f("closedby", b("134", "141", "26")),
             f("@starting-style", b("117", "129", "17.5")),
+            f(
+                "transition-behavior: allow-discrete",
+                b("117", "129", "17.4"),
+            ),
             f("@media", ALWAYS),
         ],
         fallback: "link to #id and a :target rule; open from the server",

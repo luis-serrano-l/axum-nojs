@@ -13,7 +13,8 @@
 //! - `view-transition-name` (Chrome 111, Firefox 144, Safari 18) on the open tab's chip
 //!   (an empty `.lui-tabs-mark`, never the title, so no text moves): the raised chip slides to
 //!   the new tab, across documents through the layout's `@view-transition` rule and in place
-//!   with the enhancement script.
+//!   with the enhancement script. `view-transition-class: lui-tabs-mark` (Chrome 125,
+//!   Firefox 144, Safari 18.2) gives the slide the `--lui-ease-spring` curve.
 //!
 //! **Accessibility:** each tab is a `<summary>` holding a link (one tab stop, Enter follows
 //! it); the narrow-screen select is named "Tab"; not the ARIA tablist pattern, which needs
@@ -25,6 +26,8 @@
 //!
 //! **Fallback:** without `Caps::DetailsContent` the same `<details>` render as a stacked
 //! accordion, reusing the accordion styles. Without `name` support exclusivity is lost.
+//! Without `Caps::ViewTransitions` the chip carries no transition name and simply appears on
+//! the new tab.
 //!
 //! **Server persistence:** the open tab comes from the request's `?tab.<name>=` (see
 //! [`crate::UiState::tab`]) and each title is a link to `?tab.<name>=i`, so the choice survives
@@ -197,6 +200,7 @@ impl Render for Tabs<'_> {
         } = *self;
         let s = &ui.state;
         let strip = ui.has(Cap::DetailsContent);
+        let vt = ui.has(Cap::ViewTransitions);
         let active = s.tab(name);
         let key = format!("tab.{name}");
         let class = match (strip, vertical) {
@@ -223,7 +227,7 @@ impl Render for Tabs<'_> {
                         summary {
                             a href=(s.link(&key, &i.to_string())) { (t.title) (badge(t)) }
                             @if i == active && strip {
-                                span class="lui-tabs-mark" style=(format!("view-transition-name: lui-tabs-{name}")) {}
+                                span class="lui-tabs-mark" style=[vt.then(|| format!("view-transition-name: lui-tabs-{name}; view-transition-class: lui-tabs-mark"))] {}
                             }
                         }
                         div class=(if strip { "lui-tabs-panel" } else { "lui-accordion-body" }) {
@@ -272,6 +276,9 @@ pub const CSS: &str = r#"
   position: absolute; inset: 3px; border-radius: var(--lui-radius-sm);
   background: var(--lui-bg); box-shadow: var(--lui-shadow-xs);
 }
+/* Motion: the chip slides on the spring curve (a view transition group, named only when the
+   browser has view transitions). */
+::view-transition-group(*.lui-tabs-mark) { animation-duration: var(--lui-duration-slow); animation-timing-function: var(--lui-ease-spring); }
 .lui-tabs-badge {
   display: inline-block; min-width: 1.25rem; padding: 0 0.3rem; border-radius: 1em; text-align: center;
   font-size: 0.75rem; font-weight: 500; line-height: 1.25rem; background: var(--lui-line); color: var(--lui-fg);

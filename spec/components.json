@@ -402,7 +402,9 @@
         { "name": "<dialog>", "baseline": { "chrome": "37", "firefox": "98", "safari": "15.4" } },
         { "name": "command=\"show-modal\"", "baseline": { "chrome": "135", "firefox": "144", "safari": "26.2" } },
         { "name": "<form method=\"dialog\">", "baseline": { "chrome": "37", "firefox": "98", "safari": "15.4" } },
-        { "name": "closedby", "baseline": { "chrome": "134", "firefox": "141", "safari": "26" } }
+        { "name": "closedby", "baseline": { "chrome": "134", "firefox": "141", "safari": "26" } },
+        { "name": "@starting-style", "baseline": { "chrome": "117", "firefox": "129", "safari": "17.5" } },
+        { "name": "transition-behavior: allow-discrete", "baseline": { "chrome": "117", "firefox": "129", "safari": "17.4" } }
       ],
       "fallback": "link to #id opens it through a :target rule, chosen server-side; the confirm footer is a plain form either way",
       "needs_js": "no",
@@ -434,7 +436,9 @@
       "module": "popover",
       "features": [
         { "name": "popover", "baseline": { "chrome": "114", "firefox": "125", "safari": "17" } },
-        { "name": "anchor-name", "baseline": { "chrome": "125", "firefox": "147", "safari": "26" } }
+        { "name": "anchor-name", "baseline": { "chrome": "125", "firefox": "147", "safari": "26" } },
+        { "name": "@starting-style", "baseline": { "chrome": "117", "firefox": "129", "safari": "17.5" } },
+        { "name": "transition-behavior: allow-discrete", "baseline": { "chrome": "117", "firefox": "129", "safari": "17.4" } }
       ],
       "fallback": "no anchor: UA-centred popover; no popover: <details> dropdown (submenus nested); actions are plain post forms either way",
       "needs_js": "no",
@@ -1099,7 +1103,8 @@
         { "name": "role=\"status\"", "baseline": { "chrome": "1", "firefox": "1", "safari": "1" } },
         { "name": "role=\"alert\"", "baseline": { "chrome": "1", "firefox": "1", "safari": "1" } },
         { "name": "@keyframes", "baseline": { "chrome": "43", "firefox": "16", "safari": "9" } },
-        { "name": "prefers-reduced-motion", "baseline": { "chrome": "74", "firefox": "63", "safari": "10.1" } }
+        { "name": "prefers-reduced-motion", "baseline": { "chrome": "74", "firefox": "63", "safari": "10.1" } },
+        { "name": "@starting-style", "baseline": { "chrome": "117", "firefox": "129", "safari": "17.5" } }
       ],
       "fallback": "without CSS animations toasts stay until the next page",
       "needs_js": "no",
@@ -1388,6 +1393,7 @@
         { "name": "command=\"show-modal\"", "baseline": { "chrome": "135", "firefox": "144", "safari": "26.2" } },
         { "name": "closedby", "baseline": { "chrome": "134", "firefox": "141", "safari": "26" } },
         { "name": "@starting-style", "baseline": { "chrome": "117", "firefox": "129", "safari": "17.5" } },
+        { "name": "transition-behavior: allow-discrete", "baseline": { "chrome": "117", "firefox": "129", "safari": "17.4" } },
         { "name": "@media", "baseline": { "chrome": "1", "firefox": "1", "safari": "1" } }
       ],
       "fallback": "link to #id and a :target rule; open from the server",

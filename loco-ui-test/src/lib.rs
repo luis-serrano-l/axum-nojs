@@ -149,6 +149,24 @@ impl Page {
         }
     }
 
+    /// Computed `opacity` of the first match (the final value: Blitz starts no transition on a
+    /// first render).
+    pub fn opacity(&self, selector: &str) -> Option<f32> {
+        let id = self.node(selector)?;
+        Some(self.doc.get_node(id)?.primary_styles()?.clone_opacity())
+    }
+
+    /// Computed `translate` and `scale` of the first match, as Stylo's debug text.
+    pub fn translate_scale(&self, selector: &str) -> Option<String> {
+        let id = self.node(selector)?;
+        let style = self.doc.get_node(id)?.primary_styles()?;
+        Some(format!(
+            "{:?} {:?}",
+            style.clone_translate(),
+            style.clone_scale()
+        ))
+    }
+
     /// Computed `display` of the first match: `none`, `contents`, or `<outside>/<inside>`
     /// such as `block/flow`, `inline/flow`, `block/flex`, `block/table`.
     pub fn display(&self, selector: &str) -> Option<String> {

@@ -1257,7 +1257,7 @@ shadows and motion chosen. The no-script rules are unchanged:
   - Ghost and secondary buttons stay flat.
   - `scripts/look.sh` shots are compared against linear.app and magicui.design, not the
     shadcn docs.
-- [ ] Motion, on by default but restrained:
+- [x] Motion, on by default but restrained:
   - Dialog, popover, sheet, drawer, menu and toast animate in and out with `@starting-style`
     and `transition-behavior: allow-discrete`.
   - Springs use `linear()` easing, from a `--lui-ease-spring` token.

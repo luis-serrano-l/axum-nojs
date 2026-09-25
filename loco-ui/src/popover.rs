@@ -11,6 +11,10 @@
 //! - CSS anchor positioning `anchor-name` / `position-anchor` / `position-area`
 //!   (Chrome 125, Firefox 147, Safari 26) to place the menu under its button, at its end, or
 //!   to its right (`.align_end()`, `.open_right()`).
+//! - Motion: `@starting-style` (Chrome 117, Firefox 129, Safari 17.5) and
+//!   `transition-behavior: allow-discrete` on `display` and `overlay` (Chrome 117,
+//!   Firefox 129, Safari 17.4) fade the menu in and out with a 4px drop; the `<details>`
+//!   fallback fades in only. Older browsers show and hide it at once.
 //!
 //! **Accessibility:** a `popover` menu: `aria-haspopup="menu"` on the trigger, `role="menu"`
 //! and `menuitem` on the items, Escape and a click outside close it; the script adds arrow
@@ -462,5 +466,17 @@ pub const CSS: &str = r#"
 .lui-popover-right.lui-popover-details > nav { top: 0; left: 100%; margin-left: 4px; }
 .lui-popover-sub > .lui-popover-details > summary {
   display: flex; min-height: 0; padding: 0.375rem 0.5rem; font-weight: 400; border: 0; border-radius: var(--lui-radius-sm); background: none; box-shadow: none;
+}
+/* Motion: menus (dropdowns, context and nav menus, submenus) fade in and drop 4px, and fade
+   out as they close; display and overlay are discrete so a closing popover keeps its top-layer
+   box until the fade ends. The <details> fallback animates in only: a closed <details> hides
+   its content at once. */
+.lui-popover nav {
+  transition: opacity var(--lui-duration-fast) var(--lui-ease-out), translate var(--lui-duration) var(--lui-ease-spring),
+    display var(--lui-duration-fast) allow-discrete, overlay var(--lui-duration-fast) allow-discrete;
+}
+.lui-popover nav[popover]:not(:popover-open) { opacity: 0; translate: 0 -4px; }
+@starting-style {
+  .lui-popover nav[popover]:popover-open, .lui-popover-details[open] > nav { opacity: 0; translate: 0 -4px; }
 }
 "#;

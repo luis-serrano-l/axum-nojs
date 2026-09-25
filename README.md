@@ -345,8 +345,8 @@ browser-compat-data; `no` means unshipped, so that browser gets the fallback.
 | Split | `flex-wrap`, `min-inline-size` | 29 / 28 / 9; 57 / 41 / 12.1 | none needed | No |
 | Calendar | `<table>`, `aria-current="date"`, `role="radiogroup"`, `:has(:checked)` | 1 / 1 / 1; 1 / 1 / 1; 1 / 1 / 1; 105 / 121 / 15.4 | without :has() the picked radio's day is not filled in; it is still checked and posts | Partly: changing month in place and arrow-key moves between days need script |
 | Date picker | `popover`, `anchor-name`, `<input type="date">` | 114 / 125 / 17; 125 / 147 / 26; 20 / 57 / 14.1 | without popover the calendar is laid out in the form; .native() is the browser's own control | Partly: writing the picked day onto the button before the form is sent needs script |
-| Dialog | `<dialog>`, `command="show-modal"`, `<form method="dialog">`, `closedby` | 37 / 98 / 15.4; 135 / 144 / 26.2; 37 / 98 / 15.4; 134 / 141 / 26 | link to #id opens it through a :target rule, chosen server-side; the confirm footer is a plain form either way | No |
-| Popover menu | `popover`, `anchor-name` | 114 / 125 / 17; 125 / 147 / 26 | no anchor: UA-centred popover; no popover: <details> dropdown (submenus nested); actions are plain post forms either way | No |
+| Dialog | `<dialog>`, `command="show-modal"`, `<form method="dialog">`, `closedby`, `@starting-style`, `transition-behavior: allow-discrete` | 37 / 98 / 15.4; 135 / 144 / 26.2; 37 / 98 / 15.4; 134 / 141 / 26; 117 / 129 / 17.5; 117 / 129 / 17.4 | link to #id opens it through a :target rule, chosen server-side; the confirm footer is a plain form either way | No |
+| Popover menu | `popover`, `anchor-name`, `@starting-style`, `transition-behavior: allow-discrete` | 114 / 125 / 17; 125 / 147 / 26; 117 / 129 / 17.5; 117 / 129 / 17.4 | no anchor: UA-centred popover; no popover: <details> dropdown (submenus nested); actions are plain post forms either way | No |
 | Tabs | `<details name`, `display: contents`, `::details-content`, `view-transition-name` | 120 / 130 / 17.2; 65 / 37 / 11.1; 131 / 143 / 18.4; 111 / 144 / 18 | accordion markup, chosen server-side; the narrow-screen select has a Go button | No |
 | Accordion | `<details name`, `::details-content`, `interpolate-size` | 120 / 130 / 17.2; 131 / 143 / 18.4; 129 / no / no | plain <details>: no exclusivity, no animation; expand/collapse and every toggle are links either way | No |
 | Combobox | `<datalist>`, `<optgroup>`, `<search>`, `aria-live` | 20 / 4 / 12.1; 20 / 4 / 12.1; 118 / 118 / 17; 1 / 1 / 1 | none needed: chips, results and the create row are links and forms | Partly: static suggestions and per-submit results; live filtering and arrow keys into the results need script |
@@ -371,7 +371,7 @@ browser-compat-data; `no` means unshipped, so that browser gets the fallback.
 | Meter | `<meter>` | 6 / 16 / 6 | without the pseudo-elements a browser draws its own meter | No |
 | Tooltip | `:focus-within`, `@media (hover: none)` | 60 / 52 / 10.1; 41 / 64 / 9 | none needed | Partly: a delay before opening and Escape to close need script |
 | Separator | `<hr>`, `aria-orientation` | 1 / 1 / 1; 1 / 1 / 1 | none needed | No |
-| Toast | `position: fixed`, `role="status"`, `role="alert"`, `@keyframes`, `prefers-reduced-motion` | 1 / 1 / 1; 1 / 1 / 1; 1 / 1 / 1; 43 / 16 / 9; 74 / 63 / 10.1 | without CSS animations toasts stay until the next page | No |
+| Toast | `position: fixed`, `role="status"`, `role="alert"`, `@keyframes`, `prefers-reduced-motion`, `@starting-style` | 1 / 1 / 1; 1 / 1 / 1; 1 / 1 / 1; 43 / 16 / 9; 74 / 63 / 10.1; 117 / 129 / 17.5 | without CSS animations toasts stay until the next page | No |
 | Breadcrumbs | `aria-current="page"`, `::before`, `<details>` | 1 / 1 / 1; 1 / 1 / 1; 12 / 49 / 6 | none needed | No |
 | Skeleton | `aria-busy`, `role="status"`, `@keyframes`, `prefers-reduced-motion` | 1 / 1 / 1; 1 / 1 / 1; 43 / 16 / 9; 74 / 63 / 10.1 | without CSS animations the bars are still | No |
 | Empty state | `<form method="post">` | 1 / 1 / 1 | none needed | No |
@@ -383,7 +383,7 @@ browser-compat-data; `no` means unshipped, so that browser gets the fallback.
 | Toggle group | `<fieldset>`, `:checked`, `:focus-visible` | 1 / 1 / 1; 1 / 1 / 1; 86 / 85 / 15.4 | none needed | Partly: applying a choice the moment it is pressed needs script (or the form's submit) |
 | Context menu | `popover`, `popovertarget` | 114 / 125 / 17; 114 / 125 / 17 | that of the popover menu: a <details> dropdown | Partly: opening on right-click or a long press needs script |
 | One-time code | `autocomplete="one-time-code"`, `inputmode="numeric"`, `pattern` | 84 / no / 12; 66 / 95 / 12.1; 4 / 4 / 5 | a plain spaced-out field; without autocomplete the code is typed or pasted | No |
-| Drawer | `<dialog>`, `command="show-modal"`, `closedby`, `@starting-style`, `@media` | 37 / 98 / 15.4; 135 / 144 / 26.2; 134 / 141 / 26; 117 / 129 / 17.5; 1 / 1 / 1 | link to #id and a :target rule; open from the server | No |
+| Drawer | `<dialog>`, `command="show-modal"`, `closedby`, `@starting-style`, `transition-behavior: allow-discrete`, `@media` | 37 / 98 / 15.4; 135 / 144 / 26.2; 134 / 141 / 26; 117 / 129 / 17.5; 117 / 129 / 17.4; 1 / 1 / 1 | link to #id and a :target rule; open from the server | No |
 | Command palette | `popover`, `<datalist>`, `<search>`, `accesskey` | 114 / 125 / 17; 20 / 4 / 12.1; 118 / 118 / 17; 1 / 1 / 1 | a <details> disclosure with the same form | Partly: arrow keys through live results and a global Ctrl+K need script |
 <!-- matrix:end -->
 
