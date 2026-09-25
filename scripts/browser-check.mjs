@@ -381,8 +381,14 @@ try {
   // (FINDINGS, M29): a link filling a <summary>, the no-script tab and accordion design; and
   // the <button><selectedcontent> of a customisable select, which Firefox cannot fill and only
   // gets here because the check forces the capability cookie.
+  // Entry transitions (M30 motion) are jumped to their end first, so contrast is read on the
+  // settled page, not mid-fade; long or looping animations (toast timers, marquee) are left.
   function audit(source, done) {
     (0, eval)(source);
+    for (const a of document.getAnimations()) {
+      const end = a.effect && a.effect.getComputedTiming().endTime;
+      if (end !== undefined && end < 1000) a.finish();
+    }
     axe.run(document, { resultTypes: ["violations"] }).then((r) => done(r.violations.map((v) => {
       const nodes = v.nodes.filter((n) => !(v.id === "nested-interactive" && /^<summary/.test(n.html))
         && !(v.id === "button-name" && /<selectedcontent/.test(n.html)));
