@@ -1,5 +1,8 @@
 # axum-nojs
 
+**[Live demo](https://luis-serrano-l.github.io/axum-nojs/)** (every component, static snapshot on
+GitHub Pages) · **[Source on GitHub](https://github.com/luis-serrano-l/axum-nojs)**
+
 **0 KB JavaScript required** · verified in CI by a script-less renderer ([Blitz](axum-nojs-test/tests/demo.rs)) and
 [a test that allows one optional script and nothing inline](demo/src/lib.rs) · strict CSP
 
