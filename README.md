@@ -126,8 +126,9 @@ async fn initializers(_ctx: &AppContext) -> Result<Vec<Box<dyn Initializer>>> {
 }
 ```
 
-`loco::FieldErrors` puts Loco's validation messages on the form fields, `loco::Submitted`
-parses a posted form field by field, and `loco-ui/loco-templates/` makes
+`loco::Valid<T>` is a form extractor that hands the handler `Ok(T)` or every field's
+message plus what was typed, so a bad form is shown again instead of answered with an error
+(`loco::FieldErrors` does the same for Loco's model validation), and `loco-ui/loco-templates/` makes
 `cargo loco generate scaffold` write an HTML controller and Maud views (Post/Redirect/Get,
 paging, validation) instead of a JSON API. `cargo lui auth` adds sign-in, sign-up, forgot and
 reset password, email verification and magic-link pages, all forms, with Loco's JWT in an

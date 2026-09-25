@@ -1014,10 +1014,20 @@ every Loco API named below against loco-rs 1.2 before relying on it, as M27 did.
   magic link (spent after one use), and renders sign-in, sign-up, forgot, reset, magic link
   and the expired-link page in Blitz. The fresh-app test runs `auth` too and `cargo check`s
   it. FINDINGS M29: the mail links, and `include_dir!` paths inside a workspace.
-- [ ] Validation that re-renders: an extractor (`loco::Valid<T>`) that gives the handler
+- [x] Validation that re-renders: an extractor (`loco::Valid<T>`) that gives the handler
   `Ok(T)` or `Err((FieldErrors, values))` instead of Loco's `FormValidate` error response,
   so a create/update handler is one `match`: render the form again or redirect. The scaffold
   uses it.
+  Done: `loco::Valid<T>(pub Result<T, Invalid>)`, `Invalid { errors: FieldErrors, values }`
+  (a named struct rather than a tuple, so the handler reads `bad.values`/`bad.errors`), for
+  any `T: Deserialize + Validate`. Values are trimmed and empty ones dropped (`None` for an
+  `Option`, "This field is required." otherwise); `serde_path_to_error` (new optional dep of
+  `loco`) names the field a parse error is about ("Check this field."); a bad field is stood
+  in for so every field is reported at once, then the `#[validate]` rules run.
+  `loco::checkbox` reads `on`/`true` for `#[serde(deserialize_with)]`. `Valid::check(pairs)`
+  is the same without a request. The scaffold's `Params` derives `Deserialize, Validate` and
+  create/update match on `Valid<Params>`; `examples/loco-app`'s notes were regenerated with
+  the real `cargo loco generate scaffold` (views unchanged). Loco-only, so no demo route.
 - [ ] Error summary (GOV.UK): `ui.error_summary(&errors)`, a `role="alert"` list at the top
   of the form linking to each field in error by id, focused on load via `autofocus` on its
   heading link; `Form` shows it when it has errors. Demo on `/app/signin` and `/form`.

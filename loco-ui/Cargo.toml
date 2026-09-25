@@ -18,8 +18,9 @@ http = ["dep:http", "dep:futures-util"]
 # Axum glue on top of `http`: extractors, the `/lui/caps` beacon route, `IntoResponse` impls.
 # `Saved<T>` keeps a serde value in a cookie.
 axum = ["http", "dep:axum", "dep:bytes", "dep:serde", "dep:serde_urlencoded", "dep:form_urlencoded", "loco-ui-caps/axum"]
-# Loco on top of `axum`: an initializer that mounts `/lui/enhance.js` and `/lui/caps`.
-loco = ["axum", "dep:loco-rs", "dep:async-trait"]
+# Loco on top of `axum`: an initializer that mounts `/lui/enhance.js` and `/lui/caps`, and
+# `Valid<T>`, a form extractor that reports every bad field (`serde_path_to_error`).
+loco = ["axum", "dep:loco-rs", "dep:async-trait", "dep:serde_path_to_error"]
 
 [dependencies]
 maud.workspace = true
@@ -34,6 +35,7 @@ serde_urlencoded = { version = "0.7", optional = true }
 form_urlencoded = { version = "1", optional = true }
 loco-rs = { version = "1.2", optional = true, default-features = false }
 async-trait = { version = "0.1", optional = true }
+serde_path_to_error = { version = "0.1", optional = true }
 
 [dev-dependencies]
 serde.workspace = true

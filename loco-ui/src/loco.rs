@@ -79,6 +79,49 @@
 //! # assert_eq!(FieldErrors::from(&e).get("title"), Some("Give the note a title."));
 //! ```
 //!
+//! [`Valid<T>`] does that in the extractor. Loco's `FormValidate` answers a bad form with an
+//! error response; `Valid` gives the handler `Ok(T)` or `Err(Invalid)` (the messages by field
+//! and what was posted), so a create or update is one `match`: redirect, or show the form
+//! again. The scaffold templates use it.
+//!
+//! ```rust
+//! use loco_ui::{loco::Valid, prelude::*};
+//! use loco_rs::prelude::*;
+//! use serde::Deserialize;
+//!
+//! #[derive(Deserialize, Validate)]
+//! struct NewNote {
+//!     #[validate(length(max = 80, message = "At most 80 characters."))]
+//!     title: String,
+//!     stars: Option<u8>,
+//!     #[serde(default, deserialize_with = "loco_ui::loco::checkbox")]
+//!     done: bool,
+//! }
+//!
+//! async fn create(ui: Ui, Valid(note): Valid<NewNote>) -> Response {
+//!     match note {
+//!         Ok(note) => ui.redirect("/notes").ok(&format!("Saved {}.", note.title)).into_response(),
+//!         Err(bad) => {
+//!             let body = html! {
+//!                 (ui.form("/notes")
+//!                     .text("title", "Title").required()
+//!                     .number("stars", "Stars", 1, 5)
+//!                     .checkbox("done", "Done")
+//!                     .values(&bad.values)
+//!                     .errors(&bad.errors.pairs()))
+//!             };
+//!             ui.page("New note", body).into_response()
+//!         }
+//!     }
+//! }
+//! # let posted = |s: &str| form_urlencoded::parse(s.as_bytes()).into_owned().collect::<Vec<_>>();
+//! # let bad = Valid::<NewNote>::check(posted("title=&stars=many")).0.err().unwrap();
+//! # assert_eq!(bad.errors.get("title"), Some("This field is required."));
+//! # assert_eq!(bad.errors.get("stars"), Some("Check this field."));
+//! # let ok = Valid::<NewNote>::check(posted("title=Plan&stars=&done=on")).0.ok().unwrap();
+//! # assert!(ok.title == "Plan" && ok.stars.is_none() && ok.done);
+//! ```
+//!
 //! Views are Rust, not Tera: a `views` module of functions taking `&Ui` and the data and
 //! returning `Markup`, which a controller wraps in `ui.page(..)`. Tera views keep working
 //! beside them. `docs/loco.md` says why there is no Tera function bridge.
@@ -189,8 +232,13 @@
 //! unset, so every visitor gets the baseline variant.
 
 use async_trait::async_trait;
-use axum::Router;
-use loco_rs::{Result, app::AppContext, validation::ModelValidationErrors};
+use axum::{
+    Router,
+    body::Bytes,
+    extract::{FromRequest, Request, rejection::BytesRejection},
+};
+use loco_rs::{Result, app::AppContext, validation::ModelValidationErrors, validator::Validate};
+use serde::{Deserialize, Deserializer, de::DeserializeOwned};
 
 /// The Loco initializer: `Box::new(loco_ui::loco::Initializer)` in `App::initializers`.
 #[derive(Clone, Copy, Debug, Default)]
@@ -390,6 +438,143 @@ impl Submitted {
     }
 }
 
+/// A posted form, deserialized and validated: `Ok(T)`, or `Err(`[`Invalid`]`)` with a message
+/// for every field in error and the values to show again. See the module docs.
+///
+/// How a posted form becomes a `T`: values are trimmed and empty ones left out, so an empty
+/// field is `None` for an `Option`, and "This field is required." for anything else. A value
+/// that does not parse gets "Check this field.". Every field is checked, not only the first
+/// bad one: a bad field is stood in for (by `""`, `0`, `false`, a date, a date-time or a
+/// nil UUID) so the rest can be read, and then `T`'s `#[validate(..)]` rules run; the first
+/// message per field is kept. A field of a type none of those stand-ins reads stops there,
+/// so the rules wait until it is fixed. A checkbox posts `on` (or `true`, from [`Form`](crate::form::Form)), which serde
+/// does not read as a `bool`: mark it `#[serde(default, deserialize_with =
+/// "loco_ui::loco::checkbox")]`.
+#[derive(Clone, Debug)]
+pub struct Valid<T>(pub std::result::Result<T, Invalid>);
+
+/// Why a [`Valid`] form was refused: the messages by field and what was posted.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct Invalid {
+    /// For [`Form::errors`](crate::form::Form::errors), via `.pairs()`.
+    pub errors: FieldErrors,
+    /// For [`Form::values`](crate::form::Form::values), as posted.
+    pub values: Vec<(String, String)>,
+}
+
+/// Values tried in place of a missing or unreadable field, so the fields after it are still
+/// read (the form is refused anyway, so none of them reaches the handler).
+const STAND_INS: [&str; 6] = [
+    "",
+    "0",
+    "false",
+    "1970-01-01",
+    "1970-01-01T00:00:00",
+    "00000000-0000-0000-0000-000000000000",
+];
+
+impl<T: DeserializeOwned + Validate> Valid<T> {
+    /// What the extractor does with the posted `(name, value)` pairs.
+    pub fn check(values: Vec<(String, String)>) -> Self {
+        let mut input: Vec<(String, String)> = values
+            .iter()
+            .map(|(n, v)| (n.clone(), v.trim().to_string()))
+            .filter(|(_, v)| !v.is_empty())
+            .collect();
+        let mut errors: Vec<(String, String)> = Vec::new();
+        // Each round either succeeds or records one more field, so this ends.
+        let parsed = loop {
+            let pairs = input.iter().map(|(n, v)| (n.as_str(), v.as_str()));
+            let encoded = form_urlencoded::Serializer::new(String::new())
+                .extend_pairs(pairs)
+                .finish();
+            let de =
+                serde_urlencoded::Deserializer::new(form_urlencoded::parse(encoded.as_bytes()));
+            let err = match serde_path_to_error::deserialize::<_, T>(de) {
+                Ok(value) => break Some(value),
+                Err(err) => err,
+            };
+            let Some((field, message)) = failed_field(&err) else {
+                break None;
+            };
+            let tried = input.iter().position(|(n, _)| *n == field);
+            let next = match tried {
+                None => Some(STAND_INS[0]),
+                Some(i) => STAND_INS
+                    .iter()
+                    .position(|s| *s == input[i].1)
+                    .map_or(Some(STAND_INS[0]), |k| STAND_INS.get(k + 1).copied()),
+            };
+            if !errors.iter().any(|(f, _)| *f == field) {
+                errors.push((field.clone(), message.to_string()));
+            }
+            let Some(next) = next else { break None };
+            match tried {
+                Some(i) => input[i].1 = next.to_string(),
+                None => input.push((field, next.to_string())),
+            }
+        };
+        let Some(parsed) = parsed else {
+            if errors.is_empty() {
+                errors.push((String::new(), "Check the form.".to_string()));
+            }
+            return Self::refused(errors, values);
+        };
+        if let Err(e) = Validate::validate(&parsed) {
+            for (field, message) in FieldErrors::from(&e).0 {
+                if !errors.iter().any(|(f, _)| *f == field) {
+                    errors.push((field, message));
+                }
+            }
+        }
+        if errors.is_empty() {
+            Self(Ok(parsed))
+        } else {
+            Self::refused(errors, values)
+        }
+    }
+
+    fn refused(mut errors: Vec<(String, String)>, values: Vec<(String, String)>) -> Self {
+        errors.sort();
+        Self(Err(Invalid {
+            errors: FieldErrors(errors),
+            values,
+        }))
+    }
+}
+
+/// The field a deserialization error is about, and the message it gets.
+fn failed_field(
+    err: &serde_path_to_error::Error<serde::de::value::Error>,
+) -> Option<(String, &'static str)> {
+    if let Some(serde_path_to_error::Segment::Map { key }) = err.path().iter().next() {
+        return Some((key.clone(), "Check this field."));
+    }
+    // Serde's own wording: "missing field `title`".
+    let text = err.inner().to_string();
+    let field = text.strip_prefix("missing field `")?.strip_suffix('`')?;
+    Some((field.to_string(), "This field is required."))
+}
+
+impl<S: Send + Sync, T: DeserializeOwned + Validate> FromRequest<S> for Valid<T> {
+    type Rejection = BytesRejection;
+
+    async fn from_request(req: Request, state: &S) -> std::result::Result<Self, Self::Rejection> {
+        let body = Bytes::from_request(req, state).await?;
+        Ok(Self::check(
+            form_urlencoded::parse(&body).into_owned().collect(),
+        ))
+    }
+}
+
+/// A checkbox as a `bool`: `on` (a bare checkbox), `true` or `1` is ticked. For
+/// `#[serde(default, deserialize_with = "loco_ui::loco::checkbox")]`; the `default` makes an
+/// unticked box, which posts nothing, `false`.
+pub fn checkbox<'de, D: Deserializer<'de>>(d: D) -> std::result::Result<bool, D::Error> {
+    let value = String::deserialize(d)?;
+    Ok(matches!(value.as_str(), "on" | "true" | "1"))
+}
+
 /// What [`Initializer`] does, for a test or an app that builds its router by hand.
 pub fn mount(router: Router) -> Router {
     router
@@ -422,6 +607,91 @@ mod tests {
             let req = Request::get(path).body(Body::empty()).unwrap();
             let res = app.clone().oneshot(req).await.unwrap();
             assert_eq!(res.status(), status, "{path}");
+        }
+    }
+
+    #[derive(Debug, serde::Deserialize, Validate)]
+    struct Signup {
+        #[validate(length(min = 2, message = "At least 2 characters."))]
+        name: String,
+        #[validate(email(message = "Enter an email address."))]
+        email: String,
+        age: u32,
+        seats: Option<u8>,
+        host: std::net::Ipv4Addr,
+        #[serde(default, deserialize_with = "checkbox")]
+        terms: bool,
+    }
+
+    fn posted(s: &str) -> Vec<(String, String)> {
+        form_urlencoded::parse(s.as_bytes()).into_owned().collect()
+    }
+
+    #[test]
+    fn valid_reports_every_bad_field_at_once() {
+        let form = "name=A&email=&age=old&seats=&host=10.0.0.1";
+        let bad = Valid::<Signup>::check(posted(form)).0.unwrap_err();
+        assert_eq!(
+            bad.errors.pairs(),
+            [
+                ("age", "Check this field."),
+                ("email", "This field is required."),
+                ("name", "At least 2 characters."),
+            ]
+        );
+        assert_eq!(bad.values, posted(form));
+        // No stand-in reads as an address, so the rules cannot run; the field still says why.
+        let bad = Valid::<Signup>::check(posted("name=A&email=&age=1"))
+            .0
+            .unwrap_err();
+        assert_eq!(
+            bad.errors.pairs(),
+            [
+                ("email", "This field is required."),
+                ("host", "This field is required.")
+            ]
+        );
+    }
+
+    #[test]
+    fn valid_trims_leaves_out_empty_options_and_reads_checkboxes() {
+        let ok = Valid::<Signup>::check(posted(
+            "name=+Ada+&email=ada%40example.com&age=36&seats=&host=10.0.0.1&terms=on",
+        ));
+        let ok = ok.0.unwrap();
+        assert_eq!((ok.name.as_str(), ok.age, ok.seats), ("Ada", 36, None));
+        assert!(ok.terms && ok.host.is_private());
+        let unticked =
+            Valid::<Signup>::check(posted("name=Ada&email=a%40b.co&age=1&host=10.0.0.1"));
+        assert!(!unticked.0.unwrap().terms);
+    }
+
+    async fn signup(Valid(form): Valid<Signup>) -> String {
+        match form {
+            Ok(s) => format!("ok {}", s.name),
+            Err(bad) => format!("{:?}", bad.errors.get("email")),
+        }
+    }
+
+    #[tokio::test]
+    async fn valid_is_an_extractor() {
+        let app = Router::new().route("/signup", axum::routing::post(signup));
+        for (body, answer) in [
+            (
+                "name=Ada&email=ada%40example.com&age=36&host=10.0.0.1",
+                "ok Ada",
+            ),
+            (
+                "name=Ada&email=nope&age=36&host=10.0.0.1",
+                r#"Some("Enter an email address.")"#,
+            ),
+        ] {
+            let req = Request::post("/signup").body(Body::from(body)).unwrap();
+            let res = app.clone().oneshot(req).await.unwrap();
+            let bytes = axum::body::to_bytes(res.into_body(), usize::MAX)
+                .await
+                .unwrap();
+            assert_eq!(bytes, answer.as_bytes());
         }
     }
 

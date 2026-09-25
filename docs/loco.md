@@ -78,41 +78,63 @@ into `.paged(total)`) is a doctest in the module docs.
 ## A form with validation
 
 On bad input the handler shows the form again with what was typed and a message on each
-field. Two ways to get the messages:
-
-- **`validator` rules on a struct** (what Loco models use): `FieldErrors::from(&errors)` turns
-  `ValidationErrors`, or the `ModelValidationErrors` inside `Error::Validation` /
-  `ModelError::Validation`, into `(field, message)` pairs for `.errors(..)`.
-- **Field by field** with `Submitted`, from `Form<Vec<(String, String)>>`: `required::<T>`,
-  `optional::<T>` and `checkbox` parse each field and record "This field is required." or
-  "Check this field." as they go. The scaffold uses this.
+field. `Valid<T>` is the extractor for that: where Loco's `FormValidate` answers a bad form
+with an error response, `Valid` hands the handler `Ok(T)` or `Err(Invalid)` (the messages
+by field and what was posted), so create and update are one `match`. The scaffold uses it.
 
 ```rust
-use loco_ui::{loco::Submitted, prelude::*};
+use loco_ui::{loco::Valid, prelude::*};
 use loco_rs::prelude::*;
+use serde::Deserialize;
+
+#[derive(Deserialize, Validate)]
+struct NewNote {
+    #[validate(length(max = 80, message = "At most 80 characters."))]
+    title: String,
+    due: Option<Date>,
+    #[serde(default, deserialize_with = "loco_ui::loco::checkbox")]
+    done: bool,
+}
 
 async fn create(
     ui: Ui,
     State(ctx): State<AppContext>,
-    Form(posted): Form<Vec<(String, String)>>,
+    Valid(form): Valid<NewNote>,
 ) -> Result<Response> {
-    let mut form = Submitted::new(posted);
-    let title = form.required::<String>("title");
-    let due = form.optional::<Date>("due");
-    let (Some(title), true) = (title, form.is_ok()) else {
-        let errors = form.errors();
-        let body = html! {
-            (ui.form("/notes").text("title", "Title").required().date("due", "Due", "1900-01-01", "2100-12-31")
-                .values(form.values()).errors(&errors.pairs()).submit("Save"))
-        };
-        return Ok(ui.page("New note", body).into_response());
+    let note = match form {
+        Ok(note) => note,
+        Err(bad) => {
+            let body = html! {
+                (ui.form("/notes").text("title", "Title").required()
+                    .date("due", "Due", "1900-01-01", "2100-12-31").checkbox("done", "Done")
+                    .values(&bad.values).errors(&bad.errors.pairs()).submit("Save"))
+            };
+            return Ok(ui.page("New note", body).into_response());
+        }
     };
-    let note = notes::ActiveModel { title: Set(title), due: Set(due), ..Default::default() }
-        .insert(&ctx.db)
-        .await?;
+    let note = notes::ActiveModel {
+        title: Set(note.title), due: Set(note.due), done: Set(note.done), ..Default::default()
+    }
+    .insert(&ctx.db)
+    .await?;
     Ok(ui.redirect(&format!("/notes/{}", note.id)).ok("Created.").into_response())
 }
 ```
+
+How it reads the form: values are trimmed and empty ones left out, so an empty field is
+`None` for an `Option` and "This field is required." otherwise; a value that does not parse
+gets "Check this field."; then the `#[validate(..)]` rules run. Every field in error gets its
+message at once, not only the first. A checkbox posts `on`, which serde does not read as a
+`bool`, hence `loco_ui::loco::checkbox`.
+
+Two lower-level pieces, for handlers that do not fit a struct:
+
+- `FieldErrors::from(&errors)` turns `validator`'s `ValidationErrors`, or the
+  `ModelValidationErrors` inside `Error::Validation` / `ModelError::Validation` (a model's
+  own rules, checked on save), into `(field, message)` pairs for `.errors(..)`.
+- `Submitted`, from `Form<Vec<(String, String)>>`, parses field by field: `required::<T>`,
+  `optional::<T>` and `checkbox`, recording the same messages as it goes. The account pages
+  from `cargo lui auth` use it, since sign-in checks the pair against the database.
 
 ## Sign-in without script
 
