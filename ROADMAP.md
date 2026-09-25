@@ -1284,3 +1284,18 @@ shadows and motion chosen. The no-script rules are unchanged:
 - [ ] README feature matrix, findings and `docs/comparison.md` say "Linear / Magic UI look"
   instead of "shadcn look". FINDINGS gets the Blitz gaps for `@starting-style`, `@property`
   and `animation-timeline`, each with an issue link.
+
+## M31 · The index shows the components
+The owner asked on 2026-09-25 for the main page to show the components themselves, not cards
+with their names, and for the grouping and navigation to move into a sidebar.
+
+- [ ] Index as a gallery: `/` renders each component live, with the same call its own page
+  shows in a small stage, under its name and linked to that page. Components that need a
+  full page (dialogs, drawers, toasts, sheets) show their trigger. The page stays one
+  request and readable with `curl`; a Blitz test checks that every group has a live
+  component on the index.
+- [ ] Sidebar: the groups (layers and the index groups in `site.rs`) become a sidebar on the
+  index and on every component page, listing each component under its group with the
+  current one marked (`aria-current="page"`). It is a plain `<nav>` with links; on narrow
+  screens it collapses into a `<details>` above the content. No script, and a Blitz shot at
+  1280 and 420 wide.
