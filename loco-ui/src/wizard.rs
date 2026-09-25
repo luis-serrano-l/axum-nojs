@@ -55,6 +55,7 @@
 
 use maud::{Markup, Render, html};
 
+use crate::i18n::Text;
 use crate::props::{Prop, PropKind};
 use crate::{Ui, enhance, form::Form};
 
@@ -145,7 +146,7 @@ impl Ui {
             values: &[],
             errors: &[],
             at: None,
-            finish: "Finish",
+            finish: self.text(Text::Finish),
             progress: true,
         }
     }
@@ -275,8 +276,8 @@ impl<'a> Wizard<'a> {
                             @for f in fields.iter().filter(|f| f.shown()) {
                                 dt { (f.label) }
                                 dd {
-                                    @if f.value.is_empty() { span class="lui-note" { "(skipped)" } } @else { (f.value) }
-                                    " " a class="lui-wizard-edit" href=(self.link(i)) aria-label={ "Edit " (f.label) } { "Edit" }
+                                    @if f.value.is_empty() { span class="lui-note" { (self.ui.text(Text::Skipped)) } } @else { (f.value) }
+                                    " " a class="lui-wizard-edit" href=(self.link(i)) aria-label=(self.ui.fill(Text::EditValue, &[&f.label])) { (self.ui.text(Text::Edit)) }
                                 }
                             }
                         }
@@ -313,8 +314,8 @@ impl Render for Wizard<'_> {
             div id=(enhance::swap_id("lui-wizard", id)) data-lui="swap" class="lui-wizard" {
                 @if current > 0 && state.remembered(&key) {
                     p class="lui-wizard-resume" role="status" {
-                        "Picked up where you left off, at step " (current + 1) ". "
-                        a href=(self.link(0)) { "Start over" }
+                        (ui.fill(Text::Resumed, &[&(current + 1)])) " "
+                        a href=(self.link(0)) { (ui.text(Text::StartOver)) }
                     }
                 }
                 ol class="lui-wizard-steps" {
@@ -327,20 +328,20 @@ impl Render for Wizard<'_> {
                         };
                         li class=[(!class.is_empty()).then_some(class)] aria-current=[(i == current).then_some("step")] {
                             @if i < current { a href=(self.link(i)) { (s.title) } } @else { span { (s.title) } }
-                            @if s.optional { " " small { "(optional)" } }
-                            @if failed(i) { span class="lui-sr" { " (has errors)" } }
+                            @if s.optional { " " small { (ui.text(Text::Optional)) } }
+                            @if failed(i) { span class="lui-sr" { (ui.text(Text::HasErrors)) } }
                         }
                     }
                 }
                 @if progress {
-                    progress class="lui-wizard-progress" value=(current) max=(steps.len().saturating_sub(1).max(1)) aria-label="Progress" {
-                        (current) " of " (steps.len().saturating_sub(1)) " steps done"
+                    progress class="lui-wizard-progress" value=(current) max=(steps.len().saturating_sub(1).max(1)) aria-label=(ui.text(Text::Progress)) {
+                        (ui.fill(Text::StepsDone, &[&current, &steps.len().saturating_sub(1)]))
                     }
                 }
                 form method="post" action=(action) class="lui-wizard-form" {
                     input type="hidden" name="step" value=(current);
                     fieldset aria-invalid=[failed(current).then_some("true")] {
-                        legend { "Step " (current + 1) " of " (steps.len()) ": " (step.title) @if step.optional { " (optional)" } }
+                        legend { (ui.fill(Text::StepOf, &[&(current + 1), &steps.len()])) ": " (step.title) @if step.optional { " " (ui.text(Text::Optional)) } }
                         @match &step.body {
                             Body::Fields(form) => (self.filled(form)),
                             Body::Html(markup) => (markup),
@@ -350,10 +351,10 @@ impl Render for Wizard<'_> {
                     p class="lui-wizard-actions" {
                         @if current > 0 {
                             @let back = self.link(current - 1).to_string();
-                            (ui.link_button("Back", &back).ghost().class("lui-wizard-back"))
+                            (ui.link_button(ui.text(Text::Back), &back).ghost().class("lui-wizard-back"))
                         }
-                        @if step.optional && !last { (ui.button("Skip").ghost().name("skip").value("1").formnovalidate()) }
-                        (ui.button(if last { finish } else { "Next" }).primary())
+                        @if step.optional && !last { (ui.button(ui.text(Text::Skip)).ghost().name("skip").value("1").formnovalidate()) }
+                        (ui.button(if last { finish } else { ui.text(Text::Next) }).primary())
                     }
                 }
             }

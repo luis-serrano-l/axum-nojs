@@ -61,6 +61,7 @@ use std::rc::Rc;
 
 use maud::{Markup, Render, html};
 
+use crate::i18n::Text;
 use crate::props::{Prop, PropKind};
 use crate::{Cap, Ui};
 
@@ -204,12 +205,12 @@ impl Render for Tabs<'_> {
                 @if select_below {
                     form method="get" action=(s.path()) class="lui-tabs-select" {
                         @for (k, v) in s.entries() { @if k != key { input type="hidden" name=(k) value=(v); } }
-                        select name=(key) aria-label="Tab" {
+                        select name=(key) aria-label=(ui.text(Text::Tab)) {
                             @for (i, t) in tabs.iter().enumerate() {
                                 option value=(i) selected[i == active] { (t.title) @if let Some(n) = t.badge { " (" (n) ")" } }
                             }
                         }
-                        (ui.button("Go"))
+                        (ui.button(ui.text(Text::Go)))
                     }
                 }
                 @for (i, t) in tabs.iter().enumerate() {

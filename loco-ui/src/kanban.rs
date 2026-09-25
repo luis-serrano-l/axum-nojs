@@ -41,6 +41,7 @@
 use maud::{Markup, Render, html};
 
 use crate::button::Button;
+use crate::i18n::Text;
 use crate::props::{Prop, PropKind};
 use crate::{Cap, Icon, Ui, enhance, slug};
 
@@ -155,11 +156,11 @@ impl Render for Kanban<'_> {
                             h3 id=(heading) { (col.title) }
                             span class={ "lui-kanban-count" @if over { " lui-kanban-over" } } {
                                 (col.cards.len()) @if let Some(l) = col.limit { " / " (l) }
-                                @if over { span class="lui-sr" { ", over the limit" } }
+                                @if over { span class="lui-sr" { (self.ui.text(Text::OverLimit)) } }
                             }
                         }
                         @if col.cards.is_empty() {
-                            p class="lui-kanban-empty" { "No cards" }
+                            p class="lui-kanban-empty" { (self.ui.text(Text::NoCards)) }
                         } @else {
                             ol class="lui-kanban-cards" {
                                 @for card in &col.cards {
@@ -169,11 +170,11 @@ impl Render for Kanban<'_> {
                                         form method="post" action=(self.action) class="lui-kanban-move" {
                                             input type="hidden" name="card" value=(card.key);
                                             @if let Some(prev) = i.checked_sub(1).and_then(|p| cols.get(p)) {
-                                                @let label = format!("Move {} to {}", card.title, prev.title);
+                                                @let label = self.ui.fill(Text::MoveTo, &[&card.title, &prev.title]);
                                                 (Button::new(caps, "").ghost().small().icon().name("to").value(prev.key).label(&label).content(html! { (Icon::ArrowLeft) }))
                                             }
                                             @if let Some(next) = cols.get(i + 1) {
-                                                @let label = format!("Move {} to {}", card.title, next.title);
+                                                @let label = self.ui.fill(Text::MoveTo, &[&card.title, &next.title]);
                                                 (Button::new(caps, "").ghost().small().icon().name("to").value(next.key).label(&label).content(html! { (Icon::ArrowRight) }))
                                             }
                                         }

@@ -15,6 +15,7 @@ pub(crate) fn routes() -> Router {
     Router::new()
         .route("/", get(index))
         .route("/theme", post(theme_submit))
+        .route("/lang", post(lang_submit))
 }
 
 /// Every component in the index: path, title (what each route passes to `page`), group, the
@@ -312,11 +313,19 @@ const LINEN: Tokens = Tokens {
     space: "8px",
 };
 
-/// The row above every title: the way back to the index (not on the index) and the theme switch.
+/// The row above every title: the way back to the index (not on the index), the language of
+/// the components' own words, and the theme switch.
 fn toolbar(ui: &Ui, back: bool) -> Markup {
+    let languages = html! {
+        form method="post" action="/lang" class="lui-lang" {
+            @for (tag, name) in [("en", "English"), ("es", "Español")] {
+                (ui.button(name).small().ghost().name("lang").value(tag).pressed(ui.lang() == tag))
+            }
+        }
+    };
     html! { nav class="lui-toolbar" {
         @if back { a class="lui-back" href="/" { "All components" } } @else { span {} }
-        (ui.theme_toggle("/theme"))
+        (ui.cluster(html! { (languages) (ui.theme_toggle("/theme")) }))
     } }
 }
 
@@ -432,6 +441,16 @@ struct ThemeForm {
 async fn theme_submit(ui: Ui, headers: HeaderMap, Form(f): Form<ThemeForm>) -> Redirect {
     ui.redirect(&back_to(&headers))
         .theme(Theme::parse(&f.theme))
+}
+
+#[derive(Deserialize)]
+struct LangForm {
+    lang: String,
+}
+
+/// Keep the picked language and go back to the page the switch was on.
+async fn lang_submit(ui: Ui, headers: HeaderMap, Form(f): Form<LangForm>) -> Redirect {
+    ui.redirect(&back_to(&headers)).lang(&f.lang)
 }
 
 /// The path of the page a form was posted from (same-origin `Referer`), or `/`.

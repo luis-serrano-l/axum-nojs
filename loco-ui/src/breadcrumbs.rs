@@ -31,6 +31,7 @@
 use maud::{Markup, Render, html};
 
 use crate::Ui;
+use crate::i18n::{Strings, Text};
 use crate::props::{Prop, PropKind};
 
 /// A trail of links ending in the current page, made by [`Ui::breadcrumbs`].
@@ -40,6 +41,7 @@ use crate::props::{Prop, PropKind};
 pub struct Breadcrumbs<'a> {
     trail: Vec<(&'a str, &'a str)>,
     here: &'a str,
+    strings: &'static Strings,
 }
 
 impl Breadcrumbs<'_> {
@@ -57,7 +59,10 @@ impl Ui {
     /// An empty trail: add the way down with [`Breadcrumbs::link`], then the page with
     /// [`Breadcrumbs::here`].
     pub fn breadcrumbs(&self) -> Breadcrumbs<'_> {
-        Breadcrumbs::default()
+        Breadcrumbs {
+            strings: self.strings,
+            ..Breadcrumbs::default()
+        }
     }
 }
 
@@ -89,13 +94,13 @@ impl Render for Breadcrumbs<'_> {
             (before, &before[..0], &before[..0])
         };
         html! {
-            nav class="lui-breadcrumbs" aria-label="Breadcrumb" {
+            nav class="lui-breadcrumbs" aria-label=(self.strings.get(Text::Breadcrumb)) {
                 ol {
                     @for (label, href) in head { li { a href=(href) { (label) } } }
                     @if fold {
                         li class="lui-breadcrumbs-fold" {
                             details {
-                                summary aria-label={ "Show " (middle.len()) " more" } { "\u{2026}" }
+                                summary aria-label=(self.strings.fill(Text::ShowMore, &[&middle.len()])) { "\u{2026}" }
                                 ol { @for (label, href) in middle { li { a href=(href) { (label) } } } }
                             }
                         }

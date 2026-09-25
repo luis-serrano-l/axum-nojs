@@ -46,6 +46,7 @@ use std::fmt::{self, Write};
 
 use crate::button::Button;
 use crate::enhance;
+use crate::i18n::Text;
 use crate::input::Input;
 use crate::table::{Column, Encoded, Row, TableOptions, TableQuery, table_in};
 use crate::{Caps, Icon, UiState};
@@ -170,6 +171,8 @@ pub(crate) fn paged_table_with(
         cols: inner.cols.or(cols.as_deref()),
         ..inner
     };
+    let strings = inner.strings;
+    let t = |text| strings.get(text);
     let per_key = if state.is_some() {
         format!("per.{id}")
     } else {
@@ -227,13 +230,13 @@ pub(crate) fn paged_table_with(
     html! {
         div id=(enhance::swap_id("lui-paged-table", id)) data-lui="swap" class="lui-paged-table" {
             (table_in(caps, id, href, columns, rows, TableOptions { sort, filter, keep: &keep, ..inner }, false))
-            nav class="lui-paged-table-nav" aria-label="Pages" {
-                output class="lui-paged-table-range" { (Thousands(first)) "–" (Thousands(last)) " of " (Thousands(total)) }
+            nav class="lui-paged-table-nav" aria-label=(t(Text::Pages)) {
+                output class="lui-paged-table-range" { (strings.fill(Text::RangeOf, &[&Thousands(first), &Thousands(last), &Thousands(total)])) }
                 ul class="lui-paged-table-pages" {
                     @if page > 1 {
                         @let (first, prev) = (link(1).to_string(), link(page - 1).to_string());
-                        li { (page_button(caps, &first, "First", false).class("lui-paged-table-end")) }
-                        li { (page_button(caps, &prev, "Previous", false).rel("prev").content(html! { (Icon::ChevronLeft) "Previous" })) }
+                        li { (page_button(caps, &first, t(Text::First), false).class("lui-paged-table-end")) }
+                        li { (page_button(caps, &prev, t(Text::Previous), false).rel("prev").content(html! { (Icon::ChevronLeft) (t(Text::Previous)) })) }
                     }
                     @for slot in window(page, pages) {
                         @match slot {
@@ -246,27 +249,27 @@ pub(crate) fn paged_table_with(
                     }
                     @if page < pages {
                         @let (next, last) = (link(page + 1).to_string(), link(pages).to_string());
-                        li { (page_button(caps, &next, "Next", false).rel("next").content(html! { "Next" (Icon::ChevronRight) })) }
-                        li { (page_button(caps, &last, "Last", false).class("lui-paged-table-end")) }
+                        li { (page_button(caps, &next, t(Text::Next), false).rel("next").content(html! { (t(Text::Next)) (Icon::ChevronRight) })) }
+                        li { (page_button(caps, &last, t(Text::Last), false).class("lui-paged-table-end")) }
                     }
                 }
                 @if pages > 1 {
                     form method="get" action=(href) class="lui-paged-table-jump" {
                         @for (k, v) in carried("") { input type="hidden" name=(k) value=(v); }
-                        span { "Page" }
-                        (Input::number_within("page", "Page", Some(1), Some(pages as i64)).hide_label().class("lui-paged-table-page").inputmode("numeric").id(&jump_id).value(&page_text))
-                        span { "of " (Thousands(pages)) }
-                        (Button::new(*caps, "Go"))
+                        span { (t(Text::Page)) }
+                        (Input::number_within("page", t(Text::Page), Some(1), Some(pages as i64)).hide_label().class("lui-paged-table-page").inputmode("numeric").id(&jump_id).value(&page_text))
+                        span { (strings.fill(Text::OfTotal, &[&Thousands(pages)])) }
+                        (Button::new(*caps, t(Text::Go)))
                     }
                 }
                 form method="get" action=(href) class="lui-paged-table-per" {
                     @for (k, v) in carried(&per_key) { input type="hidden" name=(k) value=(v); }
-                    label { "Rows per page "
+                    label { (t(Text::RowsPerPage)) " "
                         select name=(per_key) {
                             @for size in PAGE_SIZES { option value=(size) selected[size == per_page] { (size) } }
                         }
                     }
-                    (Button::new(*caps, "Show"))
+                    (Button::new(*caps, t(Text::Show)))
                 }
             }
         }

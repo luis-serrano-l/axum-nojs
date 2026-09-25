@@ -1068,11 +1068,26 @@ every Loco API named below against loco-rs 1.2 before relying on it, as M27 did.
   (React pages still emitted beside ours) are in FINDINGS.
 
 ### Library quality
-- [ ] i18n: `lang="en"` is hard-coded in `layout.rs` and built-in strings ("Next", "Close",
+- [x] i18n: `lang="en"` is hard-coded in `layout.rs` and built-in strings ("Next", "Close",
   "Load more", "Search", "Loading", "Page", "Cancel") are literals across components. Add
   `ui.lang()` (from `Accept-Language` or a cookie, set on `<html lang>`) and one string table
   (`Strings`, English default, overridable per app); a test fails on an English literal a
   component renders outside the table. Bridge to Loco's `fluent-templates` under `loco`.
+  Done: `i18n.rs`: `Text` (113 keys, `Text::key()` = `lui-<kebab>`), `Strings` (English
+  `const`, `Strings::new("es").with(Text::Next, "Siguiente")` in a `static`, `fill` with `{}`
+  and `{0}` placeholders so a language can reorder), `i18n::languages(&[..])` to register,
+  `Redirect::lang(tag)` for the `lui-lang` cookie. `Ui` carries `strings`; the cookie wins,
+  then `Accept-Language` by `q` and primary subtag (the Axum extractor reads the header;
+  `Ui::accept_language` for other servers); `ui.lang()`, `ui.text(..)`, `ui.fill(..)`;
+  `<html lang>` in pages and streamed pages. 25 components moved every word they write to
+  the table (month and weekday names and date order included). Test
+  `components_write_no_english_outside_the_string_table` reads component code for text-like
+  literals. Fluent: `Strings::from_lookup(lang, |key| LOCALES.try_lookup(..))`, no new
+  dependency; documented in the `loco` module (doctest) and `docs/loco.md`. Demo: a full
+  Spanish table (`demo/src/spanish.rs`, a test that nothing is left in English) and an
+  English/Español switch beside the theme toggle; demo test for cookie, header and switch.
+  Not covered: the form messages of `Valid`/`Submitted` (English, set your own in
+  `#[validate(message)]`) and the site header line in `layout::header`.
 - [ ] Automated accessibility: run axe-core inside `scripts/browser-check.mjs` over every
   `PATHS` route, both caps variants, light and dark (axe is injected by the test driver only,
   never served, so the one-script rule holds); CI fails on any violation of serious or

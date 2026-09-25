@@ -81,6 +81,7 @@ use loco_rs::controller::views::pagination::PagerMeta;
 use maud::{Markup, Render, html};
 
 use crate::button::Button;
+use crate::i18n::{Strings, Text};
 use crate::input::Input;
 use crate::paged_table::{PagedTableOptions, paged_table_with};
 use crate::popover::{MenuItem, Placement, menu};
@@ -319,6 +320,8 @@ pub(crate) struct TableOptions<'a> {
     /// Rows can be edited in place: an "Edit" link per row, and the row being edited as text
     /// boxes posting to one form.
     pub edit: Option<Editing<'a>>,
+    /// The visitor's language, for the table's own words.
+    pub strings: &'static Strings,
 }
 
 /// The in-place edit of a table's rows, worked out by [`Table`] from the request.
@@ -344,9 +347,10 @@ impl Default for TableOptions<'_> {
             choose_columns: false,
             bulk: None,
             csv: None,
-            empty: "No rows match.",
+            empty: Strings::ENGLISH.get(Text::NoRows),
             loading: false,
             edit: None,
+            strings: &Strings::ENGLISH,
         }
     }
 }
@@ -421,7 +425,9 @@ pub(crate) fn table_in(
         empty,
         loading,
         edit,
+        strings,
     } = options;
+    let t = |text| strings.get(text);
     let root = enhance::swap_id("lui-table", id);
     let edit_id = format!("{root}-edit");
     let filter_id = format!("{root}-q");
@@ -500,16 +506,16 @@ pub(crate) fn table_in(
                             input type="hidden" name="dir" value=(if desc { "desc" } else { "asc" });
                         }
                         @for (k, v) in &carried { @if *k != "q" { input type="hidden" name=(k) value=(v); } }
-                        (Input::search_box("q", "Filter rows", filter).id(&filter_id).placeholder("Filter rows…").autocomplete("off").class("lui-table-filter-input"))
-                        (Button::new(*caps, "Filter"))
+                        (Input::search_box("q", t(Text::FilterRows), filter).id(&filter_id).placeholder(t(Text::FilterRowsHint)).autocomplete("off").class("lui-table-filter-input"))
+                        (Button::new(*caps, t(Text::Filter)))
                         @if !filter.is_empty() {
-                            a class="lui-table-clear" href={ (href) (query(sort, &carried.iter().copied().filter(|(k, _)| *k != "q").collect::<Vec<_>>())) } { "Clear" }
+                            a class="lui-table-clear" href={ (href) (query(sort, &carried.iter().copied().filter(|(k, _)| *k != "q").collect::<Vec<_>>())) } { (t(Text::Clear)) }
                         }
                     }
                 }
                 @if choose_columns || cols.is_some() {
                     details class="lui-table-cols" {
-                        summary class="lui-button" { "Columns" (Icon::ChevronDown) }
+                        summary class="lui-button" { (t(Text::Columns)) (Icon::ChevronDown) }
                         ul {
                             @for c in columns {
                                 @let on = shown(c);
@@ -521,7 +527,7 @@ pub(crate) fn table_in(
                     }
                 }
                 @if let Some(base) = csv {
-                    a class="lui-table-csv" href={ (base) (query(sort, &carried)) } download { "Download CSV" }
+                    a class="lui-table-csv" href={ (base) (query(sort, &carried)) } download { (t(Text::DownloadCsv)) }
                 }
             }
             table {
@@ -532,7 +538,7 @@ pub(crate) fn table_in(
                     @if has_menu { col class="lui-table-menu-col"; }
                 }
                 thead { tr {
-                    @if bulk.is_some() { th scope="col" class="lui-table-select" { span class="lui-sr" { "Select" } } }
+                    @if bulk.is_some() { th scope="col" class="lui-table-select" { span class="lui-sr" { (t(Text::Select)) } } }
                     @for (_, col) in &visible {
                         @let sorted = sort.filter(|(k, _)| *k == col.key);
                         @let aria = sorted.map(|(_, d)| if d { "descending" } else { "ascending" });
@@ -547,8 +553,8 @@ pub(crate) fn table_in(
                             } @else { (col.label) }
                         }
                     }
-                    @if edit.is_some() { th scope="col" class="lui-table-edit" { span class="lui-sr" { "Edit" } } }
-                    @if has_menu { th scope="col" class="lui-table-menu" { span class="lui-sr" { "Actions" } } }
+                    @if edit.is_some() { th scope="col" class="lui-table-edit" { span class="lui-sr" { (t(Text::Edit)) } } }
+                    @if has_menu { th scope="col" class="lui-table-menu" { span class="lui-sr" { (t(Text::Actions)) } } }
                 } }
                 tbody style=[vt] aria-busy=[loading.then_some("true")] {
                     @if loading {
@@ -561,7 +567,7 @@ pub(crate) fn table_in(
                     tr class=[editing.then_some("lui-table-editing")] {
                         @if bulk.is_some() {
                             td class="lui-table-select" {
-                                @if let Some(k) = row.key { input type="checkbox" class="lui-table-check" name="row" value=(k) form=(bulk_id) aria-label={ "Select " (k) }; }
+                                @if let Some(k) = row.key { input type="checkbox" class="lui-table-check" name="row" value=(k) form=(bulk_id) aria-label=(strings.fill(Text::SelectRow, &[&k])); }
                             }
                         }
                         @for (n, (i, col)) in visible.iter().enumerate() {
@@ -583,18 +589,18 @@ pub(crate) fn table_in(
                         @if let Some(e) = edit {
                             td class="lui-table-edit" {
                                 @if editing {
-                                    (Button::new(*caps, "Save").primary().small().form(&edit_id))
-                                    (Button::link(*caps, "Cancel", e.done).ghost().small())
+                                    (Button::new(*caps, t(Text::Save)).primary().small().form(&edit_id))
+                                    (Button::link(*caps, t(Text::Cancel), e.done).ghost().small())
                                 } @else if let Some(k) = row.key {
                                     @let href = format!("{}{}", e.link, encode(k));
-                                    (Button::link(*caps, "Edit", &href).ghost().small())
+                                    (Button::link(*caps, t(Text::Edit), &href).ghost().small())
                                 }
                             }
                         }
                         @if has_menu {
                             td class="lui-table-menu" {
                                 @if let (Some(k), false) = (row.key, row.menu.is_empty()) {
-                                    (menu(caps, &format!("{root}-{}", slug(k)), "Row actions", &row.menu, Placement::BottomEnd, true))
+                                    (menu(caps, &format!("{root}-{}", slug(k)), t(Text::RowActions), &row.menu, Placement::BottomEnd, true))
                                 }
                             }
                         }
@@ -609,7 +615,7 @@ pub(crate) fn table_in(
             }
             @if let Some((action, buttons)) = bulk {
                 form method="post" action=(action) id=(bulk_id) class="lui-table-bulk" {
-                    span { "With the selected rows:" }
+                    span { (t(Text::WithSelected)) }
                     @for (value, label) in buttons { (Button::new(*caps, label).small().name("action").value(value)) }
                 }
             }
@@ -690,7 +696,7 @@ impl Ui {
             choose_columns: false,
             bulk: None,
             csv: None,
-            empty: "No rows match.",
+            empty: self.text(Text::NoRows),
             loading: false,
             edit: None,
         }
@@ -858,6 +864,7 @@ impl Render for Table<'_> {
             empty: self.empty,
             loading: self.loading,
             edit,
+            strings: self.ui.strings,
             ..TableOptions::default()
         };
         match self.total {

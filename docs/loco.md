@@ -234,6 +234,32 @@ supported. `examples/loco-app` scaffolds `task` with one field of each kind.
 - loco-ui's strict `csp` layer is not added for you; add
   `axum::middleware::from_fn(loco_ui::enhance::csp)` in `after_routes` to use it.
 
+## Languages
+
+The components' own words ("Next", "Load more", month names) come from one table per
+language, `loco_ui::i18n::Strings`; the request's language is the `lui-lang` cookie, else
+`Accept-Language`, and `<html lang>` says it. With Loco's fluent-templates, add the keys
+to each `assets/i18n/<lang>/main.ftl`:
+
+```ftl
+lui-next = Siguiente
+lui-load-more = Cargar más
+lui-rows-per-page = Filas por página
+```
+
+then build the tables once, in `App::boot` or an initializer (a key a file lacks stays
+English):
+
+```rust
+let spanish = Strings::from_lookup("es", |key| LOCALES.try_lookup(&langid!("es"), key));
+let tables: &'static [&'static Strings] = Box::leak(Box::new([&Strings::ENGLISH, spanish]));
+loco_ui::i18n::languages(tables);
+```
+
+`Text::ALL` lists every key (`Text::key()`); a language switch posts to a handler that
+answers `ui.redirect(back).lang("es")`. The form messages of `Valid` and `Submitted` ("This
+field is required.") are English; put your own in `#[validate(message = ..)]`.
+
 ## Views: Maud, not Tera
 
 Loco's generators write Tera templates under `assets/views/` and render them with

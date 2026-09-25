@@ -51,6 +51,7 @@
 use maud::{Markup, Render, html};
 
 use crate::Ui;
+use crate::i18n::Text;
 use crate::props::{Prop, PropKind};
 
 /// One section: a title, a body, an optional icon before the title and summary line under it.
@@ -183,8 +184,8 @@ impl Render for Accordion<'_> {
             div id={ "lui-accordion-" (group) } data-lui="swap" class="lui-accordion" {
                 @if multi && controls {
                     p class="lui-accordion-controls" {
-                        a href=(s.link(&key, &list(&(0..items.len()).collect::<Vec<_>>()))) { "Expand all" }
-                        a href=(s.link(&key, "")) { "Collapse all" }
+                        a href=(s.link(&key, &list(&(0..items.len()).collect::<Vec<_>>()))) { (ui.text(Text::ExpandAll)) }
+                        a href=(s.link(&key, "")) { (ui.text(Text::CollapseAll)) }
                     }
                 }
                 @for (i, item) in items.iter().enumerate() {

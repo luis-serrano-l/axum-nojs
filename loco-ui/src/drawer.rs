@@ -38,6 +38,7 @@
 
 use maud::{Markup, Render, html};
 
+use crate::i18n::Text;
 use crate::props::{Prop, PropKind};
 use crate::{Cap, Icon, Ui, slug};
 
@@ -162,9 +163,9 @@ impl Render for Drawer<'_> {
                         p id=(title_id) class="lui-drawer-title" { (title) }
                         @let x = html! { (Icon::X) };
                         @if invokers {
-                            (ui.button("").ghost().small().icon().class("lui-drawer-close").label("Close").content(x).command("close", id))
+                            (ui.button("").ghost().small().icon().class("lui-drawer-close").label(ui.text(Text::Close)).content(x).command("close", id))
                         } @else {
-                            (ui.link_button("", "#").ghost().small().icon().class("lui-drawer-close").label("Close").content(x))
+                            (ui.link_button("", "#").ghost().small().icon().class("lui-drawer-close").label(ui.text(Text::Close)).content(x))
                         }
                     }
                     nav aria-labelledby=(title_id) { (nav) }

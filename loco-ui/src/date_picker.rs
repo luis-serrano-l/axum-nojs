@@ -37,6 +37,7 @@ use maud::{Markup, Render, html};
 
 use crate::button::Button;
 use crate::calendar::Date;
+use crate::i18n::Text;
 use crate::props::{Prop, PropKind};
 use crate::{Cap, Icon, Ui};
 
@@ -170,11 +171,11 @@ impl Render for DatePicker<'_> {
         let browsing = ui.param(&format!("month.{}", self.name)).is_some();
         let popover = ui.has(Cap::Popover) && !browsing;
         let anchor = ui.has(Cap::Anchor);
-        let shown = Date::parse(value).map(|d| d.long());
+        let shown = Date::parse(value).map(|d| d.long(ui.strings));
         let face = html! {
             (Icon::Calendar)
             span class=[shown.is_none().then_some("lui-date-picker-empty")] {
-                @if let Some(s) = &shown { (s) } @else { "Pick a date" }
+                @if let Some(s) = &shown { (s) } @else { (ui.text(Text::PickDate)) }
             }
         };
         let legend = format!("{id}-label");

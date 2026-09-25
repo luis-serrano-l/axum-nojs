@@ -71,6 +71,7 @@ pub mod error_summary;
 pub mod flash;
 pub mod form;
 pub mod grid;
+pub mod i18n;
 pub mod icon;
 pub mod input;
 pub mod kanban;
@@ -452,6 +453,148 @@ mod tests {
     /// A builder with a `**Setters.**` paragraph, read from the source: its name, doc, the
     /// file's source and every setter (`pub fn` taking `self` and returning `Self`) of its
     /// `impl` blocks as (name, arguments after `self`).
+    /// Every word a component writes by itself comes from `i18n::Strings`, so a translated
+    /// table reaches every part. This reads each component's code (not its docs, tests, CSS or
+    /// `PROPS`) for string literals that look like text for people: a capitalised word, or two
+    /// words with a space. What is left is markup syntax, attribute values and keys.
+    #[test]
+    fn components_write_no_english_outside_the_string_table() {
+        // Files that are not components, or whose text is not for the visitor: the table
+        // itself, the spec and props lists, the script, Loco glue (its form messages are
+        // `FieldErrors`' own, overridable by the app), icons (SVG paths), the site header in
+        // `layout` (the demo's brand line) and debug output.
+        const SKIP: [&str; 8] = [
+            "i18n.rs",
+            "spec.rs",
+            "props.rs",
+            "lib.rs",
+            "enhance.rs",
+            "loco.rs",
+            "icon.rs",
+            "layout.rs",
+        ];
+        let mut found = Vec::new();
+        for path in library_sources() {
+            let name = path.file_name().unwrap().to_string_lossy().to_string();
+            if SKIP.contains(&name.as_str()) {
+                continue;
+            }
+            let source = std::fs::read_to_string(&path).unwrap();
+            let code = source.split("#[cfg(test)]\nmod tests").next().unwrap();
+            let (mut in_css, mut in_props) = (false, false);
+            for (n, line) in code.lines().enumerate() {
+                let t = line.trim();
+                if t.starts_with("pub const CSS") {
+                    in_css = true;
+                }
+                if in_css {
+                    in_css = !t.starts_with("\"#;");
+                    continue;
+                }
+                if t.starts_with("pub const PROPS") {
+                    in_props = true;
+                }
+                if in_props {
+                    in_props = t != "];";
+                    continue;
+                }
+                let skip = t.starts_with("//")
+                    || t.starts_with("Prop::new")
+                    || t.starts_with(".doc(")
+                    || t.starts_with(".default(")
+                    || t.contains("expect(")
+                    || t.contains("debug_struct(")
+                    || t.contains("write_str(")
+                    || t.contains("debug_tuple(")
+                    || t.contains("write!(f");
+                if skip {
+                    continue;
+                }
+                for literal in literals(t) {
+                    if looks_like_text(literal) {
+                        found.push(format!("{name}:{}: \"{literal}\"", n + 1));
+                    }
+                }
+            }
+        }
+        assert!(
+            found.is_empty(),
+            "English outside i18n::Strings:\n{}",
+            found.join("\n")
+        );
+    }
+
+    /// The string literals on one line (not raw strings; escapes kept as written).
+    fn literals(line: &str) -> Vec<&str> {
+        let mut out = Vec::new();
+        let mut rest = line;
+        while let Some(start) = rest.find('"') {
+            let body = &rest[start + 1..];
+            let mut end = None;
+            let mut escaped = false;
+            for (i, c) in body.char_indices() {
+                match c {
+                    '\\' if !escaped => escaped = true,
+                    '"' if !escaped => {
+                        end = Some(i);
+                        break;
+                    }
+                    _ => escaped = false,
+                }
+            }
+            let Some(end) = end else { break };
+            out.push(&body[..end]);
+            rest = &body[end + 1..];
+        }
+        out
+    }
+
+    /// A capitalised word followed by lowercase ("Next"), or two words with a space
+    /// ("Load more", " of "), once format placeholders are taken out.
+    fn looks_like_text(literal: &str) -> bool {
+        let mut plain = String::new();
+        let mut depth = 0;
+        for c in literal.chars() {
+            match c {
+                '{' => depth += 1,
+                '}' => depth -= 1,
+                _ if depth == 0 => plain.push(c),
+                _ => {}
+            }
+        }
+        // A class, inline CSS, markup, a cookie or header value, a key shortcut.
+        let syntax = plain.trim_start().starts_with("lui-")
+            || plain.contains("--")
+            || plain.contains('<')
+            || plain.contains('>')
+            || plain.contains("Path=/")
+            || plain.contains("charset")
+            || plain.contains("Alt+")
+            || plain.contains("span-")
+            || plain.contains("position-area")
+            || plain.split_once(": ").is_some_and(|(k, _)| {
+                !k.is_empty() && k.chars().all(|c| c.is_ascii_lowercase() || c == '-')
+            });
+        if syntax {
+            return false;
+        }
+        let words: Vec<&str> = plain
+            .split(|c: char| !c.is_ascii_alphabetic())
+            .filter(|w| w.len() >= 2)
+            .collect();
+        let capitalised = words.iter().any(|w| {
+            let mut cs = w.chars();
+            cs.next().is_some_and(|c| c.is_ascii_uppercase())
+                && cs.next().is_some_and(|c| c.is_ascii_lowercase())
+        });
+        let sentence = plain.contains(' ')
+            && words
+                .iter()
+                .any(|w| w.chars().all(|c| c.is_ascii_lowercase()));
+        let aside = plain.starts_with('(') && plain.ends_with(')') && words.len() == 1; // "(skipped)"
+        capitalised || sentence || aside
+    }
+
     /// The library's own files, `src/*.rs` (not `src/bin/`, the installer).
     fn library_sources() -> Vec<std::path::PathBuf> {
         let dir = concat!(env!("CARGO_MANIFEST_DIR"), "/src");

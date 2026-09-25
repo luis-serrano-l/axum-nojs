@@ -212,6 +212,24 @@
 //! The "Load more" [`Pager`](crate::pager::Pager) shows every row up to `?page=`, so it
 //! fetches the first `pager.shown()` rows: `query.limit(pager.shown() as u64).all(db)`.
 //!
+//! Languages: Loco's i18n is `fluent-templates` (`assets/i18n/<lang>/main.ftl`, a
+//! `static_loader!`). Give each language the components' keys (`lui-next = Siguiente`,
+//! `lui-load-more = Cargar más`, every [`Text::key`](crate::i18n::Text::key)) and build the
+//! tables from the loader once, at start-up; a key the file lacks stays English:
+//!
+//! ```rust
+//! use loco_ui::i18n::{self, Strings, Text};
+//! # struct Loader;
+//! # impl Loader { fn try_lookup(&self, lang: &str, key: &str) -> Option<String> {
+//! #     (lang == "es" && key == "lui-next").then(|| "Siguiente".to_string()) } }
+//! # static LOCALES: Loader = Loader;
+//! // `LOCALES.try_lookup(&langid!("es"), key)` with fluent-templates.
+//! let spanish = Strings::from_lookup("es", |key| LOCALES.try_lookup("es", key));
+//! let tables: &'static [&'static Strings] = Box::leak(Box::new([&Strings::ENGLISH, spanish]));
+//! i18n::languages(tables);
+//! assert_eq!(spanish.get(Text::Next), "Siguiente");
+//! ```
+//!
 //! Flash and Post/Redirect/Get need nothing from Loco. The flash and UI state are plain
 //! `lui-*` cookies read and written by `Ui` and `Redirect`, so there is no signing key to take
 //! from `config/*.yaml`, and they never collide with the JWT cookie `auth.jwt.location` names.

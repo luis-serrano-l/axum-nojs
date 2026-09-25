@@ -46,6 +46,7 @@
 use maud::{Markup, Render, html};
 
 use crate::Ui;
+use crate::i18n::Text;
 use crate::props::{Prop, PropKind};
 
 /// How much a message matters: sets its colour and how it is announced.
@@ -168,7 +169,7 @@ impl Render for Flash<'_> {
                             role=(if *level == Level::Danger { "alert" } else { "status" }) {
                             span class="lui-flash-text" { (message) }
                             @if let Some(href) = dismiss {
-                                " " a class="lui-flash-dismiss" href=(href) aria-label={ "Dismiss: " (message) } { "Dismiss" }
+                                " " a class="lui-flash-dismiss" href=(href) aria-label=(self.ui.fill(Text::DismissMessage, &[message])) { (self.ui.text(Text::Dismiss)) }
                             }
                         }
                     }

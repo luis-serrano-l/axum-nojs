@@ -56,7 +56,7 @@ impl Ui {
     /// A page in this request's theme whose slow sections arrive later: mark each with
     /// [`Ui::slot`], then add its content with [`Streamed::fill`].
     pub fn stream(&self, title: &str, body: Markup) -> Streamed {
-        Streamed::page(&self.caps, title, self.theme, body)
+        Streamed::page(&self.caps, self.lang(), title, self.theme, body)
     }
 
     /// Placeholder for the section `id`. In DSD mode it is a named `<slot>` showing
@@ -106,7 +106,7 @@ impl std::fmt::Debug for Streamed {
 
 impl Streamed {
     /// The page shell with `body` inside `<main>`, like `layout`, ready for fills.
-    fn page(caps: &Caps, title: &str, theme: Theme, body: Markup) -> Streamed {
+    fn page(caps: &Caps, lang: &str, title: &str, theme: Theme, body: Markup) -> Streamed {
         let dsd = caps.has(Cap::StreamingDsd);
         let inner = html! {
             (layout::header())
@@ -115,7 +115,7 @@ impl Streamed {
         };
         let open = html! {
             (DOCTYPE)
-            html lang="en" data-theme=(theme.as_str()) { (layout::head(title)) }
+            html lang=(lang) data-theme=(theme.as_str()) { (layout::head(title)) }
         };
         // `html!` closes every element it opens, so the tags after `<head>` are written by hand.
         let open = open.into_string().trim_end_matches("</html>").to_string();

@@ -56,6 +56,7 @@
 
 use maud::{Markup, Render, html};
 
+use crate::i18n::Text;
 use crate::input::Input;
 use crate::props::{Prop, PropKind};
 use crate::{Cap, Ui};
@@ -290,8 +291,8 @@ impl Render for Select<'_> {
                 span class="lui-select" {
                     @if let Some(action) = search {
                         span class="lui-select-search" {
-                            (Input::search_box(&q_name, "Filter options", q).id(&q_id).placeholder("Filter").class("lui-select-filter"))
-                            (ui.button("Filter").formmethod("get").formaction(action).formnovalidate())
+                            (Input::search_box(&q_name, ui.text(Text::FilterOptions), q).id(&q_id).placeholder(ui.text(Text::Filter)).class("lui-select-filter"))
+                            (ui.button(ui.text(Text::Filter)).formmethod("get").formaction(action).formnovalidate())
                         }
                     }
                     select id=(name) name=(name) {

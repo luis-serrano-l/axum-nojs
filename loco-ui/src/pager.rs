@@ -39,6 +39,7 @@ use std::rc::Rc;
 use maud::{Markup, Render, html};
 
 use crate::button::Button;
+use crate::i18n::{Strings, Text};
 use crate::props::{Prop, PropKind};
 use crate::{Cap, Caps, Ui, enhance};
 
@@ -49,6 +50,7 @@ use crate::{Cap, Caps, Ui, enhance};
 #[derive(Clone)]
 pub struct Pager<'a> {
     caps: Caps,
+    strings: &'static Strings,
     href: &'a str,
     total: usize,
     page: usize,
@@ -97,6 +99,7 @@ impl Ui {
             .max(1);
         Pager {
             caps: self.caps,
+            strings: self.strings,
             href,
             total,
             page,
@@ -128,6 +131,7 @@ impl<'a> Pager<'a> {
 impl Render for Pager<'_> {
     fn render(&self) -> Markup {
         let Pager {
+            strings: _,
             caps,
             href,
             total,
@@ -152,9 +156,9 @@ impl Render for Pager<'_> {
                         }
                     }
                 }
-                p class="lui-note" { "Showing " (shown) " of " (total) }
+                p class="lui-note" { (self.strings.fill(Text::ShowingOf, &[&shown, &total])) }
                 @if page * per_page < total {
-                    (Button::link(caps, "Load more", &next).class("lui-pager-more"))
+                    (Button::link(caps, self.strings.get(Text::LoadMore), &next).class("lui-pager-more"))
                 }
             }
         }

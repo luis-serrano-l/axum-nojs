@@ -45,6 +45,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use maud::{Markup, Render, html};
 
 use crate::button::Button;
+use crate::i18n::{Strings, Text};
 use crate::props::{Prop, PropKind};
 use crate::{Icon, Ui, enhance};
 
@@ -58,30 +59,6 @@ pub struct Date {
     /// 1 to the month's length.
     pub day: u8,
 }
-
-const MONTHS: [&str; 12] = [
-    "January",
-    "February",
-    "March",
-    "April",
-    "May",
-    "June",
-    "July",
-    "August",
-    "September",
-    "October",
-    "November",
-    "December",
-];
-const WEEKDAYS: [&str; 7] = [
-    "Monday",
-    "Tuesday",
-    "Wednesday",
-    "Thursday",
-    "Friday",
-    "Saturday",
-    "Sunday",
-];
 
 impl Date {
     /// The date, or `None` when the day does not exist (`2026-02-30`).
@@ -154,24 +131,16 @@ impl Date {
     }
 
     /// `"24 September 2026"`, the date as a button or a sentence shows it.
-    pub(crate) fn long(self) -> String {
-        format!(
-            "{} {} {}",
-            self.day,
-            MONTHS[usize::from(self.month - 1)],
-            self.year
-        )
+    pub(crate) fn long(self, s: &Strings) -> String {
+        let month = s.get(Text::month(u32::from(self.month)));
+        s.fill(Text::DayMonthYear, &[&self.day, &month, &self.year])
     }
 
     /// `"Thursday, 24 September 2026"`, what a screen reader says for the day.
-    pub(crate) fn spoken(self) -> String {
-        format!(
-            "{}, {} {} {}",
-            WEEKDAYS[usize::from(self.weekday())],
-            self.day,
-            MONTHS[usize::from(self.month - 1)],
-            self.year
-        )
+    pub(crate) fn spoken(self, s: &Strings) -> String {
+        let weekday = s.get(Text::weekday(u32::from(self.weekday())));
+        let month = s.get(Text::month(u32::from(self.month)));
+        s.fill(Text::LongDate, &[&weekday, &self.day, &month, &self.year])
     }
 }
 
@@ -355,7 +324,8 @@ impl Render for Calendar<'_> {
         let weeks = (lead + len + 6) / 7;
         let root = enhance::swap_id("lui-calendar", name);
         let title_id = format!("{root}-title");
-        let title = format!("{} {}", MONTHS[usize::from(shown.month - 1)], shown.year);
+        let month = ui.text(Text::month(u32::from(shown.month)));
+        let title = ui.fill(Text::MonthYear, &[&month, &shown.year]);
         let (prev_href, next_href) = (
             ui.link_with(&month_key, &format!("{:04}-{:02}", prev.year, prev.month)),
             ui.link_with(&month_key, &format!("{:04}-{:02}", next.year, next.month)),
@@ -373,18 +343,18 @@ impl Render for Calendar<'_> {
                 b.disabled().render()
             }
         };
-        let weekdays = (0..7).map(|i| WEEKDAYS[((i + start) % 7) as usize]);
+        let weekdays = (0..7).map(|i| ui.text(Text::weekday((i + start) as u32)));
         html! {
             div id=(root) data-lui="swap" class="lui-calendar"
                 role=(if self.radio { "radiogroup" } else { "group" }) aria-labelledby=(title_id)
                 aria-required=[(self.radio && self.required).then_some("true")] {
                 div class="lui-calendar-head" {
-                    (nav(&prev_href, "Previous month", Icon::ChevronLeft, has_prev))
+                    (nav(&prev_href, ui.text(Text::PreviousMonth), Icon::ChevronLeft, has_prev))
                     p id=(title_id) class="lui-calendar-title" aria-live="polite" { (title) }
-                    (nav(&next_href, "Next month", Icon::ChevronRight, has_next))
+                    (nav(&next_href, ui.text(Text::NextMonth), Icon::ChevronRight, has_next))
                 }
                 table class="lui-calendar-grid" aria-labelledby=(title_id) {
-                    thead { tr { @for w in weekdays { th scope="col" abbr=(w) { (&w[..2]) } } } }
+                    thead { tr { @for w in weekdays { th scope="col" abbr=(w) { (w.chars().take(2).collect::<String>()) } } } }
                     tbody {
                         @for week in 0..weeks { tr {
                             @for i in 0..7 {
@@ -418,7 +388,7 @@ impl Calendar<'_> {
         let tip = (!events.is_empty()).then(|| events.join(", "));
         let face = html! {
             span aria-hidden="true" { (d.day) }
-            span class="lui-sr" { (d.spoken()) @for e in &events { ", " (e) } }
+            span class="lui-sr" { (d.spoken(self.ui.strings)) @for e in &events { ", " (e) } }
             @if !events.is_empty() {
                 span class="lui-calendar-dots" aria-hidden="true" { @for _ in events.iter().take(3) { span {} } }
             }

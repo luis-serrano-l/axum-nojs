@@ -46,6 +46,7 @@
 
 use maud::{Markup, Render, html};
 
+use crate::i18n::Text;
 use crate::input::Input;
 use crate::props::{Prop, PropKind};
 use crate::{Cap, Icon, Ui};
@@ -132,7 +133,7 @@ impl Ui {
             action,
             commands: Vec::new(),
             group: "",
-            label: "Search",
+            label: self.text(Text::Search),
             key: 'k',
         }
     }
@@ -218,8 +219,8 @@ impl Render for Palette<'_> {
             let found = matches(commands, q);
             html! {
                 section class="lui-palette-results" aria-labelledby={ (id) "-results" } {
-                    h2 id={ (id) "-results" } { (found.len()) @if found.len() == 1 { " match" } @else { " matches" } " for \u{201c}" (q) "\u{201d}" }
-                    @if found.is_empty() { p { "Nothing by that name. Try one word, or pick from the list." } }
+                    h2 id={ (id) "-results" } { (ui.fill(Text::ForQuery, &[&count(ui, found.len()), &q])) }
+                    @if found.is_empty() { p { (ui.text(Text::NothingByThatName)) } }
                     @else { (grouped(found)) }
                 }
             }
@@ -227,8 +228,8 @@ impl Render for Palette<'_> {
         let form = html! {
             search {
                 form method="get" action=(action) class="lui-palette-form" {
-                    (Input::search_box("q", label, query.unwrap_or("")).id(&input_id).list(&list_id).autofocus().autocomplete("off").placeholder("Type a command or a page").class("lui-palette-input"))
-                    (ui.button("Go").primary().small())
+                    (Input::search_box("q", label, query.unwrap_or("")).id(&input_id).list(&list_id).autofocus().autocomplete("off").placeholder(ui.text(Text::TypeCommand)).class("lui-palette-input"))
+                    (ui.button(ui.text(Text::Go)).primary().small())
                 }
             }
             datalist id=(list_id) { @for c in commands { option value=(c.label) {} } }
@@ -267,6 +268,15 @@ fn grouped(commands: Vec<&Command>) -> Markup {
                 ul { @for c in commands.iter().filter(|c| c.group == g) { li { a href=(c.href) { (c.label) } } } }
             }
         }
+    }
+}
+
+/// "1 match" or "{n} matches" in the visitor's language; the combobox says it too.
+pub(crate) fn count(ui: &Ui, n: usize) -> String {
+    if n == 1 {
+        ui.text(Text::OneMatch).to_string()
+    } else {
+        ui.fill(Text::Matches, &[&n])
     }
 }
 

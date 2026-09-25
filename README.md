@@ -136,6 +136,15 @@ reset password, email verification and magic-link pages, all forms, with Loco's 
 Loco's router and Blitz; [`docs/loco.md`](docs/loco.md) covers install, controllers, forms,
 sign-in, the generator and the Loco settings that affect pages.
 
+## Languages
+
+The words components write themselves ("Next", "Load more", "Rows per page", month names)
+come from one table, `i18n::Strings`, picked per request from the `lui-lang` cookie or
+`Accept-Language`; `<html lang>` follows. English is built in; an app adds a language with
+`Strings::new("es").with(Text::Next, "Siguiente")…` or fills one from Loco's fluent files
+(`Strings::from_lookup`). The demo has Spanish (the switch beside the theme toggle), and a
+test fails when a component writes English outside the table.
+
 ## Use with any server
 
 The crate depends on Maud alone. Axum is an optional feature, and everything it does is a

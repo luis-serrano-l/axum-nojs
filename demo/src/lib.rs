@@ -3,6 +3,7 @@
 
 pub mod pricing;
 pub mod snapshot;
+pub mod spanish;
 
 mod code;
 mod routes;
@@ -57,6 +58,7 @@ pub const PATHS: [&str; 34] = [
 pub fn router() -> Router {
     // Load syntect's grammars and highlight the snippets now, not on the first page view.
     std::thread::spawn(|| LazyLock::force(&code::CODE));
+    loco_ui::i18n::languages(&spanish::LANGUAGES);
     Router::new()
         .merge(site::routes())
         .merge(routes::primitives::routes())

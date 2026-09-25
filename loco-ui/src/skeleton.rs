@@ -27,6 +27,7 @@
 use maud::{Markup, Render, html};
 
 use crate::Ui;
+use crate::i18n::Text;
 use crate::props::{Prop, PropKind};
 
 /// Placeholder bars, made by [`Ui::skeleton`]; the last one is shorter, like the end of a
@@ -57,7 +58,7 @@ impl Ui {
     pub fn skeleton<'a>(&self, lines: usize) -> Skeleton<'a> {
         Skeleton {
             lines,
-            label: "Loading",
+            label: self.text(Text::Loading),
             heading: false,
         }
     }

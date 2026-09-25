@@ -601,3 +601,36 @@ async fn refused_forms_lead_with_an_error_summary() {
             .contains("lui-error-summary\"")
     );
 }
+
+/// The components' own words follow the visitor's language: the `lui-lang` cookie, else
+/// `Accept-Language`; the page's own copy stays as written.
+#[tokio::test]
+async fn components_speak_the_visitors_language() {
+    let page = |cookie: &'static str, accept: &'static str| async move {
+        let req = Request::get("/table")
+            .header("cookie", cookie)
+            .header("accept-language", accept)
+            .body(Body::empty())
+            .unwrap();
+        let res = router().oneshot(req).await.unwrap();
+        let bytes = axum::body::to_bytes(res.into_body(), usize::MAX)
+            .await
+            .unwrap();
+        String::from_utf8(bytes.to_vec()).unwrap()
+    };
+    let spanish = page("", "es-ES,es;q=0.9").await;
+    assert!(spanish.contains(r#"<html lang="es""#), "lang attribute");
+    assert!(spanish.contains("Siguiente") && spanish.contains("Filas por página"));
+    assert!(!spanish.contains(">Next<"));
+    let english = page("lui-lang=en", "es").await;
+    assert!(english.contains(r#"<html lang="en""#) && english.contains("Rows per page"));
+
+    let req = Request::post("/lang")
+        .header("content-type", "application/x-www-form-urlencoded")
+        .header("referer", "http://localhost/table")
+        .body(Body::from("lang=es"))
+        .unwrap();
+    let res = router().oneshot(req).await.unwrap();
+    let set = res.headers()["set-cookie"].to_str().unwrap();
+    assert!(set.starts_with("lui-lang=es;"), "{set}");
+}

@@ -183,7 +183,7 @@ impl Tokens {
 /// Wrap `body` in a full page with the default [`Tokens`]. Beacons are added while the
 /// browser is still unknown.
 pub fn layout(caps: &Caps, title: &str, theme: Theme, body: Markup) -> Markup {
-    page(caps, title, theme, None, &[], true, body)
+    page(caps, "en", title, theme, None, &[], true, body)
 }
 
 /// [`layout`] under a different set of [`Tokens`]: the overrides are emitted once, in a
@@ -195,13 +195,15 @@ pub fn layout_with(
     tokens: &Tokens,
     body: Markup,
 ) -> Markup {
-    page(caps, title, theme, Some(tokens), &[], true, body)
+    page(caps, "en", title, theme, Some(tokens), &[], true, body)
 }
 
 /// The whole document: `tokens` overrides and then `css` (a user component's styles, see
 /// `Page::css`) follow the stylesheet in the head, each once.
+#[allow(clippy::too_many_arguments)]
 pub(crate) fn page(
     caps: &Caps,
+    lang: &str,
     title: &str,
     theme: Theme,
     tokens: Option<&Tokens>,
@@ -214,7 +216,7 @@ pub(crate) fn page(
     html! {
         (Reserve(size))
         (DOCTYPE)
-        html lang="en" data-theme=(theme.as_str()) {
+        html lang=(lang) data-theme=(theme.as_str()) {
             head {
                 (meta(title))
                 // Hold a cross-document view transition until `#main` is parsed. Streamed

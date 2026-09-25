@@ -41,6 +41,7 @@
 use maud::{Markup, Render, html};
 
 use crate::button::Button;
+use crate::i18n::{Strings, Text};
 use crate::input::Input;
 use crate::props::{Prop, PropKind};
 use crate::{Cap, Caps, Icon, Ui, enhance};
@@ -52,6 +53,7 @@ use crate::{Cap, Caps, Icon, Ui, enhance};
 #[derive(Clone, Debug)]
 pub struct Counter<'a> {
     caps: Caps,
+    strings: &'static Strings,
     action: &'a str,
     value: i64,
     min: Option<i64>,
@@ -84,6 +86,7 @@ impl Ui {
     pub fn counter<'a>(&self, action: &'a str, value: i64) -> Counter<'a> {
         Counter {
             caps: self.caps,
+            strings: self.strings,
             action,
             value,
             min: None,
@@ -136,6 +139,7 @@ impl Counter<'_> {
 impl Render for Counter<'_> {
     fn render(&self) -> Markup {
         let Counter {
+            strings: _,
             caps,
             action,
             value,
@@ -158,23 +162,23 @@ impl Render for Counter<'_> {
         };
         html! {
             form id=(enhance::swap_id("lui-counter", action)) data-lui="swap" class="lui-counter" method="post" action=(action) {
-                (op("dec", at_min).icon().label("decrement").content(html! { (Icon::Minus) }))
+                (op("dec", at_min).icon().label(self.strings.get(Text::Decrement)).content(html! { (Icon::Minus) }))
                 output style=[vt] { (value) }
-                (op("inc", at_max).icon().label("increment").content(html! { (Icon::Plus) }))
-                (op("reset", false).ghost().content(html! { "Reset" }))
+                (op("inc", at_max).icon().label(self.strings.get(Text::Increment)).content(html! { (Icon::Plus) }))
+                (op("reset", false).ghost().content(html! { (self.strings.get(Text::Reset)) }))
                 @if typed {
-                    (Input::number_within("value", "Value", min, max).hide_label().class("lui-counter-input").step(step).inputmode("numeric").id(&typed_id).value(&value_text))
-                    (op("set", false).content(html! { "Set" }))
+                    (Input::number_within("value", self.strings.get(Text::Value), min, max).hide_label().class("lui-counter-input").step(step).inputmode("numeric").id(&typed_id).value(&value_text))
+                    (op("set", false).content(html! { (self.strings.get(Text::Set)) }))
                 }
                 @if min.is_some() || max.is_some() {
                     small class="lui-counter-bounds" {
                         @match (min, max) {
-                            (Some(a), Some(b)) => { (a) " to " (b) },
-                            (Some(a), None) => { "at least " (a) },
-                            (None, Some(b)) => { "at most " (b) },
+                            (Some(a), Some(b)) => { (self.strings.fill(Text::FromTo, &[&a, &b])) },
+                            (Some(a), None) => { (self.strings.fill(Text::AtLeast, &[&a])) },
+                            (None, Some(b)) => { (self.strings.fill(Text::AtMost, &[&b])) },
                             _ => {},
                         }
-                        @if step != 1 { ", in steps of " (step) }
+                        @if step != 1 { (self.strings.fill(Text::InStepsOf, &[&step])) }
                     }
                 }
             }

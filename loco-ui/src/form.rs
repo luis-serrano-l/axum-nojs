@@ -73,6 +73,7 @@
 use maud::{Markup, Render, html};
 
 use crate::button::Button;
+use crate::i18n::{Strings, Text};
 use crate::input::{Choice, Field, FieldKind};
 use crate::props::{Prop, PropKind};
 use crate::{Caps, Ui, enhance};
@@ -96,6 +97,7 @@ pub struct Form<'a> {
     values: &'a [(String, String)],
     errors: &'a [(&'a str, &'a str)],
     id: Option<&'a str>,
+    strings: &'static Strings,
 }
 
 impl Form<'_> {
@@ -174,7 +176,8 @@ impl Ui {
         Form {
             action: None,
             groups: vec![(None, Vec::new())],
-            submit: "Submit",
+            submit: self.text(Text::Submit),
+            strings: self.strings,
             inline: false,
             values: &[],
             errors: &[],
@@ -426,6 +429,7 @@ impl<'a> Form<'a> {
             .filter(|(n, _)| !fields.iter().any(|f| f.name == *n));
         items.extend(loose.map(|(_, m)| (None, None, *m)));
         crate::error_summary::ErrorSummary::from_fields(items)
+            .title(self.strings.get(Text::Problem))
     }
 
     /// Whether any field has a server message.

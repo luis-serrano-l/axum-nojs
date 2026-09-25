@@ -72,6 +72,7 @@
 
 use maud::{Markup, Render, html};
 
+use crate::i18n::Text;
 use crate::props::{Prop, PropKind};
 use crate::{Cap, Icon, Ui, slug};
 
@@ -164,8 +165,8 @@ impl Ui {
             danger: false,
             confirm: None,
             returns_to: None,
-            close: "Close",
-            cancel: "Cancel",
+            close: self.text(Text::Close),
+            cancel: self.text(Text::Cancel),
             closedby: "any",
         }
     }
@@ -308,9 +309,9 @@ impl Render for Dialog<'_> {
                     @if title.is_some() {
                         @let x = html! { (Icon::X) };
                         @if invokers {
-                            (ui.button("").ghost().small().icon().class("lui-dialog-close").label("Close").content(x).command("close", id))
+                            (ui.button("").ghost().small().icon().class("lui-dialog-close").label(ui.text(Text::Close)).content(x).command("close", id))
                         } @else {
-                            (ui.link_button("", "#").ghost().small().icon().class("lui-dialog-close").label("Close").content(x))
+                            (ui.link_button("", "#").ghost().small().icon().class("lui-dialog-close").label(ui.text(Text::Close)).content(x))
                         }
                     }
                 }

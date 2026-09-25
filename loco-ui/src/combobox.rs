@@ -51,6 +51,7 @@
 
 use maud::{Markup, Render, html};
 
+use crate::i18n::Text;
 use crate::input::Input;
 use crate::props::{Prop, PropKind};
 use crate::{Icon, Ui, state::encode};
@@ -121,8 +122,8 @@ impl Ui {
             results: None,
             multi: false,
             create: None,
-            label: "Search",
-            placeholder: "Type to search\u{2026}",
+            label: self.text(Text::Search),
+            placeholder: self.text(Text::TypeToSearch),
         }
     }
 }
@@ -221,12 +222,12 @@ impl Render for Combobox<'_> {
             search class="lui-combobox" {
                 form method="get" action=(action) {
                     @if !selected.is_empty() {
-                        ul class="lui-combobox-chips" aria-label="Selected" {
+                        ul class="lui-combobox-chips" aria-label=(ui.text(Text::Selected)) {
                             @for v in &selected {
                                 li class="lui-combobox-chip" {
                                     (v)
                                     input type="hidden" name="sel" value=(v);
-                                    a href=(remove(v)) aria-label={ "Remove " (v) } { "\u{d7}" }
+                                    a href=(remove(v)) aria-label=(ui.fill(Text::RemoveValue, &[v])) { "\u{d7}" }
                                 }
                             }
                         }
@@ -240,27 +241,27 @@ impl Render for Combobox<'_> {
                             }
                         }
                     }
-                    (ui.button("Search").primary())
+                    (ui.button(ui.text(Text::Search)).primary())
                 }
                 div id=(results_id) class="lui-combobox-results" aria-live="polite" {
                     @if !results.is_empty() {
-                        p class="lui-combobox-status" { (results.len()) @if results.len() == 1 { " match" } @else { " matches" } }
-                        ul role="listbox" aria-label="Results" aria-multiselectable=[multi.then_some("true")] {
+                        p class="lui-combobox-status" { (crate::palette::count(ui, results.len())) }
+                        ul role="listbox" aria-label=(ui.text(Text::Results)) aria-multiselectable=[multi.then_some("true")] {
                             @for r in &results {
                                 @let picked = selected.contains(r);
                                 li role="option" aria-selected=(picked) {
-                                    @if picked { (r) span class="lui-combobox-picked" { " selected" } }
+                                    @if picked { (r) span class="lui-combobox-picked" { (ui.text(Text::IsSelected)) } }
                                     @else { a href=(add(r)) { (r) } }
                                 }
                             }
                         }
                     } @else if nothing {
-                        p class="lui-combobox-status" { "No matches." }
+                        p class="lui-combobox-status" { (ui.text(Text::NoMatches)) }
                         @if let Some(to) = create {
                             form method="post" action=(to) class="lui-combobox-create" {
                                 @for v in &selected { input type="hidden" name="sel" value=(v); }
                                 input type="hidden" name="name" value=(query);
-                                (ui.button("Create").content(html! { (Icon::Plus) "Create \u{201c}" (query) "\u{201d}" }))
+                                (ui.button(ui.text(Text::Create)).content(html! { (Icon::Plus) (ui.fill(Text::CreateValue, &[&query])) }))
                             }
                         }
                     }

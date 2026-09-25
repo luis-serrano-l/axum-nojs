@@ -40,6 +40,7 @@
 use maud::{Markup, Render, html};
 
 use crate::Ui;
+use crate::i18n::Text;
 use crate::props::{Prop, PropKind};
 
 /// A list of the fields in error, made by [`Ui::error_summary`] (and by a
@@ -74,7 +75,7 @@ impl Ui {
             })
             .collect();
         ErrorSummary {
-            title: "There is a problem",
+            title: self.text(Text::Problem),
             items,
         }
     }
@@ -89,10 +90,7 @@ impl<'a> ErrorSummary<'a> {
 
     /// A form's summary: every message with the id and label of its field.
     pub(crate) fn from_fields(items: Vec<(Option<String>, Option<&'a str>, &'a str)>) -> Self {
-        ErrorSummary {
-            title: "There is a problem",
-            items,
-        }
+        ErrorSummary { title: "", items }
     }
 }
 

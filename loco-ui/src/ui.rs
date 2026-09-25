@@ -40,6 +40,7 @@ use maud::{Markup, Render};
 use crate::{
     Caps, Theme, UiState,
     flash::{Level, stack},
+    i18n::{self, Strings, Text},
     layout::{self, Tokens},
     state::{FLASH_COOKIE, decode, encode},
     theme::THEME_COOKIE,
@@ -54,6 +55,10 @@ pub struct Ui {
     pub theme: Theme,
     /// Query and `lui-ui` cookie state, and the flash.
     pub state: UiState,
+    /// The visitor's language: its texts and tag ([`crate::i18n`]).
+    pub strings: &'static Strings,
+    /// Whether the `lui-lang` cookie chose the language (then `Accept-Language` does not).
+    lang_from_cookie: bool,
     /// Every query parameter, decoded, in order: what components read their own input from.
     params: Vec<(String, String)>,
 }
@@ -77,7 +82,15 @@ impl Ui {
             .filter_map(|pair| pair.trim().split_once('='))
             .find(|(k, _)| *k == THEME_COOKIE)
             .map_or(Theme::Auto, |(_, v)| Theme::parse(v));
+        let lang = cookie_header
+            .split(';')
+            .filter_map(|pair| pair.trim().split_once('='))
+            .find(|(k, _)| *k == i18n::LANG_COOKIE)
+            .map(|(_, v)| v);
+        let strings = i18n::choose(lang, "");
         Ui {
+            strings,
+            lang_from_cookie: lang.is_some_and(|l| strings.lang().eq_ignore_ascii_case(l.trim())),
             caps: Caps::from_query(query)
                 .unwrap_or_else(|| Caps::from_cookie_header(cookie_header)),
             theme,
@@ -89,6 +102,30 @@ impl Ui {
                 .map(|(k, v)| (decode(k).into_owned(), decode(v).into_owned()))
                 .collect(),
         }
+    }
+
+    /// Pick the language from an `Accept-Language` header, unless the `lui-lang` cookie
+    /// already did. The Axum extractor calls it; other servers pass the header themselves.
+    pub fn accept_language(mut self, header: &str) -> Ui {
+        if !self.lang_from_cookie {
+            self.strings = i18n::choose(None, header);
+        }
+        self
+    }
+
+    /// The visitor's language tag, as `<html lang>` says it.
+    pub fn lang(&self) -> &'static str {
+        self.strings.lang()
+    }
+
+    /// A component text in the visitor's language.
+    pub fn text(&self, text: Text) -> &'static str {
+        self.strings.get(text)
+    }
+
+    /// A component text in the visitor's language, its placeholders filled.
+    pub fn fill(&self, text: Text, args: &[&dyn std::fmt::Display]) -> String {
+        self.strings.fill(text, args)
     }
 
     /// The first value of the query parameter `key`.
@@ -152,6 +189,7 @@ impl Ui {
         Page {
             caps: self.caps,
             theme: self.theme,
+            lang: self.strings.lang(),
             title: title.to_string(),
             tokens: None,
             body,
@@ -191,6 +229,7 @@ impl Deref for Ui {
 #[derive(Clone, Debug)]
 pub struct Page {
     caps: Caps,
+    lang: &'static str,
     theme: Theme,
     title: String,
     tokens: Option<Tokens>,
@@ -245,6 +284,7 @@ impl Render for Page {
     fn render(&self) -> Markup {
         layout::page(
             &self.caps,
+            self.lang,
             &self.title,
             self.theme,
             self.tokens.as_ref(),
@@ -361,11 +401,15 @@ mod axum_glue {
                 .filter_map(|v| v.to_str().ok())
                 .collect::<Vec<_>>()
                 .join("; ");
-            Ok(Ui::from_request(
-                parts.uri.path(),
-                parts.uri.query().unwrap_or(""),
-                &cookies,
-            ))
+            let accept = parts
+                .headers
+                .get(header::ACCEPT_LANGUAGE)
+                .and_then(|v| v.to_str().ok())
+                .unwrap_or("");
+            Ok(
+                Ui::from_request(parts.uri.path(), parts.uri.query().unwrap_or(""), &cookies)
+                    .accept_language(accept),
+            )
         }
     }
 

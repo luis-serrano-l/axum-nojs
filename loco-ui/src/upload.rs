@@ -44,6 +44,7 @@
 use maud::{Markup, Render, html};
 
 use crate::button::Button;
+use crate::i18n::Text;
 use crate::props::{Prop, PropKind};
 use crate::{Icon, Ui, enhance};
 
@@ -183,16 +184,16 @@ impl Render for Upload<'_> {
                 form method="post" action=(self.action) enctype="multipart/form-data" class="lui-upload-form" {
                     label class="lui-upload-drop" for=(input_id) {
                         (Icon::Upload)
-                        span class="lui-upload-title" { @if self.multiple { "Choose files or drop them on the button" } @else { "Choose a file or drop it on the button" } }
+                        span class="lui-upload-title" { (self.ui.text(if self.multiple { Text::ChooseFiles } else { Text::ChooseFile })) }
                         @if let Some(h) = self.hint { span class="lui-upload-hint" { (h) } }
                         input id=(input_id) class="lui-upload-input" type="file" name=(self.name)
                             accept=[self.accept] multiple[self.multiple] required;
                     }
                     progress class="lui-upload-progress" data-lui-progress hidden {}
-                    (Button::new(caps, "Upload").primary())
+                    (Button::new(caps, self.ui.text(Text::Upload)).primary())
                 }
                 @if !self.files.is_empty() {
-                    ul class="lui-upload-files" aria-label="Uploaded files" {
+                    ul class="lui-upload-files" aria-label=(self.ui.text(Text::UploadedFiles)) {
                         @for f in &self.files {
                             li class="lui-upload-file" {
                                 @if let Some(src) = f.preview {
@@ -206,7 +207,7 @@ impl Render for Upload<'_> {
                                 span class="lui-upload-size" { (size(f.size)) }
                                 @if let Some(action) = self.remove {
                                     form method="post" action=(action) {
-                                        @let label = format!("Remove {}", f.name);
+                                        @let label = self.ui.fill(Text::RemoveValue, &[&f.name]);
                                         (Button::new(caps, "").ghost().small().icon().label(&label).name(self.name).value(f.name).content(html! { (Icon::Trash) }))
                                     }
                                 }

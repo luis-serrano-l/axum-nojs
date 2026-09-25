@@ -39,6 +39,7 @@
 use maud::{Markup, Render, html};
 
 use crate::button::Button;
+use crate::i18n::{Strings, Text};
 use crate::props::{Prop, PropKind};
 use crate::{Caps, Ui};
 
@@ -52,6 +53,7 @@ pub struct Color<'a> {
     presets: &'a [&'a str],
     alpha: Option<u8>,
     label: Option<&'a str>,
+    strings: &'static Strings,
 }
 
 impl Color<'_> {
@@ -73,6 +75,7 @@ impl Ui {
         Color {
             name,
             value,
+            strings: self.strings,
             ..Color::default()
         }
     }
@@ -109,6 +112,7 @@ pub fn hex_alpha(hex: &str, percent: u8) -> String {
 impl Render for Color<'_> {
     fn render(&self) -> Markup {
         let Color {
+            strings: _,
             name,
             value,
             presets,
@@ -128,15 +132,15 @@ impl Render for Color<'_> {
                     code { @if pct < 100 { (hex_alpha(value, pct)) } @else { (value) } }
                     @if alpha.is_some() {
                         label class="lui-color-alpha" {
-                            "Opacity "
+                            (self.strings.get(Text::Opacity).replace("{}", "").trim_end()) " "
                             input type="range" class="lui-color-alpha-range" id={ (id) "-alpha" } name={ (name) "-alpha" } min="0" max="100" value=(pct);
                             span { output for={ (id) "-alpha" } { (pct) } "%" }
                         }
                     }
                     @if !presets.is_empty() {
-                        span class="lui-color-presets" role="group" aria-label="Presets" {
+                        span class="lui-color-presets" role="group" aria-label=(self.strings.get(Text::Presets)) {
                             @for p in presets {
-                                @let use_p = format!("Use {p}");
+                                @let use_p = self.strings.fill(Text::UseValue, &[p]);
                                 (Button::new(Caps::NONE, "").name(&preset_name).value(p).label(&use_p).pressed(p.eq_ignore_ascii_case(value)).style(format!("--lui-color-value: {p}")))
                             }
                         }

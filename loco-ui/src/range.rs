@@ -39,6 +39,7 @@
 use maud::{Markup, Render, html};
 
 use crate::Ui;
+use crate::i18n::{Strings, Text};
 use crate::props::{Prop, PropKind};
 
 /// A slider with the server's current value beside it, made by [`Ui::range`] or, as a
@@ -54,6 +55,7 @@ pub struct Range<'a> {
     max: i64,
     step: i64,
     label: Option<&'a str>,
+    strings: &'static Strings,
 }
 
 impl Range<'_> {
@@ -82,6 +84,7 @@ impl Ui {
     /// A range input named `name` at `value`.
     pub fn range<'a>(&self, name: &'a str, value: i64) -> Range<'a> {
         Range {
+            strings: self.strings,
             name,
             value: (value, None),
             min: 0,
@@ -131,6 +134,7 @@ impl<'a> Range<'a> {
 impl Render for Range<'_> {
     fn render(&self) -> Markup {
         let Range {
+            strings: _,
             name,
             value,
             min,
@@ -158,8 +162,8 @@ impl Render for Range<'_> {
                 html! {
                     div class="lui-range lui-range-pair" {
                         div class="lui-range-track" {
-                            input type="range" class="lui-range-input" id=(lo_id) name={ (name) "_min" } min=(min) max=(max) step=(step) value=(lo) aria-label="Minimum";
-                            input type="range" class="lui-range-input" id=(hi_id) name={ (name) "_max" } min=(min) max=(max) step=(step) value=(hi) aria-label="Maximum";
+                            input type="range" class="lui-range-input" id=(lo_id) name={ (name) "_min" } min=(min) max=(max) step=(step) value=(lo) aria-label=(self.strings.get(Text::Minimum));
+                            input type="range" class="lui-range-input" id=(hi_id) name={ (name) "_max" } min=(min) max=(max) step=(step) value=(hi) aria-label=(self.strings.get(Text::Maximum));
                         }
                         span class="lui-range-values" { output for=(lo_id) { (lo) } " – " output for=(hi_id) { (hi) } }
                     }
