@@ -60,20 +60,28 @@ use serde::{Deserialize, Serialize};
 struct Settings { name: String }
 
 // `Ui` is what the server knows about this browser, its theme and the page's UI state.
-// `lui!` is Maud's `html!` with components written like elements.
-async fn show(ui: Ui, Saved(s): Saved<Settings>) -> Page {
+// `lui!` is Maud's `html!` with components written like elements. A flash left by a redirect
+// shows at the top of the page by itself.
+fn account(ui: &Ui, s: &Settings, errors: &[(&str, &str)]) -> Page {
     ui.page("Account", lui! {
-        Flash;
-        Form("/account") submit="Save" { text "name" "Name" required value=(&s.name); }
+        Form("/account") submit="Save" errors=(errors) { text "name" "Name" required value=(&s.name); }
         Dialog("Delete account") danger confirm=("Delete", "/account/delete") {
             p { "This cannot be undone." }
         }
     })
 }
 
-// Post/Redirect/Get: a 303 back, a flash, the value kept in a cookie.
-async fn save(ui: Ui, Form(s): Form<Settings>) -> Redirect {
-    ui.redirect("/account").ok("Saved.").save(&s)
+async fn show(ui: Ui, Saved(s): Saved<Settings>) -> Page {
+    account(&ui, &s, &[])
+}
+
+// Post/Redirect/Get: a 303 back with a flash and the value kept in a cookie, or the form
+// again with its message and a 422.
+async fn save(ui: Ui, Form(s): Form<Settings>) -> Result<Redirect, Page> {
+    if s.name.trim() == "admin" {
+        return Err(account(&ui, &s, &[("name", "That name is taken.")]).invalid());
+    }
+    Ok(ui.redirect("/account").ok("Saved.").save(&s))
 }
 
 let app = Router::new()
@@ -91,9 +99,14 @@ rustc's own "no method named `requird` … did you mean `required`" at the attri
 `loco_ui::props()` lists every component's setters with kind, arguments, default and the
 HTML attribute they set; the demo shows them as a table on each page.
 
-With `loco-ui = { features = ["axum"] }`. Without Axum, `Ui::from_request(path, query,
-cookies)` or `Ui::from(Caps::all())` gives the same builders and `.render().into_string()` the
-HTML; `loco-ui/examples/hyper_server.rs` shows a raw hyper server.
+The dependencies: `cargo add loco-ui --features axum`, `cargo add maud` (`lui!` expands to
+`maud::html!`, so the crate that calls it needs `maud` itself), plus `axum` and `serde` with
+`derive`. A handler that reads a post by name, or one with a file field, takes `posted:
+Posted` (urlencoded or multipart) instead of `Form<T>`: `posted.get("email")`,
+`posted.files()`, and `posted.pairs()` to give the form back its values. Without Axum,
+`Ui::from_request(path, query, cookies)` or `Ui::from(Caps::all())` gives the same builders
+and `.render().into_string()` the HTML; `loco-ui/examples/hyper_server.rs` shows a raw hyper
+server.
 
 ## Run the demo
 
@@ -209,8 +222,9 @@ component gives the HTML to another template engine.
   concept), the few exceptions with their reasons, and the renames of M32.
 - Primitives come first: `ui.button`/`ui.link_button`, `ui.input`/`ui.checkbox`/`ui.switch`/
   `ui.radio_group`, `ui.badge`, `ui.card`, `Icon` (31 Lucide shapes as inline SVG),
-  `ui.avatar`, and the layouts `ui.stack`, `ui.cluster`, `ui.grid(min, ..)`, `ui.split(side,
-  main)` with `.gap(n)` on a `--lui-space-*` scale. Components are built from them (`ui.form`
+  `ui.avatar`, and the layouts `ui.stack()`, `ui.cluster()`, `ui.grid(min)` (their content is
+  `.body(..)`, a block in `lui!`: `Stack gap=6 { .. }`) and `ui.split(side, main)`, with
+  `.gap(n)` on a `--lui-space-*` scale. Components are built from them (`ui.form`
   renders its fields through `input.rs`), and so can yours: `docs/components.md` writes one in
   about 30 lines (an extension trait on `Ui`, `impl Render`, a CSS const passed to
   `Page::css`), and its code runs as a doctest.

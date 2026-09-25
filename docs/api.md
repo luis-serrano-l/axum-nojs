@@ -81,7 +81,7 @@ assert!(menu.into_string().contains(r#"action="/logout""#));
 | `multiple` | several may be chosen or open at once (the HTML attribute) | Accordion, Combobox, ToggleGroup, Input, Upload, Form |
 | `description` | a line of text under a title | Card, Alert, Chart, Accordion item, Stat, Kanban card, ErrorPage |
 | `help` | small print under a field | Input, Form, RadioGroup, Upload |
-| `body` | the main markup, what a `lui!` block holds | Card, Alert, Dialog, Drawer, ContextMenu, Button, SelectOption, EmptyState |
+| `body` | the main markup, what a `lui!` block holds; on Form, markup placed among the fields | Card, Alert, Dialog, Drawer, ContextMenu, Button, SelectOption, EmptyState, Stack, Cluster, Grid, the blocks, Form (an item) |
 | `action` | a button posting to a URL | Menu, ContextMenu, EmptyState |
 | `link` / `links` | a destination; `links` for many from data | Menu, ContextMenu, Breadcrumbs, Sidebar, NavMenu, Palette, EmptyState |
 | `group` | a heading over the entries after it | Form, Menu, ContextMenu, Sidebar, Palette (Select and Combobox: an `<optgroup>`) |
@@ -94,6 +94,111 @@ assert!(menu.into_string().contains(r#"action="/logout""#));
 | `value` / `error` | a control's value and its server message | Input, Select, Color, Range, RadioGroup, Form |
 | `disabled` / `disabled_dates` | the element is not usable / which days cannot be picked | Button, menus / Calendar, DatePicker |
 | `hide_progress` | a switch that turns off something shown by default | Wizard |
+
+## Markup in `lui!`
+
+A block is markup wherever a value or an item can take one, so a page needs no
+`html! { .. }` or `lui! { .. }` inside `lui!`:
+
+- **A layout's block is its body**: `Stack gap=6 { .. }`, `Cluster between { .. }`,
+  `Grid("20rem") { .. }` (`ui.stack().gap(6).body(html! { .. })`).
+- **An attribute takes a block**: `footer={ Button("Save") primary; }` is
+  `.footer(html! { (ui.button("Save").primary()) })`, the block itself `lui!`.
+- **`body { .. }` among items** is `.body(..)` with that markup: an empty state's text beside
+  its link, a form's controls between its fields.
+- **An item's arguments are values.** `stat Stat("Revenue", "$1");` is an error that says
+  what to write instead: `stat (ui.stat("Revenue", "$1"))`.
+
+```rust
+use loco_ui::prelude::*;
+let ui = Ui::from_request("/", "", "");
+let a = lui! { Grid("20rem") {
+    Card title="Plan" footer={ LinkButton("Invoices", "/invoices"); Button("Upgrade") primary; } {
+        p { "12 of 20 seats used." }
+    }
+    EmptyState("No invoices") { body { "They show here once a month." } link "Billing" "/billing"; }
+} };
+let b = html! { (ui.grid("20rem").body(html! {
+    (ui.card().title("Plan")
+        .footer(html! { (ui.link_button("Invoices", "/invoices")) (ui.button("Upgrade").primary()) })
+        .body(html! { p { "12 of 20 seats used." } }))
+    (ui.empty_state("No invoices").body(html! { "They show here once a month." }).link("Billing", "/billing"))
+})) };
+assert_eq!(a.into_string(), b.into_string());
+```
+
+A card's footer packs its buttons at its end, as a dialog's do, so it needs no cluster.
+
+## Forms hold any control
+
+A form lists its fields with adders (`text`, `email`, `select`, `checkbox`, `switch`, ..) and
+takes any other control with `.body(..)` at that point in the list: a date picker, a range, a
+toggle group, a select built with its own setters. Everything sits inside the one swap root,
+under the error summary, before the button. `.get()` makes it a filter or a search whose
+answer is the same page with the choices in its URL.
+
+```rust
+use loco_ui::prelude::*;
+let ui = Ui::from_request("/orders", "status=paid", "");
+let form = lui! { Form("/orders") get submit="Filter" {
+    text "q" "Customer";
+    switch "late" "Late only";
+    body { Select("status", "Status") options=([("paid", "Paid"), ("open", "Open")]); }
+} };
+let html = form.into_string();
+assert!(html.contains(r#"method="get""#) && html.contains(r#"<option value="paid" selected>"#));
+```
+
+## Answering a post
+
+A POST handler returns `Result<Redirect, Page>`: `Ok` for Post/Redirect/Get, `Err` for the
+form again, with `.invalid()` so the answer is `422 Unprocessable Content`. `Posted` reads the
+body by name whether it came urlencoded or as `multipart/form-data` (a form with a file
+field); `posted.pairs()` gives the form back what was sent.
+
+```rust
+use loco_ui::prelude::*;
+
+fn signup(ui: &Ui, posted: &[(String, String)], errors: &[(&str, &str)]) -> Page {
+    ui.page("Sign up", lui! {
+        Form("/signup") values=(posted) errors=(errors) { email "email" "Email" required; }
+    })
+}
+
+async fn submit(ui: Ui, posted: Posted) -> Result<Redirect, Page> {
+    if posted.get("email").ends_with("@example.com") {
+        let errors = [("email", "example.com addresses are not accepted.")];
+        return Err(signup(&ui, posted.pairs(), &errors).invalid());
+    }
+    Ok(ui.redirect("/signup").ok("Signed up."))
+}
+
+let ui = Ui::from_request("/signup", "", "");
+let posted = Posted::from_pairs(vec![("email".into(), "a@example.com".into())]);
+let page = signup(&ui, posted.pairs(), &[("email", "Taken.")]).invalid();
+assert_eq!(page.status(), 422);
+```
+
+A wizard's post is a `Posted` too: `posted.step()` and `posted.skip()`.
+
+## The flash shows itself
+
+`ui.page(..)` puts a flash that a redirect left at the top of the body. Place `(ui.flash())`
+yourself only to put it elsewhere or give it setters (`Flash dismiss auto_hide;`), or show it
+as `Toasts`; the page then leaves it where it is.
+
+## What repeated in the demo, and what became of it
+
+| Pattern | Decision |
+|---|---|
+| a field with its label, help and error | kept: one adder or one `Input(name, label)` line each, the caller's own words |
+| a form with its button, around controls that are not fields | a generator: `Form` holds any control (`body { .. }`, `switch`), `.get()` for filters; the demo writes no `form class="lui-form"` by hand |
+| a card with a title and actions | a better default: the footer packs its buttons at its end |
+| layouts wrapped around markup | a block: `Stack gap=6 { .. }` |
+| `(ui.flash())` on every page | a better default: `ui.page` shows it |
+| a POST parsed by hand, a 422 built by hand | a new type and a new prop: `Posted`, `Page::invalid()` |
+| a page that is its component, its title and a note | demo only: `PAGES` (href, component, note) and one handler, the title from the index |
+| a table fed from a slice | see "Tables" |
 
 ## Kept, because
 
@@ -111,6 +216,18 @@ reasons, plus the meter's minimum, which no rule flags.
   share them.
 - `SelectOption::new(value, text)`: value then text, as `<option value>` and the
   `(value, text)` tuples every list of options takes.
+
+**Not `(name, label)`**
+
+- `ui.combobox(name, action)`: its label is not shown (the chips and the results around the
+  box say what it is, so the label is the input's `aria-label`, `.label(..)`), while the
+  action, the route that answers each search, is required. A `(name, label)` constructor
+  would promise a visible label like a field's.
+- `ui.calendar(name)`: a month of day links under the month's name, with no field and so no
+  label to show. The form control is `ui.date_picker(name, label)`, which has one.
+- `ui.split(side, main)`: two blocks of markup, where a `lui!` block can be only one, so it
+  keeps both in the call; `ui.stack()`, `ui.cluster()` and `ui.grid(min)` take their one
+  block as `.body(..)`.
 
 **Lists in one call** (everything else has an adder per entry)
 
@@ -141,6 +258,8 @@ reasons, plus the meter's minimum, which no rule flags.
 - `item`: what the component lists (a titled section, a term and its detail, a marquee entry).
 - `link`, `action`: EmptyState holds one of each; the menus add one per call.
 - `field`: RecordPage adds a field (label, value); ErrorSummary names one (name, label).
+- `body`: a component's main markup, set once; Form's is an item, markup placed among its
+  fields, and a form may hold several.
 
 **Setter named otherwise than its attribute**
 
@@ -173,10 +292,19 @@ reasons, plus the meter's minimum, which no rule flags.
 ## Before and after (M32)
 
 The old names still compile for one release, marked `#[deprecated]` with the new name in the
-warning. The three constructors changed outright (the crate is unpublished).
+warning. The constructors changed outright (the crate is unpublished, and Rust cannot keep
+`ui.stack(content)` beside `ui.stack()`).
 
 | Before | After | On |
 |---|---|---|
+| `ui.stack(html! { .. }).gap(6)`, `Stack(lui! { .. }) gap=6;` | `ui.stack().gap(6).body(html! { .. })`, `Stack gap=6 { .. }` | Stack, Cluster, Grid (breaking) |
+| `footer=(lui! { .. })`, `body (html! { .. });`, `body() { .. }` | `footer={ .. }`, `body { .. }` | `lui!` |
+| `.footer(html! { (ui.cluster(..).end()) })` | `.footer(html! { .. })`: the footer packs at its end | Card |
+| `form id=.. data-lui="swap" class="lui-form" method=.. { .. (ui.button("Save").primary()) }` | `Form(action) get submit="Save" { body { .. } switch "x" "X"; }` | Form: `.body(..)`, `.switch(..)`, `.get()` |
+| `(StatusCode::UNPROCESSABLE_ENTITY, view).into_response()` from a `Response` handler | `Err(view.invalid())` from a `Result<Redirect, Page>` handler | Page |
+| a `Multipart` loop, or `Form<Vec<(String, String)>>` and a `get` closure | `posted: Posted`, `posted.get("email")`, `posted.files()`, `posted.pairs()` | Posted |
+| `wizard::Posted::from_pairs(&pairs)`, `.step`, `.skip` | `posted.step()`, `posted.skip()` | Wizard |
+| `(ui.flash())` at the top of every page | nothing: `ui.page` shows a pending flash | Page |
 | `.multi()` | `.multiple()` | Accordion, Combobox, ToggleGroup |
 | `.icon()` (no argument) | `.icon_only()` | Button |
 | `.label("More")` | `.aria_label("More")` | Button |
