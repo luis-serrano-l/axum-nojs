@@ -38,7 +38,8 @@
 //! - **Attributes** are setters: `x="v"` or `x=(expr)` is `.x(v)`, `x=(a, b)` is `.x(a, b)`, a
 //!   bare `x` is `.x()`, `x[cond]` calls `.x()` only when `cond` holds, and `x=[option]`
 //!   calls `.x(v)` only when the option is `Some(v)` (Maud's toggle and optional syntax).
-//!   `x=|i| { markup }` passes a closure returning markup (`rows=|i| { .. }` on a pager).
+//!   `x=|i| { markup }` passes a closure returning markup (`rows=|i| { .. }` on a pager), and
+//!   `x={ markup }` passes markup, itself `lui!` (`footer={ Button("Save") primary; }`).
 //! - **A component's block** is either items or a body. It holds items when it starts with
 //!   one: a lowercase name followed by its arguments (`tab "Use"`, `column "name" "Name"`,
 //!   `tab (p.title)`, `separator()`). An item's attributes are the modifiers that apply to it
@@ -46,7 +47,10 @@
 //!   markup as a closure instead (`lazy "Why" || { .. }`), and a block that itself holds items
 //!   continues the chain (a kanban `column` with its `card`s). Otherwise the block is plain
 //!   markup, passed to `.body(..)`. Any setter can stand in an items block the same way
-//!   (`search "/shop";`, `inline();`), for the rare chain whose order matters.
+//!   (`search "/shop";`, `inline();`), for the rare chain whose order matters; `body { .. }`
+//!   among items is `.body(..)` with that markup (a form's controls between its fields).
+//!   An item's arguments are values: a builder goes in parentheses (`stat (ui.stat(..))`),
+//!   and a component written there is an error that says so.
 //! - **`@for`, `@if` / `@else`, `@match` and `@let`** work among items as they do in Maud, so
 //!   items built from data stay inline.
 //! - **`ui`** is taken from the scope by that name; `lui!(ctx => ..)` names another.
@@ -155,14 +159,22 @@ fn until_brace(tokens: &[TokenTree], from: usize, what: &str) -> Result<usize> {
         })
 }
 
-/// Whether `tokens[i]` starts an item: a lowercase name followed by an argument.
+/// Whether `tokens[i]` starts an item: a lowercase name followed by an argument, `body`
+/// followed by its block, or (a mistake [`Cx::items`] reports) a name followed by a component.
 fn item_at(tokens: &[TokenTree], i: usize) -> bool {
-    matches!(tokens.get(i), Some(TokenTree::Ident(name)) if !starts_upper(name))
-        && matches!(
-            tokens.get(i + 1),
-            Some(TokenTree::Literal(_)) | Some(TokenTree::Group(_))
-        )
-        && brace(tokens.get(i + 1)).is_none()
+    let Some(TokenTree::Ident(name)) = tokens.get(i) else {
+        return false;
+    };
+    if starts_upper(name) {
+        return false;
+    }
+    match tokens.get(i + 1) {
+        Some(TokenTree::Literal(_)) => true,
+        Some(TokenTree::Group(g)) if g.delimiter() == Delimiter::Brace => name == "body",
+        Some(TokenTree::Group(_)) => true,
+        Some(TokenTree::Ident(c)) => starts_upper(c) && paren(tokens.get(i + 2)).is_some(),
+        _ => false,
+    }
 }
 
 /// Whether a component's block holds items: its first entry (looking inside control flow)
@@ -396,6 +408,12 @@ impl Cx {
             Some(TokenTree::Group(g)) if g.delimiter() == Delimiter::Bracket => {
                 Ok((Value::Optional(g.stream()), i + 1))
             }
+            Some(TokenTree::Group(g)) if g.delimiter() == Delimiter::Brace => {
+                let inner: Vec<TokenTree> = g.stream().into_iter().collect();
+                let body = self.markup(&inner)?;
+                let html = quote_spanned!(g.span()=> ::maud::html! { #body });
+                Ok((Value::Args(html), i + 1))
+            }
             Some(TokenTree::Punct(p)) if p.as_char() == '|' => {
                 let (closure, next) = self.closure(tokens, i)?;
                 Ok((Value::Args(closure), next))
@@ -407,7 +425,8 @@ impl Cx {
             other => Err((
                 other.map_or(name.span(), TokenTree::span),
                 format!(
-                    "`{name}=` takes a literal, `(expr)`, `[option]` or a closure `|..| {{ .. }}`"
+                    "`{name}=` takes a literal, `(expr)`, `[option]`, a markup block `{{ .. }}` \
+                     or a closure `|..| {{ .. }}`"
                 ),
             )),
         }
@@ -470,6 +489,18 @@ impl Cx {
                 ));
             };
             i += 1;
+            if let Some(TokenTree::Ident(c)) = tokens.get(i)
+                && starts_upper(c)
+            {
+                return Err((
+                    c.span(),
+                    format!(
+                        "items take arguments, not a component: write `{name} (ui.{}(..))`, \
+                         the builder in parentheses",
+                        snake(&c.to_string())
+                    ),
+                ));
+            }
             // Arguments: literals, negative literals and `(..)` groups, before any attribute.
             let mut args: Vec<TokenStream> = Vec::new();
             let first = i;
@@ -490,7 +521,7 @@ impl Cx {
                 }
                 i += 1;
             }
-            if i == first && brace(tokens.get(i)).is_some() {
+            if i == first && brace(tokens.get(i)).is_some() && name != "body" {
                 return Err((
                     name.span(),
                     format!(
@@ -516,7 +547,7 @@ impl Cx {
                 }
                 Some(TokenTree::Group(g)) if g.delimiter() == Delimiter::Brace => {
                     let inner: Vec<TokenTree> = g.stream().into_iter().collect();
-                    if !inner.is_empty() && holds_items(&inner) {
+                    if name != "body" && !inner.is_empty() && holds_items(&inner) {
                         self.items(&inner, &mut nested)?;
                     } else {
                         let body = self.markup(&inner)?;

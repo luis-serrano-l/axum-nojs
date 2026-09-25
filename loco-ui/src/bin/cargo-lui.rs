@@ -68,7 +68,7 @@ pub fn page(ui: &Ui, title: &str, body: Markup) -> Page {
         title,
         html! {
             header {
-                (ui.cluster(html! {
+                (ui.cluster().body(html! {
                     a href="/" { strong { "Home" } }
                 }))
             }

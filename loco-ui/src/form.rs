@@ -74,6 +74,35 @@
 //! } };
 //! assert_eq!(same.into_string(), m.render().into_string());
 //! ```
+//!
+//! **Any control.** `.switch(..)` adds a switch like a checkbox, and `.body(..)` puts any
+//! markup at that point among the fields (a date picker, a range, a toggle group, a select
+//! built with its own setters), so it sits inside the form's swap root, under its error
+//! summary and before its button. `.get()` makes it a GET form: a filter or a search whose
+//! answer is a page with the choices in its URL.
+//!
+//! ```rust
+//! use loco_ui::prelude::*;
+//! let ui = Ui::from_request("/filters", "size=l", "");
+//! let m = ui.form("/filters")
+//!     .get()
+//!     .text("q", "Search")
+//!     .switch("open", "Open only").checked(true)
+//!     .body(html! { (ui.select("size", "Size").options([("s", "Small"), ("l", "Large")])) })
+//!     .submit("Apply");
+//! let html = m.render().into_string();
+//! assert!(html.contains(r#"method="get" action="/filters""#));
+//! assert!(html.contains(r#"role="switch""#) && html.contains(r#"<option value="l" selected>"#));
+//! assert!(html.find("f-size") < html.find("lui-form-actions"), "the markup before the button");
+//! // The same in `lui!`: a block of markup among the items is `body { .. }`, and a block with
+//! // no items at all is the body.
+//! let same = lui! { Form("/filters") get submit="Apply" {
+//!     text "q" "Search";
+//!     switch "open" "Open only" checked=(true);
+//!     body { Select("size", "Size") options=([("s", "Small"), ("l", "Large")]); }
+//! } };
+//! assert_eq!(same.into_string(), html);
+//! ```
 
 use maud::{Markup, Render, html};
 
@@ -90,12 +119,14 @@ use crate::{Caps, Ui, enhance};
 ///
 /// **Setters.** Values and items: `.values(..)`, `.errors(..)`, `.group(..)`, `.text(..)`, `.password(..)`,
 /// `.email(..)`, `.number(..)`, `.pattern(..)`, `.textarea(..)`, `.file(..)`, `.date(..)`,
-/// `.time(..)`, `.datetime(..)`, `.select(..)`, `.checkbox(..)`, `.hidden(..)`, `.help(..)`, `.maxlength(..)`,
+/// `.time(..)`, `.datetime(..)`, `.select(..)`, `.checkbox(..)`, `.switch(..)`, `.hidden(..)`,
+/// `.body(..)`, `.help(..)`, `.maxlength(..)`,
 /// `.value(..)`, `.error(..)`, `.placeholder(..)`, `.submit(..)`, `.id(..)`; switches:
-/// `.required()`, `.multiple()`, `.inline()`; from a condition: `.checked(bool)`.
+/// `.required()`, `.multiple()`, `.inline()`, `.get()`; from a condition: `.checked(bool)`.
 #[derive(Clone, Debug)]
 pub struct Form<'a> {
     action: Option<&'a str>,
+    get: bool,
     groups: Vec<(Option<&'a str>, Vec<Field<'a>>)>,
     submit: &'a str,
     inline: bool,
@@ -135,8 +166,12 @@ impl Form<'_> {
             .doc("A `<select>` of `options`: `&str`s, or `(value, label)` pairs."),
         Prop::new("checkbox", PropKind::Item, "name: &'a str, label: &'a str")
             .doc("A checkbox posting `true` when ticked and nothing when not (so a `bool` with `#[serde(default)]` reads it)."),
+        Prop::new("switch", PropKind::Item, "name: &'a str, label: &'a str")
+            .doc("A checkbox drawn as an on/off switch, posting like `.checkbox(..)`."),
         Prop::new("hidden", PropKind::Item, "name: &'a str, value: &'a str")
             .doc("`type=\"hidden\"`."),
+        Prop::new("body", PropKind::Item, "markup: Markup")
+            .doc("Any markup at this point among the fields: a control built with its own setters."),
         Prop::new("required", PropKind::Modifier, "")
             .doc("The `required` attribute, and a `*` after the label."),
         Prop::new("help", PropKind::Modifier, "help: &'a str")
@@ -157,6 +192,8 @@ impl Form<'_> {
             .doc("Label of the submit button."),
         Prop::new("inline", PropKind::Switch, "")
             .doc("Labels beside the fields on screens wider than 40rem, above them on narrower ones."),
+        Prop::new("get", PropKind::Switch, "")
+            .doc("`method=\"get\"`: the fields go in the URL of the page it answers with (a filter, a search)."),
         Prop::new("values", PropKind::Value, "values: &'a [(String, String)]")
             .doc("Submitted values by field name, as a form post parses them."),
         Prop::new("errors", PropKind::Value, "errors: &'a [(&'a str, &'a str)]")
@@ -180,6 +217,7 @@ impl Ui {
     pub fn fields<'a>(&self) -> Form<'a> {
         Form {
             action: None,
+            get: false,
             groups: vec![(None, Vec::new())],
             submit: self.text(Text::Submit),
             strings: self.strings,
@@ -303,9 +341,22 @@ impl<'a> Form<'a> {
         self.add(name, label, FieldKind::Checkbox)
     }
 
+    /// A checkbox drawn as an on/off switch, with `role="switch"`, posting like
+    /// [`Form::checkbox`]; `.checked(..)` turns it on.
+    pub fn switch(self, name: &'a str, label: &'a str) -> Self {
+        self.add(name, label, FieldKind::Switch)
+    }
+
     /// `type="hidden"`: posted with the form, not shown.
     pub fn hidden(self, name: &'a str, value: &'a str) -> Self {
         self.add(name, "", FieldKind::Hidden).value(value)
+    }
+
+    /// Any markup at this point among the fields: a control built with its own setters (a
+    /// date picker, a range, a toggle group, a select), inside the form and before its
+    /// button. The form's values and errors do not reach it; give it its own `.value(..)`.
+    pub fn body(self, markup: Markup) -> Self {
+        self.add("", "", FieldKind::Markup(markup))
     }
 
     /// The `required` attribute, and a `*` after the label.
@@ -362,6 +413,14 @@ impl<'a> Form<'a> {
     /// Labels beside the fields on screens wider than 40rem, above them on narrower ones.
     pub fn inline(mut self) -> Self {
         self.inline = true;
+        self
+    }
+
+    /// `method="get"`: the fields go in the URL of the page it answers with (a filter, a
+    /// search), which reads them back with `ui.param(..)`. Still a swap root, so with the
+    /// script the answer replaces the form in place.
+    pub fn get(mut self) -> Self {
+        self.get = true;
         self
     }
 
@@ -472,7 +531,8 @@ impl Render for Form<'_> {
             "lui-form"
         };
         html! {
-            form id=(enhance::swap_id("lui-form", self.id.unwrap_or(action))) data-lui="swap" class=(class) method="post" action=(action)
+            form id=(enhance::swap_id("lui-form", self.id.unwrap_or(action))) data-lui="swap" class=(class)
+                method=(if self.get { "get" } else { "post" }) action=(action)
                 enctype=[multipart.then_some("multipart/form-data")] {
                 (self.summary())
                 (self.fields())

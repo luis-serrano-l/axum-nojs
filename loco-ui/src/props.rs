@@ -235,7 +235,7 @@ pub(crate) const COMPONENTS: &[Component] = &[
     Component {
         module: "cluster",
         builder: "Cluster",
-        calls: &["ui.cluster(content: Markup)"],
+        calls: &["ui.cluster()"],
         props: crate::cluster::Cluster::PROPS,
         status: Status::Stable,
     },
@@ -312,7 +312,7 @@ pub(crate) const COMPONENTS: &[Component] = &[
     Component {
         module: "grid",
         builder: "Grid",
-        calls: &["ui.grid(min: &str, content: Markup)"],
+        calls: &["ui.grid(min: &str)"],
         props: crate::grid::Grid::PROPS,
         status: Status::Stable,
     },
@@ -438,7 +438,7 @@ pub(crate) const COMPONENTS: &[Component] = &[
     Component {
         module: "stack",
         builder: "Stack",
-        calls: &["ui.stack(content: Markup)"],
+        calls: &["ui.stack()"],
         props: crate::stack::Stack::PROPS,
         status: Status::Stable,
     },

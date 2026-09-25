@@ -17,14 +17,14 @@
 //! ```rust
 //! use loco_ui::prelude::*;
 //! let ui = Ui::default();
-//! let m = ui.stack(html! { p { "One" } p { "Two" } }).render().into_string();
+//! let m = ui.stack().body(html! { p { "One" } p { "Two" } }).render().into_string();
 //! assert_eq!(m, r#"<div class="lui-stack"><p>One</p><p>Two</p></div>"#);
-//! // The same in `lui!`:
-//! let same = lui! { Stack(html! { p { "One" } p { "Two" } }); };
-//! assert_eq!(same.into_string(), m);
 //! // `.gap(n)` picks a step: n × 4px with the default `--lui-space`.
-//! let m = ui.stack(html! { p { "Tight" } }).gap(2).render().into_string();
+//! let m = ui.stack().gap(2).body(html! { p { "Tight" } }).render().into_string();
 //! assert!(m.contains(r#"class="lui-stack lui-gap-2""#));
+//! // The same in `lui!`, where the block is the body:
+//! let same = lui! { Stack gap=2 { p { "Tight" } } };
+//! assert_eq!(same.into_string(), m);
 //! ```
 
 use maud::{Markup, Render, html};
@@ -34,7 +34,7 @@ use crate::props::{Prop, PropKind};
 
 /// A vertical stack, made by [`Ui::stack`].
 ///
-/// **Setters.** Values and items: `.gap(..)`.
+/// **Setters.** Values and items: `.body(..)`, `.gap(..)`.
 #[derive(Clone, Debug)]
 pub struct Stack {
     content: Markup,
@@ -44,18 +44,32 @@ pub struct Stack {
 impl Stack {
     /// Every setter with its kind, arguments, default and the HTML attribute it sets; listed by
     /// [`crate::props()`] and kept in step with the setters by a test.
-    pub const PROPS: &'static [Prop] = &[Prop::new("gap", PropKind::Number, "n: u8")
-        .doc("The gap as a step of the `--lui-space-*` scale.")];
+    pub const PROPS: &'static [Prop] = &[
+        Prop::new("body", PropKind::Value, "markup: Markup")
+            .doc("What is stacked: each top-level element under the one before."),
+        Prop::new("gap", PropKind::Number, "n: u8")
+            .doc("The gap as a step of the `--lui-space-*` scale."),
+    ];
 }
 
 impl Ui {
-    /// `content`'s top-level elements one under the other, 16px apart by default.
-    pub fn stack(&self, content: Markup) -> Stack {
-        Stack { content, gap: None }
+    /// A stack: the top-level elements of its [`Stack::body`] one under the other, 16px
+    /// apart by default.
+    pub fn stack(&self) -> Stack {
+        Stack {
+            content: Markup::default(),
+            gap: None,
+        }
     }
 }
 
 impl Stack {
+    /// What is stacked: each top-level element under the one before.
+    pub fn body(mut self, markup: Markup) -> Self {
+        self.content = markup;
+        self
+    }
+
     /// The gap as a step of the `--lui-space-*` scale: 0, 1, 2, 3, 4, 6 or 8 (n × 4px by
     /// default); other values take the step below.
     pub fn gap(mut self, n: u8) -> Self {

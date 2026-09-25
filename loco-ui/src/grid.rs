@@ -21,13 +21,14 @@
 //! ```rust
 //! use loco_ui::prelude::*;
 //! let ui = Ui::default();
-//! let m = ui.grid("15rem", html! { (ui.card().title("A")) (ui.card().title("B")) }).render().into_string();
+//! let m = ui.grid("15rem").body(html! { (ui.card().title("A")) (ui.card().title("B")) });
+//! let m = m.render().into_string();
 //! assert!(m.starts_with(r#"<div class="lui-grid" style="--lui-grid-min: 15rem">"#));
-//! // The same in `lui!`:
-//! let same = lui! { Grid("15rem", html! { (ui.card().title("A")) (ui.card().title("B")) }); };
-//! assert_eq!(same.into_string(), m);
-//! let m = ui.grid("10rem", html! { p { "x" } }).gap(2).render().into_string();
+//! let m = ui.grid("10rem").gap(2).body(html! { p { "x" } }).render().into_string();
 //! assert!(m.contains("lui-grid lui-gap-2"));
+//! // The same in `lui!`, where the block is the body:
+//! let same = lui! { Grid("10rem") gap=2 { p { "x" } } };
+//! assert_eq!(same.into_string(), m);
 //! ```
 
 use maud::{Markup, Render, html};
@@ -37,7 +38,7 @@ use crate::props::{Prop, PropKind};
 
 /// A responsive grid, made by [`Ui::grid`].
 ///
-/// **Setters.** Values and items: `.gap(..)`.
+/// **Setters.** Values and items: `.body(..)`, `.gap(..)`.
 #[derive(Clone, Debug)]
 pub struct Grid<'a> {
     min: &'a str,
@@ -48,23 +49,33 @@ pub struct Grid<'a> {
 impl Grid<'_> {
     /// Every setter with its kind, arguments, default and the HTML attribute it sets; listed by
     /// [`crate::props()`] and kept in step with the setters by a test.
-    pub const PROPS: &'static [Prop] = &[Prop::new("gap", PropKind::Number, "n: u8")
-        .doc("The gap as a step of the `--lui-space-*` scale.")];
+    pub const PROPS: &'static [Prop] = &[
+        Prop::new("body", PropKind::Value, "markup: Markup")
+            .doc("What is laid out: each top-level element is a cell."),
+        Prop::new("gap", PropKind::Number, "n: u8")
+            .doc("The gap as a step of the `--lui-space-*` scale."),
+    ];
 }
 
 impl Ui {
-    /// `content`'s top-level elements in columns at least `min` wide (any CSS length:
-    /// `"15rem"`, `"240px"`), 16px apart by default.
-    pub fn grid<'a>(&self, min: &'a str, content: Markup) -> Grid<'a> {
+    /// A grid: the top-level elements of its [`Grid::body`] in columns at least `min` wide
+    /// (any CSS length: `"15rem"`, `"240px"`), 16px apart by default.
+    pub fn grid<'a>(&self, min: &'a str) -> Grid<'a> {
         Grid {
             min,
-            content,
+            content: Markup::default(),
             gap: None,
         }
     }
 }
 
 impl Grid<'_> {
+    /// What is laid out: each top-level element is a cell.
+    pub fn body(mut self, markup: Markup) -> Self {
+        self.content = markup;
+        self
+    }
+
     /// The gap as a step of the `--lui-space-*` scale: 0, 1, 2, 3, 4, 6 or 8.
     pub fn gap(mut self, n: u8) -> Self {
         self.gap = Some(n);

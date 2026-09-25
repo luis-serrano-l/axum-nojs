@@ -1,0 +1,5 @@
+error: items take arguments, not a component: write `stat (ui.stat(..))`, the builder in parentheses
+ --> tests/ui/item_component.rs:5:53
+  |
+5 |     let _ = lui! { DashboardPage("Overview") { stat Stat("Revenue", "$1") delta="+8%"; } };
+  |                                                     ^^^^

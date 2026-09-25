@@ -159,6 +159,7 @@ impl Ui {
 
 /// What one wizard POST carries besides the step's fields: which step it is and whether it
 /// was skipped. Read it from the posted pairs with [`Posted::from_pairs`].
+#[deprecated(note = "take `loco_ui::Posted` and call `.step()` and `.skip()` on it")]
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct Posted {
     /// The step that was posted, 0-based.
@@ -167,6 +168,7 @@ pub struct Posted {
     pub skip: bool,
 }
 
+#[allow(deprecated)]
 impl Posted {
     /// `step=<n>` and `skip=1` from a form post parsed as pairs.
     pub fn from_pairs(pairs: &[(String, String)]) -> Posted {
@@ -402,6 +404,7 @@ pub const CSS: &str = r#"
 
 #[cfg(test)]
 mod tests {
+    #![allow(deprecated)]
     use super::*;
 
     fn three<'a>(ui: &'a Ui) -> Wizard<'a> {

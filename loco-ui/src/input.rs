@@ -64,17 +64,39 @@ pub(crate) enum FieldKind<'a> {
     Search,
     Email,
     Password,
-    Number { min: Option<i64>, max: Option<i64> },
-    Pattern { pattern: &'a str, hint: &'a str },
-    Textarea { rows: u8 },
-    File { accept: &'a str, multiple: bool },
-    Date { min: &'a str, max: &'a str },
-    Time { min: &'a str, max: &'a str },
-    DateTime { min: &'a str, max: &'a str },
+    Number {
+        min: Option<i64>,
+        max: Option<i64>,
+    },
+    Pattern {
+        pattern: &'a str,
+        hint: &'a str,
+    },
+    Textarea {
+        rows: u8,
+    },
+    File {
+        accept: &'a str,
+        multiple: bool,
+    },
+    Date {
+        min: &'a str,
+        max: &'a str,
+    },
+    Time {
+        min: &'a str,
+        max: &'a str,
+    },
+    DateTime {
+        min: &'a str,
+        max: &'a str,
+    },
     Select(Vec<Choice<'a>>),
     Checkbox,
     Switch,
     Hidden,
+    /// Markup a form holds among its fields (a switch, a date picker, a select).
+    Markup(Markup),
 }
 
 /// One option of a form's `<select>`: what it posts and what it shows. A `&str` is both;
@@ -153,7 +175,7 @@ impl<'a> Field<'a> {
 
     /// Whether a person sees it (a review lists only these).
     pub(crate) fn shown(&self) -> bool {
-        !matches!(self.kind, FieldKind::Hidden)
+        !matches!(self.kind, FieldKind::Hidden | FieldKind::Markup(_))
     }
 }
 
@@ -491,6 +513,9 @@ impl Render for Input<'_> {
 impl Render for Field<'_> {
     fn render(&self) -> Markup {
         let f = self;
+        if let FieldKind::Markup(m) = &f.kind {
+            return m.clone();
+        }
         let id = f.id.map_or_else(|| format!("f-{}", f.name), str::to_string);
         let help = f.help.or(match f.kind {
             FieldKind::Pattern { hint, .. } => Some(hint),
@@ -533,7 +558,7 @@ impl Render for Field<'_> {
             FieldKind::DateTime { min, max } => {
                 ("datetime-local", bound(min), bound(max), None, None, false)
             }
-            FieldKind::Checkbox | FieldKind::Switch | FieldKind::Hidden => {
+            FieldKind::Checkbox | FieldKind::Switch | FieldKind::Hidden | FieldKind::Markup(_) => {
                 ("", None, None, None, None, false)
             }
         };
