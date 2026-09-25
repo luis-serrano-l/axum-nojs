@@ -105,7 +105,7 @@ pub struct Tabs<'a> {
 
 impl Tabs<'_> {
     /// Every setter with its kind, arguments, default and the HTML attribute it sets; listed by
-    /// [`crate::props`] and kept in step with the setters by a test.
+    /// [`crate::props()`] and kept in step with the setters by a test.
     pub const PROPS: &'static [Prop] = &[
         Prop::new("tab", PropKind::Item, "title: &'a str, body: Markup")
             .doc("A tab titled `title` with its panel."),

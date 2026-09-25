@@ -42,7 +42,7 @@ pub struct Progress<'a> {
 
 impl Progress<'_> {
     /// Every setter with its kind, arguments, default and the HTML attribute it sets; listed by
-    /// [`crate::props`] and kept in step with the setters by a test.
+    /// [`crate::props()`] and kept in step with the setters by a test.
     pub const PROPS: &'static [Prop] = &[Prop::new("label", PropKind::Value, "text: &'a str")
         .doc("A label above the bar, with the percentage beside it.")];
 }

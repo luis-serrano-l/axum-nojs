@@ -63,7 +63,7 @@ use crate::{Cap, Ui};
 /// One option: its value, its text (what the filter matches), an optional icon and optional
 /// rich content shown instead of the text.
 ///
-/// **Setters.** Values and items: `.content(..)`.
+/// **Setters.** Values and items: `.icon(..)`, `.content(..)`.
 #[derive(Clone, Debug)]
 pub struct SelectOption<'a> {
     /// Posted value.
@@ -78,9 +78,12 @@ pub struct SelectOption<'a> {
 
 impl SelectOption<'_> {
     /// Every setter with its kind, arguments, default and the HTML attribute it sets; listed by
-    /// [`crate::props`] and kept in step with the setters by a test.
-    pub const PROPS: &'static [Prop] = &[Prop::new("content", PropKind::Value, "content: Markup")
-        .doc("Rich markup instead of the text (with `Caps::BaseSelect` only).")];
+    /// [`crate::props()`] and kept in step with the setters by a test.
+    pub const PROPS: &'static [Prop] = &[
+        Prop::new("icon", PropKind::Value, "icon: &'a str").doc("An icon before the label."),
+        Prop::new("content", PropKind::Value, "content: Markup")
+            .doc("Rich markup instead of the text (with `Caps::BaseSelect` only)."),
+    ];
 }
 
 impl<'a> SelectOption<'a> {
@@ -143,7 +146,7 @@ pub struct Select<'a> {
 
 impl Select<'_> {
     /// Every setter with its kind, arguments, default and the HTML attribute it sets; listed by
-    /// [`crate::props`] and kept in step with the setters by a test.
+    /// [`crate::props()`] and kept in step with the setters by a test.
     pub const PROPS: &'static [Prop] = &[
         Prop::new(
             "options",

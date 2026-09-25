@@ -45,7 +45,46 @@
         { "name": "prefers-reduced-motion", "baseline": { "chrome": "74", "firefox": "63", "safari": "10.1" } }
       ],
       "fallback": "a popover command becomes popovertarget; other commands need the component's own fallback",
-      "needs_js": "no"
+      "needs_js": "no",
+      "builders": [
+        {
+          "builder": "Button",
+          "nojs": "Button",
+          "calls": ["ui.button(text: &str)", "ui.link_button(text: &str, href: &str)"],
+          "props": [
+            { "name": "primary", "kind": "switch", "args": "", "default": "off", "attr": "", "doc": "The main action of a form or page." },
+            { "name": "danger", "kind": "switch", "args": "", "default": "off", "attr": "", "doc": "Destroys or removes something." },
+            { "name": "ghost", "kind": "switch", "args": "", "default": "off", "attr": "", "doc": "No border or fill until hovered." },
+            { "name": "small", "kind": "switch", "args": "", "default": "off", "attr": "", "doc": "2rem tall instead of 2.25rem." },
+            { "name": "icon", "kind": "switch", "args": "", "default": "off", "attr": "", "doc": "Square, for a glyph or an icon." },
+            { "name": "submit", "kind": "switch", "args": "", "default": "off", "attr": "", "doc": "`type=\"submit\"`, the default unless a command or popover target is set." },
+            { "name": "reset", "kind": "switch", "args": "", "default": "off", "attr": "", "doc": "`type=\"reset\"`." },
+            { "name": "command", "kind": "value", "args": "command: &'a str, target: &'a str", "default": "", "attr": "command", "doc": "An invoker command (`command`, `commandfor`)." },
+            { "name": "popovertarget", "kind": "value", "args": "id: &'a str", "default": "", "attr": "popovertarget", "doc": "Toggle the popover with this id (`popovertarget`)." },
+            { "name": "form", "kind": "value", "args": "id: &'a str", "default": "", "attr": "form", "doc": "Submit the form with this id, wherever the button sits in the page (`form=`)." },
+            { "name": "name", "kind": "value", "args": "name: &'a str", "default": "", "attr": "name", "doc": "Sent as `name=value` with the form when this button submits it." },
+            { "name": "value", "kind": "value", "args": "value: &'a str", "default": "", "attr": "value", "doc": "The submitted `value` that goes with `name`." },
+            { "name": "label", "kind": "value", "args": "label: &'a str", "default": "", "attr": "", "doc": "`aria-label`." },
+            { "name": "class", "kind": "value", "args": "class: &'a str", "default": "", "attr": "class", "doc": "One more class after the button's own, for a component's part name." },
+            { "name": "disabled", "kind": "switch", "args": "", "default": "off", "attr": "disabled", "doc": "Greyed out and not clickable." },
+            { "name": "loading", "kind": "condition", "args": "on: bool", "default": "off", "attr": "", "doc": "A spinner before the text, `disabled` and `aria-busy`, while `on`." },
+            { "name": "content", "kind": "value", "args": "markup: Markup", "default": "", "attr": "", "doc": "Markup to show instead of the text." },
+            { "name": "id", "kind": "value", "args": "id: &'a str", "default": "", "attr": "id", "doc": "The element's `id`." },
+            { "name": "role", "kind": "value", "args": "role: &'a str", "default": "", "attr": "role", "doc": "`role`, for a button that is a menu item or a tab, or a link that acts as a button." },
+            { "name": "title", "kind": "value", "args": "title: &'a str", "default": "", "attr": "title", "doc": "`title`." },
+            { "name": "style", "kind": "value", "args": "style: impl Into<String>", "default": "", "attr": "style", "doc": "Inline `style`, for a per-element custom property or anchor name." },
+            { "name": "aria_haspopup", "kind": "value", "args": "kind: &'a str", "default": "", "attr": "aria-haspopup", "doc": "`aria-haspopup` (`\"menu\"`, `\"dialog\"`)." },
+            { "name": "pressed", "kind": "condition", "args": "on: bool", "default": "off", "attr": "", "doc": "`aria-pressed`, for a toggle button." },
+            { "name": "accesskey", "kind": "value", "args": "key: &'a str", "default": "", "attr": "accesskey", "doc": "`accesskey`." },
+            { "name": "aria_keyshortcuts", "kind": "value", "args": "keys: &'a str", "default": "", "attr": "aria-keyshortcuts", "doc": "`aria-keyshortcuts`, the shortcut spelled out for assistive technology." },
+            { "name": "formmethod", "kind": "value", "args": "method: &'a str", "default": "", "attr": "formmethod", "doc": "`formmethod`." },
+            { "name": "formaction", "kind": "value", "args": "action: &'a str", "default": "", "attr": "formaction", "doc": "`formaction`." },
+            { "name": "formnovalidate", "kind": "switch", "args": "", "default": "off", "attr": "formnovalidate", "doc": "`formnovalidate`." },
+            { "name": "rel", "kind": "value", "args": "rel: &'a str", "default": "", "attr": "rel", "doc": "`rel` of a link (`\"prev\"`, `\"next\"`)." },
+            { "name": "current", "kind": "condition", "args": "on: bool", "default": "off", "attr": "", "doc": "`aria-current=\"page\"`." }
+          ]
+        }
+      ]
     },
     {
       "name": "Input, checkbox, switch, radio group",
@@ -60,7 +99,55 @@
       ],
       "fallback": "none needed: native controls; the switch stays a checkbox without appearance: none",
       "needs_js": "partial",
-      "needs_js_note": "a live character count while typing needs the enhancement script"
+      "needs_js_note": "a live character count while typing needs the enhancement script",
+      "builders": [
+        {
+          "builder": "Input",
+          "nojs": "Input",
+          "calls": ["ui.input(name: &str, label: &str)", "ui.checkbox(name: &str, label: &str)", "ui.switch(name: &str, label: &str)"],
+          "props": [
+            { "name": "email", "kind": "switch", "args": "", "default": "off", "attr": "", "doc": "`type=\"email\"`." },
+            { "name": "password", "kind": "switch", "args": "", "default": "off", "attr": "", "doc": "`type=\"password\"`." },
+            { "name": "number", "kind": "value", "args": "min: i64, max: i64", "default": "", "attr": "", "doc": "A whole number from `min` to `max`, inclusive." },
+            { "name": "pattern", "kind": "value", "args": "pattern: &'a str, hint: &'a str", "default": "", "attr": "pattern", "doc": "Text that must match `pattern`." },
+            { "name": "textarea", "kind": "number", "args": "rows: u8", "default": "", "attr": "", "doc": "Multi-line text, `rows` high." },
+            { "name": "file", "kind": "value", "args": "accept: &'a str", "default": "", "attr": "", "doc": "A file picker." },
+            { "name": "date", "kind": "value", "args": "min: &'a str, max: &'a str", "default": "", "attr": "", "doc": "`type=\"date\"`, bounds as `YYYY-MM-DD`." },
+            { "name": "time", "kind": "value", "args": "min: &'a str, max: &'a str", "default": "", "attr": "", "doc": "`type=\"time\"`, bounds as `HH:MM`." },
+            { "name": "multiple", "kind": "switch", "args": "", "default": "off", "attr": "multiple", "doc": "The file picker takes several files." },
+            { "name": "required", "kind": "switch", "args": "", "default": "off", "attr": "required", "doc": "The `required` attribute, and a `*` after the label." },
+            { "name": "help", "kind": "value", "args": "help: &'a str", "default": "", "attr": "", "doc": "Help text under the field." },
+            { "name": "maxlength", "kind": "number", "args": "max: usize", "default": "", "attr": "maxlength", "doc": "`maxlength`, counted in an `<output>` under the field." },
+            { "name": "value", "kind": "value", "args": "value: &'a str", "default": "", "attr": "value", "doc": "The current value (ignored for files and passwords)." },
+            { "name": "checked", "kind": "condition", "args": "checked: bool", "default": "off", "attr": "checked", "doc": "Tick the checkbox or switch." },
+            { "name": "error", "kind": "value", "args": "message: &'a str", "default": "", "attr": "", "doc": "A server message under the field." },
+            { "name": "placeholder", "kind": "value", "args": "placeholder: &'a str", "default": "", "attr": "placeholder", "doc": "Placeholder text." },
+            { "name": "search", "kind": "switch", "args": "", "default": "off", "attr": "", "doc": "`type=\"search\"`." },
+            { "name": "hide_label", "kind": "switch", "args": "", "default": "off", "attr": "", "doc": "Only the control, the label kept as its `aria-label`." },
+            { "name": "list", "kind": "value", "args": "id: &'a str", "default": "", "attr": "list", "doc": "`list`." },
+            { "name": "autocomplete", "kind": "value", "args": "value: &'a str", "default": "", "attr": "autocomplete", "doc": "`autocomplete` (`\"off\"`, `\"email\"`, `\"new-password\"`)." },
+            { "name": "autofocus", "kind": "switch", "args": "", "default": "off", "attr": "autofocus", "doc": "`autofocus`." },
+            { "name": "inputmode", "kind": "value", "args": "mode: &'a str", "default": "", "attr": "inputmode", "doc": "`inputmode` (`\"numeric\"`), the on-screen keyboard to show." },
+            { "name": "step", "kind": "number", "args": "step: i64", "default": "", "attr": "step", "doc": "`step` of a number field." },
+            { "name": "aria_controls", "kind": "value", "args": "id: &'a str", "default": "", "attr": "aria-controls", "doc": "`aria-controls`." },
+            { "name": "form", "kind": "value", "args": "id: &'a str", "default": "", "attr": "form", "doc": "`form`." },
+            { "name": "class", "kind": "value", "args": "class: &'a str", "default": "", "attr": "class", "doc": "A class on the control, for a component's part name." },
+            { "name": "id", "kind": "value", "args": "id: &'a str", "default": "", "attr": "id", "doc": "The control's id, `f-<name>` by default." }
+          ]
+        },
+        {
+          "builder": "RadioGroup",
+          "nojs": "RadioGroup",
+          "calls": ["ui.radio_group(name: &str, legend: &str)"],
+          "props": [
+            { "name": "option", "kind": "item", "args": "value: &'a str, label: &'a str", "default": "", "attr": "", "doc": "One choice posting `value`, labelled `label`." },
+            { "name": "value", "kind": "value", "args": "value: &'a str", "default": "", "attr": "value", "doc": "The value of the choice that is selected." },
+            { "name": "required", "kind": "switch", "args": "", "default": "off", "attr": "required", "doc": "One choice must be picked before the form submits." },
+            { "name": "help", "kind": "value", "args": "help: &'a str", "default": "", "attr": "", "doc": "Help text under the choices." },
+            { "name": "error", "kind": "value", "args": "message: &'a str", "default": "", "attr": "", "doc": "A server message under the choices." }
+          ]
+        }
+      ]
     },
     {
       "name": "Badge",
@@ -69,7 +156,22 @@
         { "name": "<span>", "baseline": { "chrome": "1", "firefox": "1", "safari": "1" } }
       ],
       "fallback": "none needed",
-      "needs_js": "no"
+      "needs_js": "no",
+      "builders": [
+        {
+          "builder": "Badge",
+          "nojs": "Badge",
+          "calls": ["ui.badge(text: &str)"],
+          "props": [
+            { "name": "secondary", "kind": "switch", "args": "", "default": "off", "attr": "", "doc": "The quieter `--nojs-secondary` fill." },
+            { "name": "danger", "kind": "switch", "args": "", "default": "off", "attr": "", "doc": "Filled with `--nojs-danger`." },
+            { "name": "outline", "kind": "switch", "args": "", "default": "off", "attr": "", "doc": "A border and no fill." },
+            { "name": "ok", "kind": "switch", "args": "", "default": "off", "attr": "", "doc": "A tint of `--nojs-ok`." },
+            { "name": "warn", "kind": "switch", "args": "", "default": "off", "attr": "", "doc": "A tint of `--nojs-warn`." },
+            { "name": "href", "kind": "value", "args": "href: &'a str", "default": "", "attr": "href", "doc": "Make the badge a link." }
+          ]
+        }
+      ]
     },
     {
       "name": "Card",
@@ -78,7 +180,22 @@
         { "name": "grid", "baseline": { "chrome": "57", "firefox": "52", "safari": "10.1" } }
       ],
       "fallback": "none needed",
-      "needs_js": "no"
+      "needs_js": "no",
+      "builders": [
+        {
+          "builder": "Card",
+          "nojs": "Card",
+          "calls": ["ui.card()"],
+          "props": [
+            { "name": "title", "kind": "value", "args": "title: &'a str", "default": "", "attr": "", "doc": "The heading at the top (`h3`)." },
+            { "name": "description", "kind": "value", "args": "text: &'a str", "default": "", "attr": "", "doc": "Muted text under the title." },
+            { "name": "header", "kind": "value", "args": "markup: Markup", "default": "", "attr": "", "doc": "More header content, placed at the top right beside the title." },
+            { "name": "body", "kind": "value", "args": "markup: Markup", "default": "", "attr": "", "doc": "The main content." },
+            { "name": "footer", "kind": "value", "args": "markup: Markup", "default": "", "attr": "", "doc": "A row at the bottom, usually buttons." },
+            { "name": "id", "kind": "value", "args": "id: &'a str", "default": "", "attr": "id", "doc": "The root's id, for a link to the card or a swap target." }
+          ]
+        }
+      ]
     },
     {
       "name": "Icon",
@@ -88,7 +205,17 @@
         { "name": "role=\"img\"", "baseline": { "chrome": "1", "firefox": "1", "safari": "1" } }
       ],
       "fallback": "none needed",
-      "needs_js": "no"
+      "needs_js": "no",
+      "builders": [
+        {
+          "builder": "IconMark",
+          "nojs": "Icon",
+          "calls": ["ui.icon(icon: Icon)"],
+          "props": [
+            { "name": "label", "kind": "value", "args": "label: &'a str", "default": "", "attr": "", "doc": "The name a screen reader says, for an icon that carries meaning on its own." }
+          ]
+        }
+      ]
     },
     {
       "name": "Avatar",
@@ -99,7 +226,19 @@
         { "name": "role=\"img\"", "baseline": { "chrome": "1", "firefox": "1", "safari": "1" } }
       ],
       "fallback": "the initials are the fallback",
-      "needs_js": "no"
+      "needs_js": "no",
+      "builders": [
+        {
+          "builder": "Avatar",
+          "nojs": "Avatar",
+          "calls": ["ui.avatar(name: &str)"],
+          "props": [
+            { "name": "src", "kind": "value", "args": "src: &'a str", "default": "", "attr": "src", "doc": "The picture's URL." },
+            { "name": "small", "kind": "switch", "args": "", "default": "off", "attr": "", "doc": "1.5rem across instead of 2rem, for lists and table rows." },
+            { "name": "large", "kind": "switch", "args": "", "default": "off", "attr": "", "doc": "3rem across, for a profile header." }
+          ]
+        }
+      ]
     },
     {
       "name": "Stack",
@@ -108,7 +247,17 @@
         { "name": "gap", "baseline": { "chrome": "84", "firefox": "63", "safari": "14.1" } }
       ],
       "fallback": "none needed",
-      "needs_js": "no"
+      "needs_js": "no",
+      "builders": [
+        {
+          "builder": "Stack",
+          "nojs": "Stack",
+          "calls": ["ui.stack(content: Markup)"],
+          "props": [
+            { "name": "gap", "kind": "number", "args": "n: u8", "default": "", "attr": "", "doc": "The gap as a step of the `--nojs-space-*` scale." }
+          ]
+        }
+      ]
     },
     {
       "name": "Cluster",
@@ -118,7 +267,19 @@
         { "name": "gap", "baseline": { "chrome": "84", "firefox": "63", "safari": "14.1" } }
       ],
       "fallback": "none needed",
-      "needs_js": "no"
+      "needs_js": "no",
+      "builders": [
+        {
+          "builder": "Cluster",
+          "nojs": "Cluster",
+          "calls": ["ui.cluster(content: Markup)"],
+          "props": [
+            { "name": "between", "kind": "switch", "args": "", "default": "off", "attr": "", "doc": "First child at the start, last at the end, the rest spread between." },
+            { "name": "end", "kind": "switch", "args": "", "default": "off", "attr": "", "doc": "Children packed at the end of the row (a dialog's or card's actions)." },
+            { "name": "gap", "kind": "number", "args": "n: u8", "default": "", "attr": "", "doc": "The gap as a step of the `--nojs-space-*` scale." }
+          ]
+        }
+      ]
     },
     {
       "name": "Grid",
@@ -128,7 +289,17 @@
         { "name": "@media", "baseline": { "chrome": "1", "firefox": "1", "safari": "1" } }
       ],
       "fallback": "none needed",
-      "needs_js": "no"
+      "needs_js": "no",
+      "builders": [
+        {
+          "builder": "Grid",
+          "nojs": "Grid",
+          "calls": ["ui.grid(min: &str, content: Markup)"],
+          "props": [
+            { "name": "gap", "kind": "number", "args": "n: u8", "default": "", "attr": "", "doc": "The gap as a step of the `--nojs-space-*` scale." }
+          ]
+        }
+      ]
     },
     {
       "name": "Split",
@@ -138,7 +309,19 @@
         { "name": "min-inline-size", "baseline": { "chrome": "57", "firefox": "41", "safari": "12.1" } }
       ],
       "fallback": "none needed",
-      "needs_js": "no"
+      "needs_js": "no",
+      "builders": [
+        {
+          "builder": "Split",
+          "nojs": "Split",
+          "calls": ["ui.split(side: Markup, main: Markup)"],
+          "props": [
+            { "name": "side_width", "kind": "value", "args": "width: &'a str", "default": "", "attr": "", "doc": "The side's width, any CSS length." },
+            { "name": "side_end", "kind": "switch", "args": "", "default": "off", "attr": "", "doc": "The side after the main part, in the markup and on screen." },
+            { "name": "gap", "kind": "number", "args": "n: u8", "default": "", "attr": "", "doc": "The gap as a step of the `--nojs-space-*` scale." }
+          ]
+        }
+      ]
     },
     {
       "name": "Calendar",
@@ -151,7 +334,25 @@
       ],
       "fallback": "without :has() the picked radio's day is not filled in; it is still checked and posts",
       "needs_js": "partial",
-      "needs_js_note": "changing month in place and arrow-key moves between days need script"
+      "needs_js_note": "changing month in place and arrow-key moves between days need script",
+      "builders": [
+        {
+          "builder": "Calendar",
+          "nojs": "Calendar",
+          "calls": ["ui.calendar(name: &str)"],
+          "props": [
+            { "name": "today", "kind": "value", "args": "date: &str", "default": "", "attr": "", "doc": "The date to mark as today (`YYYY-MM-DD`), instead of the server's clock in UTC." },
+            { "name": "min", "kind": "value", "args": "date: &str", "default": "", "attr": "", "doc": "The first day that can be picked (`YYYY-MM-DD`)." },
+            { "name": "max", "kind": "value", "args": "date: &str", "default": "", "attr": "", "doc": "The last day that can be picked (`YYYY-MM-DD`)." },
+            { "name": "disabled", "kind": "value", "args": "off: fn(Date) -> bool", "default": "", "attr": "disabled", "doc": "Days for which `off` returns true cannot be picked." },
+            { "name": "event", "kind": "item", "args": "date: &str, text: &'a str", "default": "", "attr": "", "doc": "A dot under the day `date` (`YYYY-MM-DD`), with `text` for screen readers and as the day's tooltip." },
+            { "name": "sunday_first", "kind": "switch", "args": "", "default": "off", "attr": "", "doc": "Weeks start on Sunday instead of Monday." },
+            { "name": "radio", "kind": "switch", "args": "", "default": "off", "attr": "", "doc": "Each day is a radio button named after the calendar, to post inside a form, instead of a link." },
+            { "name": "value", "kind": "value", "args": "date: &str", "default": "", "attr": "value", "doc": "The picked day (`YYYY-MM-DD`) when it does not come from the query string." },
+            { "name": "required", "kind": "switch", "args": "", "default": "off", "attr": "required", "doc": "In radio mode, a day must be picked before the form submits." }
+          ]
+        }
+      ]
     },
     {
       "name": "Date picker",
@@ -163,7 +364,22 @@
       ],
       "fallback": "without popover the calendar is laid out in the form; .native() is the browser's own control",
       "needs_js": "partial",
-      "needs_js_note": "writing the picked day onto the button before the form is sent needs script"
+      "needs_js_note": "writing the picked day onto the button before the form is sent needs script",
+      "builders": [
+        {
+          "builder": "DatePicker",
+          "nojs": "DatePicker",
+          "calls": ["ui.date_picker(name: &str, label: &str)"],
+          "props": [
+            { "name": "value", "kind": "value", "args": "date: &'a str", "default": "", "attr": "value", "doc": "The current value, `YYYY-MM-DD` (a saved date)." },
+            { "name": "min", "kind": "value", "args": "date: &'a str", "default": "", "attr": "min", "doc": "The first day that can be picked, `YYYY-MM-DD`." },
+            { "name": "max", "kind": "value", "args": "date: &'a str", "default": "", "attr": "max", "doc": "The last day that can be picked, `YYYY-MM-DD`." },
+            { "name": "disabled", "kind": "value", "args": "off: fn(Date) -> bool", "default": "", "attr": "", "doc": "Days for which `off` returns true cannot be picked (the native control ignores this)." },
+            { "name": "required", "kind": "switch", "args": "", "default": "off", "attr": "", "doc": "A day must be picked before the form submits." },
+            { "name": "native", "kind": "switch", "args": "", "default": "off", "attr": "", "doc": "The browser's own `<input type=\"date\">` instead of the calendar." }
+          ]
+        }
+      ]
     },
     {
       "name": "Dialog",
@@ -175,7 +391,28 @@
         { "name": "closedby", "baseline": { "chrome": "134", "firefox": "141", "safari": "26" } }
       ],
       "fallback": "link to #id opens it through a :target rule, chosen server-side; the confirm footer is a plain form either way",
-      "needs_js": "no"
+      "needs_js": "no",
+      "builders": [
+        {
+          "builder": "Dialog",
+          "nojs": "Dialog",
+          "calls": ["ui.dialog(trigger: &str)"],
+          "props": [
+            { "name": "body", "kind": "value", "args": "body: Markup", "default": "", "attr": "", "doc": "What the dialog says." },
+            { "name": "id", "kind": "value", "args": "id: &str", "default": "", "attr": "id", "doc": "The dialog's id instead of the trigger's slug." },
+            { "name": "open", "kind": "condition", "args": "open: bool", "default": "off", "attr": "open", "doc": "Render the dialog already open (non-modal, no backdrop)." },
+            { "name": "title", "kind": "value", "args": "title: &'a str", "default": "", "attr": "", "doc": "A title in a header with a close control." },
+            { "name": "small", "kind": "switch", "args": "", "default": "off", "attr": "", "doc": "20 rem wide." },
+            { "name": "large", "kind": "switch", "args": "", "default": "off", "attr": "", "doc": "40 rem wide." },
+            { "name": "danger", "kind": "switch", "args": "", "default": "off", "attr": "", "doc": "Red confirm button and title rule." },
+            { "name": "confirm", "kind": "value", "args": "label: &'a str, action: &'a str", "default": "", "attr": "", "doc": "A confirm button labelled `label`." },
+            { "name": "returns_to", "kind": "value", "args": "path: &'a str", "default": "", "attr": "", "doc": "Where the server should send the browser after the confirm form, posted as a hidden `returns_to` field." },
+            { "name": "close", "kind": "value", "args": "label: &'a str", "default": "Close", "attr": "", "doc": "Label of the closing button when there is no confirm form." },
+            { "name": "cancel", "kind": "value", "args": "label: &'a str", "default": "Cancel", "attr": "", "doc": "Label of the cancel button beside the confirm button." },
+            { "name": "closedby", "kind": "value", "args": "closedby: &'a str", "default": "any", "attr": "closedby", "doc": "The `closedby` attribute." }
+          ]
+        }
+      ]
     },
     {
       "name": "Popover menu",
@@ -185,7 +422,28 @@
         { "name": "anchor-name", "baseline": { "chrome": "125", "firefox": "147", "safari": "26" } }
       ],
       "fallback": "no anchor: UA-centred popover; no popover: <details> dropdown (submenus nested); actions are plain post forms either way",
-      "needs_js": "no"
+      "needs_js": "no",
+      "builders": [
+        {
+          "builder": "Menu",
+          "nojs": "Menu",
+          "calls": ["ui.menu(label: &str)"],
+          "props": [
+            { "name": "link", "kind": "item", "args": "text: &'a str, href: &'a str", "default": "", "attr": "", "doc": "A link." },
+            { "name": "action", "kind": "item", "args": "text: &'a str, action: &'a str", "default": "", "attr": "action", "doc": "A `<form method=\"post\">` button posting to `action`." },
+            { "name": "heading", "kind": "item", "args": "text: &'a str", "default": "", "attr": "", "doc": "A section heading." },
+            { "name": "separator", "kind": "item", "args": "", "default": "", "attr": "", "doc": "A rule between groups." },
+            { "name": "submenu", "kind": "item", "args": "text: &'a str, items: impl IntoIterator<Item = I>", "default": "", "attr": "", "doc": "A nested menu of `items` (`MenuItem`s or `(text, href)` links)." },
+            { "name": "icon", "kind": "modifier", "args": "icon: &'a str", "default": "", "attr": "", "doc": "A glyph or emoji before the item's text (decorative, hidden from assistive tech)." },
+            { "name": "shortcut", "kind": "modifier", "args": "keys: &'a str", "default": "", "attr": "", "doc": "A shortcut shown after the item's text, as `<kbd>`." },
+            { "name": "disabled", "kind": "modifier", "args": "", "default": "", "attr": "disabled", "doc": "The item is shown but not usable." },
+            { "name": "danger", "kind": "modifier", "args": "", "default": "", "attr": "", "doc": "The item is destructive." },
+            { "name": "id", "kind": "value", "args": "id: &str", "default": "", "attr": "id", "doc": "The menu's id instead of the label's slug." },
+            { "name": "align_end", "kind": "switch", "args": "", "default": "off", "attr": "", "doc": "Open below the button with right edges aligned, for a button at the end of a row." },
+            { "name": "open_right", "kind": "switch", "args": "", "default": "off", "attr": "", "doc": "Open to the right of the button." }
+          ]
+        }
+      ]
     },
     {
       "name": "Tabs",
@@ -197,7 +455,21 @@
         { "name": "view-transition-name", "baseline": { "chrome": "111", "firefox": "144", "safari": "18" } }
       ],
       "fallback": "accordion markup, chosen server-side; the narrow-screen select has a Go button",
-      "needs_js": "no"
+      "needs_js": "no",
+      "builders": [
+        {
+          "builder": "Tabs",
+          "nojs": "Tabs",
+          "calls": ["ui.tabs(name: &str)"],
+          "props": [
+            { "name": "tab", "kind": "item", "args": "title: &'a str, body: Markup", "default": "", "attr": "", "doc": "A tab titled `title` with its panel." },
+            { "name": "lazy", "kind": "item", "args": "title: &'a str, body: impl Fn() -> Markup + 'a", "default": "", "attr": "", "doc": "A tab whose panel is rendered only when it is the open one." },
+            { "name": "badge", "kind": "modifier", "args": "count: usize", "default": "", "attr": "", "doc": "A count after the title of the tab added last." },
+            { "name": "vertical", "kind": "switch", "args": "", "default": "off", "attr": "", "doc": "Titles in a column on the left, the open panel beside them." },
+            { "name": "select_below", "kind": "switch", "args": "", "default": "off", "attr": "", "doc": "On screens under 40rem the titles give way to a `<select>`." }
+          ]
+        }
+      ]
     },
     {
       "name": "Accordion",
@@ -208,7 +480,21 @@
         { "name": "interpolate-size", "baseline": { "chrome": "129", "firefox": "no", "safari": "no" } }
       ],
       "fallback": "plain <details>: no exclusivity, no animation; expand/collapse and every toggle are links either way",
-      "needs_js": "no"
+      "needs_js": "no",
+      "builders": [
+        {
+          "builder": "Accordion",
+          "nojs": "Accordion",
+          "calls": ["ui.accordion(group: &str)"],
+          "props": [
+            { "name": "item", "kind": "item", "args": "title: &'a str, body: Markup", "default": "", "attr": "", "doc": "A section titled `title` with its body." },
+            { "name": "icon", "kind": "modifier", "args": "icon: &'a str", "default": "", "attr": "", "doc": "Text (an emoji or a glyph) before the title of the section added last, hidden from assistive tech." },
+            { "name": "summary", "kind": "modifier", "args": "summary: &'a str", "default": "", "attr": "", "doc": "A muted line under the title of the section added last, visible while it is closed." },
+            { "name": "multi", "kind": "switch", "args": "", "default": "off", "attr": "", "doc": "Several sections may be open at once (`?open.<group>=0,2`)." },
+            { "name": "controls", "kind": "switch", "args": "", "default": "off", "attr": "", "doc": "\"Expand all\" and \"Collapse all\" links above the sections (with `multi`)." }
+          ]
+        }
+      ]
     },
     {
       "name": "Combobox",
@@ -221,7 +507,23 @@
       ],
       "fallback": "none needed: chips, results and the create row are links and forms",
       "needs_js": "partial",
-      "needs_js_note": "static suggestions and per-submit results; live filtering and arrow keys into the results need script"
+      "needs_js_note": "static suggestions and per-submit results; live filtering and arrow keys into the results need script",
+      "builders": [
+        {
+          "builder": "Combobox",
+          "nojs": "Combobox",
+          "calls": ["ui.combobox(name: &str, action: &str)"],
+          "props": [
+            { "name": "options", "kind": "value", "args": "values: impl IntoIterator<Item = &'a str>", "default": "", "attr": "", "doc": "Suggestions with no `<optgroup>`." },
+            { "name": "group", "kind": "value", "args": "label: &'a str, values: impl IntoIterator<Item = &'a str>", "default": "", "attr": "", "doc": "Suggestions under `<optgroup label>`." },
+            { "name": "results", "kind": "value", "args": "results: impl IntoIterator<Item = &'a str>", "default": "", "attr": "", "doc": "The server's own results for the query." },
+            { "name": "multi", "kind": "switch", "args": "", "default": "off", "attr": "", "doc": "Results add to the selection instead of replacing it." },
+            { "name": "create", "kind": "value", "args": "action: &'a str", "default": "", "attr": "", "doc": "A \"Create\" row posting to `action` when the query matches nothing." },
+            { "name": "label", "kind": "value", "args": "label: &'a str", "default": "Search", "attr": "label", "doc": "Accessible name of the input." },
+            { "name": "placeholder", "kind": "value", "args": "placeholder: &'a str", "default": "Type to search…", "attr": "", "doc": "Placeholder of the input." }
+          ]
+        }
+      ]
     },
     {
       "name": "Load-more list",
@@ -232,7 +534,18 @@
       ],
       "fallback": "plain navigation to ?page=n#more",
       "needs_js": "partial",
-      "needs_js_note": "click-to-load; scroll-to-load needs script"
+      "needs_js_note": "click-to-load; scroll-to-load needs script",
+      "builders": [
+        {
+          "builder": "Pager",
+          "nojs": "Pager",
+          "calls": ["ui.pager(href: &str, total: usize)"],
+          "props": [
+            { "name": "per_page", "kind": "number", "args": "per_page: usize", "default": "10", "attr": "", "doc": "Rows per page." },
+            { "name": "rows", "kind": "value", "args": "row: impl Fn(usize) -> Markup + 'a", "default": "", "attr": "", "doc": "Row `i` (0-based) of the list." }
+          ]
+        }
+      ]
     },
     {
       "name": "Table",
@@ -250,7 +563,40 @@
         { "name": "aria-busy", "baseline": { "chrome": "1", "firefox": "1", "safari": "1" } }
       ],
       "fallback": "none needed: sorting, filtering, column choice and the bulk form are plain navigations and posts; no select-all without script",
-      "needs_js": "no"
+      "needs_js": "no",
+      "builders": [
+        {
+          "builder": "Row",
+          "nojs": "Row",
+          "calls": ["Row::new(cells: impl IntoIterator<Item = Markup>)"],
+          "props": [
+            { "name": "key", "kind": "value", "args": "key: &'a str", "default": "", "attr": "", "doc": "The value posted for this row when its checkbox is ticked; also names its menu." },
+            { "name": "detail", "kind": "value", "args": "detail: Markup", "default": "", "attr": "", "doc": "A block shown under the first cell when its `<details>` is opened." },
+            { "name": "values", "kind": "value", "args": "values: impl IntoIterator<Item = &'a str>", "default": "", "attr": "", "doc": "The raw text of each cell, in column order, for editing the row in place." },
+            { "name": "menu", "kind": "value", "args": "items: impl IntoIterator<Item = MenuItem<'a>>", "default": "", "attr": "", "doc": "Items of the row's action menu (needs a `key`)." }
+          ]
+        },
+        {
+          "builder": "Table",
+          "nojs": "Table",
+          "calls": ["ui.table(id: &str, href: &str)"],
+          "props": [
+            { "name": "column", "kind": "item", "args": "key: &'a str, label: &'a str", "default": "", "attr": "", "doc": "A column." },
+            { "name": "sortable", "kind": "modifier", "args": "", "default": "", "attr": "", "doc": "The column added last sorts the table." },
+            { "name": "numeric", "kind": "modifier", "args": "", "default": "", "attr": "", "doc": "The column added last holds numbers." },
+            { "name": "editable", "kind": "modifier", "args": "", "default": "", "attr": "", "doc": "The column added last becomes a text box when its row is edited in place (`Table::edit`)." },
+            { "name": "edit", "kind": "value", "args": "action: &'a str", "default": "", "attr": "", "doc": "Rows (with a `Row::key`) can be edited in place." },
+            { "name": "width", "kind": "modifier", "args": "width: &'a str", "default": "", "attr": "", "doc": "A CSS width for the column added last, such as `6rem` or `30%`." },
+            { "name": "rows", "kind": "value", "args": "rows: impl IntoIterator<Item = Row<'a>>", "default": "", "attr": "", "doc": "The rows, already sorted and filtered as `Table::sort` and `Table::filter` say." },
+            { "name": "paged", "kind": "number", "args": "total: usize", "default": "", "attr": "", "doc": "Page the rows." },
+            { "name": "choose_columns", "kind": "switch", "args": "", "default": "off", "attr": "", "doc": "A \"Columns\" chooser." },
+            { "name": "bulk", "kind": "value", "args": "action: &'a str, buttons: impl IntoIterator<Item = (&'a str, &'a str)>", "default": "", "attr": "", "doc": "A checkbox per row (rows need a `Row::key`) and a bar of `(value, label)` buttons posting to `action`." },
+            { "name": "csv", "kind": "value", "args": "href: &'a str", "default": "", "attr": "", "doc": "A \"Download CSV\" link to `href` with the current sort, filter and columns appended." },
+            { "name": "empty", "kind": "value", "args": "message: &'a str", "default": "No rows match.", "attr": "", "doc": "What the body says when there are no rows." },
+            { "name": "loading", "kind": "condition", "args": "loading: bool", "default": "off", "attr": "", "doc": "Skeleton rows with `aria-busy` instead of the rows." }
+          ]
+        }
+      ]
     },
     {
       "name": "Paged table",
@@ -275,7 +621,24 @@
         { "name": "<progress>", "baseline": { "chrome": "8", "firefox": "16", "safari": "6" } }
       ],
       "fallback": "none needed: one form per step, PRG between them",
-      "needs_js": "no"
+      "needs_js": "no",
+      "builders": [
+        {
+          "builder": "Wizard",
+          "nojs": "Wizard",
+          "calls": ["ui.wizard(id: &str, action: &str)"],
+          "props": [
+            { "name": "step", "kind": "item", "args": "title: &'a str, body: impl Into<StepBody<'a>>", "default": "", "attr": "", "doc": "A step titled `title` showing `body`." },
+            { "name": "review", "kind": "item", "args": "title: &'a str", "default": "", "attr": "", "doc": "The last step." },
+            { "name": "optional", "kind": "modifier", "args": "", "default": "", "attr": "", "doc": "The step added last can be skipped." },
+            { "name": "values", "kind": "value", "args": "values: &'a [(String, String)]", "default": "", "attr": "", "doc": "What the visitor entered so far, by field name, for every step's fields and the review." },
+            { "name": "at", "kind": "number", "args": "n: usize", "default": "", "attr": "", "doc": "Show step `n` whatever the request says." },
+            { "name": "errors", "kind": "value", "args": "errors: &'a [(&'a str, &'a str)]", "default": "", "attr": "", "doc": "Server messages `(field name, message)` for the posted step." },
+            { "name": "finish", "kind": "value", "args": "label: &'a str", "default": "Finish", "attr": "", "doc": "Label of the last step's submit button." },
+            { "name": "progress", "kind": "condition", "args": "progress: bool", "default": "off", "attr": "", "doc": "Show the `<progress>` bar (on by default)." }
+          ]
+        }
+      ]
     },
     {
       "name": "Validated form",
@@ -291,7 +654,42 @@
         { "name": "field-sizing", "baseline": { "chrome": "123", "firefox": "no", "safari": "no" } }
       ],
       "fallback": "server re-renders with messages; no early styling; textareas keep their rows; the counter shows the submitted length",
-      "needs_js": "no"
+      "needs_js": "no",
+      "builders": [
+        {
+          "builder": "Form",
+          "nojs": "Form",
+          "calls": ["ui.form(action: &str)", "ui.fields()"],
+          "props": [
+            { "name": "group", "kind": "item", "args": "legend: &'a str", "default": "", "attr": "", "doc": "A `<fieldset>` with this `<legend>` around the fields added after it." },
+            { "name": "text", "kind": "item", "args": "name: &'a str, label: &'a str", "default": "", "attr": "", "doc": "Single-line text." },
+            { "name": "password", "kind": "item", "args": "name: &'a str, label: &'a str", "default": "", "attr": "", "doc": "`type=\"password\"`." },
+            { "name": "email", "kind": "item", "args": "name: &'a str, label: &'a str", "default": "", "attr": "", "doc": "`type=\"email\"`." },
+            { "name": "number", "kind": "item", "args": "name: &'a str, label: &'a str, min: i64, max: i64", "default": "", "attr": "", "doc": "A whole number from `min` to `max`, inclusive." },
+            { "name": "pattern", "kind": "item", "args": "name: &'a str, label: &'a str, pattern: &'a str, hint: &'a str", "default": "", "attr": "", "doc": "Text that must match `pattern` (the HTML `pattern` attribute)." },
+            { "name": "textarea", "kind": "item", "args": "name: &'a str, label: &'a str, rows: u8", "default": "", "attr": "", "doc": "Multi-line text, `rows` high." },
+            { "name": "file", "kind": "item", "args": "name: &'a str, label: &'a str, accept: &'a str", "default": "", "attr": "", "doc": "A file picker." },
+            { "name": "date", "kind": "item", "args": "name: &'a str, label: &'a str, min: &'a str, max: &'a str", "default": "", "attr": "", "doc": "`type=\"date\"`, bounds as `YYYY-MM-DD`." },
+            { "name": "time", "kind": "item", "args": "name: &'a str, label: &'a str, min: &'a str, max: &'a str", "default": "", "attr": "", "doc": "`type=\"time\"`, bounds as `HH:MM`." },
+            { "name": "select", "kind": "item", "args": "name: &'a str, label: &'a str, options: impl IntoIterator<Item = &'a str>", "default": "", "attr": "", "doc": "A `<select>` of `options`, each its own value and text." },
+            { "name": "checkbox", "kind": "item", "args": "name: &'a str, label: &'a str", "default": "", "attr": "", "doc": "A checkbox posting `true` when ticked and nothing when not (so a `bool` with `#[serde(default)]` reads it)." },
+            { "name": "hidden", "kind": "item", "args": "name: &'a str, value: &'a str", "default": "", "attr": "", "doc": "`type=\"hidden\"`." },
+            { "name": "required", "kind": "modifier", "args": "", "default": "", "attr": "", "doc": "The `required` attribute, and a `*` after the label." },
+            { "name": "help", "kind": "modifier", "args": "help: &'a str", "default": "", "attr": "", "doc": "Help text under the field." },
+            { "name": "maxlength", "kind": "modifier", "args": "max: usize", "default": "", "attr": "", "doc": "`maxlength`, counted in an `<output>` under the field." },
+            { "name": "value", "kind": "modifier", "args": "value: &'a str", "default": "", "attr": "value", "doc": "The field's current value (ignored for files)." },
+            { "name": "checked", "kind": "modifier", "args": "checked: bool", "default": "", "attr": "", "doc": "Tick the checkbox." },
+            { "name": "error", "kind": "modifier", "args": "message: &'a str", "default": "", "attr": "", "doc": "A server message beside the field." },
+            { "name": "placeholder", "kind": "modifier", "args": "placeholder: &'a str", "default": "", "attr": "", "doc": "Placeholder text." },
+            { "name": "multiple", "kind": "modifier", "args": "", "default": "", "attr": "", "doc": "The file picker takes several files." },
+            { "name": "submit", "kind": "value", "args": "label: &'a str", "default": "Submit", "attr": "", "doc": "Label of the submit button." },
+            { "name": "inline", "kind": "switch", "args": "", "default": "off", "attr": "", "doc": "Labels beside the fields on screens wider than 40rem, above them on narrower ones." },
+            { "name": "values", "kind": "value", "args": "values: &'a [(String, String)]", "default": "", "attr": "", "doc": "Submitted values by field name, as a form post parses them." },
+            { "name": "errors", "kind": "value", "args": "errors: &'a [(&'a str, &'a str)]", "default": "", "attr": "", "doc": "Server messages `(field name, message)`." },
+            { "name": "id", "kind": "value", "args": "id: &'a str", "default": "", "attr": "id", "doc": "What the swap root's id is built from, when two forms on a page post to the same action (one per tab, say)." }
+          ]
+        }
+      ]
     },
     {
       "name": "Counter",
@@ -303,7 +701,20 @@
         { "name": "cookie", "baseline": { "chrome": "1", "firefox": "1", "safari": "1" } }
       ],
       "fallback": "none needed",
-      "needs_js": "no"
+      "needs_js": "no",
+      "builders": [
+        {
+          "builder": "Counter",
+          "nojs": "Counter",
+          "calls": ["ui.counter(action: &str, value: i64)"],
+          "props": [
+            { "name": "min", "kind": "number", "args": "min: i64", "default": "", "attr": "min", "doc": "Lowest value." },
+            { "name": "max", "kind": "number", "args": "max: i64", "default": "", "attr": "max", "doc": "Highest value." },
+            { "name": "step", "kind": "number", "args": "step: i64", "default": "1", "attr": "step", "doc": "How far one click moves (at least 1)." },
+            { "name": "typed", "kind": "switch", "args": "", "default": "off", "attr": "", "doc": "A number field and a Set button posting `op=set&value=n`." }
+          ]
+        }
+      ]
     },
     {
       "name": "Theme toggle",
@@ -314,7 +725,15 @@
         { "name": "cookie", "baseline": { "chrome": "1", "firefox": "1", "safari": "1" } }
       ],
       "fallback": "OS preference",
-      "needs_js": "no"
+      "needs_js": "no",
+      "builders": [
+        {
+          "builder": "ThemeToggle",
+          "nojs": "ThemeToggle",
+          "calls": ["ui.theme_toggle(action: &str)"],
+          "props": []
+        }
+      ]
     },
     {
       "name": "Flash",
@@ -327,7 +746,18 @@
         { "name": "prefers-reduced-motion", "baseline": { "chrome": "74", "firefox": "63", "safari": "10.1" } }
       ],
       "fallback": "without CSS animations the message stays",
-      "needs_js": "no"
+      "needs_js": "no",
+      "builders": [
+        {
+          "builder": "Flash",
+          "nojs": "Flash",
+          "calls": ["ui.flash()"],
+          "props": [
+            { "name": "dismiss", "kind": "switch", "args": "", "default": "off", "attr": "", "doc": "A dismiss link on each message, back to this page (which no longer has the flash)." },
+            { "name": "auto_hide", "kind": "switch", "args": "", "default": "off", "attr": "", "doc": "Fade calm messages out after a few seconds." }
+          ]
+        }
+      ]
     },
     {
       "name": "UI state",
@@ -350,7 +780,31 @@
         { "name": "formmethod", "baseline": { "chrome": "9", "firefox": "4", "safari": "5.1" } }
       ],
       "fallback": "plain <select>, chosen server-side",
-      "needs_js": "no"
+      "needs_js": "no",
+      "builders": [
+        {
+          "builder": "Select",
+          "nojs": "Select",
+          "calls": ["ui.select(name: &str, selected: &str)"],
+          "props": [
+            { "name": "options", "kind": "value", "args": "options: impl IntoIterator<Item = O>", "default": "", "attr": "", "doc": "Options with no `<optgroup>`." },
+            { "name": "group", "kind": "value", "args": "label: &'a str, options: impl IntoIterator<Item = O>", "default": "", "attr": "", "doc": "Options under `<optgroup label>`." },
+            { "name": "groups", "kind": "value", "args": "groups: impl IntoIterator<Item = (&'a str, G)>", "default": "", "attr": "", "doc": "Several labelled groups at once." },
+            { "name": "search", "kind": "value", "args": "action: &'a str", "default": "", "attr": "", "doc": "A filter box submitting `<name>-q` to `action` with GET." },
+            { "name": "search_over", "kind": "number", "args": "n: usize", "default": "15", "attr": "", "doc": "Show the filter box above this many options (default 15)." },
+            { "name": "label", "kind": "value", "args": "label: &'a str", "default": "", "attr": "label", "doc": "A `<label>` above the select, in a `div.nojs-field` like a form field." }
+          ]
+        },
+        {
+          "builder": "SelectOption",
+          "nojs": "SelectOption",
+          "calls": ["SelectOption::new(value: &str, text: &str)"],
+          "props": [
+            { "name": "icon", "kind": "value", "args": "icon: &'a str", "default": "", "attr": "", "doc": "An icon before the label." },
+            { "name": "content", "kind": "value", "args": "content: Markup", "default": "", "attr": "", "doc": "Rich markup instead of the text (with `Caps::BaseSelect` only)." }
+          ]
+        }
+      ]
     },
     {
       "name": "Range",
@@ -362,7 +816,20 @@
       ],
       "fallback": "ticks not drawn",
       "needs_js": "partial",
-      "needs_js_note": "value shown after submit; live mirroring needs script"
+      "needs_js_note": "value shown after submit; live mirroring needs script",
+      "builders": [
+        {
+          "builder": "Range",
+          "nojs": "Range",
+          "calls": ["ui.range(name: &str, value: i64)", "ui.range_pair(name: &str, (a, b): (i64, i64))"],
+          "props": [
+            { "name": "min", "kind": "number", "args": "min: i64", "default": "0", "attr": "min", "doc": "Lowest value." },
+            { "name": "max", "kind": "number", "args": "max: i64", "default": "100", "attr": "max", "doc": "Highest value." },
+            { "name": "step", "kind": "number", "args": "step: i64", "default": "1", "attr": "step", "doc": "Distance between allowed values (at least 1)." },
+            { "name": "label", "kind": "value", "args": "label: &'a str", "default": "", "attr": "label", "doc": "A `<label>` above the slider, in a `div.nojs-field` like a form field." }
+          ]
+        }
+      ]
     },
     {
       "name": "Color",
@@ -372,7 +839,19 @@
         { "name": "color-mix()", "baseline": { "chrome": "111", "firefox": "113", "safari": "16.2" } }
       ],
       "fallback": "text field accepting #rrggbb",
-      "needs_js": "no"
+      "needs_js": "no",
+      "builders": [
+        {
+          "builder": "Color",
+          "nojs": "Color",
+          "calls": ["ui.color(name: &str, value: &str)"],
+          "props": [
+            { "name": "presets", "kind": "value", "args": "presets: &'a [&'a str]", "default": "", "attr": "", "doc": "`#rrggbb` swatches that post `<name>-preset` when clicked." },
+            { "name": "alpha", "kind": "number", "args": "percent: u8", "default": "", "attr": "", "doc": "An opacity slider (`<name>-alpha`) at `percent`, clamped to 100." },
+            { "name": "label", "kind": "value", "args": "label: &'a str", "default": "", "attr": "", "doc": "A `<label>` above the picker, in a `div.nojs-field` like a form field." }
+          ]
+        }
+      ]
     },
     {
       "name": "Streaming",
@@ -395,7 +874,23 @@
       ],
       "fallback": "none needed: a plain multipart post; the progress bar needs the enhancement script",
       "needs_js": "partial",
-      "needs_js_note": "upload progress and a preview before sending need script"
+      "needs_js_note": "upload progress and a preview before sending need script",
+      "builders": [
+        {
+          "builder": "Upload",
+          "nojs": "Upload",
+          "calls": ["ui.upload(action: &str, name: &str)"],
+          "props": [
+            { "name": "accept", "kind": "value", "args": "types: &'a str", "default": "", "attr": "accept", "doc": "`accept`." },
+            { "name": "multiple", "kind": "switch", "args": "", "default": "off", "attr": "multiple", "doc": "Several files at once." },
+            { "name": "hint", "kind": "value", "args": "text: &'a str", "default": "", "attr": "", "doc": "Small print in the drop zone." },
+            { "name": "file", "kind": "item", "args": "name: &'a str, size: u64", "default": "", "attr": "", "doc": "A file the server already holds, `size` in bytes." },
+            { "name": "preview", "kind": "modifier", "args": "src: &'a str", "default": "", "attr": "", "doc": "A thumbnail for the file added last (an image URL)." },
+            { "name": "href", "kind": "modifier", "args": "href: &'a str", "default": "", "attr": "href", "doc": "A link to the file added last, on its name." },
+            { "name": "remove", "kind": "value", "args": "action: &'a str", "default": "", "attr": "", "doc": "A Remove button per file, posting `<name>=<file name>` to `action`." }
+          ]
+        }
+      ]
     },
     {
       "name": "Kanban",
@@ -407,7 +902,20 @@
       ],
       "fallback": "without view transitions a moved card is simply in its new column",
       "needs_js": "partial",
-      "needs_js_note": "drag and drop and reordering within a column need script"
+      "needs_js_note": "drag and drop and reordering within a column need script",
+      "builders": [
+        {
+          "builder": "Kanban",
+          "nojs": "Kanban",
+          "calls": ["ui.kanban(action: &str)"],
+          "props": [
+            { "name": "column", "kind": "item", "args": "key: &'a str, title: &'a str", "default": "", "attr": "", "doc": "A column." },
+            { "name": "limit", "kind": "modifier", "args": "limit: usize", "default": "", "attr": "", "doc": "A work-in-progress limit for the column added last." },
+            { "name": "card", "kind": "modifier", "args": "key: &'a str, title: &'a str", "default": "", "attr": "", "doc": "A card in the column added last." },
+            { "name": "note", "kind": "modifier", "args": "text: &'a str", "default": "", "attr": "", "doc": "Small print under the card added last." }
+          ]
+        }
+      ]
     },
     {
       "name": "Alert",
@@ -417,7 +925,22 @@
         { "name": "role=\"status\"", "baseline": { "chrome": "1", "firefox": "1", "safari": "1" } }
       ],
       "fallback": "none needed",
-      "needs_js": "no"
+      "needs_js": "no",
+      "builders": [
+        {
+          "builder": "Alert",
+          "nojs": "Alert",
+          "calls": ["ui.alert(title: &str)"],
+          "props": [
+            { "name": "description", "kind": "value", "args": "text: &'a str", "default": "", "attr": "", "doc": "A line of text under the title." },
+            { "name": "body", "kind": "value", "args": "markup: Markup", "default": "", "attr": "", "doc": "Markup under the title (a list, a link), after the description." },
+            { "name": "icon", "kind": "value", "args": "icon: Icon", "default": "", "attr": "", "doc": "Another icon than the tone's own." },
+            { "name": "danger", "kind": "switch", "args": "", "default": "off", "attr": "", "doc": "Something went wrong." },
+            { "name": "warn", "kind": "switch", "args": "", "default": "off", "attr": "", "doc": "Something to watch." },
+            { "name": "ok", "kind": "switch", "args": "", "default": "off", "attr": "", "doc": "Something worked." }
+          ]
+        }
+      ]
     },
     {
       "name": "Progress",
@@ -428,7 +951,17 @@
       ],
       "fallback": "without the pseudo-elements a browser draws its own bar",
       "needs_js": "partial",
-      "needs_js_note": "moving on its own needs a streamed page or the script"
+      "needs_js_note": "moving on its own needs a streamed page or the script",
+      "builders": [
+        {
+          "builder": "Progress",
+          "nojs": "Progress",
+          "calls": ["ui.progress(value: u64, max: u64)"],
+          "props": [
+            { "name": "label", "kind": "value", "args": "text: &'a str", "default": "", "attr": "", "doc": "A label above the bar, with the percentage beside it." }
+          ]
+        }
+      ]
     },
     {
       "name": "Meter",
@@ -437,7 +970,20 @@
         { "name": "<meter>", "baseline": { "chrome": "6", "firefox": "16", "safari": "6" } }
       ],
       "fallback": "without the pseudo-elements a browser draws its own meter",
-      "needs_js": "no"
+      "needs_js": "no",
+      "builders": [
+        {
+          "builder": "Meter",
+          "nojs": "Meter",
+          "calls": ["ui.meter(value: i64, min: i64, max: i64)"],
+          "props": [
+            { "name": "label", "kind": "value", "args": "text: &'a str", "default": "", "attr": "", "doc": "A label above the meter, with the value beside it." },
+            { "name": "low", "kind": "number", "args": "low: i64", "default": "", "attr": "low", "doc": "Below this is \"low\"." },
+            { "name": "high", "kind": "number", "args": "high: i64", "default": "", "attr": "high", "doc": "Above this is \"high\"." },
+            { "name": "optimum", "kind": "number", "args": "optimum: i64", "default": "", "attr": "optimum", "doc": "The best value." }
+          ]
+        }
+      ]
     },
     {
       "name": "Tooltip",
@@ -448,7 +994,18 @@
       ],
       "fallback": "none needed",
       "needs_js": "partial",
-      "needs_js_note": "a delay before opening and Escape to close need script"
+      "needs_js_note": "a delay before opening and Escape to close need script",
+      "builders": [
+        {
+          "builder": "Tooltip",
+          "nojs": "Tooltip",
+          "calls": ["ui.tooltip(text: &str, trigger: Markup)"],
+          "props": [
+            { "name": "below", "kind": "switch", "args": "", "default": "off", "attr": "", "doc": "Show the text under the trigger instead of above it." },
+            { "name": "id", "kind": "value", "args": "id: &'a str", "default": "", "attr": "id", "doc": "The tooltip's id, `nojs-tooltip-<slug of the text>` by default." }
+          ]
+        }
+      ]
     },
     {
       "name": "Separator",
@@ -458,7 +1015,18 @@
         { "name": "aria-orientation", "baseline": { "chrome": "1", "firefox": "1", "safari": "1" } }
       ],
       "fallback": "none needed",
-      "needs_js": "no"
+      "needs_js": "no",
+      "builders": [
+        {
+          "builder": "Separator",
+          "nojs": "Separator",
+          "calls": ["ui.separator()"],
+          "props": [
+            { "name": "label", "kind": "value", "args": "text: &'a str", "default": "", "attr": "", "doc": "A word in the middle of the line." },
+            { "name": "vertical", "kind": "switch", "args": "", "default": "off", "attr": "", "doc": "Down instead of across, between items in a row (a `ui.cluster`)." }
+          ]
+        }
+      ]
     },
     {
       "name": "Toast",
@@ -471,7 +1039,17 @@
         { "name": "prefers-reduced-motion", "baseline": { "chrome": "74", "firefox": "63", "safari": "10.1" } }
       ],
       "fallback": "without CSS animations toasts stay until the next page",
-      "needs_js": "no"
+      "needs_js": "no",
+      "builders": [
+        {
+          "builder": "Toasts",
+          "nojs": "Toasts",
+          "calls": ["ui.toasts()"],
+          "props": [
+            { "name": "dismiss", "kind": "switch", "args": "", "default": "off", "attr": "", "doc": "A close link on each toast, back to this page." }
+          ]
+        }
+      ]
     },
     {
       "name": "Breadcrumbs",
@@ -482,7 +1060,18 @@
         { "name": "<details>", "baseline": { "chrome": "12", "firefox": "49", "safari": "6" } }
       ],
       "fallback": "none needed",
-      "needs_js": "no"
+      "needs_js": "no",
+      "builders": [
+        {
+          "builder": "Breadcrumbs",
+          "nojs": "Breadcrumbs",
+          "calls": ["ui.breadcrumbs()"],
+          "props": [
+            { "name": "link", "kind": "item", "args": "label: &'a str, href: &'a str", "default": "", "attr": "", "doc": "One step from the root towards this page." },
+            { "name": "here", "kind": "value", "args": "label: &'a str", "default": "", "attr": "", "doc": "The current page, last in the trail and not a link." }
+          ]
+        }
+      ]
     },
     {
       "name": "Skeleton",
@@ -494,7 +1083,18 @@
         { "name": "prefers-reduced-motion", "baseline": { "chrome": "74", "firefox": "63", "safari": "10.1" } }
       ],
       "fallback": "without CSS animations the bars are still",
-      "needs_js": "no"
+      "needs_js": "no",
+      "builders": [
+        {
+          "builder": "Skeleton",
+          "nojs": "Skeleton",
+          "calls": ["ui.skeleton(lines: usize)"],
+          "props": [
+            { "name": "label", "kind": "value", "args": "label: &'a str", "default": "Loading", "attr": "", "doc": "What screen readers hear instead of \"Loading\"." },
+            { "name": "heading", "kind": "switch", "args": "", "default": "off", "attr": "", "doc": "Start with a wider, taller bar standing in for a heading." }
+          ]
+        }
+      ]
     },
     {
       "name": "Empty state",
@@ -503,7 +1103,20 @@
         { "name": "<form method=\"post\">", "baseline": { "chrome": "1", "firefox": "1", "safari": "1" } }
       ],
       "fallback": "none needed",
-      "needs_js": "no"
+      "needs_js": "no",
+      "builders": [
+        {
+          "builder": "EmptyState",
+          "nojs": "EmptyState",
+          "calls": ["ui.empty_state(title: &str)"],
+          "props": [
+            { "name": "icon", "kind": "value", "args": "icon: &'a str", "default": "", "attr": "", "doc": "A glyph or emoji above the title, hidden from screen readers." },
+            { "name": "text", "kind": "value", "args": "text: Markup", "default": "", "attr": "", "doc": "One or two sentences." },
+            { "name": "link", "kind": "value", "args": "label: &'a str, href: &'a str", "default": "", "attr": "", "doc": "A link to follow." },
+            { "name": "post", "kind": "value", "args": "label: &'a str, action: &'a str", "default": "", "attr": "", "doc": "A button posting to `action`." }
+          ]
+        }
+      ]
     },
     {
       "name": "Stat",
@@ -512,7 +1125,21 @@
         { "name": "repeat(auto-fit", "baseline": { "chrome": "57", "firefox": "52", "safari": "10.1" } }
       ],
       "fallback": "none needed",
-      "needs_js": "no"
+      "needs_js": "no",
+      "builders": [
+        {
+          "builder": "Stat",
+          "nojs": "Stat",
+          "calls": ["ui.stat(label: &str, value: &str)"],
+          "props": [
+            { "name": "delta", "kind": "value", "args": "text: &'a str", "default": "", "attr": "", "doc": "The change." },
+            { "name": "trend", "kind": "value", "args": "trend: Trend", "default": "", "attr": "", "doc": "Override the direction read from the delta's sign." },
+            { "name": "down_is_good", "kind": "switch", "args": "", "default": "off", "attr": "", "doc": "A fall is good news (error rates, latency)." },
+            { "name": "note", "kind": "value", "args": "note: &'a str", "default": "", "attr": "", "doc": "Small print under the value." },
+            { "name": "href", "kind": "value", "args": "href: &'a str", "default": "", "attr": "href", "doc": "Make the whole card a link to the details." }
+          ]
+        }
+      ]
     },
     {
       "name": "Drawer",
@@ -525,7 +1152,22 @@
         { "name": "@media", "baseline": { "chrome": "1", "firefox": "1", "safari": "1" } }
       ],
       "fallback": "link to #id and a :target rule; open from the server",
-      "needs_js": "no"
+      "needs_js": "no",
+      "builders": [
+        {
+          "builder": "Drawer",
+          "nojs": "Drawer",
+          "calls": ["ui.drawer(label: &str)"],
+          "props": [
+            { "name": "nav", "kind": "value", "args": "nav: Markup", "default": "", "attr": "", "doc": "The navigation inside the drawer, usually a `ul` of links." },
+            { "name": "body", "kind": "value", "args": "body: Markup", "default": "", "attr": "", "doc": "The page's content, beside the drawer." },
+            { "name": "id", "kind": "value", "args": "id: &str", "default": "", "attr": "id", "doc": "The drawer's id instead of the label's slug." },
+            { "name": "title", "kind": "value", "args": "title: &'a str", "default": "", "attr": "", "doc": "A heading at the top of the panel (also its accessible name)." },
+            { "name": "sidebar", "kind": "switch", "args": "", "default": "off", "attr": "", "doc": "A permanent sidebar above 60rem." },
+            { "name": "open", "kind": "condition", "args": "open: bool", "default": "off", "attr": "open", "doc": "Render it open (non-modal) from the server." }
+          ]
+        }
+      ]
     },
     {
       "name": "Command palette",
@@ -538,7 +1180,23 @@
       ],
       "fallback": "a <details> disclosure with the same form",
       "needs_js": "partial",
-      "needs_js_note": "arrow keys through live results and a global Ctrl+K need script"
+      "needs_js_note": "arrow keys through live results and a global Ctrl+K need script",
+      "builders": [
+        {
+          "builder": "Palette",
+          "nojs": "Palette",
+          "calls": ["ui.palette(action: &str)"],
+          "props": [
+            { "name": "command", "kind": "item", "args": "label: &'a str, href: &'a str", "default": "", "attr": "", "doc": "A destination." },
+            { "name": "commands", "kind": "value", "args": "commands: impl IntoIterator<Item = (&'a str, &'a str)>", "default": "", "attr": "", "doc": "Several `(label, href)` destinations at once." },
+            { "name": "keywords", "kind": "modifier", "args": "keywords: &'a str", "default": "", "attr": "", "doc": "Extra words that find the command added last, space-separated." },
+            { "name": "group", "kind": "value", "args": "heading: &'a str", "default": "", "attr": "", "doc": "List the commands added after this under a heading." },
+            { "name": "label", "kind": "value", "args": "label: &'a str", "default": "Search", "attr": "", "doc": "The opener's label (default \"Search\")." },
+            { "name": "key", "kind": "value", "args": "key: char", "default": "", "attr": "", "doc": "The access key (default `k`)." },
+            { "name": "id", "kind": "value", "args": "id: &'a str", "default": "palette", "attr": "id", "doc": "The palette's id instead of `palette`." }
+          ]
+        }
+      ]
     }
   ]
 }

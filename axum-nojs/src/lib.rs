@@ -110,6 +110,11 @@ pub mod wizard;
 pub use axum_nojs_caps as caps;
 
 pub use axum_nojs_caps::{Cap, Caps};
+/// Every builder with its constructors and setters: see [`props`](mod@props).
+pub fn props() -> &'static [props::Component] {
+    props::COMPONENTS
+}
+
 /// Maud's `html!` with components written like elements: see [`axum_nojs_macros`].
 pub use axum_nojs_macros::nojs;
 pub use icon::Icon;
@@ -494,9 +499,12 @@ mod tests {
                     }
                 }
                 let mut setters = Vec::new();
-                for (at, _) in body.match_indices("pub fn ") {
+                for (at, _) in body
+                    .match_indices("pub fn ")
+                    .chain(body.match_indices("pub const fn "))
+                {
                     let sig = &body[at..body[at..].find('{').map_or(body.len(), |e| at + e)];
-                    let setter: String = sig["pub fn ".len()..]
+                    let setter: String = sig[sig.find("fn ").unwrap() + "fn ".len()..]
                         .chars()
                         .take_while(|c| c.is_alphanumeric() || *c == '_')
                         .collect();
@@ -549,6 +557,49 @@ mod tests {
             missing.is_empty(),
             "setters missing from their builder's **Setters.** list: {missing:?}"
         );
+    }
+
+    /// `props()` lists every builder that has setters, and every `ui.<name>(..)` that returns
+    /// a listed builder is among its constructors.
+    #[test]
+    fn props_lists_every_builder_and_constructor() {
+        let listed = |name: &str| crate::props().iter().find(|c| c.builder == name);
+        let mut missing = Vec::new();
+        for b in builders() {
+            if listed(&b.name).is_none() {
+                missing.push(b.name);
+            }
+        }
+        let dir = concat!(env!("CARGO_MANIFEST_DIR"), "/src");
+        for entry in std::fs::read_dir(dir).unwrap() {
+            let source = std::fs::read_to_string(entry.unwrap().path()).unwrap();
+            for block in source.split("\nimpl Ui {\n").skip(1) {
+                let block = &block[..block.find("\n}\n").unwrap_or(block.len())];
+                for sig in block.split("pub fn ").skip(1) {
+                    let sig = &sig[..sig.find('{').unwrap_or(sig.len())];
+                    let method: String = sig
+                        .chars()
+                        .take_while(|c| c.is_alphanumeric() || *c == '_')
+                        .collect();
+                    let ret: String = sig
+                        .rsplit("-> ")
+                        .next()
+                        .unwrap()
+                        .chars()
+                        .take_while(|c| c.is_alphanumeric())
+                        .collect();
+                    if let Some(c) = listed(&ret)
+                        && !c
+                            .calls
+                            .iter()
+                            .any(|call| call.starts_with(&format!("ui.{method}(")))
+                    {
+                        missing.push(format!("ui.{method} -> {ret}"));
+                    }
+                }
+            }
+        }
+        assert!(missing.is_empty(), "not in props(): {missing:?}");
     }
 
     /// Every component's header shows it both ways: its doctest builds it with the dot form and

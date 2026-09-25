@@ -336,9 +336,49 @@ pub(crate) fn shell(ui: &Ui, title: &str, body: Markup) -> Markup {
         div class="nojs-plate" {
             div class="nojs-stage" { (body) }
             figure class="nojs-snippet" {
-                @if let Some((_, path, code)) = CODE.iter().find(|h| h.0 == c.0) {
+                @if let Some((_, path, code, _)) = CODE.iter().find(|h| h.0 == c.0) {
                     figcaption { span { (path) } span { "The code behind the component above" } }
                     pre { code { (maud::PreEscaped(code)) } }
+                }
+            }
+        }
+        @if let Some((.., builders)) = CODE.iter().find(|h| h.0 == c.0).filter(|h| !h.3.is_empty()) {
+            (props(builders))
+        }
+    }
+}
+
+/// `text` with each `` `span` `` as `<code>`, as rustdoc shows it.
+fn inline_code(text: &str) -> Markup {
+    html! { @for (i, part) in text.split('`').enumerate() { @if i % 2 == 1 { code { (part) } } @else { (part) } } }
+}
+
+/// What each builder on the page accepts, from `axum_nojs::props()`: one `<details>` per
+/// builder (the first open), its constructors in the summary and a table of its setters inside.
+fn props(builders: &[&axum_nojs::props::Component]) -> Markup {
+    html! {
+        section class="nojs-props" {
+            h2 { "Props" }
+            @for (i, b) in builders.iter().enumerate() {
+                details open[i == 0] {
+                    summary {
+                        code { (b.nojs()) }
+                        @for call in b.calls { " " code { (call) } }
+                        span { (b.props.len()) @if b.props.len() == 1 { " prop" } @else { " props" } }
+                    }
+                    @if !b.props.is_empty() {
+                        div class="nojs-props-scroll" { table {
+                            thead { tr { th { "Prop" } th { "Kind" } th { "Arguments" } th { "Default" } th { "HTML" } th { "What it does" } } }
+                            tbody { @for p in b.props { tr {
+                                td { code { (p.name) } }
+                                td { (p.kind.as_str()) }
+                                td { @if !p.args.is_empty() { code { (p.args) } } }
+                                td { @if !p.default.is_empty() { code { (p.default) } } }
+                                td { @if !p.attr.is_empty() { code { (p.attr) } } }
+                                td { (inline_code(p.doc)) }
+                            } } }
+                        } }
+                    }
                 }
             }
         }

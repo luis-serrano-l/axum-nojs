@@ -48,7 +48,7 @@ pub struct Tooltip<'a> {
 
 impl Tooltip<'_> {
     /// Every setter with its kind, arguments, default and the HTML attribute it sets; listed by
-    /// [`crate::props`] and kept in step with the setters by a test.
+    /// [`crate::props()`] and kept in step with the setters by a test.
     pub const PROPS: &'static [Prop] = &[
         Prop::new("below", PropKind::Switch, "")
             .doc("Show the text under the trigger instead of above it."),

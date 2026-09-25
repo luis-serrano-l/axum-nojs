@@ -130,7 +130,7 @@ pub struct Input<'a>(Field<'a>);
 
 impl Input<'_> {
     /// Every setter with its kind, arguments, default and the HTML attribute it sets; listed by
-    /// [`crate::props`] and kept in step with the setters by a test.
+    /// [`crate::props()`] and kept in step with the setters by a test.
     pub const PROPS: &'static [Prop] = &[
         Prop::new("email", PropKind::Switch, "").doc("`type=\"email\"`."),
         Prop::new("password", PropKind::Switch, "").doc("`type=\"password\"`."),
@@ -545,7 +545,7 @@ pub struct RadioGroup<'a> {
 
 impl RadioGroup<'_> {
     /// Every setter with its kind, arguments, default and the HTML attribute it sets; listed by
-    /// [`crate::props`] and kept in step with the setters by a test.
+    /// [`crate::props()`] and kept in step with the setters by a test.
     pub const PROPS: &'static [Prop] = &[
         Prop::new("option", PropKind::Item, "value: &'a str, label: &'a str")
             .doc("One choice posting `value`, labelled `label`."),

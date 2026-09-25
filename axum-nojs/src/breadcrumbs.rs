@@ -44,7 +44,7 @@ pub struct Breadcrumbs<'a> {
 
 impl Breadcrumbs<'_> {
     /// Every setter with its kind, arguments, default and the HTML attribute it sets; listed by
-    /// [`crate::props`] and kept in step with the setters by a test.
+    /// [`crate::props()`] and kept in step with the setters by a test.
     pub const PROPS: &'static [Prop] = &[
         Prop::new("link", PropKind::Item, "label: &'a str, href: &'a str")
             .doc("One step from the root towards this page."),

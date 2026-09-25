@@ -47,7 +47,7 @@ pub struct Toasts<'a> {
 
 impl Toasts<'_> {
     /// Every setter with its kind, arguments, default and the HTML attribute it sets; listed by
-    /// [`crate::props`] and kept in step with the setters by a test.
+    /// [`crate::props()`] and kept in step with the setters by a test.
     pub const PROPS: &'static [Prop] = &[Prop::new("dismiss", PropKind::Switch, "")
         .doc("A close link on each toast, back to this page.")];
 }

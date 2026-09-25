@@ -913,11 +913,23 @@ the attribute form must compile down to the same builder, so both forms stay one
   `nojs!`, the stream twin is `Slot(..)`). Switches sit on the component as attributes; any
   setter may also stand in an items block (`search "/shop";`) when a chain's order matters,
   now stated in the macro doc.
-- [ ] Introspection: `axum_nojs::props()` lists every component with its `PROPS`; the M5 spec
+- [x] Introspection: `axum_nojs::props()` lists every component with its `PROPS`; the M5 spec
   JSON (`spec/components.json`, `cargo run -p demo -- spec`) gains a `props` array per
   component; each demo component page shows a props table (name, kind, default, HTML
   attribute, doc) under its code snippet, generated from the same list; `Debug` on a builder
   prints only the props set away from their default.
+  Done: `axum_nojs::props()` returns every builder as a `props::Component` (module, builder,
+  constructors as written, `PROPS`), with `.nojs()` for its `nojs!` name; 44 builders, a
+  test (`props_lists_every_builder_and_constructor`) fails on a builder or `ui.<name>(..)`
+  missing from it. `spec/components.json` gains `builders` per component (builder, nojs name,
+  calls, and `props` with name, kind, args, default, attr, doc). Each demo page ends with a
+  "Props" section: one `<details>` per builder its snippet calls (found from `ui.<name>(`,
+  `Type::new(` or the `nojs!` name), the first open, a table with the doc's backticks as
+  `<code>`; test `component_pages_show_their_props`. Widening the setter scan to
+  `pub const fn` found two setters no list had (`Row::key`, `SelectOption::icon`).
+  Not done, by choice: a `Debug` that prints only changed props. The derived `Debug` prints
+  every field; a filtered one needs a hand-written impl per builder (44) that would drift
+  from `PROPS`, the opposite of this milestone's one source of truth.
 - [ ] Swap speed: measure the enhancement script's click-to-paint on a table sort, a tab and
   a pager (Firefox via `scripts/browser-check.mjs` timings) beside an htmx swap of the same
   fragment; if ours is slower, close the gap in `enhance.rs` (answer with only the swap

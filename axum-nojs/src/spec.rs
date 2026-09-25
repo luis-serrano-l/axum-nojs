@@ -635,6 +635,42 @@ pub fn to_json() -> String {
         if let Some(n) = note {
             out.push_str(&format!(",\n      \"needs_js_note\": {}", json_str(n)));
         }
+        let builders: Vec<_> = crate::props()
+            .iter()
+            .filter(|b| b.module == c.module)
+            .collect();
+        if !builders.is_empty() {
+            out.push_str(",\n      \"builders\": [\n");
+            for (j, b) in builders.iter().enumerate() {
+                let calls: Vec<String> = b.calls.iter().map(|c| json_str(c)).collect();
+                out.push_str(&format!(
+                    "        {{\n          \"builder\": {},\n          \"nojs\": {},\n          \"calls\": [{}],\n          \"props\": [",
+                    json_str(b.builder),
+                    json_str(&b.nojs()),
+                    calls.join(", ")
+                ));
+                for (k, p) in b.props.iter().enumerate() {
+                    out.push_str(&format!(
+                        "\n            {{ \"name\": {}, \"kind\": {}, \"args\": {}, \"default\": {}, \"attr\": {}, \"doc\": {} }}{}",
+                        json_str(p.name),
+                        json_str(p.kind.as_str()),
+                        json_str(p.args),
+                        json_str(p.default),
+                        json_str(p.attr),
+                        json_str(p.doc),
+                        if k + 1 < b.props.len() { "," } else { "" }
+                    ));
+                }
+                if !b.props.is_empty() {
+                    out.push_str("\n          ");
+                }
+                out.push_str(&format!(
+                    "]\n        }}{}\n",
+                    if j + 1 < builders.len() { "," } else { "" }
+                ));
+            }
+            out.push_str("      ]");
+        }
         out.push_str(&format!(
             "\n    }}{}\n",
             if i + 1 < SPECS.len() { "," } else { "" }

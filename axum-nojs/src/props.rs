@@ -6,6 +6,9 @@
 //! of its documentation. A test reads the source and fails when a setter is missing from its
 //! builder's `PROPS`, or listed with arguments that no longer match.
 //!
+//! [`crate::props()`] lists every builder with its constructors and `PROPS`, which the spec JSON
+//! and the demo's props tables are made from.
+//!
 //! ```rust
 //! use axum_nojs::props::PropKind;
 //! use axum_nojs::tabs::Tabs;
@@ -14,6 +17,10 @@
 //! assert_eq!(vertical.default, "off");
 //! let badge = Tabs::PROPS.iter().find(|p| p.name == "badge").unwrap();
 //! assert_eq!(badge.kind, PropKind::Modifier);
+//!
+//! let tabs = axum_nojs::props().iter().find(|c| c.builder == "Tabs").unwrap();
+//! assert_eq!(tabs.calls, ["ui.tabs(name: &str)"]);
+//! assert_eq!(tabs.nojs(), "Tabs");
 //! ```
 
 /// What a setter does to its builder.
@@ -100,3 +107,316 @@ impl Prop {
         self
     }
 }
+
+/// A builder and how to get one: its module, its constructors as written in Rust, and its
+/// setters.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Component {
+    /// The file under `axum-nojs/src/` without `.rs`, as in the spec.
+    pub module: &'static str,
+    /// The builder type (`Tabs`).
+    pub builder: &'static str,
+    /// Its constructors with their required arguments (`ui.tabs(name: &str)`).
+    pub calls: &'static [&'static str],
+    /// Its setters.
+    pub props: &'static [Prop],
+}
+
+impl Component {
+    /// The name `nojs!` knows it by: the first constructor's method in `UpperCamelCase`
+    /// (`ui.date_picker(..)` is `DatePicker`); a type's own constructor keeps the type name.
+    pub fn nojs(&self) -> String {
+        let call = self.calls.first().copied().unwrap_or(self.builder);
+        let Some(method) = call.strip_prefix("ui.") else {
+            return self.builder.to_string();
+        };
+        let method = &method[..method.find('(').unwrap_or(method.len())];
+        method
+            .split('_')
+            .map(|w| {
+                let mut c = w.chars();
+                c.next().map_or(String::new(), |f| {
+                    f.to_ascii_uppercase().to_string() + c.as_str()
+                })
+            })
+            .collect()
+    }
+}
+
+/// Every builder, by module then name.
+pub(crate) const COMPONENTS: &[Component] = &[
+    Component {
+        module: "accordion",
+        builder: "Accordion",
+        calls: &["ui.accordion(group: &str)"],
+        props: crate::accordion::Accordion::PROPS,
+    },
+    Component {
+        module: "alert",
+        builder: "Alert",
+        calls: &["ui.alert(title: &str)"],
+        props: crate::alert::Alert::PROPS,
+    },
+    Component {
+        module: "avatar",
+        builder: "Avatar",
+        calls: &["ui.avatar(name: &str)"],
+        props: crate::avatar::Avatar::PROPS,
+    },
+    Component {
+        module: "badge",
+        builder: "Badge",
+        calls: &["ui.badge(text: &str)"],
+        props: crate::badge::Badge::PROPS,
+    },
+    Component {
+        module: "breadcrumbs",
+        builder: "Breadcrumbs",
+        calls: &["ui.breadcrumbs()"],
+        props: crate::breadcrumbs::Breadcrumbs::PROPS,
+    },
+    Component {
+        module: "button",
+        builder: "Button",
+        calls: &[
+            "ui.button(text: &str)",
+            "ui.link_button(text: &str, href: &str)",
+        ],
+        props: crate::button::Button::PROPS,
+    },
+    Component {
+        module: "calendar",
+        builder: "Calendar",
+        calls: &["ui.calendar(name: &str)"],
+        props: crate::calendar::Calendar::PROPS,
+    },
+    Component {
+        module: "card",
+        builder: "Card",
+        calls: &["ui.card()"],
+        props: crate::card::Card::PROPS,
+    },
+    Component {
+        module: "cluster",
+        builder: "Cluster",
+        calls: &["ui.cluster(content: Markup)"],
+        props: crate::cluster::Cluster::PROPS,
+    },
+    Component {
+        module: "color",
+        builder: "Color",
+        calls: &["ui.color(name: &str, value: &str)"],
+        props: crate::color::Color::PROPS,
+    },
+    Component {
+        module: "combobox",
+        builder: "Combobox",
+        calls: &["ui.combobox(name: &str, action: &str)"],
+        props: crate::combobox::Combobox::PROPS,
+    },
+    Component {
+        module: "counter",
+        builder: "Counter",
+        calls: &["ui.counter(action: &str, value: i64)"],
+        props: crate::counter::Counter::PROPS,
+    },
+    Component {
+        module: "date_picker",
+        builder: "DatePicker",
+        calls: &["ui.date_picker(name: &str, label: &str)"],
+        props: crate::date_picker::DatePicker::PROPS,
+    },
+    Component {
+        module: "dialog",
+        builder: "Dialog",
+        calls: &["ui.dialog(trigger: &str)"],
+        props: crate::dialog::Dialog::PROPS,
+    },
+    Component {
+        module: "drawer",
+        builder: "Drawer",
+        calls: &["ui.drawer(label: &str)"],
+        props: crate::drawer::Drawer::PROPS,
+    },
+    Component {
+        module: "empty_state",
+        builder: "EmptyState",
+        calls: &["ui.empty_state(title: &str)"],
+        props: crate::empty_state::EmptyState::PROPS,
+    },
+    Component {
+        module: "flash",
+        builder: "Flash",
+        calls: &["ui.flash()"],
+        props: crate::flash::Flash::PROPS,
+    },
+    Component {
+        module: "form",
+        builder: "Form",
+        calls: &["ui.form(action: &str)", "ui.fields()"],
+        props: crate::form::Form::PROPS,
+    },
+    Component {
+        module: "grid",
+        builder: "Grid",
+        calls: &["ui.grid(min: &str, content: Markup)"],
+        props: crate::grid::Grid::PROPS,
+    },
+    Component {
+        module: "icon",
+        builder: "IconMark",
+        calls: &["ui.icon(icon: Icon)"],
+        props: crate::icon::IconMark::PROPS,
+    },
+    Component {
+        module: "input",
+        builder: "Input",
+        calls: &[
+            "ui.input(name: &str, label: &str)",
+            "ui.checkbox(name: &str, label: &str)",
+            "ui.switch(name: &str, label: &str)",
+        ],
+        props: crate::input::Input::PROPS,
+    },
+    Component {
+        module: "input",
+        builder: "RadioGroup",
+        calls: &["ui.radio_group(name: &str, legend: &str)"],
+        props: crate::input::RadioGroup::PROPS,
+    },
+    Component {
+        module: "kanban",
+        builder: "Kanban",
+        calls: &["ui.kanban(action: &str)"],
+        props: crate::kanban::Kanban::PROPS,
+    },
+    Component {
+        module: "meter",
+        builder: "Meter",
+        calls: &["ui.meter(value: i64, min: i64, max: i64)"],
+        props: crate::meter::Meter::PROPS,
+    },
+    Component {
+        module: "pager",
+        builder: "Pager",
+        calls: &["ui.pager(href: &str, total: usize)"],
+        props: crate::pager::Pager::PROPS,
+    },
+    Component {
+        module: "palette",
+        builder: "Palette",
+        calls: &["ui.palette(action: &str)"],
+        props: crate::palette::Palette::PROPS,
+    },
+    Component {
+        module: "popover",
+        builder: "Menu",
+        calls: &["ui.menu(label: &str)"],
+        props: crate::popover::Menu::PROPS,
+    },
+    Component {
+        module: "progress",
+        builder: "Progress",
+        calls: &["ui.progress(value: u64, max: u64)"],
+        props: crate::progress::Progress::PROPS,
+    },
+    Component {
+        module: "range",
+        builder: "Range",
+        calls: &[
+            "ui.range(name: &str, value: i64)",
+            "ui.range_pair(name: &str, (a, b): (i64, i64))",
+        ],
+        props: crate::range::Range::PROPS,
+    },
+    Component {
+        module: "select",
+        builder: "Select",
+        calls: &["ui.select(name: &str, selected: &str)"],
+        props: crate::select::Select::PROPS,
+    },
+    Component {
+        module: "select",
+        builder: "SelectOption",
+        calls: &["SelectOption::new(value: &str, text: &str)"],
+        props: crate::select::SelectOption::PROPS,
+    },
+    Component {
+        module: "separator",
+        builder: "Separator",
+        calls: &["ui.separator()"],
+        props: crate::separator::Separator::PROPS,
+    },
+    Component {
+        module: "skeleton",
+        builder: "Skeleton",
+        calls: &["ui.skeleton(lines: usize)"],
+        props: crate::skeleton::Skeleton::PROPS,
+    },
+    Component {
+        module: "split",
+        builder: "Split",
+        calls: &["ui.split(side: Markup, main: Markup)"],
+        props: crate::split::Split::PROPS,
+    },
+    Component {
+        module: "stack",
+        builder: "Stack",
+        calls: &["ui.stack(content: Markup)"],
+        props: crate::stack::Stack::PROPS,
+    },
+    Component {
+        module: "stat",
+        builder: "Stat",
+        calls: &["ui.stat(label: &str, value: &str)"],
+        props: crate::stat::Stat::PROPS,
+    },
+    Component {
+        module: "table",
+        builder: "Row",
+        calls: &["Row::new(cells: impl IntoIterator<Item = Markup>)"],
+        props: crate::table::Row::PROPS,
+    },
+    Component {
+        module: "table",
+        builder: "Table",
+        calls: &["ui.table(id: &str, href: &str)"],
+        props: crate::table::Table::PROPS,
+    },
+    Component {
+        module: "tabs",
+        builder: "Tabs",
+        calls: &["ui.tabs(name: &str)"],
+        props: crate::tabs::Tabs::PROPS,
+    },
+    Component {
+        module: "theme",
+        builder: "ThemeToggle",
+        calls: &["ui.theme_toggle(action: &str)"],
+        props: &[],
+    },
+    Component {
+        module: "toast",
+        builder: "Toasts",
+        calls: &["ui.toasts()"],
+        props: crate::toast::Toasts::PROPS,
+    },
+    Component {
+        module: "tooltip",
+        builder: "Tooltip",
+        calls: &["ui.tooltip(text: &str, trigger: Markup)"],
+        props: crate::tooltip::Tooltip::PROPS,
+    },
+    Component {
+        module: "upload",
+        builder: "Upload",
+        calls: &["ui.upload(action: &str, name: &str)"],
+        props: crate::upload::Upload::PROPS,
+    },
+    Component {
+        module: "wizard",
+        builder: "Wizard",
+        calls: &["ui.wizard(id: &str, action: &str)"],
+        props: crate::wizard::Wizard::PROPS,
+    },
+];

@@ -58,7 +58,7 @@ pub struct Range<'a> {
 
 impl Range<'_> {
     /// Every setter with its kind, arguments, default and the HTML attribute it sets; listed by
-    /// [`crate::props`] and kept in step with the setters by a test.
+    /// [`crate::props()`] and kept in step with the setters by a test.
     pub const PROPS: &'static [Prop] = &[
         Prop::new("min", PropKind::Number, "min: i64")
             .default("0")

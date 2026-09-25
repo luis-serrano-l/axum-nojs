@@ -44,7 +44,7 @@ pub struct Split<'a> {
 
 impl Split<'_> {
     /// Every setter with its kind, arguments, default and the HTML attribute it sets; listed by
-    /// [`crate::props`] and kept in step with the setters by a test.
+    /// [`crate::props()`] and kept in step with the setters by a test.
     pub const PROPS: &'static [Prop] = &[
         Prop::new("side_width", PropKind::Value, "width: &'a str")
             .doc("The side's width, any CSS length."),

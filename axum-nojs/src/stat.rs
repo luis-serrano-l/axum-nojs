@@ -64,7 +64,7 @@ pub struct Stat<'a> {
 
 impl Stat<'_> {
     /// Every setter with its kind, arguments, default and the HTML attribute it sets; listed by
-    /// [`crate::props`] and kept in step with the setters by a test.
+    /// [`crate::props()`] and kept in step with the setters by a test.
     pub const PROPS: &'static [Prop] = &[
         Prop::new("delta", PropKind::Value, "text: &'a str").doc("The change."),
         Prop::new("trend", PropKind::Value, "trend: Trend")

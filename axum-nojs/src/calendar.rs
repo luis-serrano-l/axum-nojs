@@ -217,7 +217,7 @@ pub struct Calendar<'a> {
 
 impl Calendar<'_> {
     /// Every setter with its kind, arguments, default and the HTML attribute it sets; listed by
-    /// [`crate::props`] and kept in step with the setters by a test.
+    /// [`crate::props()`] and kept in step with the setters by a test.
     pub const PROPS: &'static [Prop] = &[
         Prop::new("today", PropKind::Value, "date: &str")
             .doc("The date to mark as today (`YYYY-MM-DD`), instead of the server's clock in UTC."),

@@ -39,7 +39,7 @@ pub struct Separator<'a> {
 
 impl Separator<'_> {
     /// Every setter with its kind, arguments, default and the HTML attribute it sets; listed by
-    /// [`crate::props`] and kept in step with the setters by a test.
+    /// [`crate::props()`] and kept in step with the setters by a test.
     pub const PROPS: &'static [Prop] = &[
         Prop::new("label", PropKind::Value, "text: &'a str")
             .doc("A word in the middle of the line."),

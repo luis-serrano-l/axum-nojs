@@ -2,6 +2,7 @@
 //! in the route files, highlighted on the server.
 
 use crate::site::COMPONENTS;
+use axum_nojs::props::Component;
 use maud::{Markup, html};
 use std::sync::LazyLock;
 
@@ -77,16 +78,58 @@ pub(crate) fn snippet(href: &str) -> (&'static str, String) {
     (path, blocks.join("\n\n"))
 }
 
-/// Every component's snippet, highlighted once at startup: `(href, file, html)`.
-pub(crate) static CODE: LazyLock<Vec<(&str, &str, String)>> = LazyLock::new(|| {
+/// Every component's snippet, highlighted once at startup: `(href, file, html, builders)`, the
+/// builders being those the snippet calls, for the page's props tables.
+pub(crate) static CODE: LazyLock<Vec<Code>> = LazyLock::new(|| {
     COMPONENTS
         .iter()
         .map(|c| {
             let (path, code) = snippet(c.0);
-            (c.0, path, highlight(&code).into_string())
+            let builders = called(&code);
+            (c.0, path, highlight(&code).into_string(), builders)
         })
         .collect()
 });
+
+/// A page's snippet: its href, file, highlighted HTML and the builders it calls.
+pub(crate) type Code = (&'static str, &'static str, String, Vec<&'static Component>);
+
+/// The builders `code` calls, in the order they first appear: `ui.<method>(`, a type's own
+/// constructor (`Row::new(`), or the `nojs!` name (`Tabs(`, `Card title=..`).
+fn called(code: &str) -> Vec<&'static Component> {
+    // Lines joined, so a chain split as `ui` / `.upload(` reads `ui.upload(`.
+    let code = &code
+        .lines()
+        .map(str::trim)
+        .collect::<Vec<_>>()
+        .join(" ")
+        .replace(" .", ".");
+    let mut found: Vec<(usize, &'static Component)> = Vec::new();
+    for c in axum_nojs::props() {
+        let nojs = c.nojs();
+        let at = c
+            .calls
+            .iter()
+            .filter_map(|call| code.find(&call[..=call.find('(').unwrap()]))
+            .chain(
+                [format!("{nojs}("), format!("{nojs} ")]
+                    .iter()
+                    .filter_map(|n| {
+                        code.match_indices(n.as_str())
+                            .find(|(i, _)| {
+                                !code[..*i].ends_with(|ch: char| ch.is_alphanumeric() || ch == ':')
+                            })
+                            .map(|(i, _)| i)
+                    }),
+            )
+            .min();
+        if let Some(at) = at {
+            found.push((at, c));
+        }
+    }
+    found.sort_by_key(|(at, _)| *at);
+    found.into_iter().map(|(_, c)| c).collect()
+}
 
 /// Rust source as spans the stylesheet colours, parsed by syntect's Rust grammar on the
 /// server (no script). Only seven classes, `nojs-hl-{k,s,n,c,m,f,t}`, coloured with tokens

@@ -529,3 +529,36 @@ async fn markup_follows_caps() {
     );
     assert!(body("/tabs", "").await.contains("nojs-accordion-body"));
 }
+
+/// A component page lists what its builders accept under the snippet, from
+/// `axum_nojs::props()`: the tabs page has a `Tabs` table with every setter in it.
+#[tokio::test]
+async fn component_pages_show_their_props() {
+    let res = router()
+        .oneshot(Request::get("/tabs").body(Body::empty()).unwrap())
+        .await
+        .unwrap();
+    let html = String::from_utf8(
+        axum::body::to_bytes(res.into_body(), usize::MAX)
+            .await
+            .unwrap()
+            .to_vec(),
+    )
+    .unwrap();
+    let section = html
+        .split("class=\"nojs-props\"")
+        .nth(1)
+        .expect("/tabs: no props section");
+    assert!(section.contains("<summary><code>Tabs</code> <code>ui.tabs(name: &amp;str)</code>"));
+    let tabs = axum_nojs::props()
+        .iter()
+        .find(|c| c.builder == "Tabs")
+        .unwrap();
+    for p in tabs.props {
+        assert!(
+            section.contains(&format!("<td><code>{}</code></td>", p.name)),
+            "/tabs: no row for {}",
+            p.name
+        );
+    }
+}

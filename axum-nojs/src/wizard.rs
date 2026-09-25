@@ -113,7 +113,7 @@ pub struct Wizard<'a> {
 
 impl Wizard<'_> {
     /// Every setter with its kind, arguments, default and the HTML attribute it sets; listed by
-    /// [`crate::props`] and kept in step with the setters by a test.
+    /// [`crate::props()`] and kept in step with the setters by a test.
     pub const PROPS: &'static [Prop] = &[
         Prop::new("step", PropKind::Item, "title: &'a str, body: impl Into<StepBody<'a>>")
             .doc("A step titled `title` showing `body`."),

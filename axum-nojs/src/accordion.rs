@@ -79,7 +79,7 @@ pub struct Accordion<'a> {
 
 impl Accordion<'_> {
     /// Every setter with its kind, arguments, default and the HTML attribute it sets; listed by
-    /// [`crate::props`] and kept in step with the setters by a test.
+    /// [`crate::props()`] and kept in step with the setters by a test.
     pub const PROPS: &'static [Prop] = &[
         Prop::new("item", PropKind::Item, "title: &'a str, body: Markup")
             .doc("A section titled `title` with its body."),

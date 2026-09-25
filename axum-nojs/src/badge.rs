@@ -41,7 +41,7 @@ pub struct Badge<'a> {
 
 impl Badge<'_> {
     /// Every setter with its kind, arguments, default and the HTML attribute it sets; listed by
-    /// [`crate::props`] and kept in step with the setters by a test.
+    /// [`crate::props()`] and kept in step with the setters by a test.
     pub const PROPS: &'static [Prop] = &[
         Prop::new("secondary", PropKind::Switch, "").doc("The quieter `--nojs-secondary` fill."),
         Prop::new("danger", PropKind::Switch, "").doc("Filled with `--nojs-danger`."),

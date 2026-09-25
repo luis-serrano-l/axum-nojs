@@ -50,7 +50,7 @@ pub struct Card<'a> {
 
 impl Card<'_> {
     /// Every setter with its kind, arguments, default and the HTML attribute it sets; listed by
-    /// [`crate::props`] and kept in step with the setters by a test.
+    /// [`crate::props()`] and kept in step with the setters by a test.
     pub const PROPS: &'static [Prop] = &[
         Prop::new("title", PropKind::Value, "title: &'a str").doc("The heading at the top (`h3`)."),
         Prop::new("description", PropKind::Value, "text: &'a str")

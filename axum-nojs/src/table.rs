@@ -146,7 +146,7 @@ impl<'a> Column<'a> {
 /// One row: its cells, and optionally a key (for selection and its menu id), a detail
 /// block opened from the first cell, and an action menu in a last column.
 ///
-/// **Setters.** Values and items: `.detail(..)`, `.values(..)`, `.menu(..)`.
+/// **Setters.** Values and items: `.key(..)`, `.detail(..)`, `.values(..)`, `.menu(..)`.
 #[derive(Clone, Debug)]
 pub struct Row<'a> {
     cells: Vec<Markup>,
@@ -158,8 +158,10 @@ pub struct Row<'a> {
 
 impl Row<'_> {
     /// Every setter with its kind, arguments, default and the HTML attribute it sets; listed by
-    /// [`crate::props`] and kept in step with the setters by a test.
+    /// [`crate::props()`] and kept in step with the setters by a test.
     pub const PROPS: &'static [Prop] = &[
+        Prop::new("key", PropKind::Value, "key: &'a str")
+            .doc("The value posted for this row when its checkbox is ticked; also names its menu."),
         Prop::new("detail", PropKind::Value, "detail: Markup")
             .doc("A block shown under the first cell when its `<details>` is opened."),
         Prop::new(
@@ -639,7 +641,7 @@ pub struct Table<'a> {
 
 impl Table<'_> {
     /// Every setter with its kind, arguments, default and the HTML attribute it sets; listed by
-    /// [`crate::props`] and kept in step with the setters by a test.
+    /// [`crate::props()`] and kept in step with the setters by a test.
     pub const PROPS: &'static [Prop] = &[
         Prop::new("column", PropKind::Item, "key: &'a str, label: &'a str")
             .doc("A column."),

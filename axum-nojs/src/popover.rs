@@ -166,7 +166,7 @@ pub struct Menu<'a> {
 
 impl Menu<'_> {
     /// Every setter with its kind, arguments, default and the HTML attribute it sets; listed by
-    /// [`crate::props`] and kept in step with the setters by a test.
+    /// [`crate::props()`] and kept in step with the setters by a test.
     pub const PROPS: &'static [Prop] = &[
         Prop::new("link", PropKind::Item, "text: &'a str, href: &'a str").doc("A link."),
         Prop::new("action", PropKind::Item, "text: &'a str, action: &'a str")

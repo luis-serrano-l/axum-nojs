@@ -397,6 +397,19 @@ tbody tr:hover { background: color-mix(in srgb, var(--nojs-accent) 50%, transpar
 .nojs-hl-c { color: var(--nojs-muted); font-style: italic; }
 .nojs-hl-m { color: var(--nojs-fg); font-weight: 600; }
 .nojs-hl-f { color: var(--nojs-fg); }
+/* The demo's props tables under the snippet: one <details> per builder. */
+.nojs-props { max-width: none; margin: 0 0 2rem; }
+.nojs-props details { border: 1px solid var(--nojs-line); border-radius: var(--nojs-radius); margin: 0 0 0.5rem; }
+.nojs-props summary { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.25rem 0.5rem; padding: 0.5rem 0.75rem; cursor: pointer; }
+.nojs-props summary span { margin-left: auto; color: var(--nojs-muted); font-size: 0.8125rem; }
+.nojs-props-scroll { overflow-x: auto; border-top: 1px solid var(--nojs-line); }
+.nojs-props table { width: 100%; border-collapse: collapse; font-size: 0.8125rem; }
+.nojs-props th, .nojs-props td { text-align: left; vertical-align: top; padding: 0.375rem 0.75rem; border-bottom: 1px solid var(--nojs-line); }
+.nojs-props th { color: var(--nojs-muted); font-weight: 500; white-space: nowrap; }
+.nojs-props tbody tr:last-child td { border-bottom: 0; }
+.nojs-props td:nth-child(-n+2), .nojs-props td:nth-child(4), .nojs-props td:nth-child(5) { white-space: nowrap; }
+.nojs-props td:nth-child(3) { min-width: 10rem; }
+.nojs-props td:last-child { min-width: 16rem; }
 .nojs-index { max-width: none; }
 .nojs-index h2 { margin: 3rem 0 0.25rem; font-size: 1.5rem; line-height: 2rem; }
 .nojs-index-layer { margin: 0 0 1rem; color: var(--nojs-muted); font-size: 0.875rem; }

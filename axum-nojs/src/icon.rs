@@ -213,7 +213,7 @@ pub struct IconMark<'a> {
 
 impl IconMark<'_> {
     /// Every setter with its kind, arguments, default and the HTML attribute it sets; listed by
-    /// [`crate::props`] and kept in step with the setters by a test.
+    /// [`crate::props()`] and kept in step with the setters by a test.
     pub const PROPS: &'static [Prop] = &[Prop::new("label", PropKind::Value, "label: &'a str")
         .doc("The name a screen reader says, for an icon that carries meaning on its own.")];
 }

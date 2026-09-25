@@ -42,7 +42,7 @@ pub struct Cluster {
 
 impl Cluster {
     /// Every setter with its kind, arguments, default and the HTML attribute it sets; listed by
-    /// [`crate::props`] and kept in step with the setters by a test.
+    /// [`crate::props()`] and kept in step with the setters by a test.
     pub const PROPS: &'static [Prop] = &[
         Prop::new("between", PropKind::Switch, "")
             .doc("First child at the start, last at the end, the rest spread between."),
