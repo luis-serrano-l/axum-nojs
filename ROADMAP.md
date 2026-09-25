@@ -774,9 +774,16 @@ loco-rs source (fetch it into `~/.cargo/registry` with a scratch crate) before r
   `MockDatabase` (dev-dependency `sea-orm` 2.0, Loco 1.2's version) and asserts the range
   (`11–20 of 42`) and that the SQL carries `LIMIT`/`OFFSET`. The "Load more" pager's query
   (`limit(pager.shown())`) is stated beside it.
-- [ ] Flash and PRG: `Redirect` + `ui.flash()` work with Loco's cookie setup (the private
+- [x] Flash and PRG: `Redirect` + `ui.flash()` work with Loco's cookie setup (the private
   cookie key from `config/*.yaml` if we use signed cookies); no conflict with Loco's
   session or auth middleware.
+  Done: our cookies are unsigned (`nojs-*`), so no key is needed; Loco 1.2 core has no session
+  middleware, and its JWT cookie is app-named. Test `flash_survives_locos_default_middleware`
+  builds the router as Loco's boot does (routes, `default_middleware_stack`, `with_state`, our
+  `after_routes`) with `tests_cfg::app::get_app_context` (dev-dependency `loco-rs` with
+  `testing`), then POST → 303 + flash cookie → GET shows the flash and clears it; the script is
+  served too. Documented: `secure_headers` `github` blocks the script on plain http; `owasp`'s
+  `Clear-Site-Data: "cookies"` wipes every cookie per response.
 - [ ] Views: document Maud views beside Loco's Tera default (a `views/` module of functions
   returning `Markup`), and decide whether a Tera function bridge (`{{ nojs_button(..) }}`) is
   worth it; default answer: no, Maud only, stated in the docs.

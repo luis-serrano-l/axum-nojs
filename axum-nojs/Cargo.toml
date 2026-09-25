@@ -41,6 +41,8 @@ tower = { version = "0.5", features = ["util"] }
 validator = { version = "0.20", features = ["derive"] }
 # The SeaORM paging example in `loco` runs against a mock database.
 sea-orm = { version = "2.0", default-features = false, features = ["mock", "macros", "with-json"] }
+# `testing` for `tests_cfg::app::get_app_context`: the flash test runs Loco's default middleware.
+loco-rs = { version = "1.2", default-features = false, features = ["testing"] }
 hyper = { version = "1", features = ["server", "http1", "http2"] }
 hyper-util = { version = "0.1", features = ["tokio", "server-auto", "http1", "http2"] }
 http-body-util = "0.1"

@@ -130,6 +130,18 @@
 //! The "Load more" [`Pager`](crate::pager::Pager) shows every row up to `?page=`, so it
 //! fetches the first `pager.shown()` rows: `query.limit(pager.shown() as u64).all(db)`.
 //!
+//! Flash and Post/Redirect/Get need nothing from Loco. The flash and UI state are plain
+//! `nojs-*` cookies read and written by `Ui` and `Redirect`, so there is no signing key to take
+//! from `config/*.yaml`, and they never collide with the JWT cookie `auth.jwt.location` names.
+//! Loco 1.2 has no session middleware in its core. A test runs a post, the redirect and the
+//! page showing the flash through Loco's default middleware stack. Two settings of Loco's
+//! `secure_headers` middleware matter:
+//! - The default `github` preset sends `script-src https:`, so over plain `http://` in
+//!   development the enhancement script is blocked and pages run as they do without it.
+//! - The `owasp` preset sends `Clear-Site-Data: "cache","cookies","storage"` on every
+//!   response, which wipes the flash, the theme and the sign-in cookie on each page. Use
+//!   `github`, or `owasp` with that header overridden.
+//!
 //! The strict [`csp`](crate::enhance::csp) layer is not added: an app states its own policy
 //! (add `axum::middleware::from_fn(axum_nojs::enhance::csp)` in `after_routes` to use ours).
 //!
@@ -318,6 +330,76 @@ mod tests {
             .render()
             .into_string();
         assert!(html.contains("Too short."), "{html}");
+    }
+
+    /// Post/Redirect/Get with a flash, through Loco's default middleware stack (secure headers,
+    /// ETag, compression, request id, ...) built the way Loco's boot does it: routes, then the
+    /// enabled middleware, then `with_state`, then initializers' `after_routes`.
+    #[tokio::test]
+    async fn flash_survives_locos_default_middleware() {
+        use axum::http::header;
+        use loco_rs::controller::middleware::default_middleware_stack;
+
+        async fn list(ui: crate::Ui) -> crate::Page {
+            ui.page("Notes", maud::html! { (ui.flash()) h1 { "Notes" } })
+        }
+        async fn create(ui: crate::Ui) -> crate::Redirect {
+            ui.redirect("/notes").ok("Note saved.")
+        }
+
+        let ctx = loco_rs::tests_cfg::app::get_app_context().await;
+        let mut app = Router::<AppContext>::new().route("/notes", get(list).post(create));
+        for layer in default_middleware_stack(&ctx) {
+            if layer.is_enabled() {
+                app = layer.apply(app).unwrap();
+            }
+        }
+        let app = loco_rs::app::Initializer::after_routes(
+            &Initializer,
+            app.with_state(ctx.clone()),
+            &ctx,
+        )
+        .await
+        .unwrap();
+
+        let post = Request::post("/notes").body(Body::empty()).unwrap();
+        let res = app.clone().oneshot(post).await.unwrap();
+        assert_eq!(res.status(), 303);
+        assert_eq!(res.headers()[header::LOCATION], "/notes");
+        let cookies: Vec<&str> = res
+            .headers()
+            .get_all(header::SET_COOKIE)
+            .iter()
+            .map(|v| v.to_str().unwrap().split(';').next().unwrap())
+            .collect();
+        assert!(!cookies.is_empty(), "the flash cookie is set");
+
+        let get = Request::get("/notes")
+            .header(header::COOKIE, cookies.join("; "))
+            .body(Body::empty())
+            .unwrap();
+        let res = app.clone().oneshot(get).await.unwrap();
+        assert_eq!(res.status(), 200);
+        let cleared = res.headers().get_all(header::SET_COOKIE).iter().count();
+        assert!(cleared > 0, "the shown flash is cleared");
+        let body = axum::body::to_bytes(res.into_body(), usize::MAX)
+            .await
+            .unwrap();
+        assert!(String::from_utf8_lossy(&body).contains("Note saved."));
+
+        let res = app
+            .oneshot(
+                Request::get(crate::enhance::script_url())
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(
+            res.status(),
+            200,
+            "the script is served beside Loco's routes"
+        );
     }
 
     #[tokio::test]
