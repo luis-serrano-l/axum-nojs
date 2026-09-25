@@ -1,7 +1,8 @@
-//! The theme builder: colour inputs for the main `--lui-*` roles in light and dark and a
-//! radius, sent as a GET form so the theme is in the URL; a preview of a few components under
-//! those values; and `theme.css`, the overrides as a file to paste after the stylesheet. No
-//! script: the form posts back and the page renders the new values.
+//! The theme builder: one brand colour and one gray, each grown into a 12-step scale
+//! (`layout::Scale::derive`) for light and dark, and a radius, sent as a GET form so the theme
+//! is in the URL; a preview of a few components, their shadows and the primary gradient under
+//! those values in both schemes; and `theme.css`, the overrides as a file to paste after the
+//! stylesheet. No script: the form posts back and the page renders the new values.
 
 use crate::site::page;
 use axum::{
@@ -10,7 +11,7 @@ use axum::{
     response::{IntoResponse, Response},
     routing::get,
 };
-use loco_ui::layout::Tokens;
+use loco_ui::layout::{DEPTH_DARK, DEPTH_LIGHT, DerivedScale, Scale, Tokens};
 use loco_ui::prelude::*;
 
 pub(crate) fn routes() -> Router {
@@ -19,64 +20,41 @@ pub(crate) fn routes() -> Router {
         .route("/theme.css", get(download))
 }
 
-/// The roles the builder edits, with the name the form shows.
-const ROLES: [(&str, &str); 9] = [
-    ("bg", "Background"),
-    ("fg", "Text"),
-    ("muted", "Muted text"),
-    ("line", "Lines"),
-    ("primary", "Primary"),
-    ("on_primary", "On primary"),
-    ("accent", "Accent"),
-    ("on_accent", "On accent"),
-    ("danger", "Danger"),
+/// Radix Colors' step 9 of a few brand scales, offered as swatches.
+const BRANDS: [&str; 7] = [
+    "#3e63dd", "#0090ff", "#12a594", "#46a758", "#f76b15", "#e93d82", "#6e56cf",
+];
+/// Radix Colors' step 9 of its grays: slate, gray, mauve, sage, olive, sand.
+const GRAYS: [&str; 6] = [
+    "#8b8d98", "#8d8d8d", "#8e8c99", "#868e8b", "#898e87", "#8d8d86",
 ];
 
-/// The default value of `role` in the built-in palette, as `#rrggbb` (the defaults are
-/// aliases onto the scales; a colour input needs the colour).
-fn default(t: &Tokens, dark: bool, role: &str) -> String {
-    let p = if dark { &t.dark } else { &t.light };
-    let v = match role {
-        "bg" => p.bg,
-        "fg" => p.fg,
-        "muted" => p.muted,
-        "line" => p.line,
-        "primary" => p.primary,
-        "on_primary" => p.on_primary,
-        "accent" => p.accent,
-        "on_accent" => p.on_accent,
-        _ => p.danger,
-    };
-    t.color(dark, v).unwrap_or_default()
-}
-
-/// The chosen theme, read from the query; anything not a `#rrggbb` colour is the default.
+/// The chosen theme, read from the query: a clicked swatch (`brand-preset`) wins over the
+/// picker, and anything not a `#rrggbb` colour is the default.
 struct Chosen {
-    light: Vec<(&'static str, String)>,
-    dark: Vec<(&'static str, String)>,
+    brand: String,
+    gray: String,
     radius: u32,
+    brand_scale: DerivedScale,
+    gray_scale: DerivedScale,
 }
 
 fn chosen(ui: &Ui) -> Chosen {
-    let t = Tokens::default();
     let hex = |v: &str| {
         v.len() == 7 && v.starts_with('#') && v[1..].chars().all(|c| c.is_ascii_hexdigit())
     };
-    let read = |scheme: &str, dark: bool| {
-        ROLES
-            .iter()
-            .map(|(role, _)| {
-                let v = ui.param(&format!("{scheme}.{role}")).filter(|v| hex(v));
-                (
-                    *role,
-                    v.map_or_else(|| default(&t, dark, role), str::to_lowercase),
-                )
-            })
-            .collect()
+    let pick = |name: &str, default: &str| {
+        ui.param(&format!("{name}-preset"))
+            .or_else(|| ui.param(name))
+            .filter(|v| hex(v))
+            .map_or_else(|| default.to_string(), str::to_lowercase)
     };
+    let (brand, gray) = (pick("brand", BRANDS[0]), pick("gray", GRAYS[0]));
     Chosen {
-        light: read("light", false),
-        dark: read("dark", true),
+        brand_scale: Scale::derive(&brand, &Scale::INDIGO).expect("a #rrggbb colour"),
+        gray_scale: Scale::derive(&gray, &Scale::SLATE).expect("a #rrggbb colour"),
+        brand,
+        gray,
         radius: ui
             .param("radius")
             .and_then(|r| r.parse().ok())
@@ -85,51 +63,45 @@ fn chosen(ui: &Ui) -> Chosen {
     }
 }
 
-/// `--lui-bg: #fff; …` for one scheme, with the roles the builder does not edit derived from
-/// the ones it does (cards and popovers on the background, inputs on the lines).
-fn declarations(roles: &[(&str, String)]) -> String {
-    let get = |r: &str| {
-        roles
-            .iter()
-            .find(|(k, _)| *k == r)
-            .map_or("", |(_, v)| v.as_str())
-    };
-    let mut out: Vec<String> = roles
-        .iter()
-        .map(|(r, v)| format!("--lui-{}: {v};", r.replace('_', "-")))
-        .collect();
-    for (derived, from) in [
-        ("card", "bg"),
-        ("popover", "bg"),
-        ("secondary", "accent"),
-        ("input", "line"),
-        ("ring", "muted"),
-        ("link", "primary"),
-        ("on_danger", "bg"),
-    ] {
-        out.push(format!("--lui-{derived}: {};", get(from)));
+/// The scales of one scheme, plus what follows from the brand in both: white or near-black
+/// text on its solid step, and a gradient that keeps near-black text readable.
+fn declarations(c: &Chosen, dark: bool) -> String {
+    let on = c.brand_scale.on_solid();
+    let mut out = c.gray_scale.css("gray", dark) + &c.brand_scale.css("brand", dark);
+    out.push_str(&format!("  --lui-on-primary: {on};\n"));
+    if on != "#ffffff" {
+        out.push_str("  --lui-gradient-primary: linear-gradient(in oklch to bottom, var(--lui-brand-9), var(--lui-brand-10));\n");
     }
-    out.join(" ")
+    out
 }
 
 /// The overrides as a stylesheet, in the cascade order of `layout::Tokens::css`.
 fn css(c: &Chosen) -> String {
-    let (light, dark) = (declarations(&c.light), declarations(&c.dark));
+    let (light, dark) = (declarations(c, false), declarations(c, true));
     format!(
-        "/* loco-ui theme from /theme: paste after the stylesheet (Page::css), or put the same\n   values in a layout::Tokens and pass it to Page::tokens. */\n\
-         :root {{ {light} --lui-radius: {}px; }}\n\
-         @media (prefers-color-scheme: dark) {{ :root:not([data-theme=\"light\"]) {{ {dark} }} }}\n\
-         :root[data-theme=\"dark\"] {{ {dark} }}\n",
+        "/* loco-ui theme from /theme: paste after the stylesheet (Page::css), or put the same\n   scales in a layout::Tokens and pass it to Page::tokens. */\n\
+         :root {{\n{light}  --lui-radius: {}px;\n}}\n\
+         @media (prefers-color-scheme: dark) {{\n  :root:not([data-theme=\"light\"]) {{\n{dark}  }}\n}}\n\
+         :root[data-theme=\"dark\"] {{\n{dark}}}\n",
         c.radius
     )
 }
 
-/// A few components under one scheme's values: the preview.
-fn preview(ui: &Ui, scheme: &str, roles: &[(&str, String)], radius: u32) -> Markup {
+/// A few components under one scheme's values: the preview. The roles and depth tokens are
+/// declared again on it, since `--lui-bg: var(--lui-gray-1)` resolves where it is declared
+/// (on `:root`); the chosen scales come last so their `--lui-on-primary` wins.
+fn preview(ui: &Ui, c: &Chosen, dark: bool) -> Markup {
+    let (t, scheme) = (Tokens::default(), if dark { "dark" } else { "light" });
+    let roles = if dark { t.dark } else { t.light };
+    let depth = if dark { DEPTH_DARK } else { DEPTH_LIGHT };
     let style = format!(
-        "{} --lui-radius: {radius}px; color-scheme: {scheme};",
-        declarations(roles)
-    );
+        "{}{}{} --lui-radius: {}px; color-scheme: {scheme};",
+        roles.declarations(),
+        depth,
+        declarations(c, dark),
+        c.radius
+    )
+    .replace('\n', " ");
     html! {
         div class="lui-theme-preview" style=(style) {
             (ui.card().title("Invite a teammate").description("They get an email with a link.").body(html! {
@@ -141,34 +113,31 @@ fn preview(ui: &Ui, scheme: &str, roles: &[(&str, String)], radius: u32) -> Mark
                 }))
                 (ui.alert("Two seats left").danger().description("Upgrade to add more."))
             }))
+            div class="lui-theme-depth" aria-label="Shadows xs to lg, and the primary gradient" role="img" {
+                @for size in ["xs", "sm", "md", "lg"] { span style={ "box-shadow: var(--lui-shadow-" (size) "), var(--lui-highlight)" } { (size) } }
+                span class="lui-theme-gradient" {}
+            }
         }
     }
 }
 
 async fn builder(ui: Ui) -> Page {
     let c = chosen(&ui);
-    let query: Vec<String> = c
-        .light
-        .iter()
-        .map(|(r, v)| format!("light.{r}={}", v.replace('#', "%23")))
-        .chain(
-            c.dark
-                .iter()
-                .map(|(r, v)| format!("dark.{r}={}", v.replace('#', "%23"))),
-        )
-        .chain([format!("radius={}", c.radius)])
-        .collect();
-    let download = format!("/theme.css?{}", query.join("&"));
+    let download = format!(
+        "/theme.css?brand={}&gray={}&radius={}",
+        c.brand.replace('#', "%23"),
+        c.gray.replace('#', "%23"),
+        c.radius
+    );
+    let rust = c.brand_scale.rust("BRAND") + &c.gray_scale.rust("GRAY");
     let body = lui! {
         // code: /theme
         form method="get" action="/theme" class="lui-theme-builder" {
-            @for (scheme, roles) in [("light", &c.light), ("dark", &c.dark)] {
-                fieldset {
-                    legend { (if scheme == "light" { "Light" } else { "Dark" }) }
-                    @for ((role, label), (_, value)) in ROLES.iter().zip(roles.iter()) {
-                        @let name = format!("{scheme}.{role}");
-                        Color(&name, value) label=(label);
-                    }
+            fieldset {
+                legend { "Scales" }
+                div {
+                    Color("brand", &c.brand) presets=(&BRANDS) label="Brand";
+                    Color("gray", &c.gray) presets=(&GRAYS) label="Gray";
                 }
             }
             Range("radius", i64::from(c.radius)) min=0 max=24 label="Radius (px)";
@@ -179,11 +148,12 @@ async fn builder(ui: Ui) -> Page {
             })
         }
         div class="lui-theme-previews" {
-            (preview(&ui, "light", &c.light, c.radius))
-            (preview(&ui, "dark", &c.dark, c.radius))
+            (preview(&ui, &c, false))
+            (preview(&ui, &c, true))
         }
         // end code
         details { summary { "theme.css" } pre tabindex="0" aria-label="theme.css" { code { (css(&c)) } } }
+        details { summary { "The scales in Rust" } pre tabindex="0" aria-label="The scales in Rust" { code { (rust) } } }
     };
     page(&ui, "Theme builder", body)
 }
@@ -209,18 +179,21 @@ mod tests {
 
     #[test]
     fn only_colours_reach_the_css() {
-        let ui = Ui::from_request(
-            "/theme",
-            "light.primary=%232f5bea&light.bg=red;x&radius=99",
-            "",
-        );
-        let c = chosen(&ui);
-        let out = css(&c);
-        assert!(out.contains("--lui-primary: #2f5bea;"), "{out}");
+        let ui = Ui::from_request("/theme", "brand=%2312a594&gray=red;x&radius=99", "");
+        let out = css(&chosen(&ui));
+        assert!(out.contains("--lui-brand-9: #12a594;"), "{out}");
         assert!(
-            out.contains("--lui-bg: #fcfcfd;") && !out.contains("red;x"),
+            out.contains("--lui-gray-9: #8b8d98;") && !out.contains("red;x"),
             "{out}"
         );
         assert!(out.contains("--lui-radius: 24px;"), "{out}");
+    }
+
+    #[test]
+    fn a_swatch_wins_and_a_light_brand_gets_dark_text() {
+        let ui = Ui::from_request("/theme", "brand=%2312a594&brand-preset=%23ffe629", "");
+        let out = css(&chosen(&ui));
+        assert!(out.contains("--lui-brand-9: #ffe629;"), "{out}");
+        assert!(out.contains("--lui-on-primary: #111113;"), "{out}");
     }
 }

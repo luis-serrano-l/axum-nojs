@@ -44,7 +44,7 @@ pub const PATHS: [&str; 48] = [
     "/form?layout=inline",
     "/form?errors=1",
     "/chart",
-    "/theme?light.primary=%232f5bea&radius=12",
+    "/theme?brand=%2312a594&radius=12",
     "/sidebar",
     "/nav-menu",
     "/description-list",

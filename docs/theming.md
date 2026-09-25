@@ -5,11 +5,15 @@ name a colour of their own (a test in `loco-ui/src/lib.rs` fails if one does), s
 two colour scales and a handful of values, not a stylesheet. `layout::Tokens` holds them; `ui.page(..).tokens(&t)` emits them once
 per page.
 
-To pick them by eye, the demo's theme builder (`/theme`, `cargo run -p demo`) has a colour input
-for the main roles in light and dark and a radius, previews a card, a form, buttons, a badge
-and an alert in them, and downloads the result as `theme.css`. Paste that file after the
-stylesheet (`page.css(include_str!("theme.css"))`), or copy its values into a `Tokens`. It needs
-no script: the form sends the colours in the URL, so a theme can be shared as a link.
+To pick them by eye, the demo's theme builder (`/theme`, `cargo run -p demo`) asks for two
+colours, a brand and a gray (a picker, or a swatch of Radix Colors' step 9), and a radius. Each
+colour becomes step 9 of a 12-step scale for light and dark (`layout::Scale::derive`, shaped
+like `Scale::INDIGO` and `Scale::SLATE`), so the roles that alias the scales follow. Text on
+the brand fill turns near-black when white would fall under 4.5:1. The builder previews a
+card, a form, buttons, a badge, an alert, the four shadows and the primary gradient in both
+schemes, downloads the result as `theme.css`, and shows the two scales as `Scale` consts to
+paste into a `Tokens`. Paste the file after the stylesheet (`page.css(include_str!("theme.css"))`).
+It needs no script: the form sends the colours in the URL, so a theme can be shared as a link.
 
 ## The tokens
 

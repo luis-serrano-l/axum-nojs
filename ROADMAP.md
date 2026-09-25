@@ -1247,7 +1247,7 @@ shadows and motion chosen. The no-script rules are unchanged:
     accent scale.
   - Dark mode gets its own shadows and highlight (lighter edge, deeper ambient), not the light
     values reused.
-- [ ] Theme builder (`/theme`) and `docs/theming.md`: pick one accent and one gray, and derive
+- [x] Theme builder (`/theme`) and `docs/theming.md`: pick one accent and one gray, and derive
   all 12 steps from them, rather than editing nine separate colours. The preview shows the
   shadows and the gradient in both schemes, and `theme.css` still downloads as a link.
 - [ ] Surfaces:

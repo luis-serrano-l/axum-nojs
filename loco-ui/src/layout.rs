@@ -79,8 +79,10 @@ pub struct Palette {
 }
 
 impl Palette {
-    /// The custom property declarations for this palette, one per line.
-    fn declarations(&self) -> String {
+    /// The custom property declarations for this palette (`--lui-bg: …;`), one line per
+    /// group. The theme builder re-declares them on its previews, since a role such as
+    /// `var(--lui-gray-1)` resolves where it is declared.
+    pub fn declarations(&self) -> String {
         format!(
             "  --lui-bg: {}; --lui-fg: {}; --lui-muted: {}; --lui-line: {};\n  --lui-surface: {}; --lui-card: {}; --lui-popover: {}; --lui-secondary: {};\n  --lui-accent: {}; --lui-on-accent: {}; --lui-primary: {}; --lui-on-primary: {};\n  --lui-input: {}; --lui-ring: {}; --lui-link: {};\n  --lui-danger: {}; --lui-on-danger: {}; --lui-ok: {}; --lui-warn: {};\n",
             self.bg,
@@ -192,6 +194,41 @@ impl Scale {
         ],
     };
 
+    /// A whole scale from one colour, shaped like `like` (`Scale::INDIGO` for a brand,
+    /// `Scale::SLATE` for a gray): `seed` becomes step 9 in both schemes, step 10 keeps the
+    /// profile's distance from step 9, and every other step takes the profile's lightness
+    /// with the seed's hue and its chroma scaled by the seed's. So steps 11 and 12 stay as
+    /// readable as the profile's whatever the seed. `seed` is `#rrggbb` or `oklch(..)`;
+    /// `None` for anything else. The theme builder uses it.
+    ///
+    /// ```rust
+    /// use loco_ui::layout::Scale;
+    /// let teal = Scale::derive("#12a594", &Scale::INDIGO).unwrap();
+    /// assert_eq!(teal.light[8], "#12a594");
+    /// assert!(teal.css("brand", true).starts_with("  --lui-brand-1: #"));
+    /// ```
+    pub fn derive(seed: &str, like: &Scale) -> Option<DerivedScale> {
+        let (l0, c0, h0) = crate::oklch::parse(seed)?;
+        let seed_hex = crate::oklch::to_hex((l0, c0, h0));
+        let steps = |profile: &[&str; 12]| -> Option<[String; 12]> {
+            let p: Vec<_> = profile
+                .iter()
+                .map(|v| crate::oklch::parse(v))
+                .collect::<Option<_>>()?;
+            let (l9, c9, _) = p[8];
+            let ratio = if c9 > 0.001 { c0 / c9 } else { 1.0 };
+            Some(std::array::from_fn(|i| match i {
+                8 => seed_hex.clone(),
+                9 => crate::oklch::to_hex(((l0 + p[9].0 - l9).clamp(0.0, 1.0), p[9].1 * ratio, h0)),
+                _ => crate::oklch::to_hex((p[i].0, p[i].1 * ratio, h0)),
+            }))
+        };
+        Some(DerivedScale {
+            light: steps(&like.light)?,
+            dark: steps(&like.dark)?,
+        })
+    }
+
     /// `--lui-<name>-n: <colour>;` for one scheme's steps.
     fn declarations(steps: &[&str; 12], name: &str) -> String {
         let mut out = String::from("  ");
@@ -233,6 +270,48 @@ pub const DEPTH_DARK: &str = "  --lui-shadow-xs: 0 1px 1px rgb(0 0 0 / 0.3), 0 1
   --lui-gradient-primary: linear-gradient(in oklch to bottom, var(--lui-brand-9), var(--lui-brand-8));
   --lui-gradient-ring: linear-gradient(in oklch 135deg, var(--lui-brand-11), var(--lui-brand-8));
 ";
+
+/// A scale made at run time by [`Scale::derive`], as `#rrggbb` steps.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct DerivedScale {
+    /// Steps 1–12 for the light scheme.
+    pub light: [String; 12],
+    /// Steps 1–12 for the dark scheme.
+    pub dark: [String; 12],
+}
+
+impl DerivedScale {
+    /// `--lui-<name>-1: #…; … --lui-<name>-12: #…;` for one scheme.
+    pub fn css(&self, name: &str, dark: bool) -> String {
+        let steps = if dark { &self.dark } else { &self.light };
+        Scale::declarations(&std::array::from_fn(|i| steps[i].as_str()), name)
+    }
+
+    /// The text colour for the solid step 9: white, or near-black when white would fall
+    /// under 4.5:1 (a light seed such as yellow or lime).
+    pub fn on_solid(&self) -> &'static str {
+        if crate::oklch::contrast("#ffffff", &self.light[8]) >= 4.5 {
+            "#ffffff"
+        } else {
+            "#111113"
+        }
+    }
+
+    /// The scale as a `layout::Scale` const to paste into Rust.
+    pub fn rust(&self, name: &str) -> String {
+        let list = |s: &[String; 12]| {
+            s.iter()
+                .map(|v| format!("\"{v}\""))
+                .collect::<Vec<_>>()
+                .join(", ")
+        };
+        format!(
+            "const {name}: Scale = Scale {{\n    light: [{}],\n    dark: [{}],\n}};\n",
+            list(&self.light),
+            list(&self.dark)
+        )
+    }
+}
 
 /// Every `--lui-*` token: the two scales, a light and a dark palette of roles over them, and
 /// the two shape tokens. `Default` is a Linear-like theme: Radix slate for the grays and
@@ -575,9 +654,14 @@ tbody tr:hover { background: color-mix(in srgb, var(--lui-accent) 50%, transpare
 .lui-hl-f { color: var(--lui-fg); }
 /* The demo's props tables under the snippet: one <details> per builder. */
 .lui-theme-builder { display: grid; gap: calc(var(--lui-space) * 2); max-width: none; }
-.lui-theme-builder fieldset { display: grid; grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr)); gap: var(--lui-space); margin: 0; padding: calc(var(--lui-space) * 2); border: 1px solid var(--lui-line); border-radius: var(--lui-radius); }
+.lui-theme-builder fieldset > div { display: grid; grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr)); gap: var(--lui-space); }
+.lui-theme-builder fieldset { margin: 0; padding: calc(var(--lui-space) * 2); border: 1px solid var(--lui-line); border-radius: var(--lui-radius); }
 .lui-theme-previews { display: grid; grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr)); gap: calc(var(--lui-space) * 2); margin-block: calc(var(--lui-space) * 2); }
 .lui-theme-preview { padding: calc(var(--lui-space) * 2); background: var(--lui-bg); color: var(--lui-fg); border: 1px solid var(--lui-line); border-radius: var(--lui-radius); }
+/* The builder's depth row: a tile per shadow step, then the primary gradient. */
+.lui-theme-depth { display: flex; flex-wrap: wrap; gap: calc(var(--lui-space) * 2); margin-top: calc(var(--lui-space) * 3); }
+.lui-theme-depth span { display: grid; place-items: center; width: 3.5rem; height: 3.5rem; border-radius: var(--lui-radius); background: var(--lui-card); color: var(--lui-muted); font-size: 0.75rem; }
+.lui-theme-depth .lui-theme-gradient { background: var(--lui-primary); background-image: var(--lui-gradient-primary); box-shadow: var(--lui-shadow-sm), var(--lui-highlight); }
 .lui-props { max-width: none; margin: 0 0 2rem; }
 .lui-props details { border: 1px solid var(--lui-line); border-radius: var(--lui-radius); margin: 0 0 0.5rem; }
 .lui-props summary { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.25rem 0.5rem; padding: 0.5rem 0.75rem; cursor: pointer; }
@@ -694,6 +778,49 @@ mod tests {
                 );
             }
         }
+    }
+
+    /// A derived scale keeps the profile's text steps readable whatever the seed: brand 11
+    /// (links) and gray 11 and 12 on the backgrounds, and `on_solid` on step 9.
+    #[test]
+    fn derived_scales_keep_text_readable() {
+        let indigo = Scale::derive("#3e63dd", &Scale::INDIGO).unwrap();
+        assert_eq!(indigo.light[8], "#3e63dd");
+        assert_eq!(indigo.light[10], "#3a5bc7");
+        let mut failed = Vec::new();
+        for brand in [
+            "#3e63dd", "#12a594", "#e5484d", "#ffe629", "#8e4ec6", "#f76b15", "#000000",
+        ] {
+            for gray in [
+                "#8b8d98", "#8d8d8d", "#8e8c99", "#868e8b", "#8d8d86", "#ffffff",
+            ] {
+                let (b, g) = (
+                    Scale::derive(brand, &Scale::INDIGO).unwrap(),
+                    Scale::derive(gray, &Scale::SLATE).unwrap(),
+                );
+                if contrast(b.on_solid(), &b.light[8]) < 4.5 {
+                    failed.push(format!("{brand}: on_solid on step 9"));
+                }
+                for (dark, bs, gs) in [(false, &b.light, &g.light), (true, &b.dark, &g.dark)] {
+                    for bg in 0..3 {
+                        for (name, fg) in [
+                            ("brand 11", &bs[10]),
+                            ("gray 11", &gs[10]),
+                            ("gray 12", &gs[11]),
+                        ] {
+                            let r = contrast(fg, &gs[bg]);
+                            if r < 4.5 {
+                                failed.push(format!(
+                                    "{brand}/{gray}: {name} on gray {} is {r:.2} (dark: {dark})",
+                                    bg + 1
+                                ));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        assert!(failed.is_empty(), "{failed:#?}");
     }
 
     #[test]

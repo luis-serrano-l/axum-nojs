@@ -698,7 +698,7 @@ async fn the_playground_renders_what_was_chosen() {
 /// The theme builder's download is the chosen overrides as a CSS file.
 #[tokio::test]
 async fn theme_builder_downloads_its_css() {
-    let req = Request::get("/theme.css?light.primary=%23ff5500&radius=4")
+    let req = Request::get("/theme.css?brand=%23ff5500&radius=4")
         .body(Body::empty())
         .unwrap();
     let res = router().oneshot(req).await.unwrap();
@@ -714,7 +714,7 @@ async fn theme_builder_downloads_its_css() {
         .unwrap();
     let css = String::from_utf8(bytes.to_vec()).unwrap();
     assert!(
-        css.contains("--lui-primary: #ff5500;") && css.contains("--lui-radius: 4px;"),
+        css.contains("--lui-brand-9: #ff5500;") && css.contains("--lui-radius: 4px;"),
         "{css}"
     );
 }
