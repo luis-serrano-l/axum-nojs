@@ -146,7 +146,7 @@ impl Render for Kanban<'_> {
         let root = enhance::swap_id("nojs-kanban", self.action);
         let cols = &self.columns;
         html! {
-            div id=(root) data-nojs="swap" class="nojs-kanban" {
+            div id=(root) data-nojs="swap" data-nojs-morph class="nojs-kanban" {
                 @for (i, col) in cols.iter().enumerate() {
                     @let heading = format!("{root}-{}", slug(col.key));
                     @let over = col.limit.is_some_and(|l| col.cards.len() > l);

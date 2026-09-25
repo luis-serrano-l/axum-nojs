@@ -930,11 +930,19 @@ the attribute form must compile down to the same builder, so both forms stay one
   Not done, by choice: a `Debug` that prints only changed props. The derived `Debug` prints
   every field; a filtered one needs a hand-written impl per builder (44) that would drift
   from `PROPS`, the opposite of this milestone's one source of truth.
-- [ ] Swap speed: measure the enhancement script's click-to-paint on a table sort, a tab and
+- [x] Swap speed: measure the enhancement script's click-to-paint on a table sort, a tab and
   a pager (Firefox via `scripts/browser-check.mjs` timings) beside an htmx swap of the same
   fragment; if ours is slower, close the gap in `enhance.rs` (answer with only the swap
   root's fragment when asked, prefetch on `pointerdown`, skip the view transition on fast
   answers). Numbers go in README "What a page weighs"; the no-script path stays as it is.
+  Done: `scripts/bench-swap.mjs` (geckodriver, the release demo, a proxy serving the same
+  pages with htmx 2.0.11 in place of the script and the same answers). The script was behind
+  on table sort (51 vs 41 ms p50) and pager (47 vs 22); the view transition around every swap
+  cost about a frame. Now an answer within 150 ms swaps directly, slower ones morph, and a
+  root with `data-nojs-morph` (the kanban) always morphs: table 35 vs 41, tab 13 vs 14, pager
+  32 vs 22 (p90 35 vs 35; traced to frame alignment, not script work, FINDINGS M28). Fragment
+  answers (`slim`) and prefetch already existed; nothing to add there. Numbers in README
+  "How fast an update lands".
 - [ ] Demo: routes move to `nojs!` where it reads better (every snippet between the `// code:`
   markers, so each component page teaches the attribute form); the dot form stays where a route
   keeps a builder in a variable. Count route lines before and after.

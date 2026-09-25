@@ -7,7 +7,8 @@
 //! **Platform features:** `<script defer>` (baseline 2010), `fetch` (Chrome 42, Firefox 39,
 //! Safari 10.1), `DOMParser` (baseline 2010), `history.pushState` (Chrome 5, Firefox 4,
 //! Safari 5), `document.startViewTransition` where present (Chrome 111, Firefox 144,
-//! Safari 18) so swapped parts morph, `CustomEvent` (Chrome 15, Firefox 11, Safari 6) for
+//! Safari 18) so swapped parts morph when the answer took over 150 ms (a faster one lands at
+//! once, a frame sooner; a root marked `data-nojs-morph` always morphs), `CustomEvent` (Chrome 15, Firefox 11, Safari 6) for
 //! `nojs:swap`.
 //!
 //! **Fallback:** none needed. Without the script every form and link is a normal navigation;
@@ -121,7 +122,9 @@ function swapped(el, url, mode) {
 }
 
 // hist: "push" adds a history entry, "replace" rewrites the current one, "none" keeps the URL.
-function apply(doc, id, url, hist, mode, quiet) {
+// fast: the answer came within 150 ms, so it lands at once instead of in a view transition
+// (whose old-state capture costs a frame); a root marked data-nojs-morph always morphs.
+function apply(doc, id, url, hist, mode, quiet, fast) {
   var root = document.getElementById(id), fresh = doc.getElementById(id);
   if (!root || !fresh) { if (url !== location.href) location.href = url; else location.reload(); return; }
   var f = focusState();
@@ -146,7 +149,7 @@ function apply(doc, id, url, hist, mode, quiet) {
     if (hist === "push") { history.replaceState(snapshot(), "", location.href); history.pushState(null, "", url); }
     else history.replaceState(null, "", url);
   }
-  if (!quiet && document.startViewTransition && !reduced) document.startViewTransition(swap); else swap();
+  if (!quiet && document.startViewTransition && !reduced && (!fast || root.closest("[data-nojs-morph]"))) document.startViewTransition(swap); else swap();
 }
 
 // The root an element acts on: the one named by data-nojs-target on it or an ancestor, else
@@ -184,10 +187,11 @@ function request(t, src, url, req, fallback) {
   pending[id] = (pending[id] || 0) + 1;
   busy(t, src, true);
   var run = function () {
-    var hit = !req.method && cache[url];
+    var hit = !req.method && cache[url], at = Date.now();
     delete cache[url];
     return (hit && Date.now() - hit.at < 5000 ? hit.got : load(url, req)).then(function (r) {
-      return Promise.resolve(t.quiet).then(function () { apply(parse(r.html), id, r.url, t.hist, t.mode, t.quiet); });
+      var fast = Date.now() - at < 150;
+      return Promise.resolve(t.quiet).then(function () { apply(parse(r.html), id, r.url, t.hist, t.mode, t.quiet, fast); });
     }).then(function () { done(); }, function () { done(); fallback(); });
   };
   var done = function () { pending[id]--; busy(t, src, false); if (pending[id]) busy(t, src, true); };

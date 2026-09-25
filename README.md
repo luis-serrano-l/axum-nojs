@@ -189,6 +189,23 @@ and needs an 89 KB script (24 KB gzipped) plus htmx. Two tests keep these number
 stylesheet stays under 64 KB, and every demo page under 96 KB (128 KB for the shadow-DOM
 stream) in `cargo test`.
 
+### How fast an update lands
+
+With the optional script, a click updates its part of the page in place. Measured from the
+click to the frame that shows the new state, in headless Firefox against the release demo on
+the same machine, beside htmx 2.0.11 swapping the same server answer into the same element
+(`scripts/bench-swap.mjs`, 30 runs each, median / 90th percentile, ms):
+
+| Update | axum-nojs script | htmx 2 |
+|---|---|---|
+| Sort a table (26 KB answer) | 35 / 50 | 41 / 51 |
+| Open a tab | 13 / 18 | 14 / 26 |
+| Load more rows (4 KB answer) | 32 / 35 | 22 / 35 |
+
+An answer that arrives within 150 ms lands at once; a slower one morphs in a view transition
+(a root marked `data-nojs-morph`, like the kanban board, always morphs). Without the script
+each of these is an ordinary page load of the same URL.
+
 ## Strict Content-Security-Policy
 
 Nothing is inline but styles, so pages run under a strict policy. `enhance::csp` is an Axum

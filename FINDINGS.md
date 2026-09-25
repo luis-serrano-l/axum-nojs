@@ -677,3 +677,23 @@ there is a method `vertical` with a similar name", a missing argument "this meth
 argument but 0 arguments were supplied" under `Tabs()`, a wrong value "expected `usize`,
 found `&str`" under the value. The `.stderr` files follow rustc's wording, so a new stable
 release can require `TRYBUILD=overwrite` once.
+
+### M28 · Swap speed against htmx
+
+`scripts/bench-swap.mjs` times click → new state on the page → two animation frames, in
+headless Firefox, with the demo's release build on 3002 and a proxy on 3003 serving the same
+pages with htmx 2.0.11 (`hx-boost`, `hx-select`, `hx-swap="outerHTML"` on each swap root) in
+place of the script, its requests carrying `Nojs-Enhance: 1` so both sides get the same bytes.
+
+First run (20 each, p50 / p90 ms): table sort 51 / 58 against htmx 41 / 49, tab 16 / 30
+against 18 / 25, pager 47 / 61 against 22 / 35. With `startViewTransition` removed the
+script's table and pager were 37 and 31: the transition's old-state capture costs about a
+frame on every swap. Fix: an answer within 150 ms of the click swaps directly; slower answers
+still morph (on a real network the morph hides the wait), and `data-nojs-morph` on a root
+(the kanban) keeps it always. After: table 35 / 50 against 41 / 51, tab 13 / 18 against
+14 / 26, pager 32 / 35 against 22 / 35.
+
+The pager stays about 10 ms behind at the median and level at p90. Traced with resource
+timing: the request takes 1–4 ms and the swap lands 6–12 ms after the click; the rest is the
+two frames until paint, so the gap is frame alignment, not work the script does (the history
+snapshot costs 0.4 ms, parsing the 4 KB answer under 1 ms). Left as measured.
