@@ -1040,8 +1040,16 @@ every Loco API named below against loco-rs 1.2 before relying on it, as M27 did.
   Demo: `/form?errors=1` (new PATHS entry, Blitz shot) shows the server's answer on GET and
   replaces the ad-hoc error line; `/app/signin` shows it on a refused post (demo test). The
   browser check asserts the focus both after an in-place swap and on a full load.
-- [ ] A pager fed straight from Loco: `.paged_from(&PagerMeta)` (or `From<&PageResponse<T>>`)
+- [x] A pager fed straight from Loco: `.paged_from(&PagerMeta)` (or `From<&PageResponse<T>>`)
   instead of the hand-written `num_items` + `fetch_page`; a doctest against `MockDatabase`.
+  Done: `Table::paged_from(&PagerMeta)` (feature `loco`; in PROPS), which is
+  `.paged(meta.total_items)`. The handler asks Loco for the table's page with
+  `query::fetch_page(db, select, &PaginationQuery { page: table.page(), page_size:
+  table.per_page() })`; the `loco` module doctest does that with a sort and a filter against
+  `MockDatabase` (count, then `LIMIT`/`OFFSET`). `PagerMeta` lives behind Loco's `with-db`, so
+  the `loco` feature now turns `with-db` on (any app with a database has it). The scaffold's
+  list uses `fetch_page` and `views::<plural>::list(ui, rows, &PagerMeta)`; the example's
+  notes were regenerated with the real generator. Loco-only, so no demo route.
 - [ ] Scaffold field kinds: `references` fields become a select (or combobox past N rows) of
   the parent model, `bool`, `date`, `datetime`, `decimal` and enum columns get their own
   controls; check the templates against Loco 1.x's adaptive scaffold (`--no-auth`, the

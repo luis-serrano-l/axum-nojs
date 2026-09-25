@@ -589,6 +589,7 @@
             { "name": "width", "kind": "modifier", "args": "width: &'a str", "default": "", "attr": "", "doc": "A CSS width for the column added last, such as `6rem` or `30%`." },
             { "name": "rows", "kind": "value", "args": "rows: impl IntoIterator<Item = Row<'a>>", "default": "", "attr": "", "doc": "The rows, already sorted and filtered as `Table::sort` and `Table::filter` say." },
             { "name": "paged", "kind": "number", "args": "total: usize", "default": "", "attr": "", "doc": "Page the rows." },
+            { "name": "paged_from", "kind": "value", "args": "meta: &PagerMeta", "default": "", "attr": "", "doc": "Page the rows from what Loco's `query::fetch_page` or `query::paginate` returns (feature `loco`)." },
             { "name": "choose_columns", "kind": "switch", "args": "", "default": "off", "attr": "", "doc": "A \"Columns\" chooser." },
             { "name": "bulk", "kind": "value", "args": "action: &'a str, buttons: impl IntoIterator<Item = (&'a str, &'a str)>", "default": "", "attr": "", "doc": "A checkbox per row (rows need a `Row::key`) and a bar of `(value, label)` buttons posting to `action`." },
             { "name": "csv", "kind": "value", "args": "href: &'a str", "default": "", "attr": "", "doc": "A \"Download CSV\" link to `href` with the current sort, filter and columns appended." },

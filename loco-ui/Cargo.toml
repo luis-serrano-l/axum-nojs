@@ -19,8 +19,9 @@ http = ["dep:http", "dep:futures-util"]
 # `Saved<T>` keeps a serde value in a cookie.
 axum = ["http", "dep:axum", "dep:bytes", "dep:serde", "dep:serde_urlencoded", "dep:form_urlencoded", "loco-ui-caps/axum"]
 # Loco on top of `axum`: an initializer that mounts `/lui/enhance.js` and `/lui/caps`, and
-# `Valid<T>`, a form extractor that reports every bad field (`serde_path_to_error`).
-loco = ["axum", "dep:loco-rs", "dep:async-trait", "dep:serde_path_to_error"]
+# `Valid<T>`, a form extractor that reports every bad field (`serde_path_to_error`). Loco's
+# `with-db` (what every app with a database has on) for `Table::paged_from(&PagerMeta)`.
+loco = ["axum", "dep:loco-rs", "loco-rs/with-db", "dep:async-trait", "dep:serde_path_to_error"]
 
 [dependencies]
 maud.workspace = true
@@ -47,7 +48,9 @@ validator = { version = "0.20", features = ["derive"] }
 # The SeaORM paging example in `loco` runs against a mock database.
 sea-orm = { version = "2.0", default-features = false, features = ["mock", "macros", "with-json"] }
 # `testing` for `tests_cfg::app::get_app_context`: the flash test runs Loco's default middleware.
-loco-rs = { version = "1.2", default-features = false, features = ["testing"] }
+# `with-db` for `query::fetch_page` in the paging doctest (against `MockDatabase`);
+# `db-sqlite` because `with-db` makes `get_app_context` open an in-memory SQLite.
+loco-rs = { version = "1.2", default-features = false, features = ["testing", "with-db", "db-sqlite"] }
 hyper = { version = "1", features = ["server", "http1", "http2"] }
 hyper-util = { version = "0.1", features = ["tokio", "server-auto", "http1", "http2"] }
 http-body-util = "0.1"

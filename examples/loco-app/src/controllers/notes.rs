@@ -39,13 +39,14 @@ async fn load(ctx: &AppContext, id: i64) -> Result<Model> {
 
 #[debug_handler]
 async fn list(_auth: auth::JWT, ui: Ui, State(ctx): State<AppContext>) -> Result<Page> {
-    let pages = Entity::find()
-        .order_by_asc(Column::Id)
-        .paginate(&ctx.db, ui.table("notes", "").per_page() as u64);
-    let total = pages.num_items().await? as usize;
-    let page = ui.table("notes", "").page() as u64;
-    let rows = pages.fetch_page(page.saturating_sub(1)).await?;
-    Ok(ui.page("Notes", views::notes::list(&ui, &rows, total)))
+    let table = ui.table("notes", "");
+    let wanted = query::PaginationQuery {
+        page: table.page() as u64,
+        page_size: table.per_page() as u64,
+    };
+    let found =
+        query::fetch_page(&ctx.db, Entity::find().order_by_asc(Column::Id), &wanted).await?;
+    Ok(ui.page("Notes", views::notes::list(&ui, &found.page, &found.meta)))
 }
 
 #[debug_handler]

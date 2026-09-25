@@ -158,13 +158,15 @@
 //! # }
 //! ```
 //!
-//! Paging with SeaORM (Loco's ORM): the table reads `?page=`, the page size (`per.<id>`), the
-//! sort and the filter from the request, and SeaORM's paginator asks the database for that
-//! page and the count, never every row. `.paged(total)` then draws the pager:
+//! Paging with Loco's `query::fetch_page` (or `query::paginate`, which adds a condition): the
+//! table reads `?page=`, the page size (`per.<id>`), the sort and the filter from the
+//! request; Loco asks the database for that page and the count, never every row; and
+//! `.paged_from(&meta)` draws the pager from the answer:
 //!
 //! ```rust
 //! use loco_ui::{prelude::*, table::Row};
-//! use sea_orm::{DatabaseConnection, DbErr, EntityTrait, PaginatorTrait, QueryFilter, QueryOrder};
+//! use loco_rs::{model::query::{self, PaginationQuery}, Result};
+//! use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder};
 //! # mod notes {
 //! #     use sea_orm::entity::prelude::*;
 //! #     #[derive(Clone, Debug, PartialEq, DeriveEntityModel)]
@@ -174,20 +176,18 @@
 //! #     pub enum Relation {}
 //! #     impl ActiveModelBehavior for ActiveModel {}
 //! # }
-//! use sea_orm::ColumnTrait;
 //!
-//! async fn notes_table(ui: &Ui, db: &DatabaseConnection) -> Result<Markup, DbErr> {
+//! async fn notes_table(ui: &Ui, db: &DatabaseConnection) -> Result<Markup> {
 //!     let table = ui.table("notes", "/notes").column("title", "Title").sortable();
-//!     let query = notes::Entity::find().filter(notes::Column::Title.contains(table.filter()));
-//!     let query = match table.sort() {
-//!         Some(("title", true)) => query.order_by_desc(notes::Column::Title),
-//!         _ => query.order_by_asc(notes::Column::Title),
+//!     let select = notes::Entity::find().filter(notes::Column::Title.contains(table.filter()));
+//!     let select = match table.sort() {
+//!         Some(("title", true)) => select.order_by_desc(notes::Column::Title),
+//!         _ => select.order_by_asc(notes::Column::Title),
 //!     };
-//!     let pages = query.paginate(db, table.per_page() as u64);
-//!     let total = pages.num_items().await? as usize;
-//!     let rows = pages.fetch_page(table.page() as u64 - 1).await?; // SeaORM counts from 0
-//!     let rows = rows.into_iter().map(|n| Row::new([html! { (n.title) }]));
-//!     Ok(html! { (table.rows(rows).paged(total)) })
+//!     let wanted = PaginationQuery { page: table.page() as u64, page_size: table.per_page() as u64 };
+//!     let found = query::fetch_page(db, select, &wanted).await?;
+//!     let rows = found.page.iter().map(|n| Row::new([html! { (n.title) }]));
+//!     Ok(html! { (table.rows(rows).paged_from(&found.meta)) })
 //! }
 //! # use sea_orm::{DatabaseBackend, MockDatabase, Value};
 //! # #[tokio::main(flavor = "current_thread")]
@@ -205,6 +205,9 @@
 //! #     assert!(log.contains("LIMIT") && log.contains("OFFSET"), "{log}");
 //! # }
 //! ```
+//!
+//! `Table::paged_from` is `.paged(meta.total_items)`; SeaORM's own paginator (`paginate`,
+//! `num_items`, `fetch_page(page - 1)`) with `.paged(total)` works the same without Loco.
 //!
 //! The "Load more" [`Pager`](crate::pager::Pager) shows every row up to `?page=`, so it
 //! fetches the first `pager.shown()` rows: `query.limit(pager.shown() as u64).all(db)`.

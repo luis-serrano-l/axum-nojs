@@ -57,13 +57,13 @@ async fn list(
 {% endif %}    ui: Ui,
     State(ctx): State<AppContext>,
 ) -> Result<Page> {
-    let pages = Entity::find()
-        .order_by_asc(Column::Id)
-        .paginate(&ctx.db, ui.table("{{ snake_plural }}", "").per_page() as u64);
-    let total = pages.num_items().await? as usize;
-    let page = ui.table("{{ snake_plural }}", "").page() as u64;
-    let rows = pages.fetch_page(page.saturating_sub(1)).await?;
-    Ok(ui.page("{{ pascal_plural }}", views::{{ snake_plural }}::list(&ui, &rows, total)))
+    let table = ui.table("{{ snake_plural }}", "");
+    let wanted = query::PaginationQuery {
+        page: table.page() as u64,
+        page_size: table.per_page() as u64,
+    };
+    let found = query::fetch_page(&ctx.db, Entity::find().order_by_asc(Column::Id), &wanted).await?;
+    Ok(ui.page("{{ pascal_plural }}", views::{{ snake_plural }}::list(&ui, &found.page, &found.meta)))
 }
 
 #[debug_handler]

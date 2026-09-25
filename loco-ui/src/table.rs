@@ -76,6 +76,8 @@
 //! assert_eq!(same.into_string(), html);
 //! ```
 
+#[cfg(feature = "loco")]
+use loco_rs::controller::views::pagination::PagerMeta;
 use maud::{Markup, Render, html};
 
 use crate::button::Button;
@@ -620,7 +622,7 @@ pub(crate) fn table_in(
 /// rows ([`Table::sort`], [`Table::filter`]) and hands them over with [`Table::rows`].
 ///
 /// **Setters.** Values and items: `.bulk(..)`, `.column(..)`, `.edit(..)`, `.width(..)`,
-/// `.rows(..)`, `.paged(..)`, `.csv(..)`, `.empty(..)`; switches: `.sortable()`, `.numeric()`,
+/// `.rows(..)`, `.paged(..)`, `.paged_from(..)`, `.csv(..)`, `.empty(..)`; switches: `.sortable()`, `.numeric()`,
 /// `.editable()`, `.choose_columns()`; from a condition: `.loading(bool)`.
 #[derive(Clone, Debug)]
 pub struct Table<'a> {
@@ -659,6 +661,8 @@ impl Table<'_> {
             .doc("The rows, already sorted and filtered as `Table::sort` and `Table::filter` say."),
         Prop::new("paged", PropKind::Number, "total: usize")
             .doc("Page the rows."),
+        Prop::new("paged_from", PropKind::Value, "meta: &PagerMeta")
+            .doc("Page the rows from what Loco's `query::fetch_page` or `query::paginate` returns (feature `loco`)."),
         Prop::new("choose_columns", PropKind::Switch, "")
             .doc("A \"Columns\" chooser."),
         Prop::new("bulk", PropKind::Value, "action: &'a str, buttons: impl IntoIterator<Item = (&'a str, &'a str)>")
@@ -750,6 +754,15 @@ impl<'a> Table<'a> {
     pub fn paged(mut self, total: usize) -> Self {
         self.total = Some(total);
         self
+    }
+
+    /// Page the rows from what Loco's `query::fetch_page` or `query::paginate` returns
+    /// (feature `loco`): `.paged(meta.total_items)`. Ask Loco for the page the table wants
+    /// with `PaginationQuery { page: table.page() as u64, page_size: table.per_page() as u64 }`;
+    /// the `loco` module docs have the whole handler.
+    #[cfg(feature = "loco")]
+    pub fn paged_from(self, meta: &PagerMeta) -> Self {
+        self.paged(usize::try_from(meta.total_items).unwrap_or(usize::MAX))
     }
 
     /// A "Columns" chooser: links that toggle `?cols=`.

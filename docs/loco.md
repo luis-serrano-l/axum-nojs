@@ -72,8 +72,20 @@ pub fn routes() -> Routes {
 ```
 
 The flash and the UI state are unsigned `lui-*` cookies, so there is no key to configure and
-no clash with Loco's JWT cookie. Paging with SeaORM (`paginate`, `num_items`, `fetch_page`
-into `.paged(total)`) is a doctest in the module docs.
+no clash with Loco's JWT cookie.
+
+Paging: Loco's `query::fetch_page` (or `query::paginate`) asks for one page and the count,
+and `Table::paged_from` draws the pager from its answer:
+
+```rust
+let table = ui.table("notes", "/notes").column("title", "Title");
+let wanted = query::PaginationQuery { page: table.page() as u64, page_size: table.per_page() as u64 };
+let found = query::fetch_page(&ctx.db, notes::Entity::find(), &wanted).await?;
+let rows = found.page.iter().map(|n| Row::new([html! { (n.title) }]));
+Ok(ui.page("Notes", html! { (table.rows(rows).paged_from(&found.meta)) }))
+```
+
+The module docs run the same against SeaORM's `MockDatabase`, with a sort and a filter.
 
 ## A form with validation
 
@@ -214,14 +226,15 @@ controller calls one and returns the page.
 
 ```rust
 // src/views/notes.rs
+use loco_rs::prelude::PagerMeta;
 use loco_ui::{prelude::*, table::Row};
 use crate::models::_entities::notes;
 
-pub fn list(ui: &Ui, rows: &[notes::Model], total: usize) -> Markup {
+pub fn list(ui: &Ui, rows: &[notes::Model], meta: &PagerMeta) -> Markup {
     let table = ui.table("notes", "/notes").column("title", "Title").sortable();
     html! {
         (ui.flash())
-        (table.rows(rows.iter().map(|n| Row::new([html! { a href={ "/notes/" (n.id) } { (n.title) } }]))).paged(total))
+        (table.rows(rows.iter().map(|n| Row::new([html! { a href={ "/notes/" (n.id) } { (n.title) } }]))).paged_from(meta))
         (ui.link_button("New note", "/notes/new"))
     }
 }
@@ -236,8 +249,10 @@ pub fn form(ui: &Ui, action: &str, title: &str, errors: &[(&str, &str)]) -> Mark
 ```rust
 // src/controllers/notes.rs
 async fn list(ui: Ui, State(ctx): State<AppContext>) -> Result<Page> {
-    let (rows, total) = /* the paging query in the `loco` module docs */;
-    Ok(ui.page("Notes", views::notes::list(&ui, &rows, total)))
+    let table = ui.table("notes", "");
+    let wanted = query::PaginationQuery { page: table.page() as u64, page_size: table.per_page() as u64 };
+    let found = query::fetch_page(&ctx.db, notes::Entity::find(), &wanted).await?;
+    Ok(ui.page("Notes", views::notes::list(&ui, &found.page, &found.meta)))
 }
 ```
 
