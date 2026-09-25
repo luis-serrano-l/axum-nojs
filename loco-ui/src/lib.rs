@@ -145,6 +145,11 @@ pub use ui::{Page, Redirect, Ui};
 #[doc = include_str!("../../docs/components.md")]
 pub struct ComponentsGuide;
 
+/// `docs/api.md`, whose examples run as doctests so the rules keep compiling.
+#[cfg(doctest)]
+#[doc = include_str!("../../docs/api.md")]
+pub struct ApiGuide;
+
 /// Everything a handler needs, in one import: `use loco_ui::prelude::*;`.
 pub mod prelude {
     #[cfg(feature = "axum")]
@@ -433,8 +438,8 @@ mod tests {
 
     /// Builders are plain data: every public struct derives or implements `Clone` and `Debug`,
     /// so a route can keep one in a variable, build it in a loop or print it. `Streamed` owns
-    /// futures and is `Debug` only; the doctest marker `ComponentsGuide` is not a type anyone
-    /// holds.
+    /// futures and is `Debug` only; the doctest markers `ComponentsGuide` and `ApiGuide` are
+    /// not types anyone holds.
     #[test]
     fn every_builder_is_clone_and_debug() {
         let mut missing = Vec::new();
@@ -455,10 +460,9 @@ mod tests {
                             || source.contains(&format!("impl std::fmt::{t} for {name}"))
                             || source.contains(&format!("impl fmt::{t} for {name}"))
                     };
-                    let exempt_clone = name == "Streamed" || name == "ComponentsGuide";
-                    if (!has("Clone") && !exempt_clone)
-                        || (!has("Debug") && name != "ComponentsGuide")
-                    {
+                    let guide = name == "ComponentsGuide" || name == "ApiGuide";
+                    let exempt_clone = name == "Streamed" || guide;
+                    if (!has("Clone") && !exempt_clone) || (!has("Debug") && !guide) {
                         missing.push(format!("{}: {name}", path.display()));
                     }
                     attrs.clear();

@@ -1304,15 +1304,28 @@ with their names, and for the grouping and navigation to move into a sidebar.
 The owner asked on 2026-09-25 to verify that using the components is easy, simple and
 consistent.
 
-- [ ] Audit every builder in `props::COMPONENTS` against the conventions in CLAUDE.md:
+- [x] Audit every builder in `props::COMPONENTS` against the conventions in CLAUDE.md:
   required arguments in the call (text first), everything else a setter, setter names that
   follow the HTML attribute, no-argument setters switching something on, `bool` setters only
   for conditions, adders plus last-item modifiers for lists, ids derived from the label. A
   test lists each deviation (from `props()` and the spec JSON), and each one is fixed or
   written down in `docs/api.md` with the reason.
-- [ ] Same idea, same name: one word per concept across components (`.label` vs `.title`,
+  Done: `props_follow_the_conventions` (lib.rs) checks switch/condition arguments and
+  defaults, `bool` only in conditions, a modifier's item, one shape per name, no `_with`/
+  `Options`, `x` beside `xs`, lists in one call, `.id()` wherever `slug` derives one, real
+  attributes named like their setter, constructor order; the allow-lists carry a reason each,
+  repeated in `docs/api.md` "Kept, because". Fixed: PROPS attrs (`type`, `aria-pressed`,
+  `aria-current`, `aria-label`), Palette `group` and Breadcrumbs `here` are items, `.id()` on
+  Meter, Progress, Sidebar and NavMenu, ContextMenu gets Menu's adders, Select's id is
+  `f-<name>` with `.error()`, `ui.select`/`ui.color`/`ui.range`/`ui.range_pair` take
+  `(name, label)` and read their value from the query. The scrapers skip `#[deprecated]`.
+- [x] Same idea, same name: one word per concept across components (`.label` vs `.title`,
   `.open` vs `.expanded`, `.danger` vs `.destructive`, `.size`, `.icon`, `.href`); renames keep
   the old name as `#[deprecated]` for one release.
+  Done: `multiple`, `description`, `help`, `body`, `action`, `group`, `option`, `link(s)`,
+  `accesskey`, `icon_only`, `aria_label`, `hide_progress`, `disabled_dates`; `.icon(..)` takes
+  an `Icon` or a glyph everywhere, `.badge(..)` any `Display`; `layout_with` deprecated for
+  `Page::tokens`. The before/after table is in `docs/api.md`.
 - [ ] Try it cold: write three small pages (a settings form, a table with filters, a dashboard)
   in `lui!` and as builder chains using only the docs, and note every place that needed the
   source, a second try or a workaround; fix those, or add a doc line where the fix is a doc.

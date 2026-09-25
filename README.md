@@ -204,7 +204,9 @@ component gives the HTML to another template engine.
   it changes (`ui.dialog("Delete account").title("Delete account?").danger()`). Setters such as
   `.required()`, `.icon(..)`, `.badge(..)` apply to the item added last (a field, a menu item, a
   tab). Ids come from the label; state (`?tab.x=`, `?dialog=`, `?page=`, `?sort=`) is read
-  from `ui`, so a route passes only what the page says differently. No macros beyond `html!`.
+  from `ui`, so a route passes only what the page says differently. No macros beyond `html!`
+  and `lui!`. `docs/api.md` has the rules (form controls take `(name, label)`, one word per
+  concept), the few exceptions with their reasons, and the renames of M32.
 - Primitives come first: `ui.button`/`ui.link_button`, `ui.input`/`ui.checkbox`/`ui.switch`/
   `ui.radio_group`, `ui.badge`, `ui.card`, `Icon` (31 Lucide shapes as inline SVG),
   `ui.avatar`, and the layouts `ui.stack`, `ui.cluster`, `ui.grid(min, ..)`, `ui.split(side,
@@ -445,6 +447,7 @@ docs/state.md               how state works with no script
 docs/caps.md                how the beacons work, cookie format, the first view, adding a flag
 docs/theming.md             every --lui-* token, contrast pairs, a second palette as a Tokens value
 docs/components.md          write your own component from the primitives (a doctest)
+docs/api.md                 the rules a caller can rely on, the exceptions and why, M32's renames (a doctest)
 docs/comparison.md          against maud-ui, htmx + Maud, Leptos and Dioxus; builders against Props
 docs/audiences.md           who it is for (public services, strict CSP, low bandwidth, Tor, internal tools) and the proof each relies on
 docs/layers.svg             the layers diagram at the top of this file

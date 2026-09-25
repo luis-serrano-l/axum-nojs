@@ -8,6 +8,21 @@ follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); the project us
 
 ### `loco-ui`
 
+- M32, one word per concept (`docs/api.md` has the table): `multiple` (was `multi`),
+  `description` (`summary`, `note`, `message`), `help` (`hint`), `body` (`content`, EmptyState
+  `text`), `action` (EmptyState `post`), `group` (Menu `heading`), `option` (ToggleGroup
+  `item`), `link`/`links` (Palette `command`/`commands`), `accesskey` (Palette `key`, now a
+  `&str`), `icon_only` and `aria_label` (Button `icon()` and `label`), `hide_progress()`
+  (Wizard `progress(bool)`), `disabled_dates` (Calendar and DatePicker `disabled`). The old
+  names are `#[deprecated]` for one release, and so is `layout_with` (use `Page::tokens`).
+  `.icon(..)` takes an `Icon` or a glyph everywhere; `.badge(..)` any `Display`.
+- **Breaking:** `ui.select(name, label)`, `ui.color(name, label)`, `ui.range(name, label)` and
+  `ui.range_pair(name, label)` read their value from the query, with `.value(..)` (`.values(..)`
+  for a pair) for a saved one; their `.label(..)` is gone. Select's id is `f-<name>` like a
+  form field's, so the error summary's link reaches it, and it takes `.error(..)`.
+- ContextMenu takes Menu's adders and modifiers (`.items(..)` is deprecated); `.id(..)` on
+  Meter, Progress, Sidebar and NavMenu; `ErrorSummary::field(name, label)` writes "Label:
+  message" as a form's summary does. `props_follow_the_conventions` keeps the API to the rules.
 - Latency: `stylesheet()` built once and minified (`minify_css`); `enhance::slim` middleware
   answers an enhanced request without the inline stylesheet and sets `Vary: Lui-Enhance, Cookie`
   (`enhance::slim_html` without a framework); the script sends `Accept: text/html`, fetches
