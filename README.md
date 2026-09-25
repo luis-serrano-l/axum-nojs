@@ -241,7 +241,7 @@ there is no second request for CSS, and no script is required.
 
 For comparison, `maud-ui` 0.20.3 (the same stack and look) ships 313 KB of CSS (44 KB gzipped)
 and needs an 89 KB script (24 KB gzipped) plus htmx. Two tests keep these numbers honest: the
-stylesheet stays under 88 KB, and every demo page under 120 KB (168 KB for the shadow-DOM
+stylesheet stays under 88 KB, and every demo page under 120 KB (180 KB for the shadow-DOM
 stream) in `cargo test`. (Before M29 added the blocks, the chart and six more components, the
 same limits were 64, 96 and 128 KB; M30's colour scales, depth tokens and motion raised them
 from 72, 104 and 152 KB.)
@@ -333,10 +333,10 @@ browser-compat-data; `no` means unshipped, so that browser gets the fallback.
 | Enhancement script | `fetch`, `history.pushState`, `document.startViewTransition`, `CustomEvent` | 42 / 39 / 10.1; 5 / 4 / 5; 111 / 144 / 18; 15 / 11 / 6 | none needed: without the script every form and link is a normal navigation and every data-lui-* attribute is inert | No |
 | Layout | `@view-transition`, `prefers-color-scheme`, `custom properties` | 126 / no / 18.2; 76 / 67 / 12.1; 49 / 31 / 9.1 | plain navigations (root never cross-fades); colours still switch by media query and data-theme | No |
 | Capability beacons | `@supports`, `selector()`, `background images`, `cookies` | 28 / 22 / 9; 83 / 69 / 14.1; 1 / 1 / 1; 1 / 1 / 1 | unknown browser gets every fallback; the first view always does | No |
-| Button | `invoker commands`, `popovertarget`, `aria-busy`, `prefers-reduced-motion` | 135 / 144 / 26.2; 114 / 125 / 17; 1 / 1 / 1; 74 / 63 / 10.1 | a popover command becomes popovertarget; other commands need the component's own fallback | No |
-| Input, checkbox, switch, radio group | `constraint validation`, `type=date`, `:user-invalid`, `role="switch"`, `appearance: none`, `<fieldset>` | 10 / 4 / 10.1; 20 / 57 / 14.1; 119 / 88 / 16.5; 1 / 1 / 1; 84 / 80 / 15.4; 1 / 1 / 1 | none needed: native controls; the switch stays a checkbox without appearance: none | Partly: a live character count while typing needs the enhancement script |
-| Badge | `<span>` | 1 / 1 / 1 | none needed | No |
-| Card | `grid` | 57 / 52 / 10.1 | none needed | No |
+| Button | `invoker commands`, `popovertarget`, `aria-busy`, `prefers-reduced-motion`, `translate` | 135 / 144 / 26.2; 114 / 125 / 17; 1 / 1 / 1; 74 / 63 / 10.1; 104 / 72 / 14.1 | a popover command becomes popovertarget; other commands need the component's own fallback; a shimmer button is at rest without translate | No |
+| Input, checkbox, switch, radio group | `constraint validation`, `type=date`, `:user-invalid`, `role="switch"`, `appearance: none`, `<fieldset>`, `linear-gradient(in oklch` | 10 / 4 / 10.1; 20 / 57 / 14.1; 119 / 88 / 16.5; 1 / 1 / 1; 84 / 80 / 15.4; 1 / 1 / 1; 111 / 127 / 16.2 | none needed: native controls; the switch stays a checkbox without appearance: none; a gradient border is a plain one without in oklch gradients | Partly: a live character count while typing needs the enhancement script |
+| Badge | `<span>`, `translate` | 1 / 1 / 1; 104 / 72 / 14.1 | none needed; a shimmer badge is at rest without translate | No |
+| Card | `grid`, `conic-gradient`, `@property`, `mask-composite`, `color-mix()`, `linear-gradient(in oklch`, `animation-timeline: view()` | 57 / 52 / 10.1; 69 / 83 / 12.1; 85 / 128 / 16.4; 120 / 53 / 15.4; 111 / 113 / 16.2; 111 / 127 / 16.2; 115 / no / 26 | none needed; each showpiece effect is at rest without its feature or under reduced motion | No |
 | Icon | `<svg>`, `role="img"` | 4 / 3 / 3.2; 1 / 1 / 1 | none needed | No |
 | Avatar | `alt=""`, `loading="lazy"`, `role="img"` | 1 / 1 / 1; 77 / 75 / 15.4; 1 / 1 / 1 | the initials are the fallback | No |
 | Stack | `gap` | 84 / 63 / 14.1 | none needed | No |
@@ -375,7 +375,7 @@ browser-compat-data; `no` means unshipped, so that browser gets the fallback.
 | Breadcrumbs | `aria-current="page"`, `::before`, `<details>` | 1 / 1 / 1; 1 / 1 / 1; 12 / 49 / 6 | none needed | No |
 | Skeleton | `aria-busy`, `role="status"`, `@keyframes`, `prefers-reduced-motion` | 1 / 1 / 1; 1 / 1 / 1; 43 / 16 / 9; 74 / 63 / 10.1 | without CSS animations the bars are still | No |
 | Empty state | `<form method="post">` | 1 / 1 / 1 | none needed | No |
-| Stat | `repeat(auto-fit` | 57 / 52 / 10.1 | none needed | No |
+| Stat | `repeat(auto-fit`, `animation-timeline: view()` | 57 / 52 / 10.1; 115 / no / 26 | none needed; a reveal tile is shown in place without animation-timeline | No |
 | Chart | `<svg>`, `role="img"`, `<title>`, `CSS custom properties in SVG` | 7 / 4 / 5.1; 1 / 1 / 1; 1 / 1 / 1; 49 / 31 / 9.1 | none needed | Partly: zoom, pan and a crosshair that follows the pointer need script |
 | Sidebar | `aria-current="page"` | 1 / 1 / 1 | none needed | Partly: collapsing to an icon rail kept between pages needs script |
 | Navigation menu | `popover`, `aria-current="page"` | 114 / 125 / 17; 1 / 1 / 1 | a <details> dropdown without popover; a centred panel without anchor positioning | Partly: opening a panel on hover needs script |
@@ -385,6 +385,7 @@ browser-compat-data; `no` means unshipped, so that browser gets the fallback.
 | One-time code | `autocomplete="one-time-code"`, `inputmode="numeric"`, `pattern` | 84 / no / 12; 66 / 95 / 12.1; 4 / 4 / 5 | a plain spaced-out field; without autocomplete the code is typed or pasted | No |
 | Drawer | `<dialog>`, `command="show-modal"`, `closedby`, `@starting-style`, `transition-behavior: allow-discrete`, `@media` | 37 / 98 / 15.4; 135 / 144 / 26.2; 134 / 141 / 26; 117 / 129 / 17.5; 117 / 129 / 17.4; 1 / 1 / 1 | link to #id and a :target rule; open from the server | No |
 | Command palette | `popover`, `<datalist>`, `<search>`, `accesskey` | 114 / 125 / 17; 20 / 4 / 12.1; 118 / 118 / 17; 1 / 1 / 1 | a <details> disclosure with the same form | Partly: arrow keys through live results and a global Ctrl+K need script |
+| Marquee | `inert`, `translate`, `animation-play-state`, `mask-image` | 102 / 112 / 15.5; 104 / 72 / 14.1; 43 / 16 / 9; 120 / 53 / 15.4 | at rest: the items wrap and the copy is hidden, without translate or under reduced motion | No |
 <!-- matrix:end -->
 
 ## Findings

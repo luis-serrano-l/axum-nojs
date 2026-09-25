@@ -1264,7 +1264,7 @@ shadows and motion chosen. The no-script rules are unchanged:
   - Tabs and page navigation use view transitions, gated on `Cap::ViewTransitions`.
   - Under `prefers-reduced-motion: reduce`, every duration is 0.
   - A Blitz test checks that the final layout is unchanged.
-- [ ] Showpiece setters, all opt-in. Each one gets an entry in `PROPS`, a playground control, a
+- [x] Showpiece setters, all opt-in. Each one gets an entry in `PROPS`, a playground control, a
   demo snippet and a `lui!` doctest:
   - `.shimmer()`: a light sweep across buttons and badges.
   - `.beam()`: a border beam on cards, drawn with a conic gradient and `@property` angle.

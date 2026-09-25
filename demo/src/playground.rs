@@ -61,10 +61,13 @@ pub(crate) const ENTRIES: &[Entry] = &[
     Entry {
         builder: "Button",
         call: "Button(\"Save\")",
-        props: &["primary", "danger", "ghost", "small", "disabled", "loading"],
+        props: &[
+            "primary", "danger", "ghost", "small", "disabled", "loading", "shimmer",
+        ],
         rest: ";",
         build: |t| {
             let b = t.ui.button("Save");
+            let b = switch(b, t.on("shimmer"), |b| b.shimmer());
             let b = switch(b, t.on("primary"), |b| b.primary());
             let b = switch(b, t.on("danger"), |b| b.danger());
             let b = switch(b, t.on("ghost"), |b| b.ghost());
@@ -76,10 +79,11 @@ pub(crate) const ENTRIES: &[Entry] = &[
     Entry {
         builder: "Badge",
         call: "Badge(\"New\")",
-        props: &["secondary", "danger", "outline", "ok", "warn"],
+        props: &["secondary", "danger", "outline", "ok", "warn", "shimmer"],
         rest: ";",
         build: |t| {
             let b = t.ui.badge("New");
+            let b = switch(b, t.on("shimmer"), |b| b.shimmer());
             let b = switch(b, t.on("secondary"), |b| b.secondary());
             let b = switch(b, t.on("danger"), |b| b.danger());
             let b = switch(b, t.on("outline"), |b| b.outline());
@@ -104,11 +108,22 @@ pub(crate) const ENTRIES: &[Entry] = &[
     Entry {
         builder: "Card",
         call: "Card",
-        props: &["title", "description"],
+        props: &[
+            "title",
+            "description",
+            "beam",
+            "glow",
+            "gradient_border",
+            "reveal",
+        ],
         rest: " { p { \"The card's body.\" } }",
         build: |t| {
             let b = with(t.ui.card(), t.text("title"), |b, v| b.title(v));
             let b = with(b, t.text("description"), |b, v| b.description(v));
+            let b = switch(b, t.on("beam"), |b| b.beam());
+            let b = switch(b, t.on("glow"), |b| b.glow());
+            let b = switch(b, t.on("gradient_border"), |b| b.gradient_border());
+            let b = switch(b, t.on("reveal"), |b| b.reveal());
             b.body(html! { p { "The card's body." } }).render()
         },
     },
@@ -178,12 +193,13 @@ pub(crate) const ENTRIES: &[Entry] = &[
     Entry {
         builder: "Stat",
         call: "Stat(\"Revenue\", \"$48,210\")",
-        props: &["delta", "note", "down_is_good"],
+        props: &["delta", "note", "down_is_good", "reveal"],
         rest: ";",
         build: |t| {
             let b = with(t.ui.stat("Revenue", "$48,210"), t.text("delta"), |b, v| {
                 b.delta(v)
             });
+            let b = switch(b, t.on("reveal"), |b| b.reveal());
             let b = with(b, t.text("note"), |b, v| b.note(v));
             switch(b, t.on("down_is_good"), |b| b.down_is_good()).render()
         },
@@ -243,10 +259,12 @@ pub(crate) const ENTRIES: &[Entry] = &[
             "error",
             "maxlength",
             "hide_label",
+            "gradient_border",
         ],
         rest: ";",
         build: |t| {
             let b = t.ui.input("name", "Name");
+            let b = switch(b, t.on("gradient_border"), |b| b.gradient_border());
             let b = switch(b, t.on("email"), |b| b.email());
             let b = switch(b, t.on("password"), |b| b.password());
             let b = switch(b, t.on("required"), |b| b.required());
@@ -255,6 +273,18 @@ pub(crate) const ENTRIES: &[Entry] = &[
             let b = with(b, t.text("error"), |b, v| b.error(v));
             let b = with(b, t.num("maxlength"), |b, v| b.maxlength(v));
             switch(b, t.on("hide_label"), |b| b.hide_label()).render()
+        },
+    },
+    Entry {
+        builder: "Marquee",
+        call: "Marquee(\"Customers\")",
+        props: &["reverse", "duration"],
+        rest: " { text \"Acme\"; text \"Globex\"; text \"Initech\"; text \"Umbrella\"; }",
+        build: |t| {
+            let b = t.ui.marquee("Customers").text("Acme").text("Globex");
+            let b = b.text("Initech").text("Umbrella");
+            let b = switch(b, t.on("reverse"), |b| b.reverse());
+            with(b, t.num("duration"), |b, v| b.duration(v)).render()
         },
     },
     Entry {

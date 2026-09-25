@@ -8,7 +8,11 @@
 //! submits it), `form=` (submit a form elsewhere on the page), invoker commands
 //! (`command`/`commandfor`, Chrome 135, Firefox 144, Safari 26.2) and `popovertarget`
 //! (Chrome 114, Firefox 125, Safari 17). A loading button is `disabled` and `aria-busy`, with a
-//! CSS-only spinner that slows down under `prefers-reduced-motion`.
+//! CSS-only spinner that slows down under `prefers-reduced-motion`. `.shimmer()` sweeps a light
+//! across the button: an `::after` layer over the button's own background, moved with the
+//! `translate` property (Chrome 104, Firefox 72, Safari 14.1) under `@supports (translate: 100%)`
+//! and `prefers-reduced-motion: no-preference`; the colours are `--lui-shimmer` over a filled
+//! tone and `--lui-shimmer-surface` over the others, the pace `--lui-shimmer-duration`.
 //!
 //! **Accessibility:** a native `<button>` or `<a>` (Enter and Space, or Enter for a link); an
 //! icon button carries `aria-label`, a busy one `aria-busy` and `aria-disabled`, a toggle
@@ -23,7 +27,9 @@
 //! **Fallback:** a popover command (`toggle-popover`, `show-popover`, `hide-popover`) in a
 //! browser without invoker commands is written as `popovertarget` and `popovertargetaction`,
 //! which popover browsers have had since 2023. Other commands (`show-modal`, `close`) have
-//! no attribute fallback; the dialog component uses a `:target` link there instead.
+//! no attribute fallback; the dialog component uses a `:target` link there instead. A
+//! `.shimmer()` button without `translate`, or under `prefers-reduced-motion: reduce`, is the
+//! same button at rest, with no sweep.
 //!
 //! ```rust
 //! use loco_ui::prelude::*;
@@ -42,6 +48,10 @@
 //! // The server knows the job is still running, so the page it renders says so.
 //! let busy = ui.button("Export").loading(true).render().into_string();
 //! assert!(busy.contains("disabled") && busy.contains(r#"aria-busy="true""#));
+//! // Opt-in motion: a light sweeps across it, CSS only.
+//! let shiny = ui.button("Upgrade").primary().shimmer().render().into_string();
+//! assert!(shiny.contains(r#"class="lui-button lui-button-primary lui-button-shimmer""#));
+//! assert_eq!(lui! { Button("Upgrade") primary shimmer; }.into_string(), shiny);
 //! ```
 
 use maud::{Markup, Render, html};
@@ -67,7 +77,7 @@ enum Tone {
 /// `.role(..)`, `.title(..)`, `.style(..)`, `.aria_haspopup(..)`, `.accesskey(..)`,
 /// `.aria_keyshortcuts(..)`, `.formmethod(..)`, `.formaction(..)`, `.rel(..)`; switches:
 /// `.primary()`, `.danger()`, `.ghost()`, `.small()`, `.icon()`, `.submit()`, `.reset()`,
-/// `.disabled()`, `.formnovalidate()`; from a condition: `.loading(bool)`, `.pressed(bool)`,
+/// `.disabled()`, `.formnovalidate()`, `.shimmer()`; from a condition: `.loading(bool)`, `.pressed(bool)`,
 /// `.current(bool)`.
 #[derive(Clone, Debug)]
 pub struct Button<'a> {
@@ -88,6 +98,7 @@ pub struct Button<'a> {
     class: Option<&'a str>,
     disabled: bool,
     loading: bool,
+    shimmer: bool,
     attrs: Attrs<'a>,
 }
 
@@ -155,6 +166,8 @@ impl Button<'_> {
             .doc("`rel` of a link (`\"prev\"`, `\"next\"`)."),
         Prop::new("current", PropKind::Condition, "on: bool")
             .doc("`aria-current=\"page\"`."),
+        Prop::new("shimmer", PropKind::Switch, "")
+            .doc("A light sweeps across the button, over its own background."),
     ];
 }
 
@@ -214,6 +227,7 @@ impl<'a> Button<'a> {
             class: None,
             disabled: false,
             loading: false,
+            shimmer: false,
             attrs: Attrs::default(),
         }
     }
@@ -407,6 +421,14 @@ impl<'a> Button<'a> {
         self
     }
 
+    /// A light sweeps across the button, over its own background: an opt-in showpiece for
+    /// the one action a page wants noticed. At rest without `translate` or under
+    /// `prefers-reduced-motion: reduce`.
+    pub fn shimmer(mut self) -> Self {
+        self.shimmer = true;
+        self
+    }
+
     fn classes(&self) -> String {
         let mut c = String::from("lui-button");
         match self.tone {
@@ -420,6 +442,9 @@ impl<'a> Button<'a> {
         }
         if self.icon {
             c.push_str(" lui-button-icon");
+        }
+        if self.shimmer {
+            c.push_str(" lui-button-shimmer");
         }
         if let Some(extra) = self.class {
             c.push(' ');
@@ -540,6 +565,21 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 }
 @keyframes lui-spin { to { transform: rotate(1turn); } }
 @media (prefers-reduced-motion: reduce) { .lui-button-spinner { animation-duration: 1.5s; } }
+/* .shimmer(): a light sweeping across, drawn by ::after over the button's own background (so a
+   gradient fill underneath stays). At rest without translate or under reduced motion. */
+.lui-button.lui-button-shimmer { --lui-sweep: var(--lui-shimmer-surface); }
+.lui-button.lui-button-shimmer:is(.lui-button-primary, .lui-button-danger) { --lui-sweep: var(--lui-shimmer); }
+@media (prefers-reduced-motion: no-preference) {
+  @supports (translate: 100%) {
+    .lui-button.lui-button-shimmer { position: relative; overflow: hidden; isolation: isolate; }
+    .lui-button-shimmer::after {
+      content: ""; position: absolute; inset: 0; pointer-events: none;
+      background: linear-gradient(110deg, transparent 25%, var(--lui-sweep) 50%, transparent 75%);
+      translate: -100% 0; animation: lui-shimmer var(--lui-shimmer-duration) ease-in-out infinite;
+    }
+  }
+}
+@keyframes lui-shimmer { 0% { translate: -100% 0; } 60%, 100% { translate: 100% 0; } }
 "#;
 
 #[cfg(test)]

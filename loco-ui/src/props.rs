@@ -349,6 +349,13 @@ pub(crate) const COMPONENTS: &[Component] = &[
         status: Status::Stable,
     },
     Component {
+        module: "marquee",
+        builder: "Marquee",
+        calls: &["ui.marquee(label: &str)"],
+        props: crate::marquee::Marquee::PROPS,
+        status: Status::Beta,
+    },
+    Component {
         module: "meter",
         builder: "Meter",
         calls: &["ui.meter(value: i64, min: i64, max: i64)"],

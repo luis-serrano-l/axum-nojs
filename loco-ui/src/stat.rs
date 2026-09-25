@@ -6,6 +6,9 @@
 //! **Platform features:** a card of `<p>` elements that reads in order; the change
 //! carries its direction in words for screen readers (`<span class="lui-sr">`) as well as an
 //! arrow and a colour; the grid is `repeat(auto-fit, minmax(12rem, 1fr))`, so no media query.
+//! `.reveal()` fades and rises the tile as it scrolls into view, as a card's does: a
+//! scroll-driven animation with `animation-timeline: view()` (Chrome 115, Firefox no,
+//! Safari 26), off under `prefers-reduced-motion: reduce`.
 //!
 //! **Accessibility:** a label and a value in text; trend arrows are `aria-hidden` and the
 //! change is in words. Checked by axe-core in headless Firefox on every demo route, both
@@ -13,7 +16,8 @@
 //!
 //! **What it does not do without script:** update live; the number is as fresh as the page.
 //!
-//! **Fallback:** none needed.
+//! **Fallback:** none needed. A `.reveal()` tile where `animation-timeline: view()` is missing,
+//! or under `prefers-reduced-motion: reduce`, is shown in place from the start.
 //!
 //! ```rust
 //! use loco_ui::prelude::*;
@@ -32,6 +36,10 @@
 //!     Stat("Error rate", "0.4%") delta="-0.2 pt" down_is_good note="last 7 days" href="/errors";
 //! };
 //! assert_eq!(same.into_string(), m);
+//! // Opt-in motion: it fades in as it scrolls into view.
+//! let up = ui.stat("Visitors", "12,480").reveal().render().into_string();
+//! assert!(up.starts_with(r#"<div class="lui-stat lui-stat-reveal">"#));
+//! assert_eq!(lui! { Stat("Visitors", "12,480") reveal; }.into_string(), up);
 //! ```
 
 use maud::{Markup, Render, html};
@@ -54,7 +62,7 @@ pub enum Trend {
 /// A stat card, `label` above `value`, made by [`Ui::stat`].
 ///
 /// **Setters.** Values and items: `.delta(..)`, `.trend(..)`, `.note(..)`, `.href(..)`;
-/// switches: `.down_is_good()`.
+/// switches: `.down_is_good()`, `.reveal()`.
 #[derive(Clone, Debug, Default)]
 pub struct Stat<'a> {
     label: &'a str,
@@ -64,6 +72,7 @@ pub struct Stat<'a> {
     down_is_good: bool,
     note: Option<&'a str>,
     href: Option<&'a str>,
+    reveal: bool,
 }
 
 impl Stat<'_> {
@@ -79,6 +88,7 @@ impl Stat<'_> {
         Prop::new("href", PropKind::Value, "href: &'a str")
             .attr("href")
             .doc("Make the whole card a link to the details."),
+        Prop::new("reveal", PropKind::Switch, "").doc("Fades and rises as it scrolls into view."),
     ];
 }
 
@@ -123,6 +133,13 @@ impl<'a> Stat<'a> {
         self.href = Some(href);
         self
     }
+
+    /// Fades and rises as it scrolls into view, with `animation-timeline: view()`; shown in
+    /// place where that is missing or under `prefers-reduced-motion: reduce`.
+    pub fn reveal(mut self) -> Self {
+        self.reveal = true;
+        self
+    }
 }
 impl Trend {
     /// The direction a delta's text says: `+` up, `-` or `−` down, flat when there is no
@@ -159,11 +176,12 @@ impl Render for Stat<'_> {
             }
             @if let Some(n) = self.note { p class="lui-stat-note" { (n) } }
         };
+        let reveal = if self.reveal { " lui-stat-reveal" } else { "" };
         html! {
             @if let Some(href) = self.href {
-                a class="lui-stat lui-stat-link" href=(href) { (inner) }
+                a class={ "lui-stat lui-stat-link" (reveal) } href=(href) { (inner) }
             } @else {
-                div class="lui-stat" { (inner) }
+                div class={ "lui-stat" (reveal) } { (inner) }
             }
         }
     }
@@ -185,6 +203,12 @@ pub const CSS: &str = r#"
 .lui-stat-bad { color: var(--lui-danger); }
 .lui-stat-flat { color: var(--lui-muted); }
 .lui-stat-note { color: var(--lui-muted); font-size: 0.75rem; margin-top: 0.25rem; }
+/* .reveal(): @keyframes lui-reveal is the card's (card.rs). */
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    .lui-stat-reveal { animation: lui-reveal linear both; animation-timeline: view(); animation-range: entry 0% cover 30%; }
+  }
+}
 "#;
 
 #[cfg(test)]

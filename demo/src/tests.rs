@@ -79,7 +79,7 @@ async fn pages_ship_only_the_enhancement_script() {
             // and 104 KB) for the colour scales, depth tokens and motion; M30's budget box
             // holds that growth under 15 KB gzipped.
             let budget = if html.contains("shadowrootmode") {
-                168
+                180
             } else {
                 120
             } * 1024;

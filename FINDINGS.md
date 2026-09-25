@@ -815,3 +815,20 @@ byte-identical.
   https://github.com/DioxusLabs/blitz/issues/863).
 - `get_client_bounding_rect` ignores `translate` and `scale`, so the test reads them from the
   computed style rather than trusting the box (no upstream issue yet; the owner files it).
+
+The showpiece setters (`.shimmer()` on buttons and badges; `.beam()`, `.glow()`,
+`.gradient_border()` and `.reveal()` on cards; `.gradient_border()` on inputs; `.reveal()` on
+stat tiles; `ui.marquee(..)`) are proved at rest in Blitz by
+`showpieces_rest_without_their_features` (`tests/shots/showpieces-rest.png`,
+`marquee-rest.png`). What Blitz does with them:
+
+| Gap | Upstream |
+|---|---|
+| `@property` is not supported: a registered property's `initial-value` is ignored, so `var(--x)` of an unset registered property is invalid, and `@keyframes` cannot animate it. The `.beam()` angle is written `var(--lui-beam-angle, 0deg)` so the gradient stays valid anyway. | (no upstream issue yet; the owner files it) |
+| `@supports (animation-timeline: view())` is true (Stylo parses the property), but no scroll timeline runs. A page cannot rely on `@supports` alone to keep a scroll-driven animation from a renderer that will not drive it; `.reveal()` is also inside `@media (prefers-reduced-motion: no-preference)`, which saves it here. | (no upstream issue yet; the owner files it) |
+| `@media (prefers-reduced-motion: no-preference)` does not match: every moving effect, and the marquee's loop, is off, so the shots show the reduced-motion path, the same markup at rest. It is also why no effect needs a Blitz-only override. | (no upstream issue yet; the owner files it) |
+| The `.glow()` light, a `z-index: -1` `::after` inside an `isolation: isolate` card with a sized `radial-gradient`, is not painted, although its `@supports (color-mix())` matches. The card is drawn without it, which is its at-rest look anyway; the cause is not isolated yet. | (no upstream issue yet; the owner files it) |
+
+Blitz paints `.gradient_border()` (the padding-box over border-box layers and the
+`in oklch` gradient) as a browser does. `@supports (mask-composite: exclude)` matches; the beam
+is not drawn only because it sits behind the motion query.

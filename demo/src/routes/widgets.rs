@@ -1,4 +1,4 @@
-//! Widgets: calendar, upload and kanban.
+//! Widgets: calendar, upload, kanban and marquee.
 
 use crate::site::page;
 use axum::{
@@ -21,6 +21,36 @@ pub(crate) fn routes() -> Router {
         .route("/upload/remove", post(upload_remove))
         .route("/upload/file/{n}", get(upload_file))
         .route("/kanban", get(kanban_page).post(kanban_move))
+        .route("/marquee", get(marquee_page))
+}
+
+/// Two looping rows: names, then quotes going the other way. Hover or focus stops them.
+async fn marquee_page(ui: Ui) -> Page {
+    let logos = [
+        "Acme", "Globex", "Initech", "Umbrella", "Hooli", "Stark", "Wayne", "Tyrell",
+    ];
+    let quotes = [
+        ("Ada, CTO", "Every page works with script off."),
+        ("Grace, SRE", "One stylesheet, no bundler."),
+        ("Alan, founder", "Forms that post. Imagine that."),
+    ];
+    page(
+        &ui,
+        "Marquee",
+        lui! {
+            // code: /marquee
+            Stack(lui! {
+                Marquee("Customers") { @for name in logos { text (name); } }
+                Marquee("What people say") reverse duration=30 {
+                    @for (who, quote) in quotes {
+                        item() { Card description=(who) { p { (quote) } } }
+                    }
+                }
+            });
+            // end code
+            p class="lui-note" { "Point at a row, or tab into it, and it stops. With reduced motion asked for, or in a browser without " code { "translate" } ", the items sit still and wrap." }
+        },
+    )
 }
 
 async fn calendar_page(ui: Ui) -> Page {

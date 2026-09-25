@@ -19,7 +19,7 @@ pub(crate) fn routes() -> Router {
 
 /// Every component in the index: path, title (what each route passes to `page`), group, the
 /// platform features it is built on, and what it is for in plain words.
-pub(crate) const COMPONENTS: [(&str, &str, &str, &str, &str); 44] = [
+pub(crate) const COMPONENTS: [(&str, &str, &str, &str, &str); 45] = [
     (
         "/feedback",
         "Alerts, progress and tooltips",
@@ -68,6 +68,13 @@ pub(crate) const COMPONENTS: [(&str, &str, &str, &str, &str); 44] = [
         "Widgets",
         "<table>, links or radios, aria-current=date, :has(:checked), ?month=",
         "A month you can page through and pick a day from.",
+    ),
+    (
+        "/marquee",
+        "Marquee",
+        "Widgets",
+        "@keyframes, translate, :hover/:focus-within, aria-hidden + inert",
+        "A row that loops sideways on its own and stops under the pointer or focus.",
     ),
     (
         "/button",

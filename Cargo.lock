@@ -3548,6 +3548,8 @@ dependencies = [
  "blitz-traits",
  "demo",
  "http-body-util",
+ "loco-ui",
+ "maud",
  "png",
  "tokio",
  "tower",

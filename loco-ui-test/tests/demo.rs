@@ -990,7 +990,7 @@ async fn buttons_badges_and_icons() {
         page.is_visible("a.lui-button[href='/']"),
         "a link can look like a button"
     );
-    assert_eq!(page.count(".lui-stage .lui-badge"), 6);
+    assert_eq!(page.count(".lui-stage .lui-badge"), 8);
     let svg = page.bbox("svg.lui-icon").unwrap();
     assert!(
         (svg.width - 16.0).abs() < 1.0 && (svg.height - 16.0).abs() < 1.0,
@@ -1048,6 +1048,73 @@ async fn fields_cards_and_layouts() {
         (second.x - (first.x + first.width) - 8.0).abs() < 1.0,
         "grid.gap(2) is 8px"
     );
+}
+
+/// The showpiece setters (M30) at rest: Blitz has no `@property` and no scroll-driven
+/// animations (FINDINGS.md), and paints the page once, so each effect must leave its element
+/// laid out, opaque and readable, as a browser without the feature or a visitor asking for
+/// reduced motion sees it.
+#[tokio::test]
+async fn showpieces_rest_without_their_features() {
+    let opacity = |page: &Page, sel: &str| {
+        let id = page.node(sel).unwrap();
+        let style = page.doc().get_node(id).unwrap().primary_styles().unwrap();
+        style.clone_opacity()
+    };
+    // Every effect above the fold on one page, for the shot.
+    let ui = loco_ui::Ui::default();
+    let body = loco_ui::lui! {
+        Cluster(loco_ui::lui! {
+            Button("Upgrade") primary shimmer; Button("What's new") shimmer;
+            Badge("New") shimmer; Badge("Beta") outline shimmer;
+        });
+        Grid("14rem", loco_ui::lui! {
+            Card title="Plain" description="No effect." { p { "The card at rest." } }
+            Card title="Beam and glow" description="beam glow" beam glow { p { "No beam, no glow." } }
+            Card title="Gradient border" description="gradient_border" gradient_border { p { "Drawn in Blitz." } }
+            Card title="Reveal" description="reveal" reveal { p { "Shown in place." } }
+        });
+        Input("key", "API key") gradient_border placeholder="sk-live-...";
+        div class="lui-stat-grid" { Stat("Visitors", "12,480") delta="+8.2%" reveal; }
+        Marquee("Customers") { text "Acme"; text "Globex"; text "Initech"; text "Umbrella"; }
+    };
+    let mut page = Page::from_html(ui.page("Showpieces", body).into_string());
+    shot(&mut page, "showpieces-rest");
+    for sel in [
+        ".lui-card-beam",
+        ".lui-card-glow",
+        ".lui-card-gradient-border",
+        ".lui-card-reveal",
+    ] {
+        assert!(page.is_visible(sel), "{sel} is laid out and visible");
+        assert_eq!(opacity(&page, sel), 1.0, "{sel} is fully opaque at rest");
+    }
+    assert!(page.is_visible(".lui-card-reveal .lui-card-title"));
+    let plain = page.bbox(".lui-card:not([class*=' '])").unwrap();
+    for sel in [".lui-card-beam", ".lui-card-reveal"] {
+        let b = page.bbox(sel).unwrap();
+        assert!(
+            (plain.width - b.width).abs() < 1.0 && (plain.height - b.height).abs() < 1.0,
+            "{sel} adds no size: {plain:?} {b:?}"
+        );
+    }
+    assert!(page.is_visible(".lui-button-shimmer.lui-button-primary"));
+    assert_eq!(page.text(".lui-button-shimmer").as_deref(), Some("Upgrade"));
+    assert!(page.is_visible(".lui-badge-shimmer"));
+    assert!(page.is_visible("input.lui-input-gradient-border"));
+    assert_eq!(opacity(&page, ".lui-stat-reveal"), 1.0);
+
+    let mut page = Page::render(demo::router(), "/marquee", MODERN).await;
+    shot(&mut page, "marquee-rest");
+    assert_eq!(page.count(".lui-stage .lui-marquee"), 2);
+    assert!(page.is_visible(".lui-marquee-item"));
+    let first = page.bbox(".lui-marquee-item").unwrap();
+    let row = page.bbox(".lui-marquee").unwrap();
+    assert!(
+        first.x >= row.x - 1.0,
+        "the loop starts at rest, the first item at the start: {first:?} in {row:?}"
+    );
+    assert_eq!(page.text(".lui-marquee-item").as_deref(), Some("Acme"));
 }
 
 #[tokio::test]
