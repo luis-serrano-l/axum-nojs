@@ -9,7 +9,6 @@
 //!
 //! let ui = Ui::from_request("/account", "dialog=delete-account", "lui-flash=Saved.");
 //! let page = ui.page("Account", html! {
-//!     (ui.flash())
 //!     (ui.dialog("Delete account")
 //!         .title("Delete account?")
 //!         .danger()
@@ -19,6 +18,9 @@
 //! let html = page.into_string();
 //! assert!(html.contains("Saved.") && html.contains(" open>"), "the flash shows and ?dialog= opens it");
 //! ```
+//!
+//! The page shows a pending flash at the top of the body by itself; place `(ui.flash())`
+//! (or [`Ui::toasts`]) in the body to show it somewhere else, or with its setters.
 //!
 //! A component is a builder that renders where `html!` splices it. The id, the caps, the open
 //! state and where a form returns to all come from `ui`; a setter is needed only for what the
@@ -184,8 +186,19 @@ impl Ui {
         }
     }
 
-    /// A whole page titled `title` in this request's theme.
+    /// A whole page titled `title` in this request's theme. A flash a [`Ui::redirect`] left
+    /// shows at the top of `body` unless `body` already shows it (`ui.flash()` placed
+    /// elsewhere, with its setters, or as [`Ui::toasts`]).
     pub fn page(&self, title: &str, body: Markup) -> Page {
+        let shown = |b: &Markup| {
+            let b = b.0.as_str();
+            b.contains(r#"class="lui-flash""#) || b.contains(r#"class="lui-toasts""#)
+        };
+        let body = if self.state.flash().is_some() && !shown(&body) {
+            maud::html! { (self.flash()) (body) }
+        } else {
+            body
+        };
         Page {
             caps: self.caps,
             theme: self.theme,
@@ -196,6 +209,7 @@ impl Ui {
             cookies: self.state.set_cookies(),
             css: Vec::new(),
             script: true,
+            status: 200,
         }
     }
 
@@ -237,9 +251,31 @@ pub struct Page {
     cookies: Vec<String>,
     css: Vec<&'static str>,
     script: bool,
+    status: u16,
 }
 
 impl Page {
+    /// Answer `422 Unprocessable Content`: the form comes back with its messages, so a POST
+    /// handler returns `Result<Redirect, Page>`, `Ok` for Post/Redirect/Get and
+    /// `Err(page.invalid())` for the form again.
+    ///
+    /// ```rust
+    /// use loco_ui::prelude::*;
+    /// let ui = Ui::default();
+    /// let page = ui.page("Sign up", html! { p { "Check the fields." } }).invalid();
+    /// assert_eq!(page.status(), 422);
+    /// assert_eq!(ui.page("Sign up", html! {}).status(), 200);
+    /// ```
+    pub fn invalid(mut self) -> Self {
+        self.status = 422;
+        self
+    }
+
+    /// The HTTP status this page answers with: 200, or 422 after [`Page::invalid`].
+    pub fn status(&self) -> u16 {
+        self.status
+    }
+
     /// Leave out the enhancement script: the page is exactly what Blitz renders, and
     /// [`crate::enhance::csp`] answers it with `script-src 'none'`
     /// ([`crate::enhance::CSP_NO_SCRIPT`]).
@@ -435,6 +471,8 @@ mod axum_glue {
     impl IntoResponse for Page {
         fn into_response(self) -> Response {
             let mut res = Html(self.render().into_string()).into_response();
+            *res.status_mut() =
+                axum::http::StatusCode::from_u16(self.status).unwrap_or(axum::http::StatusCode::OK);
             if !self.script {
                 // For `enhance::csp`: this page may be served under `script-src 'none'`.
                 res.extensions_mut().insert(crate::enhance::NoScript);
@@ -491,6 +529,27 @@ mod tests {
                 && html.contains("<title>T</title>")
                 && html.contains("lui-tokens")
         );
+    }
+
+    #[test]
+    fn a_page_shows_a_pending_flash_once() {
+        let ui = Ui::from_request("/t", "", "lui-flash=Saved.");
+        let count = |body: Markup| {
+            let html = ui.page("T", body).into_string();
+            html.matches(r#"class="lui-flash""#).count()
+                + html.matches(r#"class="lui-toasts""#).count()
+        };
+        assert_eq!(count(maud::html! { p { "body" } }), 1, "shown by the page");
+        assert_eq!(
+            count(maud::html! { p { "x" } (ui.flash().dismiss()) }),
+            1,
+            "the body's own"
+        );
+        assert_eq!(count(maud::html! { (ui.toasts()) }), 1, "as toasts");
+        let none = Ui::default()
+            .page("T", maud::html! { p { "body" } })
+            .into_string();
+        assert!(!none.contains("lui-flash\""), "no message, no banner");
     }
 
     #[test]

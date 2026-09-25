@@ -112,7 +112,6 @@ async fn table_page(ui: Ui, Saved(kinds): Saved<Kinds>) -> Page {
         &ui,
         "Table",
         html! {
-            (ui.flash())
             p { "Click a header to sort, again to flip. Type to filter. Hide columns, tick rows for the bulk form, open a row's menu or its detail. The page size you pick is remembered for your next visit. Every state is a URL, including " a href="/table?loading=1" { "the loading one" } "." }
             (t)
         },
@@ -177,12 +176,12 @@ async fn table_edit(
 }
 
 /// `row=<key>` per ticked box and `action=<value>` from the button: acknowledged with a flash.
-async fn table_bulk(ui: Ui, Form(pairs): Form<Vec<(String, String)>>) -> Redirect {
-    let rows = pairs.iter().filter(|(k, _)| k == "row").count();
-    let action = pairs
-        .iter()
-        .find(|(k, _)| k == "action")
-        .map_or("delete", |(_, v)| v.as_str());
+async fn table_bulk(ui: Ui, posted: Posted) -> Redirect {
+    let rows = posted.all("row").count();
+    let action = match posted.get("action") {
+        "" => "delete",
+        a => a,
+    };
     let msg = if rows == 0 {
         "Nothing selected: tick a row first.".to_string()
     } else {

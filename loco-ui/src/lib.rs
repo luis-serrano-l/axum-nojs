@@ -91,6 +91,7 @@ pub mod paged_table;
 pub mod pager;
 pub mod palette;
 pub mod popover;
+pub mod posted;
 pub mod progress;
 pub mod props;
 pub mod range;
@@ -131,6 +132,7 @@ pub use icon::Icon;
 /// Maud's `html!` with components written like elements: see [`loco_ui_macros`].
 pub use loco_ui_macros::lui;
 pub use popover::MenuItem;
+pub use posted::Posted;
 #[cfg(feature = "axum")]
 pub use saved::Saved;
 pub use state::UiState;
@@ -155,7 +157,9 @@ pub mod prelude {
     #[cfg(feature = "axum")]
     pub use crate::Saved;
     pub use crate::lui;
-    pub use crate::{Cap, Caps, Icon, MenuItem, Page, Redirect, Row, TableQuery, Theme, Ui};
+    pub use crate::{
+        Cap, Caps, Icon, MenuItem, Page, Posted, Redirect, Row, TableQuery, Theme, Ui,
+    };
     pub use maud::{Markup, Render, html};
 }
 
@@ -1075,6 +1079,10 @@ mod tests {
         (
             "action",
             "EmptyState holds one action, the menus add one per call",
+        ),
+        (
+            "body",
+            "a component's main markup; Form's is an item, markup placed among its fields",
         ),
     ];
 

@@ -1,27 +1,32 @@
 //! Overlays: dialog and popover menu.
 
-use crate::site::page;
-use axum::{
-    Form, Router,
-    routing::{get, post},
-};
+use axum::{Form, Router, routing::post};
 use loco_ui::prelude::*;
 use serde::Deserialize;
 
 pub(crate) fn routes() -> Router {
-    Router::new()
-        .route("/dialog", get(dialog_page))
+    super::pages(PAGES)
         .route("/dialog/delete", post(dialog_delete))
-        .route("/popover", get(popover_page))
-        .route("/context-menu", get(context_menu_page))
         .route("/popover/signout", post(popover_signout))
 }
 
-/// Each page's live component, which the index shows too (`site::preview`).
-pub(crate) const PREVIEWS: &[super::Preview] = &[
-    ("/dialog", dialog),
-    ("/popover", menus),
-    ("/context-menu", context_menu),
+/// The pages that are their component and a note (`super::pages`).
+pub(crate) const PAGES: &[super::Simple] = &[
+    (
+        "/dialog",
+        dialog,
+        "Opened by an invoker button; the footer is a real form posting to `/dialog/delete` with a hidden `returns_to` so the server comes back here. Server-opened: [?dialog=confirm](/dialog?dialog=confirm)",
+    ),
+    (
+        "/popover",
+        menus,
+        "Links, a heading, a disabled item, a submenu that is another popover, and a `<form method=\"post\">` action. Click outside or press Escape to close; the second menu opens end-aligned.",
+    ),
+    (
+        "/context-menu",
+        context_menu,
+        "A right-click cannot be caught without script, so the menu hangs on a button in the corner.",
+    ),
 ];
 
 fn dialog(ui: &Ui) -> Markup {
@@ -34,18 +39,6 @@ fn dialog(ui: &Ui) -> Markup {
             }
             // end code
     }
-}
-
-async fn dialog_page(ui: Ui) -> Page {
-    page(
-        &ui,
-        "Dialog",
-        lui! {
-            (ui.flash())
-            (dialog(&ui))
-            p class="lui-note" { "Opened by an invoker button; the footer is a real form posting to " code { "/dialog/delete" } " with a hidden " code { "returns_to" } " so the server comes back here. Server-opened: " a href="/dialog?dialog=confirm" { "?dialog=confirm" } }
-        },
-    )
 }
 
 #[derive(Deserialize)]
@@ -91,18 +84,6 @@ fn menus(ui: &Ui) -> Markup {
     }
 }
 
-async fn popover_page(ui: Ui) -> Page {
-    page(
-        &ui,
-        "Popover menu",
-        lui! {
-            (ui.flash())
-            (menus(&ui))
-            p class="lui-note" { "Links, a heading, a disabled item, a submenu that is another popover, and a " code { "<form method=\"post\">" } " action. Click outside or press Escape to close; the second menu opens end-aligned." }
-        },
-    )
-}
-
 /// A menu action: Post/Redirect/Get back to the menu page with a flash.
 async fn popover_signout(ui: Ui) -> Redirect {
     ui.redirect("/popover").flash("Signed out (not really)")
@@ -118,17 +99,9 @@ fn context_menu(ui: &Ui) -> Markup {
                 link "Download" "/table.csv";
                 separator();
                 action "Delete" "/blocks/record/delete" danger;
-                body() { p { strong { "report.pdf" } } p class="lui-note" { "2.4 MB · edited yesterday" } }
+                body { p { strong { "report.pdf" } } p class="lui-note" { "2.4 MB · edited yesterday" } }
             }
             // end code
         }
     }
-}
-
-async fn context_menu_page(ui: Ui) -> Page {
-    let body = lui! {
-        (context_menu(&ui))
-        p class="lui-note" { "A right-click cannot be caught without script, so the menu hangs on a button in the corner." }
-    };
-    page(&ui, "Context menu", body)
 }

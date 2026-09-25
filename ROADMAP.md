@@ -1326,12 +1326,12 @@ consistent.
   `accesskey`, `icon_only`, `aria_label`, `hide_progress`, `disabled_dates`; `.icon(..)` takes
   an `Icon` or a glyph everywhere, `.badge(..)` any `Display`; `layout_with` deprecated for
   `Page::tokens`. The before/after table is in `docs/api.md`.
-- [ ] Try it cold: write three small pages (a settings form, a table with filters, a dashboard)
+- [x] Try it cold: write three small pages (a settings form, a table with filters, a dashboard)
   in `lui!` and as builder chains using only the docs, and note every place that needed the
   source, a second try or a workaround; fix those, or add a doc line where the fix is a doc.
-- [ ] `docs/api.md`: the rules a caller can rely on, one page, with a before/after for each
+- [x] `docs/api.md`: the rules a caller can rely on, one page, with a before/after for each
   fix from this milestone.
-- [ ] Less code in the demo: the owner still sees too much code in the demo routes (asked
+- [x] Less code in the demo: the owner still sees too much code in the demo routes (asked
   2026-09-25, "not totally sure, but worth checking"). Measure each route's code between its
   `// code:` markers, list the patterns that repeat across routes (a field with its label and
   error, a form with its submit, a card with a title and actions, a table fed from a slice,
@@ -1340,3 +1340,10 @@ consistent.
   new prop, or leave it as is because it is the caller's own content. Write the decision per
   pattern in `docs/api.md`, implement the ones that pay off, and report the line count of the
   demo snippets before and after in README.
+
+## M33 · Follow-ups from M32
+- [ ] A table's own query keys: `q`, `sort`, `dir`, `page` and `cols` are shared by every table
+  on a page (only `per.<id>` carries the id), so two tables on one page (the /table page and
+  its playground table since M32) sort, filter and page together. Prefix them with the table's
+  id (`files.q`, `files.sort`, …) as tabs and dialogs already do, keep reading the bare keys
+  for one release, and update PATHS, the shots, the browser check and docs/api.md.

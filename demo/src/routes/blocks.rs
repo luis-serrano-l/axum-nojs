@@ -1,29 +1,27 @@
 //! Blocks: whole pages built from the components, one route each. Their posts land back on
 //! the page with a flash; unknown paths get the 404 block through the router's fallback.
 
-use crate::site::page;
-use axum::{Router, routing::get};
+use axum::{Router, routing::post};
 use loco_ui::prelude::*;
 
 pub(crate) fn routes() -> Router {
-    Router::new()
-        .route("/blocks/shell", get(shell_page))
-        .route("/blocks/auth", get(auth_page))
-        .route("/blocks/settings", get(settings_page).post(saved))
-        .route("/blocks/record", get(record_page))
-        .route("/blocks/record/delete", axum::routing::post(deleted))
-        .route("/blocks/dashboard", get(dashboard_page))
-        .route("/blocks/error", get(error_page))
+    super::pages(PAGES)
+        .route("/blocks/settings", post(saved))
+        .route("/blocks/record/delete", post(deleted))
 }
 
-/// Each page's block, which the index shows too (`site::preview`).
-pub(crate) const PREVIEWS: &[super::Preview] = &[
-    ("/blocks/shell", app_shell),
-    ("/blocks/auth", auth),
-    ("/blocks/settings", settings),
-    ("/blocks/record", record),
-    ("/blocks/dashboard", dashboard),
-    ("/blocks/error", error),
+/// Every block's page: the block, and a note (`super::pages`).
+pub(crate) const PAGES: &[super::Simple] = &[
+    ("/blocks/shell", app_shell, ""),
+    ("/blocks/auth", auth, ""),
+    ("/blocks/settings", settings, ""),
+    ("/blocks/record", record, ""),
+    ("/blocks/dashboard", dashboard, ""),
+    (
+        "/blocks/error",
+        error,
+        "Every unknown path answers with this page and a 404, [like this one](/no-such-page).",
+    ),
 ];
 
 fn app_shell(ui: &Ui) -> Markup {
@@ -31,43 +29,32 @@ fn app_shell(ui: &Ui) -> Markup {
         // code: /blocks/shell
         AppShell("Acme") user=("Ada Lovelace", "/app/signout") {
             link "Dashboard" "/blocks/dashboard"; link "App shell" "/blocks/shell"; link "Settings" "/blocks/settings";
-            body (html! { h2 { "Welcome back" } p { "The sidebar turns into a drawer on narrow screens." } });
+            body { h2 { "Welcome back" } p { "The sidebar turns into a drawer on narrow screens." } }
         }
         // end code
     }
-}
-
-async fn shell_page(ui: Ui) -> Page {
-    page(&ui, "App shell", app_shell(&ui))
 }
 
 fn auth(ui: &Ui) -> Markup {
     lui! {
         // code: /blocks/auth
         AuthPage("Sign in") description="Use the email you signed up with."
-            body=(ui.form("/app/signin").email("email", "Email").required().password("password", "Password").required().submit("Sign in").render())
-            footer=(html! { "No account? " a href="/app/signin" { "Sign up" } });
+            footer={ "No account? " a href="/app/signin" { "Sign up" } } {
+            Form("/app/signin") submit="Sign in" { email "email" "Email" required; password "password" "Password" required; }
+        }
         // end code
     }
-}
-
-async fn auth_page(ui: Ui) -> Page {
-    page(&ui, "Auth page", auth(&ui))
 }
 
 fn settings(ui: &Ui) -> Markup {
     lui! {
         // code: /blocks/settings
         SettingsPage("Settings") {
-            section "Profile" "How other people see you." (ui.form("/blocks/settings").text("name", "Name").value("Ada").submit("Save").render());
-            section "Email" "Where we send receipts." (ui.form("/blocks/settings").email("email", "Email").value("ada@example.com").submit("Save").render());
+            section "Profile" "How other people see you." { Form("/blocks/settings") submit="Save" { text "name" "Name" value="Ada"; } }
+            section "Email" "Where we send receipts." { Form("/blocks/settings") submit="Save" { email "email" "Email" value="ada@example.com"; } }
         }
         // end code
     }
-}
-
-async fn settings_page(ui: Ui) -> Page {
-    page(&ui, "Settings page", html! { (ui.flash()) (settings(&ui)) })
 }
 
 fn record(ui: &Ui) -> Markup {
@@ -81,10 +68,6 @@ fn record(ui: &Ui) -> Markup {
     }
 }
 
-async fn record_page(ui: Ui) -> Page {
-    page(&ui, "Record page", html! { (ui.flash()) (record(&ui)) })
-}
-
 fn dashboard(ui: &Ui) -> Markup {
     lui! {
         // code: /blocks/dashboard
@@ -92,14 +75,10 @@ fn dashboard(ui: &Ui) -> Markup {
             stat (ui.stat("Revenue", "$48,210").delta("+12%").description("vs last month"));
             stat (ui.stat("Orders", "1,284").delta("+4%"));
             stat (ui.stat("Refunds", "18").delta("-3").down_is_good());
-            body (html! { p class="lui-note" { "A table or a chart goes here." } });
+            body { p class="lui-note" { "A table or a chart goes here." } }
         }
         // end code
     }
-}
-
-async fn dashboard_page(ui: Ui) -> Page {
-    page(&ui, "Dashboard page", dashboard(&ui))
 }
 
 fn error(ui: &Ui) -> Markup {
@@ -108,14 +87,6 @@ fn error(ui: &Ui) -> Markup {
         ErrorPage(404) home="/";
         // end code
     }
-}
-
-async fn error_page(ui: Ui) -> Page {
-    let body = lui! {
-        (error(&ui))
-        p class="lui-note" { "Every unknown path answers with this page and a 404, " a href="/no-such-page" { "like this one" } "." }
-    };
-    page(&ui, "Error page", body)
 }
 
 /// The settings forms post here: back to the page with a note.

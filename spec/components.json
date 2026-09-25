@@ -209,7 +209,7 @@
             { "name": "description", "kind": "value", "args": "text: &'a str", "default": "", "attr": "", "doc": "Muted text under the title." },
             { "name": "header", "kind": "value", "args": "markup: Markup", "default": "", "attr": "", "doc": "More header content, placed at the top right beside the title." },
             { "name": "body", "kind": "value", "args": "markup: Markup", "default": "", "attr": "", "doc": "The main content." },
-            { "name": "footer", "kind": "value", "args": "markup: Markup", "default": "", "attr": "", "doc": "A row at the bottom, usually buttons." },
+            { "name": "footer", "kind": "value", "args": "markup: Markup", "default": "", "attr": "", "doc": "A row at the bottom, usually buttons, packed at its end like a dialog's." },
             { "name": "id", "kind": "value", "args": "id: &'a str", "default": "", "attr": "id", "doc": "The root's id, for a link to the card or a swap target." },
             { "name": "beam", "kind": "switch", "args": "", "default": "off", "attr": "", "doc": "A light runs round the border, drawn with a conic gradient." },
             { "name": "glow", "kind": "switch", "args": "", "default": "off", "attr": "", "doc": "A spotlight at the top centre that brightens and grows on hover." },
@@ -277,8 +277,9 @@
           "builder": "Stack",
           "lui": "Stack",
           "status": "stable",
-          "calls": ["ui.stack(content: Markup)"],
+          "calls": ["ui.stack()"],
           "props": [
+            { "name": "body", "kind": "value", "args": "markup: Markup", "default": "", "attr": "", "doc": "What is stacked: each top-level element under the one before." },
             { "name": "gap", "kind": "number", "args": "n: u8", "default": "", "attr": "", "doc": "The gap as a step of the `--lui-space-*` scale." }
           ]
         }
@@ -298,8 +299,9 @@
           "builder": "Cluster",
           "lui": "Cluster",
           "status": "stable",
-          "calls": ["ui.cluster(content: Markup)"],
+          "calls": ["ui.cluster()"],
           "props": [
+            { "name": "body", "kind": "value", "args": "markup: Markup", "default": "", "attr": "", "doc": "What goes in the row: each top-level element beside the one before." },
             { "name": "between", "kind": "switch", "args": "", "default": "off", "attr": "", "doc": "First child at the start, last at the end, the rest spread between." },
             { "name": "end", "kind": "switch", "args": "", "default": "off", "attr": "", "doc": "Children packed at the end of the row (a dialog's or card's actions)." },
             { "name": "gap", "kind": "number", "args": "n: u8", "default": "", "attr": "", "doc": "The gap as a step of the `--lui-space-*` scale." }
@@ -321,8 +323,9 @@
           "builder": "Grid",
           "lui": "Grid",
           "status": "stable",
-          "calls": ["ui.grid(min: &str, content: Markup)"],
+          "calls": ["ui.grid(min: &str)"],
           "props": [
+            { "name": "body", "kind": "value", "args": "markup: Markup", "default": "", "attr": "", "doc": "What is laid out: each top-level element is a cell." },
             { "name": "gap", "kind": "number", "args": "n: u8", "default": "", "attr": "", "doc": "The gap as a step of the `--lui-space-*` scale." }
           ]
         }
@@ -722,7 +725,9 @@
             { "name": "datetime", "kind": "item", "args": "name: &'a str, label: &'a str, min: &'a str, max: &'a str", "default": "", "attr": "", "doc": "`type=\"datetime-local\"`, bounds as `YYYY-MM-DDTHH:MM`." },
             { "name": "select", "kind": "item", "args": "name: &'a str, label: &'a str, options: impl IntoIterator<Item = O>", "default": "", "attr": "", "doc": "A `<select>` of `options`: `&str`s, or `(value, label)` pairs." },
             { "name": "checkbox", "kind": "item", "args": "name: &'a str, label: &'a str", "default": "", "attr": "", "doc": "A checkbox posting `true` when ticked and nothing when not (so a `bool` with `#[serde(default)]` reads it)." },
+            { "name": "switch", "kind": "item", "args": "name: &'a str, label: &'a str", "default": "", "attr": "", "doc": "A checkbox drawn as an on/off switch, posting like `.checkbox(..)`." },
             { "name": "hidden", "kind": "item", "args": "name: &'a str, value: &'a str", "default": "", "attr": "", "doc": "`type=\"hidden\"`." },
+            { "name": "body", "kind": "item", "args": "markup: Markup", "default": "", "attr": "", "doc": "Any markup at this point among the fields: a control built with its own setters." },
             { "name": "required", "kind": "modifier", "args": "", "default": "", "attr": "", "doc": "The `required` attribute, and a `*` after the label." },
             { "name": "help", "kind": "modifier", "args": "help: &'a str", "default": "", "attr": "", "doc": "Help text under the field." },
             { "name": "maxlength", "kind": "modifier", "args": "max: usize", "default": "", "attr": "", "doc": "`maxlength`, counted in an `<output>` under the field." },
@@ -733,6 +738,7 @@
             { "name": "multiple", "kind": "modifier", "args": "", "default": "", "attr": "", "doc": "The file picker takes several files." },
             { "name": "submit", "kind": "value", "args": "label: &'a str", "default": "Submit", "attr": "", "doc": "Label of the submit button." },
             { "name": "inline", "kind": "switch", "args": "", "default": "off", "attr": "", "doc": "Labels beside the fields on screens wider than 40rem, above them on narrower ones." },
+            { "name": "get", "kind": "switch", "args": "", "default": "off", "attr": "", "doc": "`method=\"get\"`: the fields go in the URL of the page it answers with (a filter, a search)." },
             { "name": "values", "kind": "value", "args": "values: &'a [(String, String)]", "default": "", "attr": "", "doc": "Submitted values by field name, as a form post parses them." },
             { "name": "errors", "kind": "value", "args": "errors: &'a [(&'a str, &'a str)]", "default": "", "attr": "", "doc": "Server messages `(field name, message)`." },
             { "name": "id", "kind": "value", "args": "id: &'a str", "default": "", "attr": "id", "doc": "What the swap root's id is built from, when two forms on a page post to the same action (one per tab, say)." }

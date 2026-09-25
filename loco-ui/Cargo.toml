@@ -28,7 +28,7 @@ maud.workspace = true
 loco-ui-caps = { path = "../loco-ui-caps", version = "0.1.0" }
 loco-ui-macros = { path = "../loco-ui-macros", version = "0.1.0" }
 http = { version = "1", optional = true }
-axum = { workspace = true, optional = true }
+axum = { workspace = true, optional = true, features = ["multipart"] }
 futures-util = { version = "0.3", optional = true, default-features = false, features = ["std"] }
 bytes = { version = "1", optional = true }
 serde = { version = "1", optional = true }

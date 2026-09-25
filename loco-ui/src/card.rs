@@ -87,7 +87,7 @@ impl Card<'_> {
             .doc("More header content, placed at the top right beside the title."),
         Prop::new("body", PropKind::Value, "markup: Markup").doc("The main content."),
         Prop::new("footer", PropKind::Value, "markup: Markup")
-            .doc("A row at the bottom, usually buttons."),
+            .doc("A row at the bottom, usually buttons, packed at its end like a dialog's."),
         Prop::new("id", PropKind::Value, "id: &'a str")
             .attr("id")
             .doc("The root's id, for a link to the card or a swap target."),
@@ -134,7 +134,8 @@ impl<'a> Card<'a> {
         self
     }
 
-    /// A row at the bottom, usually buttons.
+    /// A row at the bottom, usually buttons, packed at its end like a dialog's and wrapping
+    /// when narrow; no cluster needed around them.
     pub fn footer(mut self, markup: Markup) -> Self {
         self.footer = Some(markup);
         self
@@ -222,7 +223,7 @@ pub const CSS: &str = r#"
 .lui-card-body { padding-inline: 1.5rem; }
 .lui-card-body > :first-child { margin-top: 0; }
 .lui-card-body > :last-child { margin-bottom: 0; }
-.lui-card-footer { display: flex; align-items: center; flex-wrap: wrap; gap: 0.5rem; padding-inline: 1.5rem; }
+.lui-card-footer { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 0.5rem; padding-inline: 1.5rem; }
 /* Showpieces, each opt-in by its setter and each at rest without its feature. */
 .lui-card:is(.lui-card-beam, .lui-card-glow) { position: relative; isolation: isolate; }
 /* .beam(): a conic gradient on ::before, cut to the 1px border ring by the mask, its start

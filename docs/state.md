@@ -36,7 +36,8 @@ what HTTP means by a *safe* method. Application data still changes only through 
 
 Form values, the counter, the theme. They change through `<form method="post">` and the
 handler answers with `ui.redirect(to).ok("Saved.")`: a `303 See Other` plus a one-shot
-`lui-flash` cookie (60 seconds). The next GET renders it with `(ui.flash())` and the `Page`
+`lui-flash` cookie (60 seconds). The next `ui.page(..)` shows it at the top of its body (or
+where the body places `(ui.flash())`) and the `Page`
 clears the cookie in the same response. Reloading the page does not resubmit and does not
 show the message twice.
 

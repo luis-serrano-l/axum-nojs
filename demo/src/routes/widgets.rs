@@ -15,24 +15,22 @@ use std::{
 };
 
 pub(crate) fn routes() -> Router {
-    Router::new()
+    super::pages(PAGES)
         .route("/calendar", get(calendar_page))
         .route("/upload", get(upload_page).post(upload_submit))
         .route("/upload/remove", post(upload_remove))
         .route("/upload/file/{n}", get(upload_file))
         .route("/kanban", get(kanban_page).post(kanban_move))
-        .route("/marquee", get(marquee_page))
 }
+
+/// The pages that are their component and a note (`super::pages`).
+pub(crate) const PAGES: &[super::Simple] = &[(
+    "/marquee",
+    marquee,
+    "Point at a row, or tab into it, and it stops. With reduced motion asked for, or in a browser without `translate`, the items sit still and wrap.",
+)];
 
 /// Two looping rows: names, then quotes going the other way. Hover or focus stops them.
-async fn marquee_page(ui: Ui) -> Page {
-    let body = lui! {
-        (marquee(&ui))
-        p class="lui-note" { "Point at a row, or tab into it, and it stops. With reduced motion asked for, or in a browser without " code { "translate" } ", the items sit still and wrap." }
-    };
-    page(&ui, "Marquee", body)
-}
-
 fn marquee(ui: &Ui) -> Markup {
     let logos = [
         "Acme", "Globex", "Initech", "Umbrella", "Hooli", "Stark", "Wayne", "Tyrell",
@@ -44,25 +42,24 @@ fn marquee(ui: &Ui) -> Markup {
     ];
     lui! {
         // code: /marquee
-        Stack(lui! {
+        Stack {
             Marquee("Customers") { @for name in logos { text (name); } }
             Marquee("What people say") reverse duration=30 {
                 @for (who, quote) in quotes {
                     item() { Card description=(who) { p { (quote) } } }
                 }
             }
-        });
+        }
         // end code
     }
 }
 
-/// Each page's live component, which the index shows too (`site::preview`), with a visitor's
-/// saved files and board left out there.
+/// The other pages' live components, which the index shows too (`site::preview`), with a
+/// visitor's saved files and board left out there.
 pub(crate) const PREVIEWS: &[super::Preview] = &[
     ("/calendar", calendar),
     ("/upload", |ui| upload(ui, &[])),
     ("/kanban", |ui| kanban(ui, &Board::default())),
-    ("/marquee", marquee),
 ];
 
 /// A month with two events coming up; weekends cannot be picked.
@@ -78,25 +75,21 @@ fn calendar(ui: &Ui) -> Markup {
 }
 
 async fn calendar_page(ui: Ui) -> Page {
-    page(
-        &ui,
-        "Calendar",
-        lui! {
-            (calendar(&ui))
-            p class="lui-note" { @match ui.param("day") {
-                Some(d) => { "You picked " (d) ". Weekends cannot be picked; a dot marks an event." },
-                None => { "Pick a weekday. The month links and the days are ordinary links: the page comes back with " code { "?day=" } " set." },
-            } }
-            h2 { "In a form" }
-            form class="lui-stack" method="get" action="/calendar" {
-                // code: /calendar
-                DatePicker("due", "Due date") required disabled_dates=(|d| d.weekday() >= 5);
-                DatePicker("born", "Born") native max="2026-12-31";
-                Button("Save") primary;
-                // end code
-            }
-        },
-    )
+    let body = lui! {
+        (calendar(&ui))
+        p class="lui-note" { @match ui.param("day") {
+            Some(d) => { "You picked " (d) ". Weekends cannot be picked; a dot marks an event." },
+            None => { "Pick a weekday. The month links and the days are ordinary links: the page comes back with " code { "?day=" } " set." },
+        } }
+        h2 { "In a form" }
+        // code: /calendar
+        Form("/calendar") get submit="Save" {
+            DatePicker("due", "Due date") required disabled_dates=(|d| d.weekday() >= 5);
+            DatePicker("born", "Born") native max="2026-12-31";
+        }
+        // end code
+    };
+    page(&ui, "Calendar", body)
 }
 
 /// Files sent on `/upload`, per visitor, in memory: 3 files of up to 200 KB each for at most
@@ -162,16 +155,11 @@ fn upload(ui: &Ui, files: &[Held]) -> Markup {
 }
 
 async fn upload_page(ui: Ui, Saved(who): Saved<Uploader>) -> Page {
-    let up = upload(&ui, &uploads(&who.id));
-    page(&ui, "Upload", html! { (ui.flash()) (up) })
+    page(&ui, "Upload", upload(&ui, &uploads(&who.id)))
 }
 
-/// The multipart post: every non-empty `file` part up to the size limit, then PRG.
-async fn upload_submit(
-    ui: Ui,
-    Saved(who): Saved<Uploader>,
-    mut parts: axum::extract::Multipart,
-) -> Redirect {
+/// The multipart post: every file up to the size limit, then PRG.
+async fn upload_submit(ui: Ui, Saved(who): Saved<Uploader>, posted: Posted) -> Redirect {
     let who = if who.id.is_empty() {
         Uploader {
             id: format!(
@@ -185,21 +173,18 @@ async fn upload_submit(
         who
     };
     let (mut files, mut kept, mut refused) = (uploads(&who.id), 0, 0);
-    while let Ok(Some(part)) = parts.next_field().await {
-        let name: String = part
-            .file_name()
-            .unwrap_or("")
+    for f in posted.files() {
+        let name: String = f
+            .file_name
             .chars()
             .filter(|c| !c.is_control() && *c != '/' && *c != '\\')
             .take(80)
             .collect();
-        match part.bytes().await {
-            Ok(b) if !name.is_empty() && b.len() <= UPLOAD_MAX => {
-                files.push((name, b.to_vec()));
-                kept += 1;
-            }
-            Ok(b) if !name.is_empty() || !b.is_empty() => refused += 1,
-            _ => {}
+        if !name.is_empty() && f.bytes.len() <= UPLOAD_MAX {
+            files.push((name, f.bytes.clone()));
+            kept += 1;
+        } else {
+            refused += 1;
         }
     }
     let over = files.len().saturating_sub(3);
@@ -301,7 +286,7 @@ async fn kanban_page(ui: Ui, Saved(board): Saved<Board>) -> Page {
     page(
         &ui,
         "Kanban",
-        html! { (ui.flash()) (k) p class="lui-note" { "Each arrow posts the card and its new column; the server moves it and redirects back. Doing has a limit of two: past it, its count turns red." } },
+        html! { (k) p class="lui-note" { "Each arrow posts the card and its new column; the server moves it and redirects back. Doing has a limit of two: past it, its count turns red." } },
     )
 }
 

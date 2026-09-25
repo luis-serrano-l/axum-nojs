@@ -4,7 +4,6 @@ use crate::site::page;
 use axum::{
     Form, Router,
     extract::Query,
-    response::{IntoResponse, Response},
     routing::{get, post},
 };
 
@@ -38,14 +37,7 @@ pub(crate) const PREVIEWS: &[super::Preview] = &[
 ];
 
 fn signin_view(ui: &Ui, values: &[(String, String)], errors: &[(&str, &str)]) -> Page {
-    page(
-        ui,
-        "Sign in",
-        html! {
-            (ui.flash())
-            (signin_card(ui, values, errors))
-        },
-    )
+    page(ui, "Sign in", signin_card(ui, values, errors))
 }
 
 /// The sign-in form in a card, with the values and messages of a refused post.
@@ -68,13 +60,11 @@ async fn signin_page(ui: Ui) -> Page {
 
 /// The server checks what the browser already did, and more; mistakes re-render the form with
 /// the email kept and the password not.
-async fn signin_submit(ui: Ui, Form(f): Form<Vec<(String, String)>>) -> Response {
-    let get = |k: &str| {
-        f.iter()
-            .find(|(n, _)| n == k)
-            .map_or("", |(_, v)| v.as_str())
-    };
-    let (email, password) = (get("email").trim().to_string(), get("password"));
+async fn signin_submit(ui: Ui, posted: Posted) -> Result<Redirect, Page> {
+    let (email, password) = (
+        posted.get("email").trim().to_string(),
+        posted.get("password"),
+    );
     let mut errors = Vec::new();
     if !email.contains('@') || email.len() > 80 {
         errors.push(("email", "Enter an email address, like you@example.com."));
@@ -84,13 +74,9 @@ async fn signin_submit(ui: Ui, Form(f): Form<Vec<(String, String)>>) -> Response
     }
     if errors.is_empty() {
         let msg = format!("Signed in as {email}.");
-        return ui
-            .redirect("/app/notes")
-            .ok(&msg)
-            .save(&Session { email })
-            .into_response();
+        return Ok(ui.redirect("/app/notes").ok(&msg).save(&Session { email }));
     }
-    signin_view(&ui, &[("email".to_string(), email)], &errors).into_response()
+    Err(signin_view(&ui, &[("email".to_string(), email)], &errors).invalid())
 }
 
 async fn signout(ui: Ui) -> Redirect {
@@ -105,7 +91,6 @@ async fn notes_page(ui: Ui, Saved(session): Saved<Session>, Saved(saved): Saved<
             &ui,
             "Notes",
             html! {
-                (ui.flash())
                 (ui.empty_state("Sign in to see your notes")
                     .body(html! { "Your notes are kept in a cookie for this browser." })
                     .link("Sign in", "/app/signin"))
@@ -116,14 +101,13 @@ async fn notes_page(ui: Ui, Saved(session): Saved<Session>, Saved(saved): Saved<
         &ui,
         "Notes",
         html! {
-            (ui.flash())
-            (ui.stack(html! {
-                (ui.cluster(html! {
+            (ui.stack().gap(6).body(html! {
+                (ui.cluster().between().body(html! {
                     span class="lui-note" { "Signed in as " strong { (session.email) } }
                     form method="post" action="/app/signout" { (ui.button("Sign out").ghost().small()) }
-                }).between())
+                }))
                 (notes(&ui, &saved))
-            }).gap(6))
+            }))
         },
     )
 }

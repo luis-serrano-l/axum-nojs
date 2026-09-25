@@ -191,6 +191,29 @@ fn plain_maud_passes_through() {
     );
 }
 
+/// `x={ .. }` passes markup (itself `lui!`) to a setter, `body { .. }` among items is
+/// `.body(..)`, and a layout with no arguments takes its block as its body.
+#[test]
+fn markup_blocks_as_values_and_items() {
+    let ui = ui();
+    same(
+        lui! {
+            Card title="Plan" footer={ Button("Save") primary; } { p { "Pro" } }
+            Form("/f") { text "q" "Search"; body { Switch("on", "On"); } }
+            Stack gap=2 { Cluster between { p { "a" } Badge("b"); } }
+            Grid("10rem") { p { "cell" } }
+            EmptyState("None") { body { "Nothing here." } link "Add" "/add"; }
+        },
+        html! {
+            (ui.card().title("Plan").footer(html! { (ui.button("Save").primary()) }).body(html! { p { "Pro" } }))
+            (ui.form("/f").text("q", "Search").body(html! { (ui.switch("on", "On")) }))
+            (ui.stack().gap(2).body(html! { (ui.cluster().between().body(html! { p { "a" } (ui.badge("b")) })) }))
+            (ui.grid("10rem").body(html! { p { "cell" } }))
+            (ui.empty_state("None").body(html! { "Nothing here." }).link("Add", "/add"))
+        },
+    );
+}
+
 /// `lui!(ctx => ..)` names the `Ui` when it is not called `ui`.
 #[test]
 fn another_name_for_ui() {
@@ -205,20 +228,23 @@ fn another_name_for_ui() {
 #[test]
 fn the_readme_example() {
     let ui = Ui::from_request("/account", "", "lui-flash=Saved.");
-    let name = String::from("Ada");
-    same(
-        lui! {
-            Flash;
-            Form("/account") submit="Save" { text "name" "Name" required value=(&name); }
-            Dialog("Delete account") danger confirm=("Delete", "/account/delete") {
-                p { "This cannot be undone." }
-            }
-        },
-        html! {
-            (ui.flash())
-            (ui.form("/account").text("name", "Name").required().value(&name).submit("Save"))
-            (ui.dialog("Delete account").danger().confirm("Delete", "/account/delete")
-                .body(html! { p { "This cannot be undone." } }))
-        },
+    let name = String::from("admin");
+    let errors = [("name", "That name is taken.")];
+    let page = |body: Markup| ui.page("Account", body).invalid().into_string();
+    let a = page(lui! {
+        Form("/account") submit="Save" errors=(&errors) { text "name" "Name" required value=(&name); }
+        Dialog("Delete account") danger confirm=("Delete", "/account/delete") {
+            p { "This cannot be undone." }
+        }
+    });
+    let b = page(html! {
+        (ui.form("/account").errors(&errors).text("name", "Name").required().value(&name).submit("Save"))
+        (ui.dialog("Delete account").danger().confirm("Delete", "/account/delete")
+            .body(html! { p { "This cannot be undone." } }))
+    });
+    assert_eq!(a, b);
+    assert!(
+        a.contains("Saved.") && a.contains("That name is taken."),
+        "the flash shows by itself"
     );
 }

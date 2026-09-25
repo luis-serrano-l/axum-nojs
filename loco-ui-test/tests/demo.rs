@@ -1139,16 +1139,16 @@ async fn showpieces_rest_without_their_features() {
     // Every effect above the fold on one page, for the shot.
     let ui = loco_ui::Ui::default();
     let body = loco_ui::lui! {
-        Cluster(loco_ui::lui! {
+        Cluster {
             Button("Upgrade") primary shimmer; Button("What's new") shimmer;
             Badge("New") shimmer; Badge("Beta") outline shimmer;
-        });
-        Grid("14rem", loco_ui::lui! {
+        }
+        Grid("14rem") {
             Card title="Plain" description="No effect." { p { "The card at rest." } }
             Card title="Beam and glow" description="beam glow" beam glow { p { "No beam, no glow." } }
             Card title="Gradient border" description="gradient_border" gradient_border { p { "Drawn in Blitz." } }
             Card title="Reveal" description="reveal" reveal { p { "Shown in place." } }
-        });
+        }
         Input("key", "API key") gradient_border placeholder="sk-live-...";
         div class="lui-stat-grid" { Stat("Visitors", "12,480") delta="+8.2%" reveal; }
         Marquee("Customers") { text "Acme"; text "Globex"; text "Initech"; text "Umbrella"; }
@@ -1342,9 +1342,9 @@ fn jar(cookies: &mut Vec<String>, set: Vec<String>) {
 
 #[tokio::test]
 async fn a_whole_app_flow_with_no_script() {
-    // Sign in wrong: the server answers with the form, its messages beside the fields.
+    // Sign in wrong: the server answers 422 with the form, its messages beside the fields.
     let (status, _, html) = post("/app/signin", MODERN, "email=ada&password=short").await;
-    assert_eq!(status, 200);
+    assert_eq!(status, 422);
     let mut page = Page::from_html(html);
     shot(&mut page, "app-signin-errors");
     assert!(page.is_visible("#f-email-error") && page.is_visible("#f-password-error"));

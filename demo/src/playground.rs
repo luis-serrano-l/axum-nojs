@@ -316,6 +316,19 @@ pub(crate) const ENTRIES: &[Entry] = &[
         },
     },
     Entry {
+        builder: "Form",
+        call: "Form(\"/form\")",
+        props: &["submit", "inline", "get"],
+        rest: " { text \"nick\" \"Nickname\"; switch \"news\" \"Newsletter\"; }",
+        build: |t| {
+            let b = with(t.ui.form("/form"), t.text("submit"), |b, v| b.submit(v));
+            let b = switch(b, t.on("inline"), |b| b.inline());
+            let b = switch(b, t.on("get"), |b| b.get());
+            let b = b.id("playground").text("nick", "Nickname");
+            b.switch("news", "Newsletter").render()
+        },
+    },
+    Entry {
         builder: "ErrorPage",
         call: "ErrorPage(404)",
         props: &["title", "description", "home"],

@@ -30,10 +30,10 @@ fn pricing(ui: &Ui) -> Markup {
         let b = ui.link_button(text, href).small().current(on);
         if on { b } else { b.ghost() }
     };
-    html! { (ui.stack(lui! {
-        (ui.cluster(html! { (pick("Monthly", &by_month, !yearly)) (pick("Yearly", &by_year, yearly)) }).gap(1))
+    lui! { Stack gap=6 {
+        Cluster gap=1 { (pick("Monthly", &by_month, !yearly)) (pick("Yearly", &by_year, yearly)) }
         // code: /pricing
-        Grid("14rem", lui! {
+        Grid("14rem") {
             PricingCard("Hobby", hobby) period=(period) blurb="For a side project." {
                 feature "1 project"; feature "Community support"; cta "Start free" "/pricing";
             }
@@ -43,14 +43,14 @@ fn pricing(ui: &Ui) -> Markup {
             PricingCard("Team", team) period=(period) blurb="For a company." {
                 feature "Unlimited projects"; feature "SSO"; feature "Audit log"; cta "Talk to us" "/pricing";
             }
-        });
+        }
         // end code
-    }).gap(6)) }
+    } }
 }
 
 async fn pricing_page(ui: Ui) -> Page {
-    page(&ui, "Pricing card", html! { (ui.stack(lui! {
+    page(&ui, "Pricing card", lui! { Stack gap=6 {
         (pricing(&ui))
-        p class="lui-note" { "The card lives in " code { "demo/src/pricing.rs" } ": an extension trait on " code { "Ui" } ", a builder, " code { "impl Render" } " and a CSS const added with " code { "Page::css" } ". See " code { "docs/components.md" } "." }
-    }).gap(6)) }).css(PRICING_CSS)
+        p class="lui-note" { (crate::site::note("The card lives in `demo/src/pricing.rs`: an extension trait on `Ui`, a builder, `impl Render` and a CSS const added with `Page::css`. See `docs/components.md`.")) }
+    } }).css(PRICING_CSS)
 }

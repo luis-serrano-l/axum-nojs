@@ -5,13 +5,18 @@ use axum::{Router, routing::get};
 use loco_ui::prelude::*;
 
 pub(crate) fn routes() -> Router {
-    Router::new()
-        .route("/tabs", get(tabs_page))
-        .route("/accordion", get(accordion_page))
+    super::pages(PAGES).route("/tabs", get(tabs_page))
 }
 
-/// Each page's live component, which the index shows too (`site::preview`).
-pub(crate) const PREVIEWS: &[super::Preview] = &[("/tabs", tabs), ("/accordion", accordion)];
+/// The pages that are their component and a note (`super::pages`).
+pub(crate) const PAGES: &[super::Simple] = &[(
+    "/accordion",
+    accordion,
+    "Deep link: [?open.faq=0,2](/accordion?open.faq=0,2). Leave and come back: the open sections are remembered.",
+)];
+
+/// The other pages' live components, which the index shows too (`site::preview`).
+pub(crate) const PREVIEWS: &[super::Preview] = &[("/tabs", tabs)];
 
 fn tabs(ui: &Ui) -> Markup {
     lui! {
@@ -30,19 +35,17 @@ fn tabs(ui: &Ui) -> Markup {
 }
 
 async fn tabs_page(ui: Ui) -> Page {
-    page(
-        &ui,
-        "Tabs",
-        lui! {
-            (tabs(&ui))
-            p class="lui-note" { "Deep link: " a href="/tabs?tab.demo=2" { "?tab.demo=2" } ". Leave and come back: the tab is remembered. The third tab is lazy; under 40rem the strip becomes a select." }
-            h2 { "Vertical" }
-            (ui.tabs("side").vertical()
-                .tab("General", html! { p { "Titles stack on the left; the open panel sits beside them." } })
-                .tab("Members", html! { p { "Twelve members." } }).badge(12)
-                .tab("Danger zone", html! { p { "Nothing here is destructive." } }))
-        },
-    )
+    let body = lui! {
+        (tabs(&ui))
+        p class="lui-note" { "Deep link: " a href="/tabs?tab.demo=2" { "?tab.demo=2" } ". Leave and come back: the tab is remembered. The third tab is lazy; under 40rem the strip becomes a select." }
+        h2 { "Vertical" }
+        Tabs("side") vertical {
+            tab "General" { p { "Titles stack on the left; the open panel sits beside them." } }
+            tab "Members" badge=12 { p { "Twelve members." } }
+            tab "Danger zone" { p { "Nothing here is destructive." } }
+        }
+    };
+    page(&ui, "Tabs", body)
 }
 
 fn accordion(ui: &Ui) -> Markup {
@@ -68,15 +71,4 @@ fn accordion(ui: &Ui) -> Markup {
             }
             // end code
     }
-}
-
-async fn accordion_page(ui: Ui) -> Page {
-    page(
-        &ui,
-        "Accordion",
-        lui! {
-            (accordion(&ui))
-            p class="lui-note" { "Deep link: " a href="/accordion?open.faq=0,2" { "?open.faq=0,2" } ". Leave and come back: the open sections are remembered." }
-        },
-    )
 }

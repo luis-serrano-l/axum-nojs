@@ -8,6 +8,15 @@ follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); the project us
 
 ### `loco-ui`
 
+- M32, less code per page: `Form` holds any control (`.body(markup)` among its fields,
+  `.switch(name, label)`) and `.get()` makes it a filter; `Page::invalid()` answers 422, so a
+  POST handler returns `Result<Redirect, Page>`; `Posted` (feature `axum`) reads an urlencoded
+  or multipart post by name (`get`, `all`, `pairs`, `files`, and a wizard's `step`/`skip`;
+  `wizard::Posted` is deprecated); `ui.page` shows a pending flash unless the body already
+  does; a card's footer packs at its end. `lui!` takes a markup block as an attribute value
+  (`footer={ .. }`) and `body { .. }` among items, and names the fix when an item is given a
+  component. **Breaking:** `ui.stack()`, `ui.cluster()` and `ui.grid(min)` take their content
+  as `.body(..)` (`Stack gap=6 { .. }` in `lui!`).
 - M32, one word per concept (`docs/api.md` has the table): `multiple` (was `multi`),
   `description` (`summary`, `note`, `message`), `help` (`hint`), `body` (`content`, EmptyState
   `text`), `action` (EmptyState `post`), `group` (Menu `heading`), `option` (ToggleGroup

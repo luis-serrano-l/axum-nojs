@@ -17,16 +17,18 @@
 //! ```rust
 //! use loco_ui::prelude::*;
 //! let ui = Ui::default();
-//! let m = ui.cluster(html! { (ui.badge("rust")) (ui.badge("maud")) }).render().into_string();
+//! let m = ui.cluster().body(html! { (ui.badge("rust")) (ui.badge("maud")) }).render().into_string();
 //! assert!(m.starts_with(r#"<div class="lui-cluster">"#));
-//! // The same in `lui!`:
-//! let same = lui! { Cluster(html! { (ui.badge("rust")) (ui.badge("maud")) }); };
-//! assert_eq!(same.into_string(), m);
 //! // A toolbar: the title on the left, the actions pushed to the right.
-//! let m = ui.cluster(html! { h2 { "Orders" } (ui.button("New order").primary()) })
+//! let m = ui.cluster()
 //!     .between()
-//!     .gap(4);
-//! assert!(m.render().into_string().contains(r#"class="lui-cluster lui-cluster-between lui-gap-4""#));
+//!     .gap(4)
+//!     .body(html! { h2 { "Orders" } (ui.button("New order").primary()) });
+//! let m = m.render().into_string();
+//! assert!(m.contains(r#"class="lui-cluster lui-cluster-between lui-gap-4""#));
+//! // The same in `lui!`, where the block is the body:
+//! let same = lui! { Cluster between gap=4 { h2 { "Orders" } Button("New order") primary; } };
+//! assert_eq!(same.into_string(), m);
 //! ```
 
 use maud::{Markup, Render, html};
@@ -36,7 +38,7 @@ use crate::props::{Prop, PropKind};
 
 /// A wrapping row, made by [`Ui::cluster`].
 ///
-/// **Setters.** Values and items: `.gap(..)`; switches: `.between()`, `.end()`.
+/// **Setters.** Values and items: `.body(..)`, `.gap(..)`; switches: `.between()`, `.end()`.
 #[derive(Clone, Debug)]
 pub struct Cluster {
     content: Markup,
@@ -48,6 +50,8 @@ impl Cluster {
     /// Every setter with its kind, arguments, default and the HTML attribute it sets; listed by
     /// [`crate::props()`] and kept in step with the setters by a test.
     pub const PROPS: &'static [Prop] = &[
+        Prop::new("body", PropKind::Value, "markup: Markup")
+            .doc("What goes in the row: each top-level element beside the one before."),
         Prop::new("between", PropKind::Switch, "")
             .doc("First child at the start, last at the end, the rest spread between."),
         Prop::new("end", PropKind::Switch, "")
@@ -58,11 +62,11 @@ impl Cluster {
 }
 
 impl Ui {
-    /// `content`'s top-level elements in a row that wraps, 8px apart by default, centred on
-    /// each other vertically.
-    pub fn cluster(&self, content: Markup) -> Cluster {
+    /// A cluster: the top-level elements of its [`Cluster::body`] in a row that wraps, 8px
+    /// apart by default, centred on each other vertically.
+    pub fn cluster(&self) -> Cluster {
         Cluster {
-            content,
+            content: Markup::default(),
             justify: None,
             gap: None,
         }
@@ -70,6 +74,12 @@ impl Ui {
 }
 
 impl Cluster {
+    /// What goes in the row: each top-level element beside the one before.
+    pub fn body(mut self, markup: Markup) -> Self {
+        self.content = markup;
+        self
+    }
+
     /// First child at the start, last at the end, the rest spread between.
     pub fn between(mut self) -> Self {
         self.justify = Some("lui-cluster-between");

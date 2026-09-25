@@ -13,21 +13,22 @@ use serde::{Deserialize, Serialize};
 use std::time::Duration;
 
 pub(crate) fn routes() -> Router {
-    Router::new()
+    super::pages(PAGES)
         .route("/counter", get(counter_page).post(counter_submit))
         .route("/settings", get(settings_page).post(settings_submit))
-        .route("/list", get(list_page))
         .route("/caps", get(caps_page))
         .route("/stream", get(stream_page))
         .route("/swap", get(swap_page).post(swap_submit))
 }
 
-/// Each page's live component, which the index shows too (`site::preview`), with a visitor's
-/// saved values left out there, and the streamed page's section while it loads.
+/// The pages that are their component alone (`super::pages`).
+pub(crate) const PAGES: &[super::Simple] = &[("/list", list, "")];
+
+/// The other pages' live components, which the index shows too (`site::preview`), with a
+/// visitor's saved values left out there, and the streamed page's section while it loads.
 pub(crate) const PREVIEWS: &[super::Preview] = &[
     ("/counter", |ui| counter(ui, 0).render()),
     ("/settings", |ui| settings(ui, &Settings::default())),
-    ("/list", list),
     ("/caps", caps),
     ("/stream", |ui| pending(ui, "fast", 100)),
     ("/swap", |ui| swap(ui, &Notes::default())),
@@ -39,10 +40,6 @@ fn list(ui: &Ui) -> Markup {
             Pager("/list", 50) per_page=8 rows=|i| { "Row " (i + 1) };
             // end code
     }
-}
-
-async fn list_page(ui: Ui) -> Page {
-    page(&ui, "Load-more list", list(&ui))
 }
 
 #[derive(Default, Deserialize, Serialize)]
@@ -92,7 +89,6 @@ async fn swap_page(ui: Ui, Saved(notes): Saved<Notes>) -> Page {
         &ui,
         "Swap targets",
         lui! {
-            (ui.flash())
             p class="lui-note" { "Neither control sits inside a swap root. " code { "data-lui-target" } " names the root to update and " code { "data-lui-swap" } " how; without the script both are ordinary navigations to the same URL." }
             (swap(&ui, &notes))
         },

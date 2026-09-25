@@ -81,12 +81,12 @@ impl Render for PricingCard<'_> {
             button
         };
         let body = html! {
-            (ui.stack(html! {
+            (ui.stack().gap(4).body(html! {
                 p class="demo-pricing-price" { span { (self.price) } span class="demo-pricing-period" { (self.period) } }
                 ul class="demo-pricing-features" {
                     @for f in &self.features { li { (Icon::Check) span { (f) } } }
                 }
-            }).gap(4))
+            }))
         };
         let id = format!("demo-pricing-{}", slug(self.name));
         let card = ui
