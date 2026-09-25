@@ -996,7 +996,7 @@ async fn buttons_badges_and_icons() {
         (svg.width - 16.0).abs() < 1.0 && (svg.height - 16.0).abs() < 1.0,
         "icons are 1rem: {svg:?}"
     );
-    assert_eq!(page.count("svg.lui-icon"), 29);
+    assert_eq!(page.count("svg.lui-icon"), 31, "every icon in Icon::ALL");
 }
 
 #[tokio::test]

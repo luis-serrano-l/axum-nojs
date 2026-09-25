@@ -779,7 +779,8 @@ Let through, with the reason, and nothing else:
   and it is applied after `App::before_routes`, so it replaces a fallback installed there.
   `examples/loco-app` sets `server.middlewares.fallback.enable: false` in its development and
   test configs; `docs/loco.md` says so.
-- The blocks add 3.8 KB of styles to the one stylesheet. A streamed page with declarative
-  shadow DOM carries the stylesheet twice, so `/stream` went from under 128 KB to 136 KB; its
-  budget in `pages_ship_only_the_enhancement_script` is now 136 KB. Other pages stay under
-  96 KB.
+- M29 grew the one stylesheet from 57.6 to 69.6 KB (10.3 to 12.3 KB gzipped): blocks 3.8 KB,
+  chart 1 KB, the six shadcn components, the rest small fixes. The budgets moved with it:
+  stylesheet 72 KB, demo pages 104 KB, the shadow-DOM stream (which carries the stylesheet
+  twice) 152 KB. Splitting the stylesheet per page would bring them back down, at the cost of
+  the one-stylesheet rule; not done.

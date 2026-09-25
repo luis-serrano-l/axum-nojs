@@ -13,6 +13,7 @@ pub(crate) fn routes() -> Router {
         .route("/dialog", get(dialog_page))
         .route("/dialog/delete", post(dialog_delete))
         .route("/popover", get(popover_page))
+        .route("/context-menu", get(context_menu_page))
         .route("/popover/signout", post(popover_signout))
 }
 
@@ -86,4 +87,24 @@ async fn popover_page(ui: Ui) -> Page {
 /// A menu action: Post/Redirect/Get back to the menu page with a flash.
 async fn popover_signout(ui: Ui) -> Redirect {
     ui.redirect("/popover").flash("Signed out (not really)")
+}
+
+/// Actions on one thing, behind a "more" button in its corner.
+async fn context_menu_page(ui: Ui) -> Page {
+    let items = [
+        loco_ui::popover::MenuItem::link("Open", "/table"),
+        loco_ui::popover::MenuItem::link("Download", "/table.csv"),
+        loco_ui::popover::MenuItem::action("Delete", "/blocks/record/delete").danger(),
+    ];
+    let body = lui! {
+        div style="max-width: 24rem" {
+            // code: /context-menu
+            ContextMenu("report.pdf") items=(items) {
+                p { strong { "report.pdf" } } p class="lui-note" { "2.4 MB · edited yesterday" }
+            }
+            // end code
+        }
+        p class="lui-note" { "A right-click cannot be caught without script, so the menu hangs on a button in the corner." }
+    };
+    page(&ui, "Context menu", body)
 }

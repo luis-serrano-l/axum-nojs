@@ -1133,10 +1133,22 @@ every Loco API named below against loco-rs 1.2 before relying on it, as M27 did.
   through usvg: FINDINGS). Demo `/chart` (bars, a line, a sparkline in a sentence), checked
   in Firefox light and dark (`look.sh` now shoots it and the blocks) and by axe. The
   stylesheet budget went from 64 to 68 KB (blocks and chart).
-- [ ] Missing shadcn components: sidebar, navigation menu, description list, toggle group,
+- [x] Missing shadcn components: sidebar, navigation menu, description list, toggle group,
   context menu (a popover on a secondary button), input OTP (one field with
   `autocomplete="one-time-code"` and `inputmode="numeric"`). Each by the component
   conventions, with PROPS, a `lui!` twin and a demo route.
+  Done: `sidebar.rs` (groups, icon and badge modifiers, current path marked), `nav_menu.rs`
+  (links and `.panel(..)`s reusing the popover menu), `description_list.rs` (`.stacked()`),
+  `toggle_group.rs` (radios or `.multi()` checkboxes drawn as segments, pressed from the
+  query), `context_menu.rs` (a thing plus the popover menu on a "More actions" button),
+  `input_otp.rs` (one labelled field, `autocomplete="one-time-code"`, `inputmode="numeric"`,
+  `pattern`, cells drawn by the background). Each has PROPS, a `props::COMPONENTS` entry, a
+  spec entry, an Accessibility line and a doctest ending in its `lui!` twin; two new icons
+  (Bold, Italic); two new texts (More actions, "{} digits", Spanish too). Demo routes
+  `/sidebar`, `/nav-menu`, `/description-list`, `/toggle-group`, `/otp`, `/context-menu`
+  (PATHS, index, `look.sh`); axe clean on all 47 routes. Budgets raised with the stylesheet
+  (69.6 KB now): 72 KB stylesheet, 104 KB page, 152 KB shadow-DOM stream; README "What a page
+  weighs" re-measured.
 
 ### Developer experience
 - [ ] Playground per component (Lookbook, phoenix_storybook): each demo page's props table

@@ -467,4 +467,40 @@ pub(crate) const COMPONENTS: &[Component] = &[
         calls: &["ui.settings_page(title: &str)"],
         props: crate::blocks::settings_page::SettingsPage::PROPS,
     },
+    Component {
+        module: "context_menu",
+        builder: "ContextMenu",
+        calls: &["ui.context_menu(label: &str)"],
+        props: crate::context_menu::ContextMenu::PROPS,
+    },
+    Component {
+        module: "description_list",
+        builder: "DescriptionList",
+        calls: &["ui.description_list()"],
+        props: crate::description_list::DescriptionList::PROPS,
+    },
+    Component {
+        module: "input_otp",
+        builder: "InputOtp",
+        calls: &["ui.input_otp(name: &str, label: &str)"],
+        props: crate::input_otp::InputOtp::PROPS,
+    },
+    Component {
+        module: "nav_menu",
+        builder: "NavMenu",
+        calls: &["ui.nav_menu(label: &str)"],
+        props: crate::nav_menu::NavMenu::PROPS,
+    },
+    Component {
+        module: "sidebar",
+        builder: "Sidebar",
+        calls: &["ui.sidebar(label: &str)"],
+        props: crate::sidebar::Sidebar::PROPS,
+    },
+    Component {
+        module: "toggle_group",
+        builder: "ToggleGroup",
+        calls: &["ui.toggle_group(name: &str, label: &str)"],
+        props: crate::toggle_group::ToggleGroup::PROPS,
+    },
 ];

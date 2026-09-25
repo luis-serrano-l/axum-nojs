@@ -42,6 +42,7 @@ use crate::props::{Prop, PropKind};
 pub enum Icon {
     ArrowLeft,
     ArrowRight,
+    Bold,
     Calendar,
     Check,
     ChevronDown,
@@ -56,6 +57,7 @@ pub enum Icon {
     File,
     House,
     Info,
+    Italic,
     Mail,
     Menu,
     Minus,
@@ -73,9 +75,10 @@ pub enum Icon {
 
 impl Icon {
     /// Every icon, in the order the enum lists them.
-    pub const ALL: [Icon; 29] = [
+    pub const ALL: [Icon; 31] = [
         Icon::ArrowLeft,
         Icon::ArrowRight,
+        Icon::Bold,
         Icon::Calendar,
         Icon::Check,
         Icon::ChevronDown,
@@ -90,6 +93,7 @@ impl Icon {
         Icon::File,
         Icon::House,
         Icon::Info,
+        Icon::Italic,
         Icon::Mail,
         Icon::Menu,
         Icon::Minus,
@@ -137,6 +141,14 @@ impl Icon {
             Icon::Copy => (
                 "copy",
                 r#"<rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>"#,
+            ),
+            Icon::Bold => (
+                "bold",
+                r#"<path d="M6 12h9a4 4 0 0 1 0 8H7a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h7a4 4 0 0 1 0 8"/>"#,
+            ),
+            Icon::Italic => (
+                "italic",
+                r#"<path d="M19 4h-9"/><path d="M14 20H5"/><path d="M15 4 9 20"/>"#,
             ),
             Icon::Download => (
                 "download",

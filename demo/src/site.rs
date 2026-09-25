@@ -20,7 +20,7 @@ pub(crate) fn routes() -> Router {
 
 /// Every component in the index: path, title (what each route passes to `page`), group, the
 /// platform features it is built on, and what it is for in plain words.
-pub(crate) const COMPONENTS: [(&str, &str, &str, &str, &str); 37] = [
+pub(crate) const COMPONENTS: [(&str, &str, &str, &str, &str); 43] = [
     (
         "/feedback",
         "Alerts, progress and tooltips",
@@ -279,6 +279,48 @@ pub(crate) const COMPONENTS: [(&str, &str, &str, &str, &str); 37] = [
         "Feedback",
         "inline <svg>, <title> tooltips, a hidden data table, --lui-* colours",
         "Bars, a line and a sparkline drawn on the server, no chart library.",
+    ),
+    (
+        "/sidebar",
+        "Sidebar",
+        "Navigation",
+        "<nav>, aria-current",
+        "An app's navigation as a column: groups, icons, counts, the current page marked.",
+    ),
+    (
+        "/nav-menu",
+        "Navigation menu",
+        "Navigation",
+        "popover, anchor-name, <details> fallback",
+        "Top navigation whose items open panels of links.",
+    ),
+    (
+        "/description-list",
+        "Description list",
+        "Feedback",
+        "<dl>, grid",
+        "Terms and their details, side by side or stacked.",
+    ),
+    (
+        "/toggle-group",
+        "Toggle group",
+        "Input",
+        "radios and checkboxes drawn as segments, :checked",
+        "Pressable options, one or several, sent with their form.",
+    ),
+    (
+        "/otp",
+        "One-time code",
+        "Input",
+        "autocomplete=one-time-code, inputmode=numeric, pattern",
+        "The box for a code from a text message, which the phone offers to fill.",
+    ),
+    (
+        "/context-menu",
+        "Context menu",
+        "Overlays",
+        "popover, a menu on a secondary button",
+        "Actions on one thing from a button in its corner.",
     ),
 ];
 

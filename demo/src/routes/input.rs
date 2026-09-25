@@ -19,6 +19,8 @@ pub(crate) fn routes() -> Router {
         .route("/form", get(form_page).post(form_submit))
         .route("/wizard", get(wizard_page).post(wizard_submit))
         .route("/inputs", get(inputs_page).post(inputs_submit))
+        .route("/toggle-group", get(toggle_group_page))
+        .route("/otp", get(otp_page))
 }
 
 async fn combobox_page(ui: Ui) -> Page {
@@ -380,4 +382,40 @@ async fn inputs_submit(ui: Ui, Form(f): Form<Inputs>) -> Redirect {
         preset: None,
     };
     ui.redirect("/inputs").flash("Inputs saved.").save(&clean)
+}
+
+/// One pick (alignment) and several (style), sent with the form they sit in.
+async fn toggle_group_page(ui: Ui) -> Page {
+    let picked = |name| ui.params(name).collect::<Vec<_>>().join(", ");
+    let body = lui! {
+        form method="get" action="/toggle-group" {
+            Stack(lui! {
+                // code: /toggle-group
+                ToggleGroup("align", "Alignment") { item "left" "Left"; item "center" "Center"; item "right" "Right"; }
+                ToggleGroup("style", "Text style") multi {
+                    item "bold" "Bold" icon=(Icon::Bold); item "italic" "Italic" icon=(Icon::Italic);
+                }
+                // end code
+                Button("Apply") primary;
+                p class="lui-note" { "Alignment: " (picked("align")) ". Style: " (picked("style")) "." }
+            })
+        }
+    };
+    page(&ui, "Toggle group", body)
+}
+
+/// A one-time code: one field the phone offers to fill from the message.
+async fn otp_page(ui: Ui) -> Page {
+    let body = lui! {
+        form method="get" action="/otp" {
+            Stack(lui! {
+                // code: /otp
+                InputOtp("code", "Code from the text message");
+                // end code
+                Button("Verify") primary;
+                @if let Some(code) = ui.param("code") { p class="lui-note" { "Sent " code { (code) } "." } }
+            })
+        }
+    };
+    page(&ui, "One-time code", body)
 }

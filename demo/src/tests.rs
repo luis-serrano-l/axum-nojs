@@ -73,12 +73,13 @@ async fn pages_ship_only_the_enhancement_script() {
             let html = String::from_utf8(body.to_vec()).unwrap();
             // The whole page, inline stylesheet included (README: "What a page weighs").
             // A streamed page with declarative shadow DOM carries the stylesheet twice
-            // (styles do not cross into the shadow root), so it gets its own budget, raised from
-            // 128 KB when the blocks' 3.8 KB of styles joined the stylesheet (M29).
+            // (styles do not cross into the shadow root), so it gets its own budget. Both were
+            // raised in M29 (from 128 and 96 KB) as blocks, a chart and six components joined
+            // the one stylesheet (README: "What a page weighs").
             let budget = if html.contains("shadowrootmode") {
-                136
+                152
             } else {
-                96
+                104
             } * 1024;
             assert!(
                 html.len() < budget,

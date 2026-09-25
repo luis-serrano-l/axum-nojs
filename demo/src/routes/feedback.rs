@@ -11,6 +11,7 @@ pub(crate) fn routes() -> Router {
         .route("/toast", get(toast_page).post(toast_submit))
         .route("/dashboard", get(dashboard_page))
         .route("/chart", get(chart_page))
+        .route("/description-list", get(description_list_page))
 }
 
 async fn feedback_page(ui: Ui) -> Page {
@@ -135,4 +136,21 @@ async fn chart_page(ui: Ui) -> Page {
             p class="lui-note" { "Hover a bar or a point for its value (the browser's own tooltip). The numbers are also a table that screen readers read and that stays when the picture cannot load." }
         },
     )
+}
+
+/// Terms beside their details, or stacked above them.
+async fn description_list_page(ui: Ui) -> Page {
+    let body = lui! {
+        // code: /description-list
+        DescriptionList {
+            item "Plan" "Team"; item "Seats" "12 of 20";
+            item "Renews" "1 October 2026"; item "Status" (ui.badge("Active").ok());
+        }
+        h3 { "Stacked" }
+        DescriptionList stacked {
+            item "Billing email" "ada@example.com"; item "Tax id" "ES-B12345678";
+        }
+        // end code
+    };
+    page(&ui, "Description list", body)
 }

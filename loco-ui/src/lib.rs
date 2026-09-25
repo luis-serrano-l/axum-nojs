@@ -63,8 +63,10 @@ pub mod chart;
 pub mod cluster;
 pub mod color;
 pub mod combobox;
+pub mod context_menu;
 pub mod counter;
 pub mod date_picker;
+pub mod description_list;
 pub mod dialog;
 pub mod drawer;
 pub mod empty_state;
@@ -76,11 +78,13 @@ pub mod grid;
 pub mod i18n;
 pub mod icon;
 pub mod input;
+pub mod input_otp;
 pub mod kanban;
 pub mod layout;
 #[cfg(feature = "loco")]
 pub mod loco;
 pub mod meter;
+pub mod nav_menu;
 pub mod paged_table;
 pub mod pager;
 pub mod palette;
@@ -92,6 +96,7 @@ pub mod range;
 pub mod saved;
 pub mod select;
 pub mod separator;
+pub mod sidebar;
 pub mod skeleton;
 pub mod spec;
 pub mod split;
@@ -104,6 +109,7 @@ pub mod table;
 pub mod tabs;
 pub mod theme;
 pub mod toast;
+pub mod toggle_group;
 pub mod tooltip;
 pub mod ui;
 pub mod upload;
@@ -310,6 +316,12 @@ pub const COMPONENT_CSS: &[&str] = &[
     empty_state::CSS,
     stat::CSS,
     chart::CSS,
+    sidebar::CSS,
+    nav_menu::CSS,
+    description_list::CSS,
+    toggle_group::CSS,
+    context_menu::CSS,
+    input_otp::CSS,
     drawer::CSS,
     palette::CSS,
 ];
@@ -899,9 +911,9 @@ mod tests {
     /// 10.3 KB gzipped at M26; README "What a page weighs").
     #[test]
     fn stylesheet_stays_under_its_budget() {
-        // 64 KB until M29's blocks (3.8 KB) and chart (1 KB) joined it.
+        // 64 KB until M29 added blocks, a chart and six components (README: "What a page weighs").
         assert!(
-            stylesheet().len() < 68 * 1024,
+            stylesheet().len() < 72 * 1024,
             "stylesheet() is {} bytes",
             stylesheet().len()
         );

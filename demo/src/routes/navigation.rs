@@ -12,6 +12,8 @@ pub(crate) fn routes() -> Router {
     Router::new()
         .route("/palette", get(palette_page))
         .route("/nav", get(nav_page))
+        .route("/sidebar", get(sidebar_page))
+        .route("/nav-menu", get(nav_menu_page))
 }
 
 /// Every demo page as a command, plus a few deep links. An exact command name redirects;
@@ -64,4 +66,40 @@ async fn nav_page(ui: Ui) -> Page {
                 }
         },
     )
+}
+
+/// A navigation column with groups, icons and counts; the link to this page is current.
+async fn sidebar_page(ui: Ui) -> Page {
+    let body = lui! {
+        div style="max-width: 16rem" {
+            // code: /sidebar
+            Sidebar("Mail") {
+                group "Mail";
+                link "Inbox" "/sidebar" icon=(Icon::Mail) badge="12";
+                link "Drafts" "/sidebar?box=drafts" icon=(Icon::Pencil);
+                link "Sent" "/sidebar?box=sent" icon=(Icon::ArrowRight);
+                group "Labels";
+                link "Work" "/nav"; link "Personal" "/nav";
+            }
+            // end code
+        }
+        p class="lui-note" { "Put it in a drawer's " code { ".sidebar()" } " (or the app shell block) and it becomes a drawer on narrow screens." }
+    };
+    page(&ui, "Sidebar", body)
+}
+
+/// Top navigation: plain links and buttons that open a panel of links.
+async fn nav_menu_page(ui: Ui) -> Page {
+    let body = lui! {
+        // code: /nav-menu
+        NavMenu("Main") {
+            panel "Products" ([("Mail", "/sidebar"), ("Calendar", "/calendar"), ("Files", "/table")]);
+            panel "Resources" ([("Docs", "/"), ("Theming", "/?palette=linen")]);
+            link "Pricing" "/pricing";
+            link "Navigation menu" "/nav-menu";
+        }
+        // end code
+        p class="lui-note" { "A panel opens on click and closes on a click outside or Escape; the link to this page is marked current." }
+    };
+    page(&ui, "Navigation menu", body)
 }

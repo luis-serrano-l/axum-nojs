@@ -184,6 +184,10 @@ pub enum Text {
     Optional,
     /// "There is a problem": error summary.
     Problem,
+    /// "More actions": context menu: its button.
+    MoreActions,
+    /// "{} digits": one-time code: the pattern's hint.
+    Digits,
     /// "Delete": record page.
     Delete,
     /// "Sign out": app shell.
@@ -287,7 +291,7 @@ const N: usize = Text::ALL.len();
 
 impl Text {
     /// Every text, in table order.
-    pub const ALL: [Text; 120] = [
+    pub const ALL: [Text; 122] = [
         Text::Next,
         Text::Previous,
         Text::Back,
@@ -360,6 +364,8 @@ impl Text {
         Text::Step,
         Text::Optional,
         Text::Problem,
+        Text::MoreActions,
+        Text::Digits,
         Text::Delete,
         Text::SignOut,
         Text::NotFound,
@@ -508,6 +514,8 @@ const ENGLISH: [&str; N] = [
     "Step {}",
     "(optional)",
     "There is a problem",
+    "More actions",
+    "{} digits",
     "Delete",
     "Sign out",
     "Page not found",

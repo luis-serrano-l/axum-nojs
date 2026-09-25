@@ -1196,6 +1196,141 @@
       ]
     },
     {
+      "name": "Sidebar",
+      "module": "sidebar",
+      "features": [
+        { "name": "aria-current=\"page\"", "baseline": { "chrome": "1", "firefox": "1", "safari": "1" } }
+      ],
+      "fallback": "none needed",
+      "needs_js": "partial",
+      "needs_js_note": "collapsing to an icon rail kept between pages needs script",
+      "builders": [
+        {
+          "builder": "Sidebar",
+          "lui": "Sidebar",
+          "calls": ["ui.sidebar(label: &str)"],
+          "props": [
+            { "name": "group", "kind": "item", "args": "heading: &'a str", "default": "", "attr": "", "doc": "Start a group of links under a small heading." },
+            { "name": "link", "kind": "item", "args": "text: &'a str, href: &'a str", "default": "", "attr": "href", "doc": "A link; the one to the current path is marked current." },
+            { "name": "icon", "kind": "modifier", "args": "icon: Icon", "default": "", "attr": "", "doc": "An icon before the link added last." },
+            { "name": "badge", "kind": "modifier", "args": "text: &'a str", "default": "", "attr": "", "doc": "A count after the link added last." }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Navigation menu",
+      "module": "nav_menu",
+      "features": [
+        { "name": "popover", "baseline": { "chrome": "114", "firefox": "125", "safari": "17" } },
+        { "name": "aria-current=\"page\"", "baseline": { "chrome": "1", "firefox": "1", "safari": "1" } }
+      ],
+      "fallback": "a <details> dropdown without popover; a centred panel without anchor positioning",
+      "needs_js": "partial",
+      "needs_js_note": "opening a panel on hover needs script",
+      "builders": [
+        {
+          "builder": "NavMenu",
+          "lui": "NavMenu",
+          "calls": ["ui.nav_menu(label: &str)"],
+          "props": [
+            { "name": "link", "kind": "item", "args": "text: &'a str, href: &'a str", "default": "", "attr": "href", "doc": "A link in the row; the one to the current path is marked current." },
+            { "name": "panel", "kind": "item", "args": "text: &'a str, items: impl IntoIterator<Item = I>", "default": "", "attr": "", "doc": "A button that opens a panel of `items` (`MenuItem`s or `(text, href)` links)." }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Description list",
+      "module": "description_list",
+      "features": [
+        { "name": "<dl>", "baseline": { "chrome": "1", "firefox": "1", "safari": "1" } },
+        { "name": "grid", "baseline": { "chrome": "57", "firefox": "52", "safari": "10.1" } }
+      ],
+      "fallback": "without grid the terms stack above their details",
+      "needs_js": "no",
+      "builders": [
+        {
+          "builder": "DescriptionList",
+          "lui": "DescriptionList",
+          "calls": ["ui.description_list()"],
+          "props": [
+            { "name": "item", "kind": "item", "args": "term: &'a str, detail: impl Render", "default": "", "attr": "", "doc": "A term and its detail (text, or markup such as a badge)." },
+            { "name": "stacked", "kind": "switch", "args": "", "default": "off", "attr": "", "doc": "Each term above its detail instead of beside it." }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Toggle group",
+      "module": "toggle_group",
+      "features": [
+        { "name": "<fieldset>", "baseline": { "chrome": "1", "firefox": "1", "safari": "1" } },
+        { "name": ":checked", "baseline": { "chrome": "1", "firefox": "1", "safari": "1" } },
+        { "name": ":focus-visible", "baseline": { "chrome": "86", "firefox": "85", "safari": "15.4" } }
+      ],
+      "fallback": "none needed",
+      "needs_js": "partial",
+      "needs_js_note": "applying a choice the moment it is pressed needs script (or the form's submit)",
+      "builders": [
+        {
+          "builder": "ToggleGroup",
+          "lui": "ToggleGroup",
+          "calls": ["ui.toggle_group(name: &str, label: &str)"],
+          "props": [
+            { "name": "item", "kind": "item", "args": "value: &'a str, text: &'a str", "default": "", "attr": "value", "doc": "An option posting `value`, shown as `text`." },
+            { "name": "icon", "kind": "modifier", "args": "icon: Icon", "default": "", "attr": "", "doc": "The option added last shows this icon, its text becoming a hidden label." },
+            { "name": "value", "kind": "value", "args": "value: &'a str", "default": "", "attr": "checked", "doc": "Press this option (again for more with `.multi()`); the query's own values by default." },
+            { "name": "multi", "kind": "switch", "args": "", "default": "off", "attr": "type=\"checkbox\"", "doc": "Several options may be pressed (checkboxes, not radios)." }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Context menu",
+      "module": "context_menu",
+      "features": [
+        { "name": "popover", "baseline": { "chrome": "114", "firefox": "125", "safari": "17" } },
+        { "name": "popovertarget", "baseline": { "chrome": "114", "firefox": "125", "safari": "17" } }
+      ],
+      "fallback": "that of the popover menu: a <details> dropdown",
+      "needs_js": "partial",
+      "needs_js_note": "opening on right-click or a long press needs script",
+      "builders": [
+        {
+          "builder": "ContextMenu",
+          "lui": "ContextMenu",
+          "calls": ["ui.context_menu(label: &str)"],
+          "props": [
+            { "name": "items", "kind": "value", "args": "items: impl IntoIterator<Item = MenuItem<'a>>", "default": "", "attr": "", "doc": "The actions: `MenuItem::link`, `MenuItem::action`." },
+            { "name": "body", "kind": "value", "args": "body: Markup", "default": "", "attr": "", "doc": "The thing the actions are on." },
+            { "name": "id", "kind": "value", "args": "id: &'a str", "default": "", "attr": "id", "doc": "The menu's id instead of `ctx-<label>`." }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "One-time code",
+      "module": "input_otp",
+      "features": [
+        { "name": "autocomplete=\"one-time-code\"", "baseline": { "chrome": "84", "firefox": "no", "safari": "12" } },
+        { "name": "inputmode=\"numeric\"", "baseline": { "chrome": "66", "firefox": "95", "safari": "12.1" } },
+        { "name": "pattern", "baseline": { "chrome": "4", "firefox": "4", "safari": "5" } }
+      ],
+      "fallback": "a plain spaced-out field; without autocomplete the code is typed or pasted",
+      "needs_js": "no",
+      "builders": [
+        {
+          "builder": "InputOtp",
+          "lui": "InputOtp",
+          "calls": ["ui.input_otp(name: &str, label: &str)"],
+          "props": [
+            { "name": "length", "kind": "number", "args": "digits: u8", "default": "6", "attr": "maxlength", "doc": "How many digits the code has." }
+          ]
+        }
+      ]
+    },
+    {
       "name": "Drawer",
       "module": "drawer",
       "features": [

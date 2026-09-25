@@ -187,7 +187,7 @@ component gives the HTML to another template engine.
   tab). Ids come from the label; state (`?tab.x=`, `?dialog=`, `?page=`, `?sort=`) is read
   from `ui`, so a route passes only what the page says differently. No macros beyond `html!`.
 - Primitives come first: `ui.button`/`ui.link_button`, `ui.input`/`ui.checkbox`/`ui.switch`/
-  `ui.radio_group`, `ui.badge`, `ui.card`, `Icon` (29 Lucide shapes as inline SVG),
+  `ui.radio_group`, `ui.badge`, `ui.card`, `Icon` (31 Lucide shapes as inline SVG),
   `ui.avatar`, and the layouts `ui.stack`, `ui.cluster`, `ui.grid(min, ..)`, `ui.split(side,
   main)` with `.gap(n)` on a `--lui-space-*` scale. Components are built from them (`ui.form`
   renders its fields through `input.rs`), and so can yours: `docs/components.md` writes one in
@@ -213,21 +213,22 @@ component gives the HTML to another template engine.
 
 ## What a page weighs
 
-Measured on the demo's release build (M26), gzip as served; every page inlines the whole
-stylesheet, so there is no second request for CSS, and no script is required.
+Measured on the demo (M29), gzip at level 9; every page inlines the whole stylesheet, so
+there is no second request for CSS, and no script is required.
 
 | | raw | gzip |
 |---|---|---|
-| The whole stylesheet, every component (`stylesheet()`) | 57.6 KB | 10.3 KB |
-| A demo page, stylesheet included (`/dialog` … `/calendar`) | 62–80 KB | 11.8–13.5 KB |
-| `/stream` with declarative shadow DOM (the stylesheet twice: once for the shadow root) | 117 KB | 20.4 KB |
+| The whole stylesheet, every component and block (`stylesheet()`) | 69.6 KB | 12.3 KB |
+| A demo page, stylesheet and props tables included (`/nav` … `/calendar`) | 78–101 KB | 14.5–16.8 KB |
+| `/stream` with declarative shadow DOM (the stylesheet twice: once for the shadow root) | 145 KB | 25.0 KB |
 | JavaScript required | 0 | 0 |
 | The optional script, `/lui/enhance.js` (cached forever) | 10.6 KB | 3.6 KB |
 
 For comparison, `maud-ui` 0.20.3 (the same stack and look) ships 313 KB of CSS (44 KB gzipped)
 and needs an 89 KB script (24 KB gzipped) plus htmx. Two tests keep these numbers honest: the
-stylesheet stays under 64 KB, and every demo page under 96 KB (128 KB for the shadow-DOM
-stream) in `cargo test`.
+stylesheet stays under 72 KB, and every demo page under 104 KB (152 KB for the shadow-DOM
+stream) in `cargo test`. (Before M29 added the blocks, the chart and six more components, the
+same limits were 64, 96 and 128 KB.)
 
 ### How fast an update lands
 
@@ -348,6 +349,12 @@ browser-compat-data; `no` means unshipped, so that browser gets the fallback.
 | Empty state | `<form method="post">` | 1 / 1 / 1 | none needed | No |
 | Stat | `repeat(auto-fit` | 57 / 52 / 10.1 | none needed | No |
 | Chart | `<svg>`, `role="img"`, `<title>`, `CSS custom properties in SVG` | 7 / 4 / 5.1; 1 / 1 / 1; 1 / 1 / 1; 49 / 31 / 9.1 | none needed | Partly: zoom, pan and a crosshair that follows the pointer need script |
+| Sidebar | `aria-current="page"` | 1 / 1 / 1 | none needed | Partly: collapsing to an icon rail kept between pages needs script |
+| Navigation menu | `popover`, `aria-current="page"` | 114 / 125 / 17; 1 / 1 / 1 | a <details> dropdown without popover; a centred panel without anchor positioning | Partly: opening a panel on hover needs script |
+| Description list | `<dl>`, `grid` | 1 / 1 / 1; 57 / 52 / 10.1 | without grid the terms stack above their details | No |
+| Toggle group | `<fieldset>`, `:checked`, `:focus-visible` | 1 / 1 / 1; 1 / 1 / 1; 86 / 85 / 15.4 | none needed | Partly: applying a choice the moment it is pressed needs script (or the form's submit) |
+| Context menu | `popover`, `popovertarget` | 114 / 125 / 17; 114 / 125 / 17 | that of the popover menu: a <details> dropdown | Partly: opening on right-click or a long press needs script |
+| One-time code | `autocomplete="one-time-code"`, `inputmode="numeric"`, `pattern` | 84 / no / 12; 66 / 95 / 12.1; 4 / 4 / 5 | a plain spaced-out field; without autocomplete the code is typed or pasted | No |
 | Drawer | `<dialog>`, `command="show-modal"`, `closedby`, `@starting-style`, `@media` | 37 / 98 / 15.4; 135 / 144 / 26.2; 134 / 141 / 26; 117 / 129 / 17.5; 1 / 1 / 1 | link to #id and a :target rule; open from the server | No |
 | Command palette | `popover`, `<datalist>`, `<search>`, `accesskey` | 114 / 125 / 17; 20 / 4 / 12.1; 118 / 118 / 17; 1 / 1 / 1 | a <details> disclosure with the same form | Partly: arrow keys through live results and a global Ctrl+K need script |
 <!-- matrix:end -->

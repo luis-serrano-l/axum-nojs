@@ -600,6 +600,64 @@ pub const SPECS: &[ComponentSpec] = &[
         ),
     },
     ComponentSpec {
+        name: "Sidebar",
+        module: "sidebar",
+        features: &[f("aria-current=\"page\"", ALWAYS)],
+        fallback: "none needed",
+        needs_js: NeedsJs::Partial("collapsing to an icon rail kept between pages needs script"),
+    },
+    ComponentSpec {
+        name: "Navigation menu",
+        module: "nav_menu",
+        features: &[
+            f("popover", b("114", "125", "17")),
+            f("aria-current=\"page\"", ALWAYS),
+        ],
+        fallback: "a <details> dropdown without popover; a centred panel without anchor positioning",
+        needs_js: NeedsJs::Partial("opening a panel on hover needs script"),
+    },
+    ComponentSpec {
+        name: "Description list",
+        module: "description_list",
+        features: &[f("<dl>", ALWAYS), f("grid", b("57", "52", "10.1"))],
+        fallback: "without grid the terms stack above their details",
+        needs_js: NeedsJs::No,
+    },
+    ComponentSpec {
+        name: "Toggle group",
+        module: "toggle_group",
+        features: &[
+            f("<fieldset>", ALWAYS),
+            f(":checked", ALWAYS),
+            f(":focus-visible", b("86", "85", "15.4")),
+        ],
+        fallback: "none needed",
+        needs_js: NeedsJs::Partial(
+            "applying a choice the moment it is pressed needs script (or the form's submit)",
+        ),
+    },
+    ComponentSpec {
+        name: "Context menu",
+        module: "context_menu",
+        features: &[
+            f("popover", b("114", "125", "17")),
+            f("popovertarget", b("114", "125", "17")),
+        ],
+        fallback: "that of the popover menu: a <details> dropdown",
+        needs_js: NeedsJs::Partial("opening on right-click or a long press needs script"),
+    },
+    ComponentSpec {
+        name: "One-time code",
+        module: "input_otp",
+        features: &[
+            f("autocomplete=\"one-time-code\"", b("84", "no", "12")),
+            f("inputmode=\"numeric\"", b("66", "95", "12.1")),
+            f("pattern", b("4", "4", "5")),
+        ],
+        fallback: "a plain spaced-out field; without autocomplete the code is typed or pasted",
+        needs_js: NeedsJs::No,
+    },
+    ComponentSpec {
         name: "Drawer",
         module: "drawer",
         features: &[
@@ -795,6 +853,12 @@ mod tests {
         ("empty_state", include_str!("empty_state.rs")),
         ("stat", include_str!("stat.rs")),
         ("chart", include_str!("chart.rs")),
+        ("sidebar", include_str!("sidebar.rs")),
+        ("nav_menu", include_str!("nav_menu.rs")),
+        ("description_list", include_str!("description_list.rs")),
+        ("toggle_group", include_str!("toggle_group.rs")),
+        ("context_menu", include_str!("context_menu.rs")),
+        ("input_otp", include_str!("input_otp.rs")),
         ("drawer", include_str!("drawer.rs")),
         ("palette", include_str!("palette.rs")),
     ];

@@ -34,6 +34,12 @@ blocks-shell|/blocks/shell|sidebar
 blocks-auth|/blocks/auth|
 blocks-record|/blocks/record|
 blocks-error|/no-such-page|
+sidebar|/sidebar|sidebar
+nav-menu|/nav-menu|navigation-menu
+toggle-group|/toggle-group?align=center&style=bold|toggle-group
+otp|/otp|input-otp
+context-menu|/context-menu|context-menu
+description-list|/description-list|
 "
 
 PORT=3009 target/debug/demo >/dev/null 2>&1 &
