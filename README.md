@@ -3,12 +3,17 @@
 **[Live demo](https://luis-serrano-l.github.io/loco-ui/)** (every component, static snapshot on
 GitHub Pages) · **[Source on GitHub](https://github.com/luis-serrano-l/loco-ui)**
 
-**0 KB JavaScript required** · verified in CI by a script-less renderer ([Blitz](loco-ui-test/tests/demo.rs)) and
+**HTML first, script optional** · every page works with JavaScript off, checked in CI by a
+script-less renderer ([Blitz](loco-ui-test/tests/demo.rs)) and
 [a test that allows one optional script and nothing inline](demo/src/tests.rs) · strict CSP
 
-**The no-JS UI kit for Rust servers.** Buttons, forms, dialogs, tables, a calendar, uploads and
-a kanban board for Axum and Maud, in shadcn/ui's look, that work with JavaScript turned off.
-The core is plain functions over strings, so it also works with any other Rust server.
+**Server-rendered UI components for Loco and Axum.** Buttons, forms, dialogs, tables, a
+calendar, uploads and a kanban board, written in Maud, in shadcn/ui's look. The HTML and CSS
+platform does the interactive work (`<dialog>`, `popover`, `<details>`, forms that post and
+redirect). One optional 11 KB script makes those forms and links update the page in place
+instead of reloading it; block it and every page still works. On Loco, a scaffold generates
+HTML controllers and Maud views for a model. The core is plain functions over strings, so it
+also works with any other Rust server.
 
 ![Five layers, bottom to top: the HTML and CSS platform; primitives such as button, input and card; components such as dialog, tabs and table; widgets such as calendar and kanban; and components you write in your own crate](docs/layers.svg)
 
@@ -19,7 +24,7 @@ the button restyles every dialog, table and form, including yours.
 | | loco-ui | Leptos, Dioxus | htmx + hand-written Maud |
 |---|---|---|---|
 | Where the UI runs | server, HTML out | Rust compiled to WebAssembly in the browser, rendered first on the server | server |
-| JavaScript needed for it to work | none: one optional 11 KB script | the WASM bundle and its JS glue, to hydrate | the htmx library, for every `hx-` attribute |
+| JavaScript needed for it to work | none; one optional 11 KB script updates the page in place | the WASM bundle and its JS glue, to hydrate | the htmx library, for every `hx-` attribute |
 | With script blocked | every page works; CI proves it with a script-less renderer (Blitz) | server-rendered HTML shows; interactivity stops | whatever you wrote as plain links and forms |
 | Components | primitives, components and widgets, themed by tokens | from the ecosystem, or your own | your own |
 | State | URL, cookies, form posts (Post/Redirect/Get) | signals in the browser, server functions | on the server, swapped fragments |
@@ -107,26 +112,6 @@ cannot render is listed with issue links in `FINDINGS.md`. `scripts/browser-chec
 headless Firefox through geckodriver to check the enhancement script (in-place counter, tabs,
 search as you type, in-place table sort, wizard steps, live range output, theme).
 
-## Use with any server
-
-The crate depends on Maud alone. Axum is an optional feature, and everything it does is a
-thin wrapper over plain functions on strings, so any server can do the same in a few lines:
-
-| You need | Without a framework | With `--features http` | With `--features axum` |
-|---|---|---|---|
-| What the browser supports | `Caps::from_query(query)` then `Caps::from_cookie_header(cookies)` | same | `caps: Caps` extractor |
-| The beacon route `GET /lui/caps?flag=x` | `caps::beacon_cookie(query)` → 204 + `Set-Cookie`, or 404 | same | `caps::router()` |
-| Caps, theme, tab/accordion/dialog state, query | `Ui::from_request(path, query, cookies)` | same | `ui: Ui` extractor |
-| A whole page | `ui.page(title, body).into_string()`, `page.set_cookies()` | same | return the `Page` |
-| Post/Redirect/Get with a flash | `ui.redirect(to).ok(msg)`: `.location()`, `.set_cookies()` | `.into_http()` → `http::Response<B>` | return the `Redirect` |
-| A value kept in a cookie | | | `Saved<T>` extractor, `redirect.save(&value)` |
-| Out-of-order streaming | | `Streamed::into_stream()` → chunks | `impl IntoResponse for Streamed` |
-| The optional script | serve `enhance::JS` at `enhance::SCRIPT_PATH` | same | `enhance::router()` |
-
-`loco-ui/examples/hyper_server.rs` is the whole of it on raw hyper: three components, the
-beacon route, a POST answered with PRG, the script served by hand. `.into_string()` on any
-component gives the HTML to another template engine.
-
 ## Use with Loco
 
 On [Loco](https://loco.rs), turn on the `loco` feature and add one line to `App::initializers`;
@@ -146,6 +131,26 @@ paging, validation) instead of a JSON API. Sign-in works without script by point
 JWT at a cookie. [`examples/loco-app`](examples/loco-app) is a generated app, tested through
 Loco's router and Blitz; [`docs/loco.md`](docs/loco.md) covers install, controllers, forms,
 sign-in, the generator and the Loco settings that affect pages.
+
+## Use with any server
+
+The crate depends on Maud alone. Axum is an optional feature, and everything it does is a
+thin wrapper over plain functions on strings, so any server can do the same in a few lines:
+
+| You need | Without a framework | With `--features http` | With `--features axum` |
+|---|---|---|---|
+| What the browser supports | `Caps::from_query(query)` then `Caps::from_cookie_header(cookies)` | same | `caps: Caps` extractor |
+| The beacon route `GET /lui/caps?flag=x` | `caps::beacon_cookie(query)` → 204 + `Set-Cookie`, or 404 | same | `caps::router()` |
+| Caps, theme, tab/accordion/dialog state, query | `Ui::from_request(path, query, cookies)` | same | `ui: Ui` extractor |
+| A whole page | `ui.page(title, body).into_string()`, `page.set_cookies()` | same | return the `Page` |
+| Post/Redirect/Get with a flash | `ui.redirect(to).ok(msg)`: `.location()`, `.set_cookies()` | `.into_http()` → `http::Response<B>` | return the `Redirect` |
+| A value kept in a cookie | | | `Saved<T>` extractor, `redirect.save(&value)` |
+| Out-of-order streaming | | `Streamed::into_stream()` → chunks | `impl IntoResponse for Streamed` |
+| The optional script | serve `enhance::JS` at `enhance::SCRIPT_PATH` | same | `enhance::router()` |
+
+`loco-ui/examples/hyper_server.rs` is the whole of it on raw hyper: three components, the
+beacon route, a POST answered with PRG, the script served by hand. `.into_string()` on any
+component gives the HTML to another template engine.
 
 ## How to read this crate
 

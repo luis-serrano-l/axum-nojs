@@ -2,7 +2,7 @@
 name = "loco-ui"
 version = "0.1.0"
 edition = "2024"
-description = "The no-JS UI kit for Rust servers: shadcn-style components for Axum and Maud that work with JavaScript off, by progressive enhancement"
+description = "Server-rendered UI components for Loco and Axum, in Maud with a shadcn look: HTML first, every page works with JavaScript off, one optional script"
 readme = "../README.md"
 license = "MIT"
 repository = "https://github.com/luis-serrano-l/loco-ui"
