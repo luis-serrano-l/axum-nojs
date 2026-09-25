@@ -54,6 +54,7 @@ pub mod accordion;
 pub mod alert;
 pub mod avatar;
 pub mod badge;
+pub mod blocks;
 pub mod breadcrumbs;
 pub mod button;
 pub mod calendar;
@@ -196,6 +197,7 @@ pub fn stylesheet() -> &'static str {
         let tokens = layout::Tokens::default().css();
         let mut parts = vec![tokens.as_str()];
         parts.extend(COMPONENT_CSS);
+        parts.extend(blocks::CSS);
         parts.push(beacons.as_str());
         minify_css(&parts.join("\n"))
     })
@@ -620,13 +622,18 @@ mod tests {
         );
     }
 
-    /// The library's own files, `src/*.rs` (not `src/bin/`, the installer).
+    /// The library's own files, `src/*.rs` and `src/blocks/*.rs` (not `src/bin/`, the
+    /// installer).
     fn library_sources() -> Vec<std::path::PathBuf> {
-        let dir = concat!(env!("CARGO_MANIFEST_DIR"), "/src");
-        let entries = std::fs::read_dir(dir).unwrap().map(|e| e.unwrap().path());
-        entries
-            .filter(|p| p.extension().is_some_and(|x| x == "rs"))
-            .collect()
+        let rs = |dir: &str| {
+            let entries = std::fs::read_dir(dir).unwrap().map(|e| e.unwrap().path());
+            entries
+                .filter(|p| p.extension().is_some_and(|x| x == "rs"))
+                .collect::<Vec<_>>()
+        };
+        let mut files = rs(concat!(env!("CARGO_MANIFEST_DIR"), "/src"));
+        files.extend(rs(concat!(env!("CARGO_MANIFEST_DIR"), "/src/blocks")));
+        files
     }
 
     struct Builder {

@@ -8,7 +8,11 @@ use std::sync::LazyLock;
 
 /// Every file with `// code:` markers, as `(path, source)`, so every component page can show
 /// the code that draws it. A new route file goes here.
-pub(crate) const SOURCES: [(&str, &str); 11] = [
+pub(crate) const SOURCES: [(&str, &str); 12] = [
+    (
+        "demo/src/routes/blocks.rs",
+        include_str!("routes/blocks.rs"),
+    ),
     (
         "demo/src/routes/primitives.rs",
         include_str!("routes/primitives.rs"),

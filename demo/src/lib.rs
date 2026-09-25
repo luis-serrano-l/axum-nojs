@@ -17,7 +17,7 @@ use tower_http::compression::{
 };
 
 /// Every demo path the no-script test and the screenshot test visit.
-pub const PATHS: [&str; 34] = [
+pub const PATHS: [&str; 40] = [
     "/",
     "/caps",
     "/button?loading=1",
@@ -42,6 +42,12 @@ pub const PATHS: [&str; 34] = [
     "/form",
     "/form?layout=inline",
     "/form?errors=1",
+    "/blocks/shell",
+    "/blocks/auth",
+    "/blocks/settings",
+    "/blocks/record",
+    "/blocks/dashboard",
+    "/blocks/error",
     "/counter",
     "/inputs",
     "/table?sort=size&dir=desc&q=a&per.files=5&page=2&cols=name,size",
@@ -62,6 +68,7 @@ pub fn router() -> Router {
     Router::new()
         .merge(site::routes())
         .merge(routes::primitives::routes())
+        .merge(routes::blocks::routes())
         .merge(routes::overlays::routes())
         .merge(routes::disclosure::routes())
         .merge(routes::navigation::routes())
@@ -74,6 +81,7 @@ pub fn router() -> Router {
         .merge(routes::own::routes())
         .merge(loco_ui::caps::router())
         .merge(loco_ui::enhance::router())
+        .fallback(loco_ui::blocks::not_found)
         .layer(axum::middleware::from_fn(loco_ui::enhance::slim))
         .layer(axum::middleware::from_fn(loco_ui::enhance::csp))
         .layer(CompressionLayer::new().compress_when(DefaultPredicate::new().and(WholeBody)))

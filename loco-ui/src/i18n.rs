@@ -184,6 +184,20 @@ pub enum Text {
     Optional,
     /// "There is a problem": error summary.
     Problem,
+    /// "Delete": record page.
+    Delete,
+    /// "Sign out": app shell.
+    SignOut,
+    /// "Page not found": 404 page.
+    NotFound,
+    /// "The page you asked for is not here. It may have moved, or the link was mistyped.": 404 page.
+    NotFoundMessage,
+    /// "Something went wrong": 500 page.
+    ServerError,
+    /// "The server could not answer this time. Try again in a moment.": 500 page.
+    ServerErrorMessage,
+    /// "Go home": error pages.
+    GoHome,
     /// "(skipped)": wizard review.
     Skipped,
     /// "Edit {}": wizard review: the edit link's name.
@@ -273,7 +287,7 @@ const N: usize = Text::ALL.len();
 
 impl Text {
     /// Every text, in table order.
-    pub const ALL: [Text; 113] = [
+    pub const ALL: [Text; 120] = [
         Text::Next,
         Text::Previous,
         Text::Back,
@@ -346,6 +360,13 @@ impl Text {
         Text::Step,
         Text::Optional,
         Text::Problem,
+        Text::Delete,
+        Text::SignOut,
+        Text::NotFound,
+        Text::NotFoundMessage,
+        Text::ServerError,
+        Text::ServerErrorMessage,
+        Text::GoHome,
         Text::Skipped,
         Text::EditValue,
         Text::StepOf,
@@ -487,6 +508,13 @@ const ENGLISH: [&str; N] = [
     "Step {}",
     "(optional)",
     "There is a problem",
+    "Delete",
+    "Sign out",
+    "Page not found",
+    "The page you asked for is not here. It may have moved, or the link was mistyped.",
+    "Something went wrong",
+    "The server could not answer this time. Try again in a moment.",
+    "Go home",
     "(skipped)",
     "Edit {}",
     "Step {} of {}",

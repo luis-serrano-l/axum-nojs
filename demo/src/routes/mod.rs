@@ -1,6 +1,7 @@
 //! The demo routes, one file per group of the index (`site::COMPONENTS`). Each has a
 //! `routes()` that `crate::router` merges.
 
+pub(crate) mod blocks;
 pub(crate) mod disclosure;
 pub(crate) mod feedback;
 pub(crate) mod flows;

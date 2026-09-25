@@ -771,3 +771,14 @@ Let through, with the reason, and nothing else:
   check forces the capability cookie.
 
 24 findings of minor or moderate impact are counted, not failed.
+
+### M29 · Blocks
+
+- Loco turns on its own `fallback` middleware outside production ("Welcome to Loco!", 404),
+  and it is applied after `App::before_routes`, so it replaces a fallback installed there.
+  `examples/loco-app` sets `server.middlewares.fallback.enable: false` in its development and
+  test configs; `docs/loco.md` says so.
+- The blocks add 3.8 KB of styles to the one stylesheet. A streamed page with declarative
+  shadow DOM carries the stylesheet twice, so `/stream` went from under 128 KB to 136 KB; its
+  budget in `pages_ship_only_the_enhancement_script` is now 136 KB. Other pages stay under
+  96 KB.

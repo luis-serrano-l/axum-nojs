@@ -73,9 +73,10 @@ async fn pages_ship_only_the_enhancement_script() {
             let html = String::from_utf8(body.to_vec()).unwrap();
             // The whole page, inline stylesheet included (README: "What a page weighs").
             // A streamed page with declarative shadow DOM carries the stylesheet twice
-            // (styles do not cross into the shadow root), so it gets its own budget.
+            // (styles do not cross into the shadow root), so it gets its own budget, raised from
+            // 128 KB when the blocks' 3.8 KB of styles joined the stylesheet (M29).
             let budget = if html.contains("shadowrootmode") {
-                128
+                136
             } else {
                 96
             } * 1024;
@@ -634,4 +635,19 @@ async fn components_speak_the_visitors_language() {
     let res = router().oneshot(req).await.unwrap();
     let set = res.headers()["set-cookie"].to_str().unwrap();
     assert!(set.starts_with("lui-lang=es;"), "{set}");
+}
+
+/// A path no route answers gets the 404 block with a 404 status, in the site's look.
+#[tokio::test]
+async fn unknown_paths_get_the_not_found_block() {
+    let res = router()
+        .oneshot(Request::get("/no-such-page").body(Body::empty()).unwrap())
+        .await
+        .unwrap();
+    assert_eq!(res.status(), 404);
+    let bytes = axum::body::to_bytes(res.into_body(), usize::MAX)
+        .await
+        .unwrap();
+    let html = String::from_utf8(bytes.to_vec()).unwrap();
+    assert!(html.contains("<h1>Page not found</h1>") && html.contains("lui-error-page"));
 }

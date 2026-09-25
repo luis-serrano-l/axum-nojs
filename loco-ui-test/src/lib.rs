@@ -50,12 +50,17 @@ pub struct Rect {
 impl Page {
     /// GET `path` from `router` with a raw `Cookie` header and render the response.
     pub async fn render(router: Router, path: &str, cookie: &str) -> Page {
+        Page::render_expecting(router, path, cookie, 200).await
+    }
+
+    /// [`Page::render`] for a response with another status (a 404 page, say).
+    pub async fn render_expecting(router: Router, path: &str, cookie: &str, status: u16) -> Page {
         let req = Request::get(path)
             .header("cookie", cookie)
             .body(Body::empty())
             .unwrap();
         let res = router.oneshot(req).await.unwrap();
-        assert_eq!(res.status(), 200, "{path}");
+        assert_eq!(res.status(), status, "{path}");
         let bytes = axum::body::to_bytes(res.into_body(), usize::MAX)
             .await
             .unwrap();

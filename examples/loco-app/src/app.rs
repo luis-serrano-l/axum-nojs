@@ -36,6 +36,11 @@ impl Hooks for App {
         Ok(vec![Box::new(loco_ui::loco::Initializer)])
     }
 
+    /// Every path no route answers gets loco-ui's 404 page, in the app's look.
+    async fn before_routes(_ctx: &AppContext) -> Result<axum::Router<AppContext>> {
+        Ok(axum::Router::new().fallback(loco_ui::blocks::not_found))
+    }
+
     fn routes(_ctx: &AppContext) -> AppRoutes {
         AppRoutes::empty()
             .add_route(controllers::tasks::routes())

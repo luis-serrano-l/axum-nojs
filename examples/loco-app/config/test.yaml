@@ -7,7 +7,11 @@ server:
   port: <%= get_env(name="PORT", default="5150") %>
   binding: <%= get_env(name="BINDING", default="localhost") %>
   host: http://localhost
-  middlewares: {}
+  middlewares:
+    # Loco's own "Welcome to Loco!" page answers unknown paths outside production; the
+    # router's fallback (loco-ui's 404 page, in `App::before_routes`) does instead.
+    fallback:
+      enable: false
 
 workers:
   # No background jobs in this app.

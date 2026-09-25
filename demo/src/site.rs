@@ -20,7 +20,7 @@ pub(crate) fn routes() -> Router {
 
 /// Every component in the index: path, title (what each route passes to `page`), group, the
 /// platform features it is built on, and what it is for in plain words.
-pub(crate) const COMPONENTS: [(&str, &str, &str, &str, &str); 30] = [
+pub(crate) const COMPONENTS: [(&str, &str, &str, &str, &str); 36] = [
     (
         "/feedback",
         "Alerts, progress and tooltips",
@@ -231,10 +231,52 @@ pub(crate) const COMPONENTS: [(&str, &str, &str, &str, &str); 30] = [
         "data-lui-target, data-lui-swap, data-lui-oob, data-lui-indicator, data-lui-push, Lui-Enhance header",
         "Update one part of the page without reloading it.",
     ),
+    (
+        "/blocks/shell",
+        "App shell",
+        "Blocks",
+        "a sidebar that is a drawer on narrow screens, aria-current",
+        "The frame of a signed-in app: navigation, who is signed in, the page.",
+    ),
+    (
+        "/blocks/auth",
+        "Auth page",
+        "Blocks",
+        "a card, a form that posts",
+        "A sign-in or sign-up page, centred, with the links to the other account pages.",
+    ),
+    (
+        "/blocks/settings",
+        "Settings page",
+        "Blocks",
+        "fragment links, a two-column grid",
+        "Settings in sections, each with its own form, and a list that jumps to each.",
+    ),
+    (
+        "/blocks/record",
+        "Record page",
+        "Blocks",
+        "<dl>, a delete form, PRG",
+        "One record's fields and the actions on it.",
+    ),
+    (
+        "/blocks/dashboard",
+        "Dashboard page",
+        "Blocks",
+        "auto-fit grid",
+        "A row of numbers and what goes under them.",
+    ),
+    (
+        "/blocks/error",
+        "Error page",
+        "Blocks",
+        "Router::fallback, HTTP status",
+        "The 404 and 500 pages in the site's look; the demo's fallback.",
+    ),
 ];
 
 /// The index's layers, bottom up, each with the groups it holds (as in `docs/layers.svg`).
-pub(crate) const LAYERS: [(&str, &str, &[&str]); 5] = [
+pub(crate) const LAYERS: [(&str, &str, &[&str]); 6] = [
     (
         "Primitives",
         "The parts every component is built from.",
@@ -256,6 +298,11 @@ pub(crate) const LAYERS: [(&str, &str, &[&str]); 5] = [
         "Widgets",
         "Larger pieces built from components and primitives.",
         &["Widgets"],
+    ),
+    (
+        "Blocks",
+        "Whole pages from the components: fill one in, or copy its file when yours differs.",
+        &["Blocks"],
     ),
     (
         "Your own",

@@ -289,6 +289,12 @@ async fn every_page_works_without_script() {
         page.screenshot(format!("{dir}/loco-{name}.png")).unwrap();
     }
 
+    // A path no route answers is loco-ui's 404 page, not Loco's plain one.
+    let res = send(&router, "GET", "/no-such-page", "", "").await;
+    assert_eq!(res.status(), StatusCode::NOT_FOUND);
+    let html = text(res).await;
+    assert!(html.contains("Page not found"), "{html}");
+
     // The script and the beacon the pages ask for are mounted.
     let res = send(&router, "GET", loco_ui::enhance::SCRIPT_PATH, "", "").await;
     assert_eq!(res.status(), StatusCode::OK);

@@ -234,6 +234,31 @@ supported. `examples/loco-app` scaffolds `task` with one field of each kind.
 - loco-ui's strict `csp` layer is not added for you; add
   `axum::middleware::from_fn(loco_ui::enhance::csp)` in `after_routes` to use it.
 
+## Blocks and the 404 page
+
+`loco_ui::blocks` has whole pages built from the components: `ui.app_shell(..)`,
+`ui.auth_page(..)`, `ui.settings_page(..)`, `ui.record_page(..)`, `ui.dashboard_page(..)` and
+`ui.error_page(status)` (the demo shows each under "Blocks"). The 404 page goes in as the
+router's fallback, in `App::before_routes`:
+
+```rust
+async fn before_routes(_ctx: &AppContext) -> Result<axum::Router<AppContext>> {
+    Ok(axum::Router::new().fallback(loco_ui::blocks::not_found))
+}
+```
+
+Loco turns on its own fallback (a "Welcome to Loco!" page) outside production, and it wins;
+switch it off in `config/*.yaml`:
+
+```yaml
+server:
+  middlewares:
+    fallback:
+      enable: false
+```
+
+For a 500 from a handler, answer `ui.error_page(500).into_response()`.
+
 ## Languages
 
 The components' own words ("Next", "Load more", month names) come from one table per

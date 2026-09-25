@@ -1252,3 +1252,63 @@ async fn a_whole_app_flow_with_no_script() {
     let page = Page::render(demo::router(), "/app/notes", &cookies.join("; ")).await;
     assert!(page.text("tbody").unwrap().contains("No notes yet"));
 }
+
+/// Each block lays out as a page: its parts are there and visible without script.
+#[tokio::test]
+async fn blocks_lay_out() {
+    let checks: [(&str, &[&str]); 7] = [
+        (
+            "/blocks/shell",
+            &[
+                ".lui-app-shell-links a[aria-current=page]",
+                ".lui-app-shell-user",
+            ],
+        ),
+        (
+            "/blocks/auth",
+            &[
+                ".lui-auth-card h1",
+                ".lui-auth-card input[type=email]",
+                ".lui-auth-footer",
+            ],
+        ),
+        (
+            "/blocks/settings",
+            &[
+                ".lui-settings-page-nav a",
+                "#settings-email h2",
+                "#settings-email input[type=email]",
+            ],
+        ),
+        (
+            "/blocks/record",
+            &[
+                ".lui-record-fields dt",
+                ".lui-record-actions button",
+                ".lui-badge-ok",
+            ],
+        ),
+        (
+            "/blocks/dashboard",
+            &[".lui-dashboard .lui-stat-grid", ".lui-stat"],
+        ),
+        (
+            "/blocks/error",
+            &[".lui-error-page h1", ".lui-error-page .lui-button"],
+        ),
+        (
+            "/no-such-page",
+            &[".lui-error-page h1", ".lui-error-page-status"],
+        ),
+    ];
+    for (path, parts) in checks {
+        let status = if path == "/no-such-page" { 404 } else { 200 };
+        let mut page = Page::render_expecting(demo::router(), path, MODERN, status).await;
+        for part in parts {
+            assert!(page.is_visible(part), "{path}: {part} is not visible");
+        }
+        if path == "/no-such-page" {
+            shot(&mut page, "blocks-not-found");
+        }
+    }
+}

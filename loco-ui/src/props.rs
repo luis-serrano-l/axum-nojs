@@ -425,4 +425,40 @@ pub(crate) const COMPONENTS: &[Component] = &[
         calls: &["ui.wizard(id: &str, action: &str)"],
         props: crate::wizard::Wizard::PROPS,
     },
+    Component {
+        module: "blocks/app_shell",
+        builder: "AppShell",
+        calls: &["ui.app_shell(name: &str)"],
+        props: crate::blocks::app_shell::AppShell::PROPS,
+    },
+    Component {
+        module: "blocks/auth_page",
+        builder: "AuthPage",
+        calls: &["ui.auth_page(title: &str)"],
+        props: crate::blocks::auth_page::AuthPage::PROPS,
+    },
+    Component {
+        module: "blocks/dashboard_page",
+        builder: "DashboardPage",
+        calls: &["ui.dashboard_page(title: &str)"],
+        props: crate::blocks::dashboard_page::DashboardPage::PROPS,
+    },
+    Component {
+        module: "blocks/error_page",
+        builder: "ErrorPage",
+        calls: &["ui.error_page(status: u16)"],
+        props: crate::blocks::error_page::ErrorPage::PROPS,
+    },
+    Component {
+        module: "blocks/record_page",
+        builder: "RecordPage",
+        calls: &["ui.record_page(title: &str)"],
+        props: crate::blocks::record_page::RecordPage::PROPS,
+    },
+    Component {
+        module: "blocks/settings_page",
+        builder: "SettingsPage",
+        calls: &["ui.settings_page(title: &str)"],
+        props: crate::blocks::settings_page::SettingsPage::PROPS,
+    },
 ];

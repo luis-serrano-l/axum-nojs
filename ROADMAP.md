@@ -1105,9 +1105,21 @@ every Loco API named below against loco-rs 1.2 before relying on it, as M27 did.
   select's button that only a forced cookie shows Firefox. 44 component headers have an
   **Accessibility** line (test `every_component_header_has_an_accessibility_line`); README
   says axe-clean.
-- [ ] Blocks, no script: app shell with sidebar, auth pages, settings page, record show/edit
+- [x] Blocks, no script: app shell with sidebar, auth pages, settings page, record show/edit
   page, dashboard of stats, and error pages (404, 500) in Maud usable as Loco's fallback. One
   file each under `loco-ui/src/blocks/`, one demo route each, one Blitz test each.
+  Done: `loco-ui/src/blocks/{app_shell,auth_page,settings_page,record_page,dashboard_page,
+  error_page}.rs`, each a builder from `ui` (`ui.app_shell(name)`, `ui.error_page(status)`, …)
+  with PROPS, a `props::COMPONENTS` entry, an Accessibility line and a doctest ending in its
+  `lui!` twin (the source-reading tests now include `src/blocks/`); their words are in the
+  i18n table (Delete, Sign out, the 404/500 texts; Spanish too). Composed from the drawer,
+  avatar, button, form, stat and badge; 3.8 KB of CSS. `blocks::not_found` is a
+  `Router::fallback` handler (and `ErrorPage` is `IntoResponse` with its status): the demo
+  router and `examples/loco-app` (`App::before_routes`, Loco's dev fallback switched off; test)
+  use it. Demo: a "Blocks" layer with `/blocks/{shell,auth,settings,record,dashboard,error}`
+  (PATHS, SOURCES, props tables); Blitz test `blocks_lay_out` checks each block's parts and
+  the 404 page (`Page::render_expecting` for non-200); axe covers the new routes. The DSD
+  stream page budget went from 128 to 136 KB (FINDINGS).
 - [ ] Server-rendered SVG charts (bar, line, sparkline): `ui.chart(..)` writes `<svg>` with
   `<title>`/`<desc>` and a visually hidden data table as the accessible fallback; theme
   colours from `--lui-*` tokens. No JS, which maud-ui and most kits need here.

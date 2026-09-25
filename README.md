@@ -138,6 +138,15 @@ reset password, email verification and magic-link pages, all forms, with Loco's 
 Loco's router and Blitz; [`docs/loco.md`](docs/loco.md) covers install, controllers, forms,
 sign-in, the generator and the Loco settings that affect pages.
 
+## Blocks
+
+Whole pages from the components, each a builder like any component and one file under
+`loco-ui/src/blocks/` to copy when yours differs: `ui.app_shell(..)` (sidebar navigation that
+is a drawer on narrow screens, who is signed in), `ui.auth_page(..)`, `ui.settings_page(..)`,
+`ui.record_page(..)`, `ui.dashboard_page(..)` and `ui.error_page(404 | 500)`.
+`loco_ui::blocks::not_found` is a `Router::fallback` handler, so unknown paths get the 404
+page in the site's look (the demo and `examples/loco-app` use it).
+
 ## Languages
 
 The words components write themselves ("Next", "Load more", "Rows per page", month names)
