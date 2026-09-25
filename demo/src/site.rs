@@ -429,14 +429,25 @@ const LINEN: Tokens = Tokens {
     space: "8px",
 };
 
-/// A component page's live component, from the `PREVIEWS` beside its route: the function its
-/// page calls between the `// code:` markers, so the index shows the same call the page does.
+/// A component page's live component, from the `PAGES` or `PREVIEWS` beside its route: the
+/// function its page calls between the `// code:` markers, so the index shows the same call
+/// the page does.
 pub(crate) fn preview(href: &str) -> Option<fn(&Ui) -> Markup> {
     use crate::routes::*;
-    [
+    let pages = [
+        primitives::PAGES,
+        overlays::PAGES,
+        disclosure::PAGES,
+        navigation::PAGES,
+        input::PAGES,
+        feedback::PAGES,
+        server_state::PAGES,
+        widgets::PAGES,
+        blocks::PAGES,
+    ];
+    let previews = [
         primitives::PREVIEWS,
         theme::PREVIEWS,
-        overlays::PREVIEWS,
         disclosure::PREVIEWS,
         navigation::PREVIEWS,
         input::PREVIEWS,
@@ -444,14 +455,39 @@ pub(crate) fn preview(href: &str) -> Option<fn(&Ui) -> Markup> {
         table::PREVIEWS,
         server_state::PREVIEWS,
         widgets::PREVIEWS,
-        blocks::PREVIEWS,
         flows::PREVIEWS,
         own::PREVIEWS,
-    ]
-    .into_iter()
-    .flatten()
-    .find(|p| p.0 == href)
-    .map(|p| p.1)
+    ];
+    let simple = pages.into_iter().flatten().map(|p| (p.0, p.1));
+    simple
+        .chain(previews.into_iter().flatten().copied())
+        .find(|p| p.0 == href)
+        .map(|p| p.1)
+}
+
+/// A component page's title, as `COMPONENTS` has it.
+pub(crate) fn title(href: &'static str) -> &'static str {
+    COMPONENTS
+        .iter()
+        .find(|c| c.0 == href)
+        .map_or(href, |c| c.1)
+}
+
+/// A note's text as markup: `` `x` `` is code, `[text](href)` a link.
+pub(crate) fn note(text: &str) -> Markup {
+    let link = |part: &str| {
+        let mut rest = part;
+        let mut out = Vec::new();
+        while let Some((before, after)) = rest.split_once('[')
+            && let Some((text, after)) = after.split_once("](")
+            && let Some((href, after)) = after.split_once(')')
+        {
+            out.push(html! { (before) a href=(href) { (text) } });
+            rest = after;
+        }
+        html! { @for m in out { (m) } (rest) }
+    };
+    html! { @for (i, part) in text.split('`').enumerate() { @if i % 2 == 1 { code { (part) } } @else { (link(part)) } } }
 }
 
 /// Every component under its group, in the index's order, the current page marked. From 60rem
@@ -485,7 +521,7 @@ fn toolbar(ui: &Ui, back: bool) -> Markup {
     };
     html! { nav class="lui-toolbar" {
         @if back { a class="lui-back" href="/" { "All components" } } @else { span {} }
-        (ui.cluster(html! { (languages) (ui.theme_toggle("/theme")) }))
+        (ui.cluster().body(html! { (languages) (ui.theme_toggle("/theme")) }))
     } }
 }
 
@@ -583,6 +619,14 @@ fn props(ui: &Ui, builders: &[&loco_ui::props::Component]) -> Markup {
 }
 
 pub(crate) fn page(ui: &Ui, title: &str, body: Markup) -> Page {
+    // A pending flash on the stage, over the component that sent it, unless the body shows
+    // it itself (as toasts, or with setters); `ui.page` would put it above the whole shell.
+    let own = ["class=\"lui-flash\"", "class=\"lui-toasts\""];
+    let body = if own.iter().any(|c| body.0.contains(c)) {
+        body
+    } else {
+        html! { (ui.flash()) (body) }
+    };
     let page = ui.page(title, shell(ui, title, body));
     // `?script=off`: the same page without the enhancement script, served under
     // `script-src 'none'`, so the no-script path can be tried in any browser.

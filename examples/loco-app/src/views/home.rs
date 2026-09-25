@@ -5,7 +5,7 @@ pub fn index(ui: &Ui) -> Markup {
         (ui.flash())
         h1 { "Notes" }
         p { "A Loco app on loco-ui. Every page works with script off." }
-        (ui.cluster(html! {
+        (ui.cluster().body(html! {
             (ui.link_button("Sign in", "/signin").primary())
             (ui.link_button("Sign up", "/signup"))
             (ui.link_button("Notes", "/notes").ghost())

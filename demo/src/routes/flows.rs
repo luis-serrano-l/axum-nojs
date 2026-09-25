@@ -117,13 +117,13 @@ async fn notes_page(ui: Ui, Saved(session): Saved<Session>, Saved(saved): Saved<
         "Notes",
         html! {
             (ui.flash())
-            (ui.stack(html! {
-                (ui.cluster(html! {
+            (ui.stack().gap(6).body(html! {
+                (ui.cluster().between().body(html! {
                     span class="lui-note" { "Signed in as " strong { (session.email) } }
                     form method="post" action="/app/signout" { (ui.button("Sign out").ghost().small()) }
-                }).between())
+                }))
                 (notes(&ui, &saved))
-            }).gap(6))
+            }))
         },
     )
 }

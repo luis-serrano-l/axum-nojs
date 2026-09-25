@@ -1135,16 +1135,16 @@ async fn showpieces_rest_without_their_features() {
     // Every effect above the fold on one page, for the shot.
     let ui = loco_ui::Ui::default();
     let body = loco_ui::lui! {
-        Cluster(loco_ui::lui! {
+        Cluster {
             Button("Upgrade") primary shimmer; Button("What's new") shimmer;
             Badge("New") shimmer; Badge("Beta") outline shimmer;
-        });
-        Grid("14rem", loco_ui::lui! {
+        }
+        Grid("14rem") {
             Card title="Plain" description="No effect." { p { "The card at rest." } }
             Card title="Beam and glow" description="beam glow" beam glow { p { "No beam, no glow." } }
             Card title="Gradient border" description="gradient_border" gradient_border { p { "Drawn in Blitz." } }
             Card title="Reveal" description="reveal" reveal { p { "Shown in place." } }
-        });
+        }
         Input("key", "API key") gradient_border placeholder="sk-live-...";
         div class="lui-stat-grid" { Stat("Visitors", "12,480") delta="+8.2%" reveal; }
         Marquee("Customers") { text "Acme"; text "Globex"; text "Initech"; text "Umbrella"; }

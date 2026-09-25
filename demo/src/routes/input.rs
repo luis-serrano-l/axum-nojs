@@ -4,33 +4,37 @@ use crate::site::page;
 use axum::{
     Form, Router,
     extract::Query,
-    http::StatusCode,
-    response::{IntoResponse, Response},
     routing::{get, post},
 };
 use loco_ui::prelude::*;
-use loco_ui::wizard::{Posted, Wizard};
+use loco_ui::wizard::Wizard;
 use serde::{Deserialize, Serialize};
 
 pub(crate) fn routes() -> Router {
-    Router::new()
-        .route("/combobox", get(combobox_page))
+    super::pages(PAGES)
         .route("/combobox/new", post(combobox_new))
         .route("/form", get(form_page).post(form_submit))
         .route("/wizard", get(wizard_page).post(wizard_submit))
         .route("/inputs", get(inputs_page).post(inputs_submit))
-        .route("/toggle-group", get(toggle_group_page))
-        .route("/otp", get(otp_page))
 }
 
-/// Each page's live component, which the index shows too (`site::preview`), empty there.
+/// The pages that are their component and a note (`super::pages`).
+pub(crate) const PAGES: &[super::Simple] = &[
+    (
+        "/combobox",
+        combobox,
+        "Pick several: each result adds a chip, each chip's \u{d7} removes it, and the chips ride along with the next search. Type a language that is not here to get a Create row.",
+    ),
+    ("/toggle-group", toggle_group, ""),
+    ("/otp", otp, ""),
+];
+
+/// The other pages' live components, which the index shows too (`site::preview`), empty
+/// there.
 pub(crate) const PREVIEWS: &[super::Preview] = &[
-    ("/combobox", combobox),
     ("/form", |ui| signup_form(ui, &[], &[])),
     ("/wizard", |ui| signup(ui, &Signup::default(), &[]).render()),
     ("/inputs", |ui| inputs(ui, &Inputs::default())),
-    ("/toggle-group", toggle_group),
-    ("/otp", otp),
 ];
 
 fn combobox(ui: &Ui) -> Markup {
@@ -47,18 +51,6 @@ fn combobox(ui: &Ui) -> Markup {
                 // end code
             }
     }
-}
-
-async fn combobox_page(ui: Ui) -> Page {
-    page(
-        &ui,
-        "Combobox",
-        lui! {
-            (ui.flash())
-            (combobox(&ui))
-            p class="lui-note" { "Pick several: each result adds a chip, each chip's \u{d7} removes it, and the chips ride along with the next search. Type a language that is not here to get a Create row." }
-        },
-    )
 }
 
 #[derive(Deserialize)]
@@ -135,15 +127,11 @@ fn signup_errors(step: usize, s: &Signup) -> Vec<(&'static str, &'static str)> {
 }
 
 fn wizard_view(ui: &Ui, wizard: Wizard) -> Page {
-    page(
-        ui,
-        "Wizard",
-        html! {
-            (ui.flash())
-            p { "Three steps, one form each. The server checks every step; the second can be skipped. Close the tab and come back to " a href="/wizard" { "/wizard" } ": you resume where you left off." }
-            (wizard)
-        },
-    )
+    let body = html! {
+        p { "Three steps, one form each. The server checks every step; the second can be skipped. Close the tab and come back to " a href="/wizard" { "/wizard" } ": you resume where you left off." }
+        (wizard)
+    };
+    page(ui, "Wizard", body)
 }
 
 async fn wizard_page(ui: Ui, Saved(s): Saved<Signup>) -> Page {
@@ -155,35 +143,31 @@ async fn wizard_page(ui: Ui, Saved(s): Saved<Signup>) -> Page {
 async fn wizard_submit(
     ui: Ui,
     Saved(mut s): Saved<Signup>,
-    Form(pairs): Form<Vec<(String, String)>>,
-) -> Response {
-    let posted = Posted::from_pairs(&pairs);
-    for (k, v) in pairs
-        .into_iter()
-        .filter(|(k, _)| !posted.skip && k != "step" && k != "skip")
+    posted: Posted,
+) -> Result<Redirect, Page> {
+    let (step, skip) = (posted.step(), posted.skip());
+    for (k, v) in posted
+        .pairs()
+        .iter()
+        .filter(|(k, _)| !skip && k != "step" && k != "skip")
     {
-        s.0.retain(|(n, _)| *n != k);
-        s.0.push((k, v));
+        s.0.retain(|(n, _)| n != k);
+        s.0.push((k.clone(), v.clone()));
     }
-    let errors = if posted.skip {
+    let errors = if skip {
         Vec::new()
     } else {
-        signup_errors(posted.step, &s)
+        signup_errors(step, &s)
     };
-    let wizard = signup(&ui, &s, &errors).at(posted.step);
+    let wizard = signup(&ui, &s, &errors).at(step);
     if !errors.is_empty() {
-        return (StatusCode::UNPROCESSABLE_ENTITY, wizard_view(&ui, wizard)).into_response();
+        return Err(wizard_view(&ui, wizard).invalid());
     }
-    if wizard.is_last(posted.step) {
-        return ui
-            .redirect(&wizard.link(0))
-            .flash("Account created (well, the cookie was cleared).")
-            .forget::<Signup>()
-            .into_response();
+    if wizard.is_last(step) {
+        let done = "Account created (well, the cookie was cleared).";
+        return Ok(ui.redirect(&wizard.link(0)).flash(done).forget::<Signup>());
     }
-    ui.redirect(&wizard.link(posted.step + 1))
-        .save(&s)
-        .into_response()
+    Ok(ui.redirect(&wizard.link(step + 1)).save(&s))
 }
 
 /// The sign-up form, with the values and messages of a post the server refused.
@@ -212,17 +196,12 @@ fn signup_form(ui: &Ui, values: &[(String, String)], errors: &[(&str, &str)]) ->
 
 fn form_view(ui: &Ui, values: &[(String, String)], errors: &[(&str, &str)]) -> Page {
     let inline = ui.param("layout") == Some("inline");
-    let form = signup_form(ui, values, errors);
-    page(
-        ui,
-        "Validated form",
-        html! {
-            (ui.flash())
-            p { "Labels " @if inline { "beside the fields. " a href="/form" { "Put them above" } } @else { "above the fields. " a href="/form?layout=inline" { "Put them beside" } } "." }
-            p class="lui-note" { "The handle " code { "admin" } " and " code { "@example.com" } " addresses pass the browser's checks and fail the server's: the form comes back with an error summary on top that takes the focus and links to each field. " a href="/form?errors=1" { "See it" } "." }
-            (form)
-        },
-    )
+    let body = html! {
+        p { "Labels " @if inline { "beside the fields. " a href="/form" { "Put them above" } } @else { "above the fields. " a href="/form?layout=inline" { "Put them beside" } } "." }
+        p class="lui-note" { "The handle " code { "admin" } " and " code { "@example.com" } " addresses pass the browser's checks and fail the server's: the form comes back with an error summary on top that takes the focus and links to each field. " a href="/form?errors=1" { "See it" } "." }
+        (signup_form(ui, values, errors))
+    };
+    page(ui, "Validated form", body)
 }
 
 /// `?errors=1` shows the answer to a post the server refused, without posting.
@@ -243,67 +222,60 @@ async fn form_page(ui: Ui) -> Page {
     form_view(&ui, &values, &errors)
 }
 
-/// A multipart post (the avatar is a file): server rules, then PRG with a flash or the form again.
-async fn form_submit(ui: Ui, mut parts: axum::extract::Multipart) -> Response {
-    let (mut values, mut files) = (Vec::new(), Vec::new());
-    while let Ok(Some(part)) = parts.next_field().await {
-        let (name, file) = (
-            part.name().unwrap_or("").to_string(),
-            part.file_name().map(str::to_string),
-        );
-        match file {
-            Some(f) => {
-                let n = part.bytes().await.map_or(0, |b| b.len());
-                if !f.is_empty() {
-                    files.push(format!(" with {f} ({n} bytes)"));
-                }
-            }
-            None => values.push((name, part.text().await.unwrap_or_default())),
-        }
-    }
-    let get = |k: &str| {
-        values
-            .iter()
-            .find(|(n, _)| n == k)
-            .map_or("", |(_, v)| v.as_str())
-    };
+/// A multipart post (the avatar is a file): server rules, then PRG with a flash or the form
+/// again with 422.
+async fn form_submit(ui: Ui, posted: Posted) -> Result<Redirect, Page> {
     let mut errors = Vec::new();
-    if get("handle") == "admin" {
+    if posted.get("handle") == "admin" {
         errors.push(("handle", "That handle is reserved."));
     }
-    if get("email").ends_with("@example.com") {
+    if posted.get("email").ends_with("@example.com") {
         errors.push(("email", "example.com addresses are not accepted."));
     }
-    if errors.is_empty() {
-        return ui
-            .redirect("/form")
-            .flash(&format!(
-                "Signed up as {}{}.",
-                get("handle"),
-                files.concat()
-            ))
-            .into_response();
+    if !errors.is_empty() {
+        return Err(form_view(&ui, posted.pairs(), &errors).invalid());
     }
-    (
-        StatusCode::UNPROCESSABLE_ENTITY,
-        form_view(&ui, &values, &errors),
-    )
-        .into_response()
+    let files: String = posted
+        .files()
+        .iter()
+        .map(|f| format!(" with {} ({} bytes)", f.file_name, f.bytes.len()))
+        .collect();
+    let handle = posted.get("handle");
+    Ok(ui
+        .redirect("/form")
+        .flash(&format!("Signed up as {handle}{files}.")))
 }
 
-/// The inputs page's values: from the query while filtering (unsaved), else saved.
-#[derive(Deserialize, Serialize, Default)]
+/// The inputs page's values: from the query while filtering (unsaved), else saved; a missing
+/// one is its default.
+#[derive(Deserialize, Serialize)]
+#[serde(default)]
 struct Inputs {
-    size: Option<String>,
-    volume: Option<i64>,
-    accent: Option<String>,
+    size: String,
+    volume: i64,
+    accent: String,
     #[serde(rename = "accent-alpha")]
-    alpha: Option<u8>,
+    alpha: u8,
     #[serde(rename = "accent-preset")]
     preset: Option<String>,
-    price_min: Option<i64>,
-    price_max: Option<i64>,
-    country: Option<String>,
+    price_min: i64,
+    price_max: i64,
+    country: String,
+}
+
+impl Default for Inputs {
+    fn default() -> Self {
+        Inputs {
+            size: "m".into(),
+            volume: 40,
+            accent: ACCENTS[0].into(),
+            alpha: 100,
+            preset: None,
+            price_min: 20,
+            price_max: 80,
+            country: "es".into(),
+        }
+    }
 }
 
 const SIZES: [(&str, &str, &str); 3] = [
@@ -361,103 +333,77 @@ async fn inputs_page(ui: Ui, Query(q): Query<Inputs>, Saved(saved): Saved<Inputs
     } else {
         saved
     };
-    page(
-        &ui,
-        "Select, range, colour",
-        lui! {
-            (ui.flash())
-            (inputs(&ui, &v))
-            p class="lui-note" { "Without the enhancement script the outputs and the swatch show the last saved values and update on submit, and the country filter needs its button." }
-        },
-    )
+    let body = lui! {
+        (inputs(&ui, &v))
+        p class="lui-note" { "Without the enhancement script the outputs and the swatch show the last saved values and update on submit, and the country filter needs its button." }
+    };
+    page(&ui, "Select, range, colour", body)
 }
 
 /// The form of select, range and colour, showing `v`.
 fn inputs(ui: &Ui, v: &Inputs) -> Markup {
     lui! {
-            form id="inputs" data-lui="swap" class="lui-form" method="post" action="/inputs" {
-                // code: /inputs
-                Select("size", "Size") value=(v.size.as_deref().unwrap_or("m")) options=(SIZES);
-                Select("country", "Country") value=(v.country.as_deref().unwrap_or("es")) groups=(COUNTRIES) search="/inputs";
-                Range("volume", "Volume") value=(v.volume.unwrap_or(40)) step=5;
-                RangePair("price", "Price") values=(v.price_min.unwrap_or(20), v.price_max.unwrap_or(80)) step=5;
-                Color("accent", "Accent") value=(v.accent.as_deref().unwrap_or("#1f6f5f")) presets=(&ACCENTS) alpha=(v.alpha.unwrap_or(100));
-                // end code
-                (ui.button("Save").primary())
-            }
+        // code: /inputs
+        Form("/inputs") submit="Save" {
+            Select("size", "Size") value=(&v.size) options=(SIZES);
+            Select("country", "Country") value=(&v.country) groups=(COUNTRIES) search="/inputs";
+            Range("volume", "Volume") value=(v.volume) step=5;
+            RangePair("price", "Price") values=(v.price_min, v.price_max) step=5;
+            Color("accent", "Accent") value=(&v.accent) presets=(&ACCENTS) alpha=(v.alpha);
+        }
+        // end code
     }
 }
 
 /// Only known sizes, countries and `#rrggbb` colours are kept; numbers are clamped.
 async fn inputs_submit(ui: Ui, Form(f): Form<Inputs>) -> Redirect {
-    let known = |v: &Option<String>, ok: &dyn Fn(&str) -> bool| v.clone().filter(|v| ok(v));
-    let hex = |c: &str| c.len() == 7 && c.starts_with('#');
-    let (lo, hi) = loco_ui::range::order(
-        f.price_min.unwrap_or(20).clamp(0, 100),
-        f.price_max.unwrap_or(80).clamp(0, 100),
-    );
+    let d = Inputs::default();
+    let hex = |c: &String| c.len() == 7 && c.starts_with('#');
+    let size = SIZES.iter().any(|(v, ..)| *v == f.size);
+    let country = COUNTRIES
+        .iter()
+        .flat_map(|(_, cs)| cs)
+        .any(|(v, ..)| *v == f.country);
+    let accent = f.preset.filter(hex).or(Some(f.accent).filter(hex));
+    let (lo, hi) = loco_ui::range::order(f.price_min.clamp(0, 100), f.price_max.clamp(0, 100));
     let clean = Inputs {
-        size: known(&f.size, &|s| SIZES.iter().any(|(v, ..)| *v == s)),
-        country: known(&f.country, &|c| {
-            COUNTRIES
-                .iter()
-                .flat_map(|(_, cs)| cs)
-                .any(|(v, ..)| *v == c)
-        }),
-        accent: known(&f.preset, &hex).or(known(&f.accent, &hex)),
-        alpha: Some(f.alpha.unwrap_or(100).min(100)),
-        volume: Some(f.volume.unwrap_or(40).clamp(0, 100)),
-        price_min: Some(lo),
-        price_max: Some(hi),
+        size: if size { f.size } else { d.size },
+        country: if country { f.country } else { d.country },
+        accent: accent.unwrap_or(d.accent),
+        alpha: f.alpha.min(100),
+        volume: f.volume.clamp(0, 100),
+        price_min: lo,
+        price_max: hi,
         preset: None,
     };
     ui.redirect("/inputs").flash("Inputs saved.").save(&clean)
 }
 
-/// One pick (alignment) and several (style), sent with the form they sit in.
+/// One pick (alignment) and several (style), sent with the form they sit in, which says what
+/// it was sent with.
 fn toggle_group(ui: &Ui) -> Markup {
+    let picked = |name| ui.params(name).collect::<Vec<_>>().join(", ");
     lui! {
-        form method="get" action="/toggle-group" {
-            Stack(lui! {
-                // code: /toggle-group
-                ToggleGroup("align", "Alignment") { option "left" "Left"; option "center" "Center"; option "right" "Right"; }
-                ToggleGroup("style", "Text style") multiple {
-                    option "bold" "Bold" icon=(Icon::Bold); option "italic" "Italic" icon=(Icon::Italic);
-                }
-                // end code
-                Button("Apply") primary;
-            })
+        Form("/toggle-group") get submit="Apply" {
+            // code: /toggle-group
+            ToggleGroup("align", "Alignment") { option "left" "Left"; option "center" "Center"; option "right" "Right"; }
+            ToggleGroup("style", "Text style") multiple {
+                option "bold" "Bold" icon=(Icon::Bold); option "italic" "Italic" icon=(Icon::Italic);
+            }
+            // end code
+            @if ui.param("align").is_some() { p class="lui-note" { "Alignment: " (picked("align")) ". Style: " (picked("style")) "." } }
         }
     }
-}
-
-async fn toggle_group_page(ui: Ui) -> Page {
-    let picked = |name| ui.params(name).collect::<Vec<_>>().join(", ");
-    let body = lui! {
-        (toggle_group(&ui))
-        p class="lui-note" { "Alignment: " (picked("align")) ". Style: " (picked("style")) "." }
-    };
-    page(&ui, "Toggle group", body)
 }
 
 /// A one-time code: one field the phone offers to fill from the message.
 fn otp(ui: &Ui) -> Markup {
     lui! {
-        form method="get" action="/otp" {
-            Stack(lui! {
-                // code: /otp
-                InputOtp("code", "Code from the text message");
-                // end code
-                Button("Verify") primary;
-            })
+        Form("/otp") get submit="Verify" {
+            // code: /otp
+            InputOtp("code", "Code from the text message");
+            // end code
+            @if let Some(code) = ui.param("code") { p class="lui-note" { "Sent " code { (code) } "." } }
         }
     }
-}
-
-async fn otp_page(ui: Ui) -> Page {
-    let body = lui! {
-        (otp(&ui))
-        @if let Some(code) = ui.param("code") { p class="lui-note" { "Sent " code { (code) } "." } }
-    };
-    page(&ui, "One-time code", body)
 }

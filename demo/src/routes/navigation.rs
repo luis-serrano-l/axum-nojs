@@ -9,20 +9,26 @@ use axum::{
 use loco_ui::prelude::*;
 
 pub(crate) fn routes() -> Router {
-    Router::new()
-        .route("/palette", get(palette_page))
-        .route("/nav", get(nav_page))
-        .route("/sidebar", get(sidebar_page))
-        .route("/nav-menu", get(nav_menu_page))
+    super::pages(PAGES).route("/palette", get(palette_page))
 }
 
-/// Each page's live component, which the index shows too (`site::preview`).
-pub(crate) const PREVIEWS: &[super::Preview] = &[
-    ("/palette", |ui| palette(ui).render()),
-    ("/nav", drawer),
-    ("/sidebar", sidebar),
-    ("/nav-menu", nav_menu),
+/// The pages that are their component and a note (`super::pages`).
+pub(crate) const PAGES: &[super::Simple] = &[
+    ("/nav", drawer, ""),
+    (
+        "/sidebar",
+        sidebar,
+        "Put it in a drawer's `.sidebar()` (or the app shell block) and it becomes a drawer on narrow screens.",
+    ),
+    (
+        "/nav-menu",
+        nav_menu,
+        "A panel opens on click and closes on a click outside or Escape; the link to this page is marked current.",
+    ),
 ];
+
+/// The other pages' live components, which the index shows too (`site::preview`).
+pub(crate) const PREVIEWS: &[super::Preview] = &[("/palette", |ui| palette(ui).render())];
 
 /// Every demo page as a command, plus a few deep links.
 fn palette(ui: &Ui) -> loco_ui::palette::Palette<'_> {
@@ -60,10 +66,10 @@ fn drawer(ui: &Ui) -> Markup {
     lui! {
             // code: /nav
             Drawer("Menu") id="site" title="loco-ui" sidebar
-                nav=(html! { ul {
+                nav={ ul {
                     li { a href="/nav" aria-current="page" { "Overview" } }
                     li { a href="/table" { "Files" } } li { a href="/dashboard" { "Reports" } } li { a href="/settings" { "Settings" } }
-                } }) {
+                } } {
                     Breadcrumbs { link "Home" "/"; link "Projects" "/nav"; here "loco-ui"; }
                     p { "Wider than 60rem the navigation is a sidebar; narrower, the menu button opens it as a drawer. Escape or a click outside closes it." }
                     p { "A long trail folds its middle so both ends stay readable:" }
@@ -75,10 +81,6 @@ fn drawer(ui: &Ui) -> Markup {
                     p class="lui-note" { "Server-opened: " a href="/nav?dialog=site" { "?dialog=site" } }
                 }
     }
-}
-
-async fn nav_page(ui: Ui) -> Page {
-    page(&ui, "Drawer and breadcrumbs", drawer(&ui))
 }
 
 /// A navigation column with groups, icons and counts; the link to this page is current.
@@ -99,14 +101,6 @@ fn sidebar(ui: &Ui) -> Markup {
     }
 }
 
-async fn sidebar_page(ui: Ui) -> Page {
-    let body = lui! {
-        (sidebar(&ui))
-        p class="lui-note" { "Put it in a drawer's " code { ".sidebar()" } " (or the app shell block) and it becomes a drawer on narrow screens." }
-    };
-    page(&ui, "Sidebar", body)
-}
-
 /// Top navigation: plain links and buttons that open a panel of links.
 fn nav_menu(ui: &Ui) -> Markup {
     lui! {
@@ -119,12 +113,4 @@ fn nav_menu(ui: &Ui) -> Markup {
         }
         // end code
     }
-}
-
-async fn nav_menu_page(ui: Ui) -> Page {
-    let body = lui! {
-        (nav_menu(&ui))
-        p class="lui-note" { "A panel opens on click and closes on a click outside or Escape; the link to this page is marked current." }
-    };
-    page(&ui, "Navigation menu", body)
 }

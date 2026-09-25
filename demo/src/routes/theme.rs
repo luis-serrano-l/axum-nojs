@@ -109,7 +109,7 @@ fn preview(ui: &Ui, c: &Chosen, dark: bool) -> Markup {
         div class="lui-theme-preview" style=(style) {
             (ui.card().title("Invite a teammate").description("They get an email with a link.").body(html! {
                 (ui.input(&format!("preview-{scheme}-email"), "Email").email().placeholder("ada@example.com"))
-                (ui.cluster(html! {
+                (ui.cluster().body(html! {
                     (ui.button("Send invite").primary())
                     (ui.button("Cancel"))
                     (ui.badge("Beta").secondary())
@@ -143,11 +143,11 @@ fn pickers(ui: &Ui, c: &Chosen) -> Markup {
                 }
             }
             Range("radius", "Radius (px)") value=(i64::from(c.radius)) min=0 max=24;
-            Cluster(lui! {
+            Cluster {
                 Button("Preview") primary;
                 LinkButton("Download theme.css", &download);
                 a href="/theme" { "Reset" }
-            })
+            }
         }
         div class="lui-theme-previews" {
             (preview(ui, c, false))
