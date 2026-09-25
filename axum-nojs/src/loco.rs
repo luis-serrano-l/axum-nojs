@@ -79,6 +79,57 @@
 //! # assert_eq!(FieldErrors::from(&e).get("title"), Some("Give the note a title."));
 //! ```
 //!
+//! Paging with SeaORM (Loco's ORM): the table reads `?page=`, the page size (`per.<id>`), the
+//! sort and the filter from the request, and SeaORM's paginator asks the database for that
+//! page and the count, never every row. `.paged(total)` then draws the pager:
+//!
+//! ```rust
+//! use axum_nojs::{prelude::*, table::Row};
+//! use sea_orm::{DatabaseConnection, DbErr, EntityTrait, PaginatorTrait, QueryFilter, QueryOrder};
+//! # mod notes {
+//! #     use sea_orm::entity::prelude::*;
+//! #     #[derive(Clone, Debug, PartialEq, DeriveEntityModel)]
+//! #     #[sea_orm(table_name = "notes")]
+//! #     pub struct Model { #[sea_orm(primary_key)] pub id: i32, pub title: String }
+//! #     #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
+//! #     pub enum Relation {}
+//! #     impl ActiveModelBehavior for ActiveModel {}
+//! # }
+//! use sea_orm::ColumnTrait;
+//!
+//! async fn notes_table(ui: &Ui, db: &DatabaseConnection) -> Result<Markup, DbErr> {
+//!     let table = ui.table("notes", "/notes").column("title", "Title").sortable();
+//!     let query = notes::Entity::find().filter(notes::Column::Title.contains(table.filter()));
+//!     let query = match table.sort() {
+//!         Some(("title", true)) => query.order_by_desc(notes::Column::Title),
+//!         _ => query.order_by_asc(notes::Column::Title),
+//!     };
+//!     let pages = query.paginate(db, table.per_page() as u64);
+//!     let total = pages.num_items().await? as usize;
+//!     let rows = pages.fetch_page(table.page() as u64 - 1).await?; // SeaORM counts from 0
+//!     let rows = rows.into_iter().map(|n| Row::new([html! { (n.title) }]));
+//!     Ok(html! { (table.rows(rows).paged(total)) })
+//! }
+//! # use sea_orm::{DatabaseBackend, MockDatabase, Value};
+//! # #[tokio::main(flavor = "current_thread")]
+//! # async fn main() {
+//! #     let count = std::collections::BTreeMap::from([("num_items", Value::BigInt(Some(42)))]);
+//! #     let note = notes::Model { id: 11, title: "Eleventh".into() };
+//! #     let db = MockDatabase::new(DatabaseBackend::Sqlite)
+//! #         .append_query_results([[count]])
+//! #         .append_query_results([[note]])
+//! #         .into_connection();
+//! #     let ui = Ui::from_request("/notes", "page=2", "");
+//! #     let html = notes_table(&ui, &db).await.unwrap().into_string();
+//! #     assert!(html.contains("11–20 of 42") && html.contains("Eleventh"), "{html}");
+//! #     let log = format!("{:?}", db.into_transaction_log());
+//! #     assert!(log.contains("LIMIT") && log.contains("OFFSET"), "{log}");
+//! # }
+//! ```
+//!
+//! The "Load more" [`Pager`](crate::pager::Pager) shows every row up to `?page=`, so it
+//! fetches the first `pager.shown()` rows: `query.limit(pager.shown() as u64).all(db)`.
+//!
 //! The strict [`csp`](crate::enhance::csp) layer is not added: an app states its own policy
 //! (add `axum::middleware::from_fn(axum_nojs::enhance::csp)` in `after_routes` to use ours).
 //!

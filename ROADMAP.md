@@ -766,8 +766,14 @@ loco-rs source (fetch it into `~/.cargo/registry` with a scratch crate) before r
   there: Loco's prelude makes `.validate()` ambiguous (call `Validate::validate`), and the
   pairs borrow, so build the form inside `html!`. Before this, the `loco` doctests were not run
   (`cargo test <filter>` skipped them); `verify.sh` and CI now run `--doc` explicitly.
-- [ ] Data: SeaORM's paginator feeds `paged_table`/`pager` (`?page=` and page size) without
+- [x] Data: SeaORM's paginator feeds `paged_table`/`pager` (`?page=` and page size) without
   loading every row; an example query in the docs.
+  Done: no new API; the table already exposes `page()`, `per_page()`, `sort()` and `filter()`.
+  The `loco` module doc has `notes_table(ui, db)`: filter, sort, `paginate(db, per_page)`,
+  `num_items()` and `fetch_page(page - 1)`, then `.paged(total)`. It runs against SeaORM's
+  `MockDatabase` (dev-dependency `sea-orm` 2.0, Loco 1.2's version) and asserts the range
+  (`11–20 of 42`) and that the SQL carries `LIMIT`/`OFFSET`. The "Load more" pager's query
+  (`limit(pager.shown())`) is stated beside it.
 - [ ] Flash and PRG: `Redirect` + `ui.flash()` work with Loco's cookie setup (the private
   cookie key from `config/*.yaml` if we use signed cookies); no conflict with Loco's
   session or auth middleware.
