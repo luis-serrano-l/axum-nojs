@@ -193,14 +193,28 @@ fn form_view(ui: &Ui, values: &[(String, String)], errors: &[(&str, &str)]) -> P
         html! {
             (ui.flash())
             p { "Labels " @if inline { "beside the fields. " a href="/form" { "Put them above" } } @else { "above the fields. " a href="/form?layout=inline" { "Put them beside" } } "." }
-            @if !errors.is_empty() { p class="lui-error" { "Server-side checks failed. Browser validation passed, these rules only live on the server." } }
+            p class="lui-note" { "The handle " code { "admin" } " and " code { "@example.com" } " addresses pass the browser's checks and fail the server's: the form comes back with an error summary on top that takes the focus and links to each field. " a href="/form?errors=1" { "See it" } "." }
             (form)
         },
     )
 }
 
+/// `?errors=1` shows the answer to a post the server refused, without posting.
 async fn form_page(ui: Ui) -> Page {
-    form_view(&ui, &[], &[])
+    if ui.param("errors").is_none() {
+        return form_view(&ui, &[], &[]);
+    }
+    let values = [
+        ("name", "Ada"),
+        ("email", "ada@example.com"),
+        ("handle", "admin"),
+    ];
+    let values: Vec<(String, String)> = values.map(|(n, v)| (n.into(), v.into())).into();
+    let errors = [
+        ("email", "example.com addresses are not accepted."),
+        ("handle", "That handle is reserved."),
+    ];
+    form_view(&ui, &values, &errors)
 }
 
 /// A multipart post (the avatar is a file): server rules, then PRG with a flash or the form again.

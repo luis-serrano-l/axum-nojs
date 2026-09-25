@@ -368,6 +368,17 @@ pub const SPECS: &[ComponentSpec] = &[
         needs_js: NeedsJs::No,
     },
     ComponentSpec {
+        name: "Error summary",
+        module: "error_summary",
+        features: &[
+            f("role=\"alert\"", ALWAYS),
+            f("aria-labelledby", ALWAYS),
+            f("autofocus", b("79", "110", "15.4")),
+        ],
+        fallback: "where autofocus only works on form controls the summary is still first in the form and read out as an alert",
+        needs_js: NeedsJs::Partial("moving the focus into the field a link points to needs script"),
+    },
+    ComponentSpec {
         name: "Counter",
         module: "counter",
         features: &[
@@ -748,6 +759,7 @@ mod tests {
         ("paged_table", include_str!("paged_table.rs")),
         ("wizard", include_str!("wizard.rs")),
         ("form", include_str!("form.rs")),
+        ("error_summary", include_str!("error_summary.rs")),
         ("counter", include_str!("counter.rs")),
         ("theme", include_str!("theme.rs")),
         ("flash", include_str!("flash.rs")),

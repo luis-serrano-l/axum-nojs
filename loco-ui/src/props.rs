@@ -245,6 +245,12 @@ pub(crate) const COMPONENTS: &[Component] = &[
         props: crate::empty_state::EmptyState::PROPS,
     },
     Component {
+        module: "error_summary",
+        builder: "ErrorSummary",
+        calls: &["ui.error_summary(errors: &[(&str, &str)])"],
+        props: crate::error_summary::ErrorSummary::PROPS,
+    },
+    Component {
         module: "flash",
         builder: "Flash",
         calls: &["ui.flash()"],

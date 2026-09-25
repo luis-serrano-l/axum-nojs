@@ -16,7 +16,7 @@ use tower_http::compression::{
 };
 
 /// Every demo path the no-script test and the screenshot test visit.
-pub const PATHS: [&str; 33] = [
+pub const PATHS: [&str; 34] = [
     "/",
     "/caps",
     "/button?loading=1",
@@ -40,6 +40,7 @@ pub const PATHS: [&str; 33] = [
     "/list?page=2",
     "/form",
     "/form?layout=inline",
+    "/form?errors=1",
     "/counter",
     "/inputs",
     "/table?sort=size&dir=desc&q=a&per.files=5&page=2&cols=name,size",

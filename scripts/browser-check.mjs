@@ -163,7 +163,7 @@ try {
   await type("#f-age", "36");
   await type("#f-handle", "ada_l");
   await type("#f-avatar", process.cwd() + "/loco-ui-test/tests/fixture.png");
-  await click(".lui-form button[type=submit]");
+  await click(".lui-form-actions button");
   await until(async () => (await js("return document.querySelector('.lui-flash')?.textContent || ''")).includes("fixture.png"), "file posted as multipart and named in the flash");
   assert(await navigations() === 1, "form: submitted with a file without a reload");
 
@@ -321,6 +321,17 @@ try {
   await click("#lui-calendar-day a[href*='day=2026-10-15']");
   await until(async () => await js("return !!document.querySelector('.lui-calendar-picked[href*=\"2026-10-15\"]')"), "calendar: day picked");
   assert(await navigations() === 1, "calendar: a day picked in place");
+
+  // Error summary: a refused sign-in swaps the form in place and the summary takes the focus;
+  // a full load of the same answer focuses it through autofocus.
+  await go("/app/signin");
+  await type("#f-email", "ada@example.com");
+  await type("#f-password", "short");
+  await click(".lui-form-actions button");
+  await until(async () => await js("return !!document.querySelector('.lui-error-summary')"), "error summary shown");
+  assert(await js("return document.activeElement.closest('.lui-error-summary') !== null") && await navigations() === 1, "error summary: swapped in place and focused");
+  await go("/form?errors=1");
+  assert(await js("return document.activeElement.getAttribute('href')") === "#f-email", "error summary: focused on load by autofocus");
 
   // Tooltip: hidden until its trigger has focus (or the pointer), then shown; named by aria-describedby.
   await go("/feedback");

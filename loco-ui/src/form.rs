@@ -20,7 +20,8 @@
 //! - `field-sizing` (Chrome 123, not yet in Firefox or Safari): a textarea grows with its
 //!   content.
 //! - Post/Redirect/Get for success; on error the server re-renders the form with values and
-//!   messages.
+//!   messages, and an [error summary](crate::error_summary) at the top that links to each
+//!   field in error and takes the focus.
 //!
 //! **What it does not do without script:** validate against the server as you type, or warn
 //! about unsaved changes on leaving the page.
@@ -399,6 +400,25 @@ impl<'a> Form<'a> {
             })
     }
 
+    /// The error summary: every field with a message, linked by its id and named by its
+    /// label, then the messages that name no field.
+    fn summary(&self) -> crate::error_summary::ErrorSummary<'a> {
+        let fields: Vec<Field<'a>> = self.filled().flat_map(|(_, fs)| fs).collect();
+        let mut items: Vec<_> = fields
+            .iter()
+            .filter_map(|f| {
+                let id = f.id.map_or_else(|| format!("f-{}", f.name), str::to_string);
+                Some((Some(id), Some(f.label), f.error?))
+            })
+            .collect();
+        let loose = self
+            .errors
+            .iter()
+            .filter(|(n, _)| !fields.iter().any(|f| f.name == *n));
+        items.extend(loose.map(|(_, m)| (None, None, *m)));
+        crate::error_summary::ErrorSummary::from_fields(items)
+    }
+
     /// Whether any field has a server message.
     pub(crate) fn has_errors(&self) -> bool {
         self.filled()
@@ -436,6 +456,7 @@ impl Render for Form<'_> {
         html! {
             form id=(enhance::swap_id("lui-form", self.id.unwrap_or(action))) data-lui="swap" class=(class) method="post" action=(action)
                 enctype=[multipart.then_some("multipart/form-data")] {
+                (self.summary())
                 (self.fields())
                 div class="lui-form-actions" { (Button::new(Caps::NONE, self.submit).primary()) }
             }

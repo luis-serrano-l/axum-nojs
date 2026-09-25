@@ -164,7 +164,7 @@ pub(crate) const COMPONENTS: [(&str, &str, &str, &str, &str); 30] = [
         "/form",
         "Validated form",
         "Input",
-        ":user-invalid, <fieldset>, <output> counters, field-sizing, multipart, PRG",
+        ":user-invalid, <fieldset>, <output> counters, field-sizing, multipart, PRG, error summary with autofocus",
         "Fields the browser checks first and the server checks again.",
     ),
     (

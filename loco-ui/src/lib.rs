@@ -67,6 +67,7 @@ pub mod dialog;
 pub mod drawer;
 pub mod empty_state;
 pub mod enhance;
+pub mod error_summary;
 pub mod flash;
 pub mod form;
 pub mod grid;
@@ -287,6 +288,7 @@ pub const COMPONENT_CSS: &[&str] = &[
     combobox::CSS,
     pager::CSS,
     form::CSS,
+    error_summary::CSS,
     counter::CSS,
     theme::CSS,
     flash::CSS,

@@ -47,6 +47,9 @@
 //! inside the form as the upload goes out, when the form has one), opens
 //! the `:target` dialog fallback as a real modal, moves through an open popover menu with the
 //! arrow keys, searches a combobox as you type and walks its results with the arrow keys.
+//! After a swap, an element marked `autofocus` in the new markup takes the focus (a form sent
+//! back with an error summary starts there, as it would on a page load); otherwise the
+//! element that had the focus gets it back.
 //! A tab title opens its panel and slides the underline on the click itself; the server's
 //! answer replaces the strip quietly once the slide ends (a lazy panel fills in then).
 //!
@@ -142,7 +145,8 @@ function apply(doc, id, url, hist, mode, quiet, fast) {
     if (doc.title) document.title = doc.title;
     var theme = doc.documentElement.getAttribute("data-theme");
     if (theme) document.documentElement.setAttribute("data-theme", theme);
-    restoreFocus(f);
+    var af = anchor.querySelector("[autofocus]"); // as on a load
+    af ? af.focus() : restoreFocus(f);
     swapped(anchor, url, mode);
   };
   if (hist !== "none" && url !== location.href) {

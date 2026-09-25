@@ -1028,9 +1028,18 @@ every Loco API named below against loco-rs 1.2 before relying on it, as M27 did.
   is the same without a request. The scaffold's `Params` derives `Deserialize, Validate` and
   create/update match on `Valid<Params>`; `examples/loco-app`'s notes were regenerated with
   the real `cargo loco generate scaffold` (views unchanged). Loco-only, so no demo route.
-- [ ] Error summary (GOV.UK): `ui.error_summary(&errors)`, a `role="alert"` list at the top
+- [x] Error summary (GOV.UK): `ui.error_summary(&errors)`, a `role="alert"` list at the top
   of the form linking to each field in error by id, focused on load via `autofocus` on its
   heading link; `Form` shows it when it has errors. Demo on `/app/signin` and `/form`.
+  Done: `error_summary.rs` (`ErrorSummary`, setter `.title(..)`, default "There is a
+  problem"; PROPS, spec, props entry). Links go to `#f-<name>`; inside a `Form` they use the
+  field's own id and read "Label: message", and messages naming no field are listed unlinked
+  (the heading then takes `tabindex="-1" autofocus` itself). `Form` renders it first when any
+  message is set. The enhancement script now focuses the `autofocus` element of swapped-in
+  markup (else the old focus, as before), so the enhanced submit behaves like the load.
+  Demo: `/form?errors=1` (new PATHS entry, Blitz shot) shows the server's answer on GET and
+  replaces the ad-hoc error line; `/app/signin` shows it on a refused post (demo test). The
+  browser check asserts the focus both after an in-place swap and on a full load.
 - [ ] A pager fed straight from Loco: `.paged_from(&PagerMeta)` (or `From<&PageResponse<T>>`)
   instead of the hand-written `num_items` + `fetch_page`; a doctest against `MockDatabase`.
 - [ ] Scaffold field kinds: `references` fields become a select (or combobox past N rows) of

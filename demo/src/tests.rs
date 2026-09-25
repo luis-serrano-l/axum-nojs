@@ -562,3 +562,42 @@ async fn component_pages_show_their_props() {
         );
     }
 }
+
+/// A form the server sends back starts with the error summary: one link per field in error,
+/// named by its label, and the focus on its heading.
+#[tokio::test]
+async fn refused_forms_lead_with_an_error_summary() {
+    let text = |req: Request<Body>| async {
+        let res = router().oneshot(req).await.unwrap();
+        let bytes = axum::body::to_bytes(res.into_body(), usize::MAX)
+            .await
+            .unwrap();
+        String::from_utf8(bytes.to_vec()).unwrap()
+    };
+    let req = Request::post("/app/signin")
+        .header("content-type", "application/x-www-form-urlencoded")
+        .body(Body::from("email=ada&password=short"))
+        .unwrap();
+    let html = text(req).await;
+    assert!(
+        html.contains(r##"<a href="#f-email" autofocus>There is a problem</a>"##),
+        "{html}"
+    );
+    assert!(
+        html.contains(r##"<a href="#f-password">Password: The password needs"##),
+        "{html}"
+    );
+
+    let html = text(Request::get("/form?errors=1").body(Body::empty()).unwrap()).await;
+    let summary = html.find("lui-error-summary").unwrap();
+    assert!(
+        summary < html.find(r#"id="f-name""#).unwrap(),
+        "the summary comes first"
+    );
+    assert!(html.contains(r##"<a href="#f-handle">Handle: That handle is reserved.</a>"##));
+    assert!(
+        !text(Request::get("/form").body(Body::empty()).unwrap())
+            .await
+            .contains("lui-error-summary\"")
+    );
+}

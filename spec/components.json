@@ -692,6 +692,28 @@
       ]
     },
     {
+      "name": "Error summary",
+      "module": "error_summary",
+      "features": [
+        { "name": "role=\"alert\"", "baseline": { "chrome": "1", "firefox": "1", "safari": "1" } },
+        { "name": "aria-labelledby", "baseline": { "chrome": "1", "firefox": "1", "safari": "1" } },
+        { "name": "autofocus", "baseline": { "chrome": "79", "firefox": "110", "safari": "15.4" } }
+      ],
+      "fallback": "where autofocus only works on form controls the summary is still first in the form and read out as an alert",
+      "needs_js": "partial",
+      "needs_js_note": "moving the focus into the field a link points to needs script",
+      "builders": [
+        {
+          "builder": "ErrorSummary",
+          "lui": "ErrorSummary",
+          "calls": ["ui.error_summary(errors: &[(&str, &str)])"],
+          "props": [
+            { "name": "title", "kind": "value", "args": "text: &'a str", "default": "There is a problem", "attr": "", "doc": "The heading." }
+          ]
+        }
+      ]
+    },
+    {
       "name": "Counter",
       "module": "counter",
       "features": [
