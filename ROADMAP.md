@@ -1192,6 +1192,8 @@ every Loco API named below against loco-rs 1.2 before relying on it, as M27 did.
   component's file into the app, from the spec JSON as the registry. Components read `ui`, so
   first decide whether a vendored file keeps `use loco_ui::…` for `Ui` or copies it; ask
   the owner before starting.
+  Blocked on the owner: the question and a suggested answer (keep `use loco_ui::…`) are in
+  BLOCKED.md; not started.
 
 ### Positioning
 - [ ] README and `docs/loco.md` lead with "server-rendered scaffolds for Loco 1.x, zero

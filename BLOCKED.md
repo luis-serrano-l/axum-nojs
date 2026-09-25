@@ -55,3 +55,22 @@ loco-rs's source before anything is built on them.
 
 Posted on 2026-09-23 after the owner's approval:
 https://github.com/DioxusLabs/blitz/issues/923#issuecomment-5800768284
+
+## Copy-paste mode: what does a vendored file keep? (M29, "Copy-paste mode" box), open
+
+`cargo lui add <component>` would copy a component's file into the app (shadcn and templUI
+do this). loco-ui components read the request through `Ui` (caps, theme, state, language)
+and build on the primitives (`Button`, `Input`, `Icon`, the i18n table, `enhance::swap_id`),
+so a copied file cannot stand alone. Options:
+
+1. **Keep `use loco_ui::…`** (suggested): the vendored file imports `Ui`, the primitives and
+   the i18n table from the crate, and only the component's own markup, CSS and `PROPS` are
+   the app's to edit. Small, stays in step with fixes to the primitives; the app still
+   depends on `loco-ui`.
+2. **Copy everything it touches**: the file plus `Ui`, the primitives and their CSS, renamed
+   into the app. Fully owned, but hundreds of lines per component and no upstream fixes.
+3. **Do not build it**: the blocks and the "write your own" page (M24) already show how to
+   make a component in the app; the spec JSON is the registry for tools.
+
+Suggested answer: 1, with the command writing `src/components/<name>.rs` and registering its
+CSS through `Page::css`. Nothing is built until you choose.
