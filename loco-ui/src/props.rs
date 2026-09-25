@@ -197,6 +197,12 @@ pub(crate) const COMPONENTS: &[Component] = &[
         props: crate::card::Card::PROPS,
     },
     Component {
+        module: "chart",
+        builder: "Chart",
+        calls: &["ui.chart(title: &str)"],
+        props: crate::chart::Chart::PROPS,
+    },
+    Component {
         module: "cluster",
         builder: "Cluster",
         calls: &["ui.cluster(content: Markup)"],

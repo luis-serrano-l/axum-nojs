@@ -29,6 +29,11 @@ dashboard|/dashboard|card
 palette|/palette?q=ta|command
 settings|/settings|switch
 stream|/stream|skeleton
+chart|/chart|chart
+blocks-shell|/blocks/shell|sidebar
+blocks-auth|/blocks/auth|
+blocks-record|/blocks/record|
+blocks-error|/no-such-page|
 "
 
 PORT=3009 target/debug/demo >/dev/null 2>&1 &

@@ -1167,6 +1167,35 @@
       ]
     },
     {
+      "name": "Chart",
+      "module": "chart",
+      "features": [
+        { "name": "<svg>", "baseline": { "chrome": "7", "firefox": "4", "safari": "5.1" } },
+        { "name": "role=\"img\"", "baseline": { "chrome": "1", "firefox": "1", "safari": "1" } },
+        { "name": "<title>", "baseline": { "chrome": "1", "firefox": "1", "safari": "1" } },
+        { "name": "CSS custom properties in SVG", "baseline": { "chrome": "49", "firefox": "31", "safari": "9.1" } }
+      ],
+      "fallback": "none needed",
+      "needs_js": "partial",
+      "needs_js_note": "zoom, pan and a crosshair that follows the pointer need script",
+      "builders": [
+        {
+          "builder": "Chart",
+          "lui": "Chart",
+          "calls": ["ui.chart(title: &str)"],
+          "props": [
+            { "name": "point", "kind": "item", "args": "label: &'a str, value: f64", "default": "", "attr": "", "doc": "One value, labelled on the x axis." },
+            { "name": "description", "kind": "value", "args": "text: &'a str", "default": "", "attr": "", "doc": "What the chart shows, in a sentence: its `<desc>`." },
+            { "name": "unit", "kind": "value", "args": "unit: &'a str", "default": "", "attr": "", "doc": "Written after every value, as `\" ms\"` or `\"%\"`." },
+            { "name": "id", "kind": "value", "args": "id: &'a str", "default": "", "attr": "id", "doc": "The id its parts are named from; `chart-<title>` by default." },
+            { "name": "bar", "kind": "switch", "args": "", "default": "off", "attr": "", "doc": "Bars, one per point (the default)." },
+            { "name": "line", "kind": "switch", "args": "", "default": "off", "attr": "", "doc": "A line through the points." },
+            { "name": "sparkline", "kind": "switch", "args": "", "default": "off", "attr": "", "doc": "A small line with no axes, to sit beside a number." }
+          ]
+        }
+      ]
+    },
+    {
       "name": "Drawer",
       "module": "drawer",
       "features": [

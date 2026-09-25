@@ -1120,9 +1120,19 @@ every Loco API named below against loco-rs 1.2 before relying on it, as M27 did.
   (PATHS, SOURCES, props tables); Blitz test `blocks_lay_out` checks each block's parts and
   the 404 page (`Page::render_expecting` for non-200); axe covers the new routes. The DSD
   stream page budget went from 128 to 136 KB (FINDINGS).
-- [ ] Server-rendered SVG charts (bar, line, sparkline): `ui.chart(..)` writes `<svg>` with
+- [x] Server-rendered SVG charts (bar, line, sparkline): `ui.chart(..)` writes `<svg>` with
   `<title>`/`<desc>` and a visually hidden data table as the accessible fallback; theme
   colours from `--lui-*` tokens. No JS, which maud-ui and most kits need here.
+  Done: `chart.rs`: `ui.chart(title)` with `.point(label, value)` items, `.bar()` (default),
+  `.line()`, `.sparkline()`, `.description(..)` (`<desc>`), `.unit(..)`, `.id(..)`; PROPS,
+  spec, `lui!` twin. A `<figure>` with `role="img"` SVG named by `<title>`/`<desc>`, a `<title>`
+  per bar and point (native tooltip), a y axis in 1/2/5 steps (negative values hang below
+  zero), and the data in a visually hidden table (a sparkline, being phrasing content, is a
+  `<span>` with the values as hidden text). Fills and strokes are `--lui-*` tokens in CSS,
+  with presentation attributes for renderers without the page's CSS (Blitz draws inline SVG
+  through usvg: FINDINGS). Demo `/chart` (bars, a line, a sparkline in a sentence), checked
+  in Firefox light and dark (`look.sh` now shoots it and the blocks) and by axe. The
+  stylesheet budget went from 64 to 68 KB (blocks and chart).
 - [ ] Missing shadcn components: sidebar, navigation menu, description list, toggle group,
   context menu (a popover on a secondary button), input OTP (one field with
   `autocomplete="one-time-code"` and `inputmode="numeric"`). Each by the component

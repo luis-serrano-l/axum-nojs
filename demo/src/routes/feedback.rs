@@ -10,6 +10,7 @@ pub(crate) fn routes() -> Router {
         .route("/feedback", get(feedback_page))
         .route("/toast", get(toast_page).post(toast_submit))
         .route("/dashboard", get(dashboard_page))
+        .route("/chart", get(chart_page))
 }
 
 async fn feedback_page(ui: Ui) -> Page {
@@ -107,6 +108,31 @@ async fn dashboard_page(ui: Ui) -> Page {
                 ul { li { "#1042, Ada Lovelace, 3 items" } li { "#1041, Grace Hopper, 1 item" } li { "#1040, Alan Turing, 2 items" } }
                 p class="lui-note" { a href="/dashboard?orders=none" { "See the empty state" } }
             }
+        },
+    )
+}
+
+/// Bars, a line and a sparkline, drawn on the server as SVG with the data in a hidden table.
+async fn chart_page(ui: Ui) -> Page {
+    page(
+        &ui,
+        "Charts",
+        lui! {
+            // code: /chart
+            Chart("Signups") description="New accounts per weekday, this week" {
+                point "Mon" 12.0; point "Tue" 18.0; point "Wed" 9.0; point "Thu" 22.0; point "Fri" 15.0;
+            }
+            Chart("Latency") line unit=" ms" description="p50 response time per day" {
+                point "Mon" 41.5; point "Tue" 38.0; point "Wed" 44.2; point "Thu" 36.9; point "Fri" 35.1;
+            }
+            p { "Revenue " strong { "$48,210" } " "
+                Chart("Revenue, last 8 weeks") sparkline {
+                    point "1" 30.0; point "2" 34.0; point "3" 31.0; point "4" 38.0;
+                    point "5" 36.0; point "6" 41.0; point "7" 44.0; point "8" 48.0;
+                }
+            }
+            // end code
+            p class="lui-note" { "Hover a bar or a point for its value (the browser's own tooltip). The numbers are also a table that screen readers read and that stays when the picture cannot load." }
         },
     )
 }

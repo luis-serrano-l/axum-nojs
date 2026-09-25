@@ -586,6 +586,20 @@ pub const SPECS: &[ComponentSpec] = &[
         needs_js: NeedsJs::No,
     },
     ComponentSpec {
+        name: "Chart",
+        module: "chart",
+        features: &[
+            f("<svg>", b("7", "4", "5.1")),
+            f("role=\"img\"", ALWAYS),
+            f("<title>", ALWAYS),
+            f("CSS custom properties in SVG", b("49", "31", "9.1")),
+        ],
+        fallback: "none needed",
+        needs_js: NeedsJs::Partial(
+            "zoom, pan and a crosshair that follows the pointer need script",
+        ),
+    },
+    ComponentSpec {
         name: "Drawer",
         module: "drawer",
         features: &[
@@ -780,6 +794,7 @@ mod tests {
         ("skeleton", include_str!("skeleton.rs")),
         ("empty_state", include_str!("empty_state.rs")),
         ("stat", include_str!("stat.rs")),
+        ("chart", include_str!("chart.rs")),
         ("drawer", include_str!("drawer.rs")),
         ("palette", include_str!("palette.rs")),
     ];

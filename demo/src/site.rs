@@ -20,7 +20,7 @@ pub(crate) fn routes() -> Router {
 
 /// Every component in the index: path, title (what each route passes to `page`), group, the
 /// platform features it is built on, and what it is for in plain words.
-pub(crate) const COMPONENTS: [(&str, &str, &str, &str, &str); 36] = [
+pub(crate) const COMPONENTS: [(&str, &str, &str, &str, &str); 37] = [
     (
         "/feedback",
         "Alerts, progress and tooltips",
@@ -272,6 +272,13 @@ pub(crate) const COMPONENTS: [(&str, &str, &str, &str, &str); 36] = [
         "Blocks",
         "Router::fallback, HTTP status",
         "The 404 and 500 pages in the site's look; the demo's fallback.",
+    ),
+    (
+        "/chart",
+        "Charts",
+        "Feedback",
+        "inline <svg>, <title> tooltips, a hidden data table, --lui-* colours",
+        "Bars, a line and a sparkline drawn on the server, no chart library.",
     ),
 ];
 

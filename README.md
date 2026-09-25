@@ -347,6 +347,7 @@ browser-compat-data; `no` means unshipped, so that browser gets the fallback.
 | Skeleton | `aria-busy`, `role="status"`, `@keyframes`, `prefers-reduced-motion` | 1 / 1 / 1; 1 / 1 / 1; 43 / 16 / 9; 74 / 63 / 10.1 | without CSS animations the bars are still | No |
 | Empty state | `<form method="post">` | 1 / 1 / 1 | none needed | No |
 | Stat | `repeat(auto-fit` | 57 / 52 / 10.1 | none needed | No |
+| Chart | `<svg>`, `role="img"`, `<title>`, `CSS custom properties in SVG` | 7 / 4 / 5.1; 1 / 1 / 1; 1 / 1 / 1; 49 / 31 / 9.1 | none needed | Partly: zoom, pan and a crosshair that follows the pointer need script |
 | Drawer | `<dialog>`, `command="show-modal"`, `closedby`, `@starting-style`, `@media` | 37 / 98 / 15.4; 135 / 144 / 26.2; 134 / 141 / 26; 117 / 129 / 17.5; 1 / 1 / 1 | link to #id and a :target rule; open from the server | No |
 | Command palette | `popover`, `<datalist>`, `<search>`, `accesskey` | 114 / 125 / 17; 20 / 4 / 12.1; 118 / 118 / 17; 1 / 1 / 1 | a <details> disclosure with the same form | Partly: arrow keys through live results and a global Ctrl+K need script |
 <!-- matrix:end -->
