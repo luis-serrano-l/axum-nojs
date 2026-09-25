@@ -80,6 +80,40 @@
 //! } };
 //! assert_eq!(same.into_string(), html);
 //! ```
+//!
+//! **Fetching first, in `lui!`:** [`Ui::table_query`] reads the same sort, filter, page and page
+//! size before the markup, and sorts and slices a `Vec` for you; rows can be tuples of
+//! anything `Render`. A filter of the page's own (`?status=`) is a `.filter_select(..)` in the
+//! search form, or a `.keep(..)` when the page draws it elsewhere: either way every sort link,
+//! the search form and the pager carry it.
+//!
+//! ```rust
+//! use loco_ui::prelude::*;
+//! let ui = Ui::from_request("/orders", "status=paid&sort=total&dir=desc", "");
+//! let orders = [(1, "Ada", "paid", 12.5_f64), (2, "Grace", "pending", 30.0), (3, "Ken", "paid", 20.0)];
+//! let q = ui.table_query("orders", &["id", "total"]);
+//! let status = ui.param("status").unwrap_or("");
+//! let mut found: Vec<_> = orders.iter().filter(|o| (status.is_empty() || o.2 == status) && q.matches(o.1)).collect();
+//! q.sort_by(&mut found, |a, b, key| match key { "total" => a.3.total_cmp(&b.3), _ => a.0.cmp(&b.0) });
+//! let (page, total) = q.page_of(&found);
+//! let html = lui! { Table("orders", "/orders") paged=(total) {
+//!     column "id" "Order" sortable numeric;
+//!     column "customer" "Customer";
+//!     column "status" "Status";
+//!     column "total" "Total" sortable numeric;
+//!     filter_select "status" "Status" ([("", "All"), ("paid", "Paid"), ("pending", "Pending")]);
+//!     rows (page.iter().map(|o| (o.0, o.1, ui.badge(o.2), format!("${:.2}", o.3))));
+//! } }.into_string();
+//! assert!(html.contains("<td>Ken</td>") && !html.contains("Grace"));
+//! assert!(html.contains(r#"href="/orders?sort=total&amp;dir=asc&amp;status=paid&amp;"#), "kept by the sort links");
+//! assert!(html.contains(r#"<option value="paid" selected>Paid</option>"#));
+//! // A display-only table: no search box, no sortable column, no pager, so no link at all.
+//! let recent = lui! { Table("recent", "") hide_search {
+//!     column "who" "Who"; column "what" "What";
+//!     rows ([("Ada", "upgraded to Pro"), ("Ken", "signed up")]);
+//! } }.into_string();
+//! assert!(!recent.contains("<a ") && !recent.contains("<form"));
+//! ```
 
 #[cfg(feature = "loco")]
 use loco_rs::controller::views::pagination::PagerMeta;
@@ -91,6 +125,7 @@ use crate::input::Input;
 use crate::paged_table::{PagedTableOptions, paged_table_with};
 use crate::popover::{MenuItem, Placement, menu};
 use crate::props::{Prop, PropKind};
+use crate::state::decode;
 use crate::{Cap, Caps, Icon, Ui, enhance, slug};
 
 /// One column: the query key it sorts by, its header text, whether it can be sorted, how
@@ -228,46 +263,231 @@ impl From<Vec<Markup>> for Row<'_> {
     }
 }
 
-/// A table's URL parameters: `sort`, `dir`, `q`, `page` and `cols`.
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
-pub(crate) struct TableQuery {
-    /// `?sort=<key>`, checked against the columns by [`TableQuery::sort`].
-    pub sort: Option<String>,
-    /// `?dir=desc`.
-    pub desc: bool,
-    /// `?q=`, the search text as typed.
-    pub filter: String,
-    /// `?page=`, 1-based.
-    pub page: Option<usize>,
-    /// `?cols=a,b`, checked against the columns by [`TableQuery::cols`].
-    pub cols: Option<String>,
+// A row from a tuple of cells, anything `Render` (text, numbers, markup, a badge):
+// `(o.id, o.customer, ui.badge(o.status)).into()`, or the tuples themselves in `.rows(..)`.
+impl<A: Render, B: Render> From<(A, B)> for Row<'_> {
+    fn from((a, b): (A, B)) -> Self {
+        Row::new([a.render(), b.render()])
+    }
 }
 
-impl TableQuery {
-    /// Read the table's parameters from the request.
-    pub fn from_ui(ui: &Ui) -> TableQuery {
+impl<A: Render, B: Render, C: Render> From<(A, B, C)> for Row<'_> {
+    fn from((a, b, c): (A, B, C)) -> Self {
+        Row::new([a.render(), b.render(), c.render()])
+    }
+}
+
+impl<A: Render, B: Render, C: Render, D: Render> From<(A, B, C, D)> for Row<'_> {
+    fn from((a, b, c, d): (A, B, C, D)) -> Self {
+        Row::new([a.render(), b.render(), c.render(), d.render()])
+    }
+}
+
+impl<A: Render, B: Render, C: Render, D: Render, E: Render> From<(A, B, C, D, E)> for Row<'_> {
+    fn from((a, b, c, d, e): (A, B, C, D, E)) -> Self {
+        Row::new([a.render(), b.render(), c.render(), d.render(), e.render()])
+    }
+}
+
+impl<A: Render, B: Render, C: Render, D: Render, E: Render, F: Render> From<(A, B, C, D, E, F)>
+    for Row<'_>
+{
+    fn from((a, b, c, d, e, f): (A, B, C, D, E, F)) -> Self {
+        Row::new([
+            a.render(),
+            b.render(),
+            c.render(),
+            d.render(),
+            e.render(),
+            f.render(),
+        ])
+    }
+}
+
+impl<A: Render, B: Render, C: Render, D: Render, E: Render, F: Render, G: Render>
+    From<(A, B, C, D, E, F, G)> for Row<'_>
+{
+    fn from((a, b, c, d, e, f, g): (A, B, C, D, E, F, G)) -> Self {
+        Row::new([
+            a.render(),
+            b.render(),
+            c.render(),
+            d.render(),
+            e.render(),
+            f.render(),
+            g.render(),
+        ])
+    }
+}
+
+impl<A: Render, B: Render, C: Render, D: Render, E: Render, F: Render, G: Render, H: Render>
+    From<(A, B, C, D, E, F, G, H)> for Row<'_>
+{
+    fn from((a, b, c, d, e, f, g, h): (A, B, C, D, E, F, G, H)) -> Self {
+        Row::new([
+            a.render(),
+            b.render(),
+            c.render(),
+            d.render(),
+            e.render(),
+            f.render(),
+            g.render(),
+            h.render(),
+        ])
+    }
+}
+
+/// A table's URL parameters (`?sort=&dir=&q=&page=&cols=`) and its page size, read before the
+/// markup: made by [`Ui::table_query`], so a route can fetch, sort and slice its rows and then
+/// write the table in `lui!` without holding the builder in a variable. The [`Table`] with the
+/// same id reads the same parameters, so the two agree.
+///
+/// ```rust
+/// use loco_ui::prelude::*;
+/// let ui = Ui::from_request("/orders", "sort=total&dir=desc&q=ADA&page=2", "lui-ui=per.orders=5");
+/// let q = ui.table_query("orders", &["id", "total"]);
+/// assert_eq!((q.sort(), q.filter(), q.page(), q.per_page()), (Some(("total", true)), "ADA", 2, 5));
+/// let mut orders: Vec<(u32, &str, f64)> = (1..=20).map(|i| (i, "Ada", i as f64)).collect();
+/// orders.retain(|o| q.matches(o.1)); // case-insensitive, and true when there is no filter
+/// q.sort_by(&mut orders, |a, b, key| match key {
+///     "total" => a.2.total_cmp(&b.2),
+///     _ => a.0.cmp(&b.0),
+/// });
+/// let (page, total) = q.page_of(&orders);
+/// assert_eq!((page[0].0, page.len(), total), (15, 5, 20));
+/// // Defaults: no sort, no filter, page 1 of 10 rows.
+/// let ui = Ui::from_request("/orders", "sort=secret", "");
+/// let q = ui.table_query("orders", &["id"]);
+/// assert_eq!((q.sort(), q.filter(), q.page(), q.per_page()), (None, "", 1, 10));
+/// ```
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct TableQuery<'a> {
+    /// `?sort=<key>`; checked against the sortable keys (or the table's columns).
+    pub(crate) sort: Option<&'a str>,
+    /// `?dir=desc`.
+    pub(crate) desc: bool,
+    /// `?q=`, the search text as typed, trimmed.
+    pub(crate) filter: &'a str,
+    /// The search text lowercased, for [`TableQuery::matches`].
+    lower: String,
+    /// `?page=`, 1-based.
+    pub(crate) page: Option<usize>,
+    /// `?cols=a,b`, checked against the columns by [`TableQuery::cols_in`].
+    pub(crate) cols: Option<&'a str>,
+    /// Rows per page: `per.<id>` from the `lui-ui` cookie or the URL, else 10, at most 50.
+    per_page: usize,
+}
+
+impl Ui {
+    /// The query of the table `id` ([`TableQuery`]): its sort (only by one of `sortable`),
+    /// search text, page and page size, for fetching the rows before writing the table.
+    /// Defaults: unsorted, no filter, page 1, 10 rows per page, or the size the visitor picked
+    /// (`ui.state.per_page(id)`, capped at 50).
+    pub fn table_query<'a>(&'a self, id: &str, sortable: &[&str]) -> TableQuery<'a> {
+        let mut q = TableQuery::from_ui(self, id);
+        q.sort = q.sort.filter(|k| sortable.contains(k));
+        q
+    }
+}
+
+impl<'a> TableQuery<'a> {
+    /// Read the table's parameters from the request, the sort key unchecked.
+    pub(crate) fn from_ui(ui: &'a Ui, id: &str) -> TableQuery<'a> {
+        let filter = ui.param("q").unwrap_or("").trim();
+        let sizes = crate::paged_table::PAGE_SIZES;
         TableQuery {
-            sort: ui.param("sort").map(str::to_string),
+            sort: ui.param("sort"),
             desc: ui.param("dir") == Some("desc"),
-            filter: ui.param("q").unwrap_or("").trim().to_string(),
+            filter,
+            lower: filter.to_lowercase(),
             page: ui
                 .param("page")
                 .and_then(|v| v.parse().ok())
                 .filter(|&n| n > 0),
-            cols: ui.param("cols").map(str::to_string),
+            cols: ui.param("cols"),
+            per_page: ui
+                .state
+                .per_page(id)
+                .map_or(sizes[1], |n| n.min(sizes[sizes.len() - 1]))
+                .max(1),
         }
     }
+
+    /// The requested sort as `(column key, descending)`.
+    pub fn sort(&self) -> Option<(&'a str, bool)> {
+        self.sort.map(|k| (k, self.desc))
+    }
+
+    /// The requested search text, trimmed, as typed.
+    pub fn filter(&self) -> &'a str {
+        self.filter
+    }
+
+    /// Whether `text` contains the search text, ignoring case; always true with no search.
+    pub fn matches(&self, text: &str) -> bool {
+        self.lower.is_empty() || text.to_lowercase().contains(&self.lower)
+    }
+
+    /// The requested page, 1-based (not yet clamped to the rows there are: see
+    /// [`TableQuery::page_of`]).
+    pub fn page(&self) -> usize {
+        self.page.unwrap_or(1)
+    }
+
+    /// Rows per page: the visitor's remembered choice (`per.<id>`), or 10.
+    pub fn per_page(&self) -> usize {
+        self.per_page
+    }
+
+    /// Sort `rows` as asked, when asked: `cmp(a, b, key)` compares two rows by the column
+    /// `key` in ascending order, and a descending sort reverses it. Stable.
+    pub fn sort_by<T>(&self, rows: &mut [T], cmp: impl Fn(&T, &T, &str) -> std::cmp::Ordering) {
+        if let Some((key, desc)) = self.sort() {
+            rows.sort_by(|a, b| {
+                let order = cmp(a, b, key);
+                if desc { order.reverse() } else { order }
+            });
+        }
+    }
+
+    /// The current page of `rows` (every row, filtered and sorted) and their count, the
+    /// `total` for [`Table::paged`]. A page past the end gives the last one, as the pager does.
+    pub fn page_of<'r, T>(&self, rows: &'r [T]) -> (&'r [T], usize) {
+        let total = rows.len();
+        let pages = total.div_ceil(self.per_page).max(1);
+        let start = (self.page().clamp(1, pages) - 1) * self.per_page;
+        (
+            &rows[start.min(total)..(start + self.per_page).min(total)],
+            total,
+        )
+    }
+
+    /// The keys of the columns `?cols=` shows, in table order; every key when it names none.
+    pub fn visible<'k>(&self, keys: &[&'k str]) -> Vec<&'k str> {
+        let shown: Vec<&'k str> = keys
+            .iter()
+            .copied()
+            .filter(|k| self.cols.is_some_and(|c| c.split(',').any(|w| w == *k)))
+            .collect();
+        if shown.is_empty() {
+            keys.to_vec()
+        } else {
+            shown
+        }
+    }
+
     /// The sort as `(key, descending)`, only for a sortable column of `columns`.
-    pub fn sort<'c>(&self, columns: &[Column<'c>]) -> Option<(&'c str, bool)> {
+    pub(crate) fn sort_in<'c>(&self, columns: &[Column<'c>]) -> Option<(&'c str, bool)> {
         sort_from_query(
             columns,
-            self.sort.as_deref(),
+            self.sort,
             Some(if self.desc { "desc" } else { "asc" }),
         )
     }
+
     /// The visible column keys, only those `columns` has; `None` means every column.
-    pub fn cols<'c>(&self, columns: &[Column<'c>]) -> Option<Vec<&'c str>> {
-        cols_from_query(columns, self.cols.as_deref())
+    pub(crate) fn cols_in<'c>(&self, columns: &[Column<'c>]) -> Option<Vec<&'c str>> {
+        cols_from_query(columns, self.cols)
     }
 }
 
@@ -327,6 +547,32 @@ pub(crate) struct TableOptions<'a> {
     pub edit: Option<Editing<'a>>,
     /// The visitor's language, for the table's own words.
     pub strings: &'static Strings,
+    /// The search box (on unless `Table::hide_search`).
+    pub search: bool,
+    /// `<select>`s in the search form, each filtering by one query parameter.
+    pub selects: &'a [FilterSelect<'a>],
+}
+
+/// A `<select>` in the table's search form: its parameter, label, `(value, text)` options and
+/// the value the request chose.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) struct FilterSelect<'a> {
+    name: &'a str,
+    label: &'a str,
+    options: Vec<(&'a str, &'a str)>,
+    value: &'a str,
+}
+
+/// `href` followed by `query` (empty, or starting with `?`): joined with `&` when `href` has
+/// a query of its own, and `?` alone when both are empty, so a link to "this page, no
+/// parameters" never becomes `href=""` (which keeps the current ones).
+fn join(href: &str, query: &str) -> String {
+    match query.strip_prefix('?') {
+        None if href.is_empty() => "?".to_string(),
+        None => href.to_string(),
+        Some(rest) if href.contains('?') => format!("{href}&{rest}"),
+        Some(_) => format!("{href}{query}"),
+    }
 }
 
 /// The in-place edit of a table's rows, worked out by [`Table`] from the request.
@@ -356,6 +602,8 @@ impl Default for TableOptions<'_> {
             loading: false,
             edit: None,
             strings: &Strings::ENGLISH,
+            search: true,
+            selects: &[],
         }
     }
 }
@@ -431,6 +679,8 @@ pub(crate) fn table_in(
         loading,
         edit,
         strings,
+        search,
+        selects,
     } = options;
     let t = |text| strings.get(text);
     let root = enhance::swap_id("lui-table", id);
@@ -494,8 +744,13 @@ pub(crate) fn table_in(
             .filter(|(k, _)| *k != "cols")
             .collect();
         pairs.push(("cols", &joined));
-        format!("{href}{}", query(sort, &pairs))
+        join(href, &query(sort, &pairs))
     };
+    // A `<select>` sends its own value, so the form carries everything else.
+    let hidden = |k: &str| (search && k == "q") || selects.iter().any(|s| s.name == k);
+    let filtering = search || !selects.is_empty();
+    let toolbar = filtering || choose_columns || cols.is_some() || csv.is_some();
+    let action = (!href.is_empty()).then_some(href);
     let has_menu = rows.iter().any(|r| !r.menu.is_empty());
     let span = visible.len()
         + usize::from(bulk.is_some())
@@ -503,20 +758,33 @@ pub(crate) fn table_in(
         + usize::from(edit.is_some());
     html! {
         div id=(root) data-lui=[swap.then_some("swap")] class="lui-table" {
+            @if toolbar {
             div class="lui-table-toolbar" {
+                @if filtering {
                 search class="lui-table-filter" {
-                    form method="get" action=(href) {
+                    form method="get" action=[action] {
                         @if let Some((key, desc)) = sort {
                             input type="hidden" name="sort" value=(key);
                             input type="hidden" name="dir" value=(if desc { "desc" } else { "asc" });
                         }
-                        @for (k, v) in &carried { @if *k != "q" { input type="hidden" name=(k) value=(v); } }
-                        (Input::search_box("q", t(Text::FilterRows), filter).id(&filter_id).placeholder(t(Text::FilterRowsHint)).autocomplete("off").class("lui-table-filter-input"))
+                        @for (k, v) in &carried { @if !hidden(k) { input type="hidden" name=(k) value=(v); } }
+                        @if search {
+                            (Input::search_box("q", t(Text::FilterRows), filter).id(&filter_id).placeholder(t(Text::FilterRowsHint)).autocomplete("off").class("lui-table-filter-input"))
+                        }
+                        @for s in selects {
+                            label class="lui-table-filter-select" {
+                                span class="lui-sr" { (s.label) }
+                                select name=(s.name) {
+                                    @for (value, text) in &s.options { option value=(value) selected[*value == s.value] { (text) } }
+                                }
+                            }
+                        }
                         (Button::new(*caps, t(Text::Filter)))
                         @if !filter.is_empty() {
-                            a class="lui-table-clear" href={ (href) (query(sort, &carried.iter().copied().filter(|(k, _)| *k != "q").collect::<Vec<_>>())) } { (t(Text::Clear)) }
+                            a class="lui-table-clear" href=(join(href, &query(sort, &carried.iter().copied().filter(|(k, _)| *k != "q").collect::<Vec<_>>()))) { (t(Text::Clear)) }
                         }
                     }
+                }
                 }
                 @if choose_columns || cols.is_some() {
                     details class="lui-table-cols" {
@@ -532,8 +800,9 @@ pub(crate) fn table_in(
                     }
                 }
                 @if let Some(base) = csv {
-                    a class="lui-table-csv" href={ (base) (query(sort, &carried)) } download { (t(Text::DownloadCsv)) }
+                    a class="lui-table-csv" href=(join(base, &query(sort, &carried))) download { (t(Text::DownloadCsv)) }
                 }
+            }
             }
             table {
                 colgroup {
@@ -551,7 +820,7 @@ pub(crate) fn table_in(
                             @if col.sortable {
                                 @let next_desc = matches!(sorted, Some((_, false)));
                                 @let pairs: Vec<(&str, &str)> = carried.clone();
-                                a href={ (href) (query(Some((col.key, next_desc)), &pairs)) } {
+                                a href=(join(href, &query(Some((col.key, next_desc)), &pairs))) {
                                     (col.label)
                                     @match sorted { Some((_, true)) => span class="lui-table-arrow" { "▼" }, Some((_, false)) => span class="lui-table-arrow" { "▲" }, None => {} }
                                 }
@@ -632,15 +901,22 @@ pub(crate) fn table_in(
 /// from the request (`?sort=&dir=&q=&page=&cols=`), so a route asks it how to fetch the
 /// rows ([`Table::sort`], [`Table::filter`]) and hands them over with [`Table::rows`].
 ///
+/// To fetch the rows before writing the table (in `lui!`, say), read the same parameters
+/// with [`Ui::table_query`].
+///
 /// **Setters.** Values and items: `.bulk(..)`, `.column(..)`, `.edit(..)`, `.width(..)`,
-/// `.rows(..)`, `.paged(..)`, `.paged_from(..)`, `.csv(..)`, `.empty(..)`; switches: `.sortable()`, `.numeric()`,
-/// `.editable()`, `.choose_columns()`; from a condition: `.loading(bool)`.
+/// `.rows(..)`, `.paged(..)`, `.paged_from(..)`, `.csv(..)`, `.empty(..)`, `.keep(..)`,
+/// `.filter_select(..)`; switches: `.sortable()`, `.numeric()`, `.editable()`,
+/// `.choose_columns()`, `.hide_search()`; from a condition: `.loading(bool)`.
 #[derive(Clone, Debug)]
 pub struct Table<'a> {
     ui: &'a Ui,
     id: &'a str,
     href: &'a str,
-    query: TableQuery,
+    query: TableQuery<'a>,
+    keep: Vec<&'a str>,
+    selects: Vec<FilterSelect<'a>>,
+    search: bool,
     columns: Vec<Column<'a>>,
     rows: Vec<Row<'a>>,
     total: Option<usize>,
@@ -668,8 +944,14 @@ impl Table<'_> {
             .doc("Rows (with a `Row::key`) can be edited in place."),
         Prop::new("width", PropKind::Modifier, "width: &'a str")
             .doc("A CSS width for the column added last, such as `6rem` or `30%`."),
-        Prop::new("rows", PropKind::Value, "rows: impl IntoIterator<Item = Row<'a>>")
-            .doc("The rows, already sorted and filtered as `Table::sort` and `Table::filter` say."),
+        Prop::new("rows", PropKind::Value, "rows: impl IntoIterator<Item = R>")
+            .doc("The rows, already sorted and filtered as `Table::sort` and `Table::filter` say: `Row`s, or tuples of cells."),
+        Prop::new("keep", PropKind::Item, "name: &'a str")
+            .doc("A query parameter of this page (`status`) carried, with the request's value, by every sort link, the search form, the pager and the CSV link."),
+        Prop::new("filter_select", PropKind::Item, "name: &'a str, label: &'a str, options: impl IntoIterator<Item = (&'a str, &'a str)>")
+            .doc("A `<select>` of `(value, text)` options in the search form, filtering by the query parameter `name`, which the table then keeps."),
+        Prop::new("hide_search", PropKind::Switch, "")
+            .doc("No search box (a display-only table, or one filtered by `filter_select` alone)."),
         Prop::new("paged", PropKind::Number, "total: usize")
             .doc("Page the rows."),
         Prop::new("paged_from", PropKind::Value, "meta: &PagerMeta")
@@ -689,12 +971,18 @@ impl Table<'_> {
 
 impl Ui {
     /// A table `id` whose links and forms go to `href`; add columns with [`Table::column`].
+    /// `href` may carry a query of its own (`/orders?status=paid`), kept by every link and
+    /// form, or be empty for this page (links then start with `?`), as a display-only table
+    /// with no sortable column, no search box and no pager never links anywhere.
     pub fn table<'a>(&'a self, id: &'a str, href: &'a str) -> Table<'a> {
         Table {
             ui: self,
             id,
             href,
-            query: TableQuery::from_ui(self),
+            query: TableQuery::from_ui(self, id),
+            keep: Vec::new(),
+            selects: Vec::new(),
+            search: true,
             columns: Vec::new(),
             rows: Vec::new(),
             total: None,
@@ -752,9 +1040,42 @@ impl<'a> Table<'a> {
     }
 
     /// The rows, already sorted and filtered as [`Table::sort`] and [`Table::filter`] say;
-    /// cells in column order.
-    pub fn rows(mut self, rows: impl IntoIterator<Item = Row<'a>>) -> Self {
-        self.rows = rows.into_iter().collect();
+    /// cells in column order. Each is a [`Row`], or a tuple of cells (anything `Render`:
+    /// `(o.id, o.customer, ui.badge(o.status))`) when it needs no key, detail or menu.
+    pub fn rows<R: Into<Row<'a>>>(mut self, rows: impl IntoIterator<Item = R>) -> Self {
+        self.rows = rows.into_iter().map(Into::into).collect();
+        self
+    }
+
+    /// A query parameter of this page (`status`, say) that every sort link, the search form,
+    /// the pager and the CSV link carry with the request's value, so a filter the page draws
+    /// itself survives sorting and paging. Absent or empty, it is not carried.
+    pub fn keep(mut self, name: &'a str) -> Self {
+        self.keep.push(name);
+        self
+    }
+
+    /// A `<select>` in the search form filtering by the query parameter `name`: `(value,
+    /// text)` options, the request's value chosen (an `("", "All")` option for no filter). The
+    /// table keeps `name` in its links; the route filters the rows by `ui.param(name)`.
+    pub fn filter_select(
+        mut self,
+        name: &'a str,
+        label: &'a str,
+        options: impl IntoIterator<Item = (&'a str, &'a str)>,
+    ) -> Self {
+        self.selects.push(FilterSelect {
+            name,
+            label,
+            options: options.into_iter().collect(),
+            value: self.ui.param(name).unwrap_or(""),
+        });
+        self.keep(name)
+    }
+
+    /// No search box: a display-only table, or one filtered by [`Table::filter_select`] alone.
+    pub fn hide_search(mut self) -> Self {
+        self.search = false;
         self
     }
 
@@ -813,18 +1134,18 @@ impl<'a> Table<'a> {
 
     /// The requested sort as `(column key, descending)`, only for a sortable column.
     pub fn sort(&self) -> Option<(&'a str, bool)> {
-        self.query.sort(&self.columns)
+        self.query.sort_in(&self.columns)
     }
 
     /// The requested search text, trimmed, as typed.
-    pub fn filter(&self) -> &str {
-        &self.query.filter
+    pub fn filter(&self) -> &'a str {
+        self.query.filter
     }
 
     /// The keys of the columns to show, in table order.
     pub fn visible(&self) -> Vec<&'a str> {
         self.query
-            .cols(&self.columns)
+            .cols_in(&self.columns)
             .unwrap_or_else(|| self.columns.iter().map(|c| c.key).collect())
     }
 
@@ -833,18 +1154,33 @@ impl<'a> Table<'a> {
         self.query.page.unwrap_or(1)
     }
 
-    /// Rows per page: the visitor's remembered choice, or 10.
+    /// Rows per page: the visitor's remembered choice (at most 50), or 10.
     pub fn per_page(&self) -> usize {
-        self.ui
-            .state
-            .per_page(self.id)
-            .unwrap_or(crate::paged_table::PAGE_SIZES[1])
+        self.query.per_page()
     }
 }
 
 impl Render for Table<'_> {
     fn render(&self) -> Markup {
-        let cols = self.query.cols(&self.columns);
+        let cols = self.query.cols_in(&self.columns);
+        // A query in `href` is kept like `.keep(..)`: forms drop an action's query, and links
+        // would otherwise end up with two `?`.
+        let (href, own) = self.href.split_once('?').unwrap_or((self.href, ""));
+        let own: Vec<(String, String)> = own
+            .split('&')
+            .filter_map(|p| p.split_once('=').or(Some((p, ""))))
+            .filter(|(k, _)| !k.is_empty())
+            .map(|(k, v)| (decode(k).into_owned(), decode(v).into_owned()))
+            .collect();
+        let mut keep: Vec<(&str, &str)> =
+            own.iter().map(|(k, v)| (k.as_str(), v.as_str())).collect();
+        for name in &self.keep {
+            if let Some(v) = self.ui.param(name).filter(|v| !v.is_empty())
+                && !keep.iter().any(|(k, _)| k == name)
+            {
+                keep.push((name, v));
+            }
+        }
         let edit_key = format!("edit.{}", self.id);
         let (link, done) = (
             self.ui.link_with(&edit_key, ""),
@@ -870,7 +1206,9 @@ impl Render for Table<'_> {
             loading: self.loading,
             edit,
             strings: self.ui.strings,
-            ..TableOptions::default()
+            keep: &keep,
+            search: self.search,
+            selects: &self.selects,
         };
         match self.total {
             Some(total) => {
@@ -883,7 +1221,7 @@ impl Render for Table<'_> {
                 paged_table_with(
                     &self.ui.caps,
                     self.id,
-                    self.href,
+                    href,
                     &self.columns,
                     &self.rows,
                     total,
@@ -893,7 +1231,7 @@ impl Render for Table<'_> {
             None => table_with(
                 &self.ui.caps,
                 self.id,
-                self.href,
+                href,
                 &self.columns,
                 &self.rows,
                 options,
@@ -1069,5 +1407,88 @@ mod tests {
         assert!(m.contains("<form method=\"post\" action=\"/b\" id=\"lui-table-t-bulk\""));
         assert!(m.contains("<button type=\"submit\" class=\"lui-button lui-button-small\" name=\"action\" value=\"x\">X</button>"), "{m}");
         assert_eq!(slug("src/a.txt"), "src-a-txt");
+    }
+
+    /// `.keep(..)` and a query in `href` reach every link and form: sort links, the search
+    /// form, the columns chooser, the CSV link and the pager.
+    #[test]
+    fn kept_parameters_and_a_query_in_href_survive_everything() {
+        let ui = Ui::from_request("/o", "status=paid&tab=2&q=a&page=2", "");
+        let table = |href| {
+            ui.table("o", href)
+                .column("n", "N")
+                .sortable()
+                .choose_columns()
+                .csv("/o.csv?x=1")
+                .keep("status")
+                .keep("absent")
+                .rows([("a", ""), ("b", "")])
+                .paged(40)
+                .render()
+                .into_string()
+        };
+        let m = table("/o?tab=2");
+        assert!(!m.contains("?tab=2?") && !m.contains("absent"), "{m}");
+        assert!(
+            m.contains(
+                r#"href="/o?sort=n&amp;dir=asc&amp;q=a&amp;tab=2&amp;status=paid&amp;per.o=10""#
+            ),
+            "sort link: {m}"
+        );
+        assert!(m.contains(r#"<form method="get" action="/o"><input type="hidden" name="tab" value="2"><input type="hidden" name="status" value="paid">"#));
+        assert!(
+            m.contains(r#"href="/o.csv?x=1&amp;q=a&amp;tab=2&amp;status=paid"#),
+            "csv: {m}"
+        );
+        assert!(
+            m.contains("q=a&amp;tab=2&amp;status=paid&amp;per.o=10&amp;page=3"),
+            "pager: {m}"
+        );
+        // An empty `href`: relative links, forms with no action.
+        let m = table("");
+        assert!(
+            m.contains(r#"href="?sort=n&amp;dir=asc"#)
+                && m.contains(r#"<form method="get"><input"#)
+        );
+        assert!(
+            m.contains(r#"class="lui-table-clear" href="?status=paid&amp;per.o=10""#),
+            "{m}"
+        );
+    }
+
+    #[test]
+    fn search_box_and_filter_selects() {
+        let ui = Ui::from_request("/o", "status=paid", "");
+        let plain = |t: Table| t.column("n", "N").render().into_string();
+        let hidden = plain(ui.table("o", "/o").hide_search());
+        assert!(!hidden.contains("lui-table-toolbar") && !hidden.contains("<search"));
+        let select = plain(ui.table("o", "/o").hide_search().filter_select(
+            "status",
+            "Status",
+            [("", "All"), ("paid", "Paid")],
+        ));
+        assert!(
+            !select.contains(r#"name="q""#) && !select.contains(r#"type="hidden""#),
+            "{select}"
+        );
+        assert!(select.contains(r#"<label class="lui-table-filter-select"><span class="lui-sr">Status</span><select name="status"><option value="">All</option><option value="paid" selected>Paid</option></select></label>"#), "{select}");
+        let row: Row = (1, "Ada", ui.badge("paid")).into();
+        assert_eq!(row.cells.len(), 3);
+        assert_eq!(row.cells[0].clone().into_string(), "1");
+    }
+
+    #[test]
+    fn the_query_sorts_and_pages_a_vec() {
+        let ui = Ui::from_request("/o", "sort=n&dir=desc&page=9&q=%20X%20", "lui-ui=per.o=5");
+        let q = ui.table_query("o", &["n"]);
+        assert!(q.matches("axe") && !q.matches("bee") && q.filter() == "X");
+        let mut v: Vec<u32> = (1..=12).collect();
+        q.sort_by(&mut v, |a, b, _| a.cmp(b));
+        assert_eq!(q.page_of(&v), (&[2, 1][..], 12), "page 9 of 3 is the last");
+        assert_eq!(q.page_of::<u32>(&[]), (&[][..], 0));
+        assert_eq!(q.visible(&["a", "b"]), ["a", "b"]);
+        let ui = Ui::from_request("/o", "cols=b,zz", "");
+        let q = ui.table_query("o", &[]);
+        assert_eq!((q.visible(&["a", "b"]), q.sort()), (vec!["b"], None));
     }
 }

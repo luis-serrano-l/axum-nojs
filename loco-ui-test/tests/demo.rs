@@ -540,7 +540,11 @@ async fn table_sort_links_and_pages() {
         ),
         "other links keep filter, page size and columns"
     );
-    assert_eq!(page.count(".lui-table tbody tr"), 5, "one page of rows");
+    assert_eq!(
+        page.count("#lui-table-files tbody tr"),
+        5,
+        "one page of rows"
+    );
     assert!(
         !page.exists("th a[href*='sort=kind']"),
         "the hidden column has no header"

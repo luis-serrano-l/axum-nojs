@@ -223,6 +223,20 @@ pub(crate) const ENTRIES: &[Entry] = &[
         },
     },
     Entry {
+        builder: "Table",
+        call: "Table(\"try\", \"\")",
+        props: &["hide_search", "choose_columns", "loading"],
+        rest: " { column \"name\" \"Name\"; column \"size\" \"Size\" numeric; rows ([(\"a.txt\", \"1 KB\"), (\"b.txt\", \"2 KB\")]); }",
+        build: |t| {
+            let b = t.ui.table("try", "").column("name", "Name");
+            let b = b.column("size", "Size").numeric();
+            let b = b.rows([("a.txt", "1 KB"), ("b.txt", "2 KB")]);
+            let b = switch(b, t.on("hide_search"), |b| b.hide_search());
+            let b = switch(b, t.on("choose_columns"), |b| b.choose_columns());
+            b.loading(t.on("loading")).render()
+        },
+    },
+    Entry {
         builder: "DescriptionList",
         call: "DescriptionList",
         props: &["stacked"],

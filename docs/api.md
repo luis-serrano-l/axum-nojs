@@ -204,3 +204,67 @@ warning. The three constructors changed outright (the crate is unpublished).
 | Select's id `plan`, while the error summary linked `#f-plan` | `f-plan`, with `.error(..)` like a field's | Select |
 | a loose error summary listed bare messages | `.field("email", "Email")` writes "Email: …" as a form's does | ErrorSummary |
 | no way to set the id of a meter, bar, sidebar or nav menu | `.id(..)` | Meter, Progress, Sidebar, NavMenu |
+
+## Tables
+
+A table route does three things: read what the visitor asked for, fetch and sort the rows, and
+write the table. `ui.table_query(id, sortable)` does the first before any markup, so the table
+itself can be written in `lui!` without holding the builder in a variable:
+
+```rust
+use loco_ui::prelude::*;
+let ui = Ui::from_request("/orders", "sort=total&dir=desc&status=paid", "");
+let orders = [(1, "Ada", "paid", 12.5_f64), (2, "Grace", "pending", 30.0), (3, "Ken", "paid", 20.0)];
+let q = ui.table_query("orders", &["id", "total"]);
+let status = ui.param("status").unwrap_or("");
+let mut found: Vec<_> = orders.iter().filter(|o| (status.is_empty() || o.2 == status) && q.matches(o.1)).collect();
+q.sort_by(&mut found, |a, b, key| match key { "total" => a.3.total_cmp(&b.3), _ => a.0.cmp(&b.0) });
+let (page, total) = q.page_of(&found);
+let html = lui! { Table("orders", "/orders") paged=(total) {
+    column "id" "Order" sortable numeric;
+    column "customer" "Customer";
+    column "status" "Status";
+    column "total" "Total" sortable numeric;
+    filter_select "status" "Status" ([("", "All"), ("paid", "Paid"), ("pending", "Pending")]);
+    rows (page.iter().map(|o| (o.0, o.1, ui.badge(o.2), format!("${:.2}", o.3))));
+} };
+assert!(html.into_string().contains("<td>Ken</td>"));
+```
+
+- **`TableQuery`** (`ui.table_query(id, sortable)`): `.sort()` as `(key, descending)`, only for
+  a key in `sortable`; `.filter()` the search text, trimmed; `.page()` 1-based; `.per_page()`
+  the size the visitor picked (`ui.state.per_page(id)`, at most 50) or **10**. Defaults:
+  unsorted, no filter, page 1, 10 rows.
+- **Data helpers** on it: `.matches(text)` (case-insensitive, true with no search),
+  `.sort_by(&mut v, |a, b, key| ..)` (ascending comparator; a descending sort reverses it;
+  nothing happens without a sort), `.page_of(&v)` (the page's slice and the total for
+  `.paged(total)`; past the end gives the last page, as the pager does), and `.visible(&keys)`
+  for a CSV of the shown columns.
+- **Rows** are a `Row` (in the prelude) when they need a key, a detail, a menu or in-place
+  values, or else a tuple of up to eight cells of anything `Render`:
+  `(o.id, o.customer, ui.badge(o.status))`.
+- **A filter of the page's own** travels with the table: `.keep("status")` carries the
+  request's `status` on every sort link, the search form, the columns chooser, the pager and
+  the CSV link; `.filter_select(name, label, options)` puts a `<select>` for it in the search
+  form and keeps it. A query in `href` (`/orders?status=paid`) is kept the same way.
+- **The search box** is on unless `.hide_search()`; with no sortable column, no search, no
+  pager and no chooser a table has no links, so `href` may be `""` for a display-only table
+  (links, if any, are then relative: `?sort=..`, forms post to this page).
+- **Chart** values from data in one call: `.points(SIGNUPS)` beside `.point(label, value)`.
+
+| Before | After |
+|---|---|
+| a `Table` in a variable, asked `t.sort()`, `t.filter()`, `t.page()`, `t.per_page()` before its rows | `let q = ui.table_query(id, &sortable)`, then `lui! { Table(..) { .. } }` |
+| `if let Some((key, desc)) = t.sort() { v.sort_by(..); if desc { v.reverse() } }` | `q.sort_by(&mut v, \|a, b, key\| ..)` |
+| `v.iter().skip((page - 1) * per).take(per)` and `let total = v.len()` | `let (page, total) = q.page_of(&v)` |
+| `n.to_lowercase().contains(&t.filter().to_lowercase())` | `q.matches(n)` |
+| `Row::new([html! { (a) }, html! { (b) }])` | `(a, b)`, or `Row::from((a, b)).key(..)` |
+| `use loco_ui::{prelude::*, table::Row}` | `use loco_ui::prelude::*` |
+| `?status=` in the path (`/orders/{status}`) because links dropped it; `href="/o?status=paid"` built `/o?status=paid?sort=..` | `.keep("status")` or `.filter_select(..)`; a query in `href` is kept |
+| a search box on every table | `.hide_search()`, and `href` may be `""` for a display-only table |
+| `SIGNUPS.iter().fold(ui.chart(..), \|c, (d, n)\| c.point(d, *n))` | `ui.chart(..).points(SIGNUPS)` |
+
+Kept, because: `.rows(..)`, `.filter_select(..)` and `Chart::points` take a list in one call
+(rows and options come from data; `.point(..)` still adds one value); `ui.table(id, href)` keeps
+its order (the id keys the query parameters). `Table::sort`, `filter`, `page` and `per_page`
+stay for routes that do hold the builder.

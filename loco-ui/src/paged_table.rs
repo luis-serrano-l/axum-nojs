@@ -72,13 +72,13 @@ pub(crate) struct PagedTableOptions<'a> {
     /// the size the visitor picked (`per.<id>`) wins, capped at the largest of [`PAGE_SIZES`].
     pub per_page: usize,
     /// Everything else the inner table takes (columns, bulk form, CSV link, empty and
-    /// loading states); its `sort`, `filter` and `keep` are overwritten by the pager's.
+    /// loading states); its `sort` and `filter` are overwritten by the pager's, and its `keep` gains the page size.
     pub table: TableOptions<'a>,
     /// Remember the page size per table as the state key `per.<id>`.
     pub state: Option<&'a UiState>,
     /// The URL's sort, filter, page and columns, used wherever the setters above left the
     /// default.
-    pub query: Option<&'a TableQuery>,
+    pub query: Option<&'a TableQuery<'a>>,
 }
 
 impl Default for PagedTableOptions<'_> {
@@ -130,7 +130,7 @@ impl<'a> PagedTableOptions<'a> {
     }
 
     /// Take the sort, filter, page and columns from the parsed URL.
-    pub fn query(mut self, query: &'a TableQuery) -> Self {
+    pub fn query(mut self, query: &'a TableQuery<'a>) -> Self {
         self.query = Some(query);
         self
     }
@@ -157,9 +157,9 @@ pub(crate) fn paged_table_with(
         state,
         query,
     } = options;
-    let sort = sort.or_else(|| query.and_then(|q| q.sort(columns)));
+    let sort = sort.or_else(|| query.and_then(|q| q.sort_in(columns)));
     let filter = if filter.is_empty() {
-        query.map_or("", |q| q.filter.as_str())
+        query.map_or("", |q| q.filter)
     } else {
         filter
     };
@@ -170,7 +170,7 @@ pub(crate) fn paged_table_with(
     let cols = inner
         .cols
         .is_none()
-        .then(|| query.and_then(|q| q.cols(columns)))
+        .then(|| query.and_then(|q| q.cols_in(columns)))
         .flatten();
     let inner = TableOptions {
         cols: inner.cols.or(cols.as_deref()),
@@ -212,6 +212,7 @@ pub(crate) fn paged_table_with(
         if !filter.is_empty() {
             pairs.push(("q", filter));
         }
+        pairs.extend(inner.keep.iter().copied());
         if let Some(c) = &cols_value {
             pairs.push(("cols", c));
         }
@@ -229,7 +230,9 @@ pub(crate) fn paged_table_with(
         base: &base,
         n,
     };
-    let keep = [(per_key.as_str(), per.as_str())];
+    let mut keep = inner.keep.to_vec();
+    keep.push((per_key.as_str(), per.as_str()));
+    let action = (!href.is_empty()).then_some(href);
     let jump_id = format!("{}-page", enhance::swap_id("lui-paged-table", id));
     let page_text = page.to_string();
     html! {
@@ -259,7 +262,7 @@ pub(crate) fn paged_table_with(
                     }
                 }
                 @if pages > 1 {
-                    form method="get" action=(href) class="lui-paged-table-jump" {
+                    form method="get" action=[action] class="lui-paged-table-jump" {
                         @for (k, v) in carried("") { input type="hidden" name=(k) value=(v); }
                         span { (t(Text::Page)) }
                         (Input::number_within("page", t(Text::Page), Some(1), Some(pages as i64)).hide_label().class("lui-paged-table-page").inputmode("numeric").id(&jump_id).value(&page_text))
@@ -267,7 +270,7 @@ pub(crate) fn paged_table_with(
                         (Button::new(*caps, t(Text::Go)))
                     }
                 }
-                form method="get" action=(href) class="lui-paged-table-per" {
+                form method="get" action=[action] class="lui-paged-table-per" {
                     @for (k, v) in carried(&per_key) { input type="hidden" name=(k) value=(v); }
                     label { (t(Text::RowsPerPage)) " "
                         select name=(per_key) {
@@ -455,11 +458,9 @@ mod tests {
         let rows: Vec<Row> = (1..=12)
             .map(|n| Row::new(vec![html! { "row " (n) }, html! {}]))
             .collect();
-        let query = TableQuery::from_ui(&crate::Ui::from_request(
-            "/t",
-            "sort=n&dir=desc&q=r%C3%A9&page=3&cols=n&other=1",
-            "",
-        ));
+        let ui =
+            crate::Ui::from_request("/t", "sort=n&dir=desc&q=r%C3%A9&page=3&cols=n&other=1", "");
+        let query = TableQuery::from_ui(&ui, "t");
         assert_eq!(query.filter, "r\u{e9}");
         let state = UiState::parse("/t", "per.t=5", "");
         let m = paged_table_with(

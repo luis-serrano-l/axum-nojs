@@ -7,7 +7,7 @@ use axum::{
     response::{IntoResponse, Response},
     routing::{get, post},
 };
-use loco_ui::Row;
+
 use loco_ui::prelude::*;
 use serde::{Deserialize, Serialize};
 
@@ -131,48 +131,26 @@ async fn notes_page(ui: Ui, Saved(session): Saved<Session>, Saved(saved): Saved<
 /// The form that adds a note over the table of notes: filter, sort, rename, delete, pages.
 fn notes(ui: &Ui, notes: &AppNotes) -> Markup {
     // code: /app/notes
-    let t = ui
-        .table("notes", "/app/notes")
-        .column("text", "Note")
-        .sortable()
-        .editable()
-        .column("id", "No.")
-        .numeric()
-        .width("5rem");
-    let q = t.filter().to_lowercase();
-    let mut rows: Vec<&(String, String)> = notes
-        .0
-        .iter()
-        .filter(|(_, n)| n.to_lowercase().contains(&q))
-        .collect();
-    if let Some((_, desc)) = t.sort() {
-        rows.sort_by_key(|n| n.1.to_lowercase());
-        if desc {
-            rows.reverse();
-        }
-    }
-    let total = rows.len();
-    let deletes: Vec<String> = rows
-        .iter()
-        .map(|(id, _)| format!("/app/notes/delete?id={id}"))
-        .collect();
-    let t = t
-        .rows(rows.iter().zip(&deletes).map(|((id, text), del)| {
-            Row::new([html! { (text) }, html! { (id) }])
-                .key(id)
-                .values([text.as_str(), ""])
-                .menu([MenuItem::action("Delete", del).danger()])
-        }))
-        .paged(total)
-        .edit("/app/notes/edit")
-        .empty("No notes yet: add one above.");
-    let add = lui! {
+    let q = ui.table_query("notes", &["text"]);
+    let mut found: Vec<&(String, String)> = notes.0.iter().filter(|n| q.matches(&n.1)).collect();
+    q.sort_by(&mut found, |a, b, _| {
+        a.1.to_lowercase().cmp(&b.1.to_lowercase())
+    });
+    let (page, total) = q.page_of(&found);
+    let delete = |id| format!("/app/notes/delete?id={id}");
+    let deletes: Vec<String> = page.iter().map(|n| delete(&n.0)).collect();
+    lui! {
         Form("/app/notes") submit="Add note" {
             text "text" "New note" required maxlength=60 placeholder="Buy milk";
         }
-    };
+        Table("notes", "/app/notes") paged=(total) edit="/app/notes/edit" empty="No notes yet: add one above." {
+            column "text" "Note" sortable editable;
+            column "id" "No." numeric width="5rem";
+            rows (page.iter().zip(&deletes).map(|((id, text), del)| Row::from((text, id)).key(id)
+                .values([text.as_str(), ""]).menu([MenuItem::action("Delete", del).danger()])));
+        }
+    }
     // end code
-    html! { (add) (t) }
 }
 
 #[derive(Deserialize)]

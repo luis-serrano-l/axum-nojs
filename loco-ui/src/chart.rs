@@ -29,6 +29,9 @@
 //! let html = m.render().into_string();
 //! assert!(html.contains(r#"role="img""#) && html.contains("<title id=\"chart-signups-title\">Signups</title>"));
 //! assert!(html.contains(r#"<th scope="row">Tue</th><td>18</td>"#));
+//! // Values from data in one call:
+//! const SIGNUPS: [(&str, f64); 3] = [("Mon", 12.0), ("Tue", 18.0), ("Wed", 9.0)];
+//! assert_eq!(ui.chart("Signups").points(SIGNUPS).render().into_string(), html);
 //!
 //! let m = ui.chart("Latency").line().unit(" ms").description("p50 per day, last week")
 //!     .point("Mon", 41.5).point("Tue", 38.0);
@@ -50,7 +53,7 @@ use crate::{Ui, slug};
 
 /// Bars, a line or a sparkline, made by [`Ui::chart`].
 ///
-/// **Setters.** Values and items: `.point(..)`, `.description(..)`, `.unit(..)`, `.id(..)`;
+/// **Setters.** Values and items: `.point(..)`, `.points(..)`, `.description(..)`, `.unit(..)`, `.id(..)`;
 /// switches: `.bar()`, `.line()`, `.sparkline()`.
 #[derive(Clone, Debug)]
 pub struct Chart<'a> {
@@ -76,6 +79,12 @@ impl Chart<'_> {
     pub const PROPS: &'static [Prop] = &[
         Prop::new("point", PropKind::Item, "label: &'a str, value: f64")
             .doc("One value, labelled on the x axis."),
+        Prop::new(
+            "points",
+            PropKind::Value,
+            "points: impl IntoIterator<Item = (&'a str, f64)>",
+        )
+        .doc("Many values at once, from a slice or a query: `(label, value)` pairs."),
         Prop::new("description", PropKind::Value, "text: &'a str")
             .doc("What the chart shows, in a sentence: its `<desc>`."),
         Prop::new("unit", PropKind::Value, "unit: &'a str")
@@ -108,6 +117,13 @@ impl<'a> Chart<'a> {
     /// One value, labelled on the x axis.
     pub fn point(mut self, label: &'a str, value: f64) -> Self {
         self.points.push((label, value));
+        self
+    }
+
+    /// Many values at once, from a slice or a query: `(label, value)` pairs, after any
+    /// `.point(..)` added before.
+    pub fn points(mut self, points: impl IntoIterator<Item = (&'a str, f64)>) -> Self {
+        self.points.extend(points);
         self
     }
 

@@ -7,7 +7,6 @@ use axum::{
     routing::{get, post},
 };
 use loco_ui::prelude::*;
-use loco_ui::{Row, table::Table};
 use serde::{Deserialize, Serialize};
 
 pub(crate) fn routes() -> Router {
@@ -38,45 +37,29 @@ const FILES: [(&str, u32, &str); 12] = [
     ("video.mp4", 9800000, "video"),
 ];
 
-/// The files table's columns; the page and the CSV both read their sort and filter from it.
-fn files_table(ui: &Ui) -> Table<'_> {
-    // code: /table
-    ui.table("files", "/table")
-        .column("name", "Name")
-        .sortable()
-        .column("size", "Size")
-        .sortable()
-        .numeric()
-        .width("7rem")
-        .column("kind", "Kind")
-        .sortable()
-        .editable()
-        .width("9rem")
-    // end code
-}
+/// A file: its path, its size in bytes and its kind.
+type File = (String, u32, &'static str);
 
-/// Thirty-six files sorted and filtered on the server, in one place for the page and the CSV.
-fn files(t: &Table) -> Vec<(String, u32, &'static str)> {
-    let q = t.filter().to_lowercase();
-    let mut files: Vec<(String, u32, &str)> = ["src", "docs", "old"]
+/// The table's columns, every one sortable; the CSV writes the visible ones.
+const COLUMNS: [&str; 3] = ["name", "size", "kind"];
+
+/// Thirty-six files filtered and sorted on the server as the table's query says, in one place
+/// for the page and the CSV.
+fn files(q: &TableQuery) -> Vec<File> {
+    let mut files: Vec<File> = ["src", "docs", "old"]
         .iter()
         .flat_map(|dir| {
             FILES
                 .iter()
                 .map(move |f| (format!("{dir}/{}", f.0), f.1 * (dir.len() as u32), f.2))
         })
-        .filter(|f| q.is_empty() || f.0.contains(&q) || f.2.contains(&q))
+        .filter(|f| q.matches(&f.0) || q.matches(f.2))
         .collect();
-    if let Some((key, desc)) = t.sort() {
-        files.sort_by(|a, b| match key {
-            "size" => a.1.cmp(&b.1),
-            "kind" => a.2.cmp(b.2),
-            _ => a.0.cmp(&b.0),
-        });
-        if desc {
-            files.reverse();
-        }
-    }
+    q.sort_by(&mut files, |a, b, key| match key {
+        "size" => a.1.cmp(&b.1),
+        "kind" => a.2.cmp(b.2),
+        _ => a.0.cmp(&b.0),
+    });
     files
 }
 
@@ -93,30 +76,34 @@ impl Kinds {
     }
 }
 
-/// The table only renders and links; a row can expand, has its own menu and can be selected.
-fn files_page(ui: &Ui, kinds: &Kinds) -> Markup {
-    let t = files_table(ui);
-    let files = files(&t);
-    let rows = files.iter().map(|f| Row::new([html! { code { (f.0) } }, html! { (loco_ui::paged_table::thousands(f.1 as usize / 1024)) " KB" }, html! { (kinds.of(&f.0, f.2)) }])
+/// A file as a row that expands, has its own menu, can be selected and edited in place.
+fn file_row<'a>(f: &'a File, kinds: &'a Kinds) -> Row<'a> {
+    let size = format!(
+        "{} KB",
+        loco_ui::paged_table::thousands(f.1 as usize / 1024)
+    );
+    Row::from((html! { code { (f.0) } }, size, kinds.of(&f.0, f.2)))
         .key(&f.0)
         .values(["", "", kinds.of(&f.0, f.2)])
         .detail(html! { p { "A " (f.2) " of " (f.1) " bytes, in " code { (f.0.split('/').next().unwrap_or("")) } "." } })
-        .menu([MenuItem::link("Open", "/table"), MenuItem::action("Delete", "/table/bulk").danger()]));
+        .menu([MenuItem::link("Open", "/table"), MenuItem::action("Delete", "/table/bulk").danger()])
+}
+
+/// The table only renders and links: the route reads its query, fetches, sorts and slices.
+fn files_page(ui: &Ui, kinds: &Kinds) -> Markup {
     // code: /table
-    let t = t
-        .rows(rows)
-        .paged(files.len())
-        .choose_columns()
-        .csv("/table.csv")
-        .bulk(
-            "/table/bulk",
-            [("archive", "Archive"), ("delete", "Delete")],
-        )
-        .edit("/table/edit")
-        .empty("No files match this filter.")
-        .loading(ui.param("loading") == Some("1"));
+    let q = ui.table_query("files", &COLUMNS);
+    let files = files(&q);
+    let (page, total) = q.page_of(&files);
+    lui! { Table("files", "/table") paged=(total) choose_columns csv="/table.csv" edit="/table/edit"
+            empty="No files match this filter." loading=(ui.param("loading") == Some("1")) {
+        column "name" "Name" sortable;
+        column "size" "Size" sortable numeric width="7rem";
+        column "kind" "Kind" sortable editable width="9rem";
+        bulk "/table/bulk" ([("archive", "Archive"), ("delete", "Delete")]);
+        rows (page.iter().map(|f| file_row(f, kinds)));
+    } }
     // end code
-    t.render()
 }
 
 async fn table_page(ui: Ui, Saved(kinds): Saved<Kinds>) -> Page {
@@ -134,10 +121,10 @@ async fn table_page(ui: Ui, Saved(kinds): Saved<Kinds>) -> Page {
 
 /// The same rows as text/csv, for the sort, filter and columns in the URL.
 async fn table_csv(ui: Ui) -> impl IntoResponse {
-    let t = files_table(&ui);
-    let cols = t.visible();
+    let q = ui.table_query("files", &COLUMNS);
+    let cols = q.visible(&COLUMNS);
     let mut csv = cols.join(",") + "\n";
-    for f in files(&t) {
+    for f in files(&q) {
         let cells = [
             ("name", f.0.clone()),
             ("size", f.1.to_string()),

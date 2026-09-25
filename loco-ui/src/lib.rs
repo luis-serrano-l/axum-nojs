@@ -136,7 +136,7 @@ pub use saved::Saved;
 pub use state::UiState;
 #[cfg(feature = "http")]
 pub use stream::Streamed;
-pub use table::Row;
+pub use table::{Row, TableQuery};
 pub use theme::Theme;
 pub use ui::{Page, Redirect, Ui};
 
@@ -155,7 +155,7 @@ pub mod prelude {
     #[cfg(feature = "axum")]
     pub use crate::Saved;
     pub use crate::lui;
-    pub use crate::{Cap, Caps, Icon, MenuItem, Page, Redirect, Theme, Ui};
+    pub use crate::{Cap, Caps, Icon, MenuItem, Page, Redirect, Row, TableQuery, Theme, Ui};
     pub use maud::{Markup, Render, html};
 }
 
@@ -1109,6 +1109,11 @@ mod tests {
         ),
         ("rows", "a table's rows come from a slice of records"),
         (
+            "filter_select",
+            "a table's filter `<select>` is given with its options, like `ui.select`",
+        ),
+        ("points", "a chart's values from data, a slice or a query"),
+        (
             "bulk",
             "the buttons of one bulk-action form, as (label, value) pairs",
         ),
@@ -1147,6 +1152,10 @@ mod tests {
         (
             "Select::groups",
             "groups from data beside `.group(..)` for one",
+        ),
+        (
+            "Chart::points",
+            "values from data beside `.point(..)` for one",
         ),
         (
             "Palette::links",
