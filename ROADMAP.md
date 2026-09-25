@@ -943,9 +943,18 @@ the attribute form must compile down to the same builder, so both forms stay one
   32 vs 22 (p90 35 vs 35; traced to frame alignment, not script work, FINDINGS M28). Fragment
   answers (`slim`) and prefetch already existed; nothing to add there. Numbers in README
   "How fast an update lands".
-- [ ] Demo: routes move to `nojs!` where it reads better (every snippet between the `// code:`
+- [x] Demo: routes move to `nojs!` where it reads better (every snippet between the `// code:`
   markers, so each component page teaches the attribute form); the dot form stays where a route
   keeps a builder in a variable. Count route lines before and after.
+  Done: 41 `nojs!` blocks across the route files; every component page whose snippet can be
+  written that way now teaches it, including the kanban and upload (items from data through
+  `@for`, `@if let` and `x=[option]` instead of a mutable builder in a loop) and the
+  "write your own" page (`PricingCard(..)` from its own `impl Ui` method). Kept in the dot
+  form, where a route keeps or reads a builder: `/wizard`, `/table`, the notes table,
+  `/counter`, `/palette` (`.exact()`), `/stream`, the toast and settings redirects. Every
+  page's HTML is byte-identical outside the snippet box (48 exported pages diffed) except
+  `/settings`, which gains a Form props table now that `Form(..)` is inside its snippet.
+  Route lines 1791 → 1798: nested blocks take a line more, loops a few less.
 - [ ] Docs: CLAUDE.md convention 5 and the macro rule (`nojs!`, `PROPS`), README first example,
   `docs/ergonomics.md` before/after, `docs/comparison.md` (maud-ui's `Props` vs ours, now
   with names at the call site and a listable prop table, which maud-ui's docs say it lacks).

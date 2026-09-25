@@ -26,17 +26,20 @@ async fn pricing_page(ui: Ui) -> Page {
         let b = ui.link_button(text, href).small().current(on);
         if on { b } else { b.ghost() }
     };
-    page(&ui, "Pricing card", html! { (ui.stack(html! {
+    page(&ui, "Pricing card", html! { (ui.stack(nojs! {
         (ui.cluster(html! { (pick("Monthly", &by_month, !yearly)) (pick("Yearly", &by_year, yearly)) }).gap(1))
         // code: /pricing
-        (ui.grid("14rem", html! {
-            (ui.pricing_card("Hobby", hobby).period(period).blurb("For a side project.")
-                .feature("1 project").feature("Community support").cta("Start free", "/pricing"))
-            (ui.pricing_card("Pro", pro).period(period).blurb("For a small team shipping weekly.").featured()
-                .feature("10 projects").feature("Email support").feature("Custom domain").cta("Upgrade to Pro", "/pricing"))
-            (ui.pricing_card("Team", team).period(period).blurb("For a company.")
-                .feature("Unlimited projects").feature("SSO").feature("Audit log").cta("Talk to us", "/pricing"))
-        }))
+        Grid("14rem", nojs! {
+            PricingCard("Hobby", hobby) period=(period) blurb="For a side project." {
+                feature "1 project"; feature "Community support"; cta "Start free" "/pricing";
+            }
+            PricingCard("Pro", pro) period=(period) blurb="For a small team shipping weekly." featured {
+                feature "10 projects"; feature "Email support"; feature "Custom domain"; cta "Upgrade to Pro" "/pricing";
+            }
+            PricingCard("Team", team) period=(period) blurb="For a company." {
+                feature "Unlimited projects"; feature "SSO"; feature "Audit log"; cta "Talk to us" "/pricing";
+            }
+        });
         // end code
         p class="nojs-note" { "The card lives in " code { "demo/src/pricing.rs" } ": an extension trait on " code { "Ui" } ", a builder, " code { "impl Render" } " and a CSS const added with " code { "Page::css" } ". See " code { "docs/components.md" } "." }
     }).gap(6)) }).css(PRICING_CSS)

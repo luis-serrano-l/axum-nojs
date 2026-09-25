@@ -16,24 +16,24 @@ async fn feedback_page(ui: Ui) -> Page {
     page(
         &ui,
         "Alerts, progress and tooltips",
-        html! {
-            (ui.stack(html! {
+        nojs! {
+            Stack(nojs! {
                 // code: /feedback
-                (ui.alert("Heads up").description("Deploys pause at 18:00 on Fridays."))
-                (ui.alert("Payment failed").danger().description("The card was declined. Try another one."))
-                (ui.alert("Backups are complete").ok())
-                (ui.progress(62, 100).label("Uploading photos"))
-                (ui.progress(0, 0).label("Waiting for the server"))
-                (ui.meter(83, 0, 100).label("Disk used").low(60).high(80).optimum(0))
-                (ui.cluster(html! {
-                    (ui.tooltip("Copy the link", html! { (ui.button("").icon().label("Copy").content(html! { (Icon::Copy) })) }))
-                    (ui.separator().vertical())
-                    (ui.tooltip("Opens in a new tab", html! { (ui.link_button("Docs", "/")) }).below())
-                }))
-                (ui.separator().label("or"))
+                Alert("Heads up") description="Deploys pause at 18:00 on Fridays.";
+                Alert("Payment failed") danger description="The card was declined. Try another one.";
+                Alert("Backups are complete") ok;
+                Progress(62, 100) label="Uploading photos";
+                Progress(0, 0) label="Waiting for the server";
+                Meter(83, 0, 100) label="Disk used" low=60 high=80 optimum=0;
+                Cluster(nojs! {
+                    Tooltip("Copy the link", nojs! { Button("") icon label="Copy" content=(html! { (Icon::Copy) }); });
+                    Separator vertical;
+                    Tooltip("Opens in a new tab", nojs! { LinkButton("Docs", "/"); }) below;
+                });
+                Separator label="or";
                 // end code
                 p class="nojs-note" { "Hover or tab to the buttons for their tooltips. The meter turns amber past 60 and red past 80 because its best value is 0." }
-            }).gap(6))
+            }) gap=6;
         },
     )
 }
@@ -43,7 +43,7 @@ async fn toast_page(ui: Ui) -> Page {
     page(
         &ui,
         "Toasts",
-        html! {
+        nojs! {
             p { "Each button posts, the server redirects back, and the answer shows in the corner. Calm ones fade after five seconds (hover to keep them); errors stay until dismissed." }
             form method="post" action="/toast" class="nojs-cluster" {
                 (ui.button("Send invite").primary().name("kind").value("ok"))
@@ -52,7 +52,7 @@ async fn toast_page(ui: Ui) -> Page {
                 (ui.button("All three").name("kind").value("all"))
             }
             // code: /toast
-            (ui.toasts().dismiss())
+            Toasts dismiss;
             // end code
         },
     )
@@ -86,21 +86,22 @@ async fn dashboard_page(ui: Ui) -> Page {
     page(
         &ui,
         "Stats and empty states",
-        html! {
+        nojs! {
             div class="nojs-stat-grid" {
                 // code: /dashboard
-                (ui.stat("Visitors", "12,480").delta("+8.2%").note("last 7 days"))
-                (ui.stat("Orders", if none { "0" } else { "3" }).delta(if none { "-3" } else { "0" }))
-                (ui.stat("Error rate", "0.4%").delta("-0.2 pt").down_is_good().href("/table"))
-                (ui.stat("p95 latency", "38 ms").delta("+6 ms").down_is_good())
+                Stat("Visitors", "12,480") delta="+8.2%" note="last 7 days";
+                Stat("Orders", if none { "0" } else { "3" }) delta=(if none { "-3" } else { "0" });
+                Stat("Error rate", "0.4%") delta="-0.2 pt" down_is_good href="/table";
+                Stat("p95 latency", "38 ms") delta="+6 ms" down_is_good;
                 // end code
             }
             h2 { "Recent orders" }
             @if none {
                 // code: /dashboard
-                (ui.empty_state("No orders yet").icon("\u{1f4e6}")
-                    .text(html! { "Orders show up here as soon as a customer checks out." })
-                    .link("Show sample orders", "/dashboard"))
+                EmptyState("No orders yet") icon="\u{1f4e6}" {
+                    text() { "Orders show up here as soon as a customer checks out." }
+                    link "Show sample orders" "/dashboard";
+                }
                 // end code
             } @else {
                 ul { li { "#1042, Ada Lovelace, 3 items" } li { "#1041, Grace Hopper, 1 item" } li { "#1040, Alan Turing, 2 items" } }

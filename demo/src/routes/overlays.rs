@@ -20,15 +20,14 @@ async fn dialog_page(ui: Ui) -> Page {
     page(
         &ui,
         "Dialog",
-        html! {
+        nojs! {
             (ui.flash())
             // code: /dialog
-            (ui.dialog("Delete account").id("confirm").title("Delete account?").small().danger()
-                .confirm("Delete account", "/dialog/delete").cancel("Keep it")
-                .body(html! {
-                    p { "This cannot be undone. Everything you wrote goes with it." }
-                    (ui.input("reason", "Tell us why (optional)").placeholder("Moving on"))
-                }))
+            Dialog("Delete account") id="confirm" title="Delete account?" small danger
+                confirm=("Delete account", "/dialog/delete") cancel="Keep it" {
+                p { "This cannot be undone. Everything you wrote goes with it." }
+                Input("reason", "Tell us why (optional)") placeholder="Moving on";
+            }
             // end code
             p class="nojs-note" { "Opened by an invoker button; the footer is a real form posting to " code { "/dialog/delete" } " with a hidden " code { "returns_to" } " so the server comes back here. Server-opened: " a href="/dialog?dialog=confirm" { "?dialog=confirm" } }
         },
@@ -59,22 +58,24 @@ async fn popover_page(ui: Ui) -> Page {
     page(
         &ui,
         "Popover menu",
-        html! {
+        nojs! {
             (ui.flash())
             div class="nojs-popover-row" {
                 // code: /popover
-                (ui.menu("Account")
-                    .heading("Signed in as Ada")
-                    .link("Profile", "/popover").icon("@").shortcut("g p")
-                    .link("Settings", "/settings").icon("\u{2699}").shortcut("g s")
-                    .link("Billing", "/popover").icon("$").disabled()
-                    .separator()
-                    .submenu("Theme", [("Light", "/popover?theme=light"), ("Dark", "/popover?theme=dark")]).icon("\u{25d0}")
-                    .separator()
-                    .action("Sign out", "/popover/signout").icon("\u{2192}").danger())
-                (ui.menu("More").align_end()
-                    .link("Documentation", "/").icon("?")
-                    .action("Clear cache", "/popover/signout"))
+                Menu("Account") {
+                    heading "Signed in as Ada";
+                    link "Profile" "/popover" icon="@" shortcut="g p";
+                    link "Settings" "/settings" icon="\u{2699}" shortcut="g s";
+                    link "Billing" "/popover" icon="$" disabled;
+                    separator();
+                    submenu "Theme" ([("Light", "/popover?theme=light"), ("Dark", "/popover?theme=dark")]) icon="\u{25d0}";
+                    separator();
+                    action "Sign out" "/popover/signout" icon="\u{2192}" danger;
+                }
+                Menu("More") align_end {
+                    link "Documentation" "/" icon="?";
+                    action "Clear cache" "/popover/signout";
+                }
                 // end code
             }
             p class="nojs-note" { "Links, a heading, a disabled item, a submenu that is another popover, and a " code { "<form method=\"post\">" } " action. Click outside or press Escape to close; the second menu opens end-aligned." }

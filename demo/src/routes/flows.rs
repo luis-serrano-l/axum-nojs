@@ -32,17 +32,13 @@ struct AppNotes(Vec<(String, String)>);
 
 fn signin_view(ui: &Ui, values: &[(String, String)], errors: &[(&str, &str)]) -> Page {
     // code: /app/signin
-    let form = ui
-        .form("/app/signin")
-        .submit("Sign in")
-        .values(values)
-        .errors(errors)
-        .email("email", "Email")
-        .required()
-        .placeholder("you@example.com")
-        .password("password", "Password")
-        .required()
-        .help("At least 8 characters. Try a short one to see the server's answer.");
+    let form = nojs! {
+        Form("/app/signin") submit="Sign in" values=(values) errors=(errors) {
+            email "email" "Email" required placeholder="you@example.com";
+            password "password" "Password" required
+                help="At least 8 characters. Try a short one to see the server's answer.";
+        }
+    };
     // end code
     page(
         ui,
@@ -140,13 +136,11 @@ async fn notes_page(ui: Ui, Saved(session): Saved<Session>, Saved(notes): Saved<
         .paged(total)
         .edit("/app/notes/edit")
         .empty("No notes yet: add one above.");
-    let add = ui
-        .form("/app/notes")
-        .submit("Add note")
-        .text("text", "New note")
-        .required()
-        .maxlength(60)
-        .placeholder("Buy milk");
+    let add = nojs! {
+        Form("/app/notes") submit="Add note" {
+            text "text" "New note" required maxlength=60 placeholder="Buy milk";
+        }
+    };
     // end code
     page(
         &ui,

@@ -26,9 +26,9 @@ async fn list_page(ui: Ui) -> Page {
     page(
         &ui,
         "Load-more list",
-        html! {
+        nojs! {
             // code: /list
-            (ui.pager("/list", 50).per_page(8).rows(|i| html! { "Row " (i + 1) }))
+            Pager("/list", 50) per_page=8 rows=|i| { "Row " (i + 1) };
             // end code
         },
     )
@@ -81,7 +81,7 @@ async fn swap_page(ui: Ui, Saved(notes): Saved<Notes>) -> Page {
     page(
         &ui,
         "Swap targets",
-        html! {
+        nojs! {
             (ui.flash())
             p class="nojs-note" { "Neither control sits inside a swap root. " code { "data-nojs-target" } " names the root to update and " code { "data-nojs-swap" } " how; without the script both are ordinary navigations to the same URL." }
             // code: /swap
@@ -91,8 +91,8 @@ async fn swap_page(ui: Ui, Saved(notes): Saved<Notes>) -> Page {
             p { "Notes so far: " span id="note-count" { (notes.0.len()) } }
             // code: /swap
             form method="post" action="/swap" data-nojs-target="#log" data-nojs-swap="append" data-nojs-indicator="#saving" {
-                (ui.input("note", "Note").hide_label().required().placeholder("A note").autocomplete("off"))
-                (ui.button("Add note").primary())
+                Input("note", "Note") hide_label required placeholder="A note" autocomplete="off";
+                Button("Add note") primary;
                 " " span id="saving" class="nojs-note" hidden { "Saving…" }
             }
             ol id="log" data-nojs="swap" { @for (_, note) in &notes.0 { li { (note) } } }
@@ -139,18 +139,26 @@ struct Settings {
 /// Tabs + form + flash. Everything survives a full navigation: the tab in the `nojs-ui`
 /// cookie, the values in `nojs-settings`, the flash in a one-shot cookie.
 async fn settings_page(ui: Ui, Saved(s): Saved<Settings>) -> Page {
-    let form = |id| ui.form("/settings").id(id).submit("Save");
     page(
         &ui,
         "Settings",
-        html! {
+        nojs! {
             // code: /settings
-            (ui.flash().dismiss().auto_hide())
-            (ui.tabs("settings")
-                .tab("Profile", form("profile").text("name", "Display name").required().value(&s.name)
-                    .hidden("notify", if s.notify { "true" } else { "false" }).render())
-                .tab("Notifications", form("notify").hidden("name", &s.name)
-                    .checkbox("notify", "Email me about releases").checked(s.notify).render()))
+            Flash dismiss auto_hide;
+            Tabs("settings") {
+                tab "Profile" {
+                    Form("/settings") id="profile" submit="Save" {
+                        text "name" "Display name" required value=(&s.name);
+                        hidden "notify" (if s.notify { "true" } else { "false" });
+                    }
+                }
+                tab "Notifications" {
+                    Form("/settings") id="notify" submit="Save" {
+                        hidden "name" (&s.name);
+                        checkbox "notify" "Email me about releases" checked=(s.notify);
+                    }
+                }
+            }
             // end code
             p class="nojs-note" { "Go to " a href="/" { "the index" } " and come back: the open tab and the values are remembered. Saving with notifications off stacks a warning under the confirmation; the name " code { "admin" } " is refused with an alert. The confirmation fades after six seconds unless reduced motion is on." }
         },

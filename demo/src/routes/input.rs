@@ -25,16 +25,17 @@ async fn combobox_page(ui: Ui) -> Page {
     page(
         &ui,
         "Combobox",
-        html! {
+        nojs! {
             (ui.flash())
             // One swap root around the form and its results: the script searches as you type.
             div id="langs" data-nojs="swap" {
                 // code: /combobox
-                (ui.combobox("q", "/combobox").multi().create("/combobox/new")
-                    .label("Language").placeholder("Type a language")
-                    .group("Systems", ["Rust", "Zig", "Swift"])
-                    .group("Scripting", ["Ruby", "Python", "Racket"])
-                    .options(["Prolog", "Scala"]))
+                Combobox("q", "/combobox") multi create="/combobox/new"
+                    label="Language" placeholder="Type a language" {
+                    group "Systems" (["Rust", "Zig", "Swift"]);
+                    group "Scripting" (["Ruby", "Python", "Racket"]);
+                    options(["Prolog", "Scala"]);
+                }
                 // end code
             }
             p class="nojs-note" { "Pick several: each result adds a chip, each chip's \u{d7} removes it, and the chips ride along with the next search. Type a language that is not here to get a Create row." }
@@ -170,35 +171,21 @@ async fn wizard_submit(
 fn form_view(ui: &Ui, values: &[(String, String)], errors: &[(&str, &str)]) -> Page {
     let inline = ui.param("layout") == Some("inline");
     // code: /form
-    let form = ui
-        .form("/form")
-        .submit("Sign up")
-        .values(values)
-        .errors(errors)
-        .group("Account")
-        .text("name", "Name")
-        .required()
-        .email("email", "Email")
-        .required()
-        .number("age", "Age", 13, 120)
-        .required()
-        .pattern(
-            "handle",
-            "Handle",
-            "[a-z0-9_]{3,16}",
-            "3–16 lowercase letters, digits or _",
-        )
-        .required()
-        .select("plan", "Plan", ["Free", "Team", "Enterprise"])
-        .group("Profile")
-        .textarea("bio", "Bio", 3)
-        .maxlength(160)
-        .help("Grows as you type where the browser supports it.")
-        .file("avatar", "Avatar", "image/png,image/jpeg")
-        .help("PNG or JPEG.")
-        .date("start", "Start date", "2026-01-01", "2027-12-31")
-        .time("call", "Best time to call", "09:00", "17:00")
-        .help("Office hours, 09:00 to 17:00.");
+    let form = nojs! {
+        Form("/form") submit="Sign up" values=(values) errors=(errors) inline[inline] {
+            group "Account";
+            text "name" "Name" required;
+            email "email" "Email" required;
+            number "age" "Age" 13 120 required;
+            pattern "handle" "Handle" "[a-z0-9_]{3,16}" "3–16 lowercase letters, digits or _" required;
+            select "plan" "Plan" (["Free", "Team", "Enterprise"]);
+            group "Profile";
+            textarea "bio" "Bio" 3 maxlength=160 help="Grows as you type where the browser supports it.";
+            file "avatar" "Avatar" "image/png,image/jpeg" help="PNG or JPEG.";
+            date "start" "Start date" "2026-01-01" "2027-12-31";
+            time "call" "Best time to call" "09:00" "17:00" help="Office hours, 09:00 to 17:00.";
+        }
+    };
     // end code
     page(
         ui,
@@ -207,7 +194,7 @@ fn form_view(ui: &Ui, values: &[(String, String)], errors: &[(&str, &str)]) -> P
             (ui.flash())
             p { "Labels " @if inline { "beside the fields. " a href="/form" { "Put them above" } } @else { "above the fields. " a href="/form?layout=inline" { "Put them beside" } } "." }
             @if !errors.is_empty() { p class="nojs-error" { "Server-side checks failed. Browser validation passed, these rules only live on the server." } }
-            (if inline { form.inline() } else { form })
+            (form)
         },
     )
 }
@@ -337,15 +324,15 @@ async fn inputs_page(ui: Ui, Query(q): Query<Inputs>, Saved(saved): Saved<Inputs
     page(
         &ui,
         "Select, range, colour",
-        html! {
+        nojs! {
             (ui.flash())
             form id="inputs" data-nojs="swap" class="nojs-form" method="post" action="/inputs" {
                 // code: /inputs
-                (ui.select("size", v.size.as_deref().unwrap_or("m")).options(SIZES).label("Size"))
-                (ui.select("country", v.country.as_deref().unwrap_or("es")).groups(COUNTRIES).search("/inputs").label("Country"))
-                (ui.range("volume", v.volume.unwrap_or(40)).step(5).label("Volume"))
-                (ui.range_pair("price", (v.price_min.unwrap_or(20), v.price_max.unwrap_or(80))).step(5).label("Price"))
-                (ui.color("accent", v.accent.as_deref().unwrap_or("#1f6f5f")).presets(&ACCENTS).alpha(v.alpha.unwrap_or(100)).label("Accent"))
+                Select("size", v.size.as_deref().unwrap_or("m")) options=(SIZES) label="Size";
+                Select("country", v.country.as_deref().unwrap_or("es")) groups=(COUNTRIES) search="/inputs" label="Country";
+                Range("volume", v.volume.unwrap_or(40)) step=5 label="Volume";
+                RangePair("price", (v.price_min.unwrap_or(20), v.price_max.unwrap_or(80))) step=5 label="Price";
+                Color("accent", v.accent.as_deref().unwrap_or("#1f6f5f")) presets=(&ACCENTS) alpha=(v.alpha.unwrap_or(100)) label="Accent";
                 // end code
                 (ui.button("Save").primary())
             }

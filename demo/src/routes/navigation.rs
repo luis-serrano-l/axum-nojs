@@ -45,22 +45,23 @@ async fn nav_page(ui: Ui) -> Page {
     page(
         &ui,
         "Drawer and breadcrumbs",
-        html! {
+        nojs! {
             // code: /nav
-            (ui.drawer("Menu").id("site").title("axum-nojs").sidebar()
-                .nav(html! { ul {
+            Drawer("Menu") id="site" title="axum-nojs" sidebar
+                nav=(html! { ul {
                     li { a href="/nav" aria-current="page" { "Overview" } }
                     li { a href="/table" { "Files" } } li { a href="/dashboard" { "Reports" } } li { a href="/settings" { "Settings" } }
-                } })
-                .body(html! {
-                    (ui.breadcrumbs().link("Home", "/").link("Projects", "/nav").here("axum-nojs"))
+                } }) {
+                    Breadcrumbs { link "Home" "/"; link "Projects" "/nav"; here "axum-nojs"; }
                     p { "Wider than 60rem the navigation is a sidebar; narrower, the menu button opens it as a drawer. Escape or a click outside closes it." }
                     p { "A long trail folds its middle so both ends stay readable:" }
-                    (ui.breadcrumbs().link("Home", "/").link("Projects", "/nav").link("axum-nojs", "/nav")
-                        .link("Components", "/").link("Navigation", "/nav").here("Breadcrumbs"))
+                    Breadcrumbs {
+                        link "Home" "/"; link "Projects" "/nav"; link "axum-nojs" "/nav";
+                        link "Components" "/"; link "Navigation" "/nav"; here "Breadcrumbs";
+                    }
             // end code
                     p class="nojs-note" { "Server-opened: " a href="/nav?dialog=site" { "?dialog=site" } }
-                }))
+                }
         },
     )
 }

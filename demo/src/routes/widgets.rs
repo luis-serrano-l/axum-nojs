@@ -29,12 +29,10 @@ async fn calendar_page(ui: Ui) -> Page {
     page(
         &ui,
         "Calendar",
-        html! {
+        nojs! {
             // code: /calendar
-            (ui.calendar("day")
-                .disabled(|d| d.weekday() >= 5)
-                .event(&invoice, "Invoice due")
-                .event(&release, "Release"))
+            Calendar("day") disabled=(|d| d.weekday() >= 5)
+                event=(&invoice, "Invoice due") event=(&release, "Release");
             // end code
             p class="nojs-note" { @match ui.param("day") {
                 Some(d) => { "You picked " (d) ". Weekends cannot be picked; a dot marks an event." },
@@ -43,9 +41,9 @@ async fn calendar_page(ui: Ui) -> Page {
             h2 { "In a form" }
             form class="nojs-stack" method="get" action="/calendar" {
                 // code: /calendar
-                (ui.date_picker("due", "Due date").required().disabled(|d| d.weekday() >= 5))
-                (ui.date_picker("born", "Born").native().max("2026-12-31"))
-                (ui.button("Save").primary())
+                DatePicker("due", "Due date") required disabled=(|d| d.weekday() >= 5);
+                DatePicker("born", "Born") native max="2026-12-31";
+                Button("Save") primary;
                 // end code
             }
         },
@@ -100,18 +98,16 @@ async fn upload_page(ui: Ui, Saved(who): Saved<Uploader>) -> Page {
         .map(|n| format!("/upload/file/{n}"))
         .collect();
     // code: /upload
-    let mut up = ui
-        .upload("/upload", "file")
-        .accept("image/*,.txt,.pdf")
-        .multiple()
-        .hint("Images, text or PDF, up to 200 KB each. The last three are kept.");
-    for ((name, bytes), href) in files.iter().zip(&links) {
-        up = up.file(name, bytes.len() as u64).href(href);
-        if upload_type(name).is_some() {
-            up = up.preview(href);
+    let up = nojs! {
+        Upload("/upload", "file") accept="image/*,.txt,.pdf" multiple
+            hint="Images, text or PDF, up to 200 KB each. The last three are kept." {
+            @for ((name, bytes), href) in files.iter().zip(&links) {
+                // An image gets a thumbnail; anything else just its link.
+                file (name) (bytes.len() as u64) href=(href) preview=[upload_type(name).map(|_| href)];
+            }
+            remove "/upload/remove";
         }
-    }
-    let up = up.remove("/upload/remove");
+    };
     // end code
     page(&ui, "Upload", html! { (ui.flash()) (up) })
 }
@@ -228,18 +224,19 @@ impl Default for Board {
 
 async fn kanban_page(ui: Ui, Saved(board): Saved<Board>) -> Page {
     // code: /kanban
-    let mut k = ui.kanban("/kanban");
-    for (lane, title) in LANES {
-        k = k.column(lane, title);
-        if lane == "doing" {
-            k = k.limit(2);
-        }
-        for (key, _) in board.0.iter().filter(|(_, l)| l == lane) {
-            if let Some((key, text, note)) = CARDS.iter().find(|c| c.0 == key) {
-                k = k.card(key, text).note(note);
+    let k = nojs! {
+        Kanban("/kanban") {
+            @for (lane, title) in LANES {
+                column (lane) (title) limit=[(lane == "doing").then_some(2)] {
+                    @for (key, _) in board.0.iter().filter(|(_, l)| l == lane) {
+                        @if let Some((key, text, note)) = CARDS.iter().find(|c| c.0 == key) {
+                            card (key) (text) note=(note);
+                        }
+                    }
+                }
             }
         }
-    }
+    };
     // end code
     page(
         &ui,
