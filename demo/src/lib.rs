@@ -9,6 +9,7 @@ use axum::{
     routing::{get, post},
 };
 pub mod pricing;
+pub mod snapshot;
 use axum_nojs::calendar::Date;
 use axum_nojs::layout::{Palette, Tokens};
 use axum_nojs::prelude::*;

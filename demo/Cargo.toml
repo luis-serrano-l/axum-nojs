@@ -8,10 +8,10 @@ axum-nojs = { path = "../axum-nojs", features = ["axum"] }
 maud.workspace = true
 axum = { workspace = true, features = ["multipart"] }
 tokio.workspace = true
+tower = { version = "0.5", features = ["util"] }
 serde.workspace = true
 tower-http = { version = "0.7.1", features = ["compression-gzip", "compression-br"] }
 syntect = { version = "5.3.0", default-features = false, features = ["default-syntaxes", "regex-fancy", "html"] }
 
 [dev-dependencies]
-tower = { version = "0.5", features = ["util"] }
 http-body-util = "0.1"

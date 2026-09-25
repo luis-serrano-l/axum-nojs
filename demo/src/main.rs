@@ -2,6 +2,7 @@
 //! the port; the checks use 3001 so they never kill a server you are looking at).
 //! `cargo run -p demo -- spec` prints `spec/components.json`; `-- spec write` regenerates
 //! that file and the README feature matrix from `axum_nojs::spec::SPECS`.
+//! `cargo run -p demo -- snapshot <dir>` writes the static snapshot (`demo::snapshot`).
 
 use std::path::Path;
 
@@ -16,8 +17,11 @@ async fn main() {
     {
         ["spec"] => print!("{}", axum_nojs::spec::to_json()),
         ["spec", "write"] => write_spec(),
+        ["snapshot", dir] => write_snapshot(Path::new(dir)).await,
         [] => serve().await,
-        other => eprintln!("unknown arguments {other:?}; try `spec`, `spec write`, or nothing"),
+        other => eprintln!(
+            "unknown arguments {other:?}; try `spec`, `spec write`, `snapshot <dir>`, or nothing"
+        ),
     }
 }
 
@@ -54,4 +58,17 @@ fn write_spec() {
     );
     std::fs::write(&readme_path, updated).unwrap();
     println!("wrote spec/components.json and README.md feature matrix");
+}
+
+/// Write every page of the static snapshot into `dir`, replacing what was there.
+async fn write_snapshot(dir: &Path) {
+    let _ = std::fs::remove_dir_all(dir);
+    std::fs::create_dir_all(dir).unwrap();
+    let pages = demo::snapshot::pages().await;
+    for page in &pages {
+        std::fs::write(dir.join(&page.name), &page.html).unwrap();
+    }
+    // Pages would otherwise run Jekyll over the files.
+    std::fs::write(dir.join(".nojekyll"), "").unwrap();
+    println!("wrote {} pages to {}", pages.len(), dir.display());
 }

@@ -75,6 +75,7 @@ cargo run -p demo      # http://127.0.0.1:3000: index grouped by what the platfo
 cargo dev              # same, restarted when Rust source changes (cargo install cargo-watch)
 cargo test             # includes: only the enhancement <script> on any route, and Blitz layout tests
 scripts/verify.sh      # build + clippy -D warnings + tests + screenshots + <script> grep + Firefox check
+scripts/snapshot.sh    # static snapshot of every page into target/site/ (no script, relative links, a banner)
 ```
 
 The index lists every component in groups (overlays, disclosure, navigation, input, feedback,
@@ -322,6 +323,7 @@ axum-nojs/src/<name>.rs     one component each: dialog, popover, tabs, accordion
                             combobox, pager, form, counter, theme, toast, breadcrumbs, skeleton,
                             empty_state, stat, drawer, palette (command palette)
 demo/src/lib.rs             Axum routes, ≤15 lines each, plus the no-script test
+demo/src/snapshot.rs        the static snapshot for GitHub Pages (scripts/snapshot.sh)
 axum-nojs-test/src/lib.rs   Page: render a route through Blitz, assert layout, screenshot
 axum-nojs-test/tests/       every route rendered and captured; layout assertions
 axum-nojs-test/examples/probe.rs   render any HTML file through Blitz, print boxes

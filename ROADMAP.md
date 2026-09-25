@@ -713,11 +713,18 @@ script, proven in CI, with server-side flows included.
   description), and the post drafted in `docs/launch-post.md`.
   Hosting answered 2026-09-24: a static snapshot on GitHub Pages (no server). Posting stays
   with the owner (BLOCKED.md).
-  - [ ] Static snapshot: export every GET page in `PATHS` to HTML (both caps variants where
+  - [x] Static snapshot: export every GET page in `PATHS` to HTML (both caps variants where
     they differ, the enhancement script off), rewrite links to relative `.html`, and add a
     banner on every page: forms, cookies and paging need the real server (`cargo run -p demo`).
     `<dialog>`, `popover`, `<details>` and tooltips keep working. A script (`scripts/snapshot.sh`)
     writes it to `target/site/`, and a test checks that every exported page has the banner and no `<script>`.
+    Done: `demo/src/snapshot.rs` (`cargo run -p demo -- snapshot <dir>`, wrapped by
+    `scripts/snapshot.sh`). Each path renders with every capability as `<name>.html` and with
+    none as `<name>.baseline.html` where the two differ (15 of 33), linked from the banner; the
+    capability beacons are stripped. Links and GET form actions to an exported path point at its
+    file (the exact query if `PATHS` has it, else the route's first export); POST targets and
+    `/table.csv` stay absolute and fail, as the banner says. `.nojekyll` is written too. The test
+    also checks every `.html` link resolves.
   - [ ] A Pages workflow (`.github/workflows/pages.yml`) that builds the snapshot and deploys it.
     Enabling Pages in the repository settings and pushing are the owner's actions.
 
