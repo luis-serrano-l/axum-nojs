@@ -727,9 +727,10 @@ pub fn to_json() -> String {
             for (j, b) in builders.iter().enumerate() {
                 let calls: Vec<String> = b.calls.iter().map(|c| json_str(c)).collect();
                 out.push_str(&format!(
-                    "        {{\n          \"builder\": {},\n          \"lui\": {},\n          \"calls\": [{}],\n          \"props\": [",
+                    "        {{\n          \"builder\": {},\n          \"lui\": {},\n          \"status\": {},\n          \"calls\": [{}],\n          \"props\": [",
                     json_str(b.builder),
                     json_str(&b.lui()),
+                    json_str(b.status.as_str()),
                     calls.join(", ")
                 ));
                 for (k, p) in b.props.iter().enumerate() {

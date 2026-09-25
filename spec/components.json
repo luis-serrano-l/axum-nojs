@@ -50,6 +50,7 @@
         {
           "builder": "Button",
           "lui": "Button",
+          "status": "stable",
           "calls": ["ui.button(text: &str)", "ui.link_button(text: &str, href: &str)"],
           "props": [
             { "name": "primary", "kind": "switch", "args": "", "default": "off", "attr": "", "doc": "The main action of a form or page." },
@@ -104,6 +105,7 @@
         {
           "builder": "Input",
           "lui": "Input",
+          "status": "stable",
           "calls": ["ui.input(name: &str, label: &str)", "ui.checkbox(name: &str, label: &str)", "ui.switch(name: &str, label: &str)"],
           "props": [
             { "name": "email", "kind": "switch", "args": "", "default": "off", "attr": "", "doc": "`type=\"email\"`." },
@@ -139,6 +141,7 @@
         {
           "builder": "RadioGroup",
           "lui": "RadioGroup",
+          "status": "stable",
           "calls": ["ui.radio_group(name: &str, legend: &str)"],
           "props": [
             { "name": "option", "kind": "item", "args": "value: &'a str, label: &'a str", "default": "", "attr": "", "doc": "One choice posting `value`, labelled `label`." },
@@ -162,6 +165,7 @@
         {
           "builder": "Badge",
           "lui": "Badge",
+          "status": "stable",
           "calls": ["ui.badge(text: &str)"],
           "props": [
             { "name": "secondary", "kind": "switch", "args": "", "default": "off", "attr": "", "doc": "The quieter `--lui-secondary` fill." },
@@ -186,6 +190,7 @@
         {
           "builder": "Card",
           "lui": "Card",
+          "status": "stable",
           "calls": ["ui.card()"],
           "props": [
             { "name": "title", "kind": "value", "args": "title: &'a str", "default": "", "attr": "", "doc": "The heading at the top (`h3`)." },
@@ -211,6 +216,7 @@
         {
           "builder": "IconMark",
           "lui": "Icon",
+          "status": "stable",
           "calls": ["ui.icon(icon: Icon)"],
           "props": [
             { "name": "label", "kind": "value", "args": "label: &'a str", "default": "", "attr": "", "doc": "The name a screen reader says, for an icon that carries meaning on its own." }
@@ -232,6 +238,7 @@
         {
           "builder": "Avatar",
           "lui": "Avatar",
+          "status": "stable",
           "calls": ["ui.avatar(name: &str)"],
           "props": [
             { "name": "src", "kind": "value", "args": "src: &'a str", "default": "", "attr": "src", "doc": "The picture's URL." },
@@ -253,6 +260,7 @@
         {
           "builder": "Stack",
           "lui": "Stack",
+          "status": "stable",
           "calls": ["ui.stack(content: Markup)"],
           "props": [
             { "name": "gap", "kind": "number", "args": "n: u8", "default": "", "attr": "", "doc": "The gap as a step of the `--lui-space-*` scale." }
@@ -273,6 +281,7 @@
         {
           "builder": "Cluster",
           "lui": "Cluster",
+          "status": "stable",
           "calls": ["ui.cluster(content: Markup)"],
           "props": [
             { "name": "between", "kind": "switch", "args": "", "default": "off", "attr": "", "doc": "First child at the start, last at the end, the rest spread between." },
@@ -295,6 +304,7 @@
         {
           "builder": "Grid",
           "lui": "Grid",
+          "status": "stable",
           "calls": ["ui.grid(min: &str, content: Markup)"],
           "props": [
             { "name": "gap", "kind": "number", "args": "n: u8", "default": "", "attr": "", "doc": "The gap as a step of the `--lui-space-*` scale." }
@@ -315,6 +325,7 @@
         {
           "builder": "Split",
           "lui": "Split",
+          "status": "stable",
           "calls": ["ui.split(side: Markup, main: Markup)"],
           "props": [
             { "name": "side_width", "kind": "value", "args": "width: &'a str", "default": "", "attr": "", "doc": "The side's width, any CSS length." },
@@ -340,6 +351,7 @@
         {
           "builder": "Calendar",
           "lui": "Calendar",
+          "status": "stable",
           "calls": ["ui.calendar(name: &str)"],
           "props": [
             { "name": "today", "kind": "value", "args": "date: &str", "default": "", "attr": "", "doc": "The date to mark as today (`YYYY-MM-DD`), instead of the server's clock in UTC." },
@@ -370,6 +382,7 @@
         {
           "builder": "DatePicker",
           "lui": "DatePicker",
+          "status": "stable",
           "calls": ["ui.date_picker(name: &str, label: &str)"],
           "props": [
             { "name": "value", "kind": "value", "args": "date: &'a str", "default": "", "attr": "value", "doc": "The current value, `YYYY-MM-DD` (a saved date)." },
@@ -397,6 +410,7 @@
         {
           "builder": "Dialog",
           "lui": "Dialog",
+          "status": "stable",
           "calls": ["ui.dialog(trigger: &str)"],
           "props": [
             { "name": "body", "kind": "value", "args": "body: Markup", "default": "", "attr": "", "doc": "What the dialog says." },
@@ -428,6 +442,7 @@
         {
           "builder": "Menu",
           "lui": "Menu",
+          "status": "stable",
           "calls": ["ui.menu(label: &str)"],
           "props": [
             { "name": "link", "kind": "item", "args": "text: &'a str, href: &'a str", "default": "", "attr": "", "doc": "A link." },
@@ -461,6 +476,7 @@
         {
           "builder": "Tabs",
           "lui": "Tabs",
+          "status": "stable",
           "calls": ["ui.tabs(name: &str)"],
           "props": [
             { "name": "tab", "kind": "item", "args": "title: &'a str, body: Markup", "default": "", "attr": "", "doc": "A tab titled `title` with its panel." },
@@ -486,6 +502,7 @@
         {
           "builder": "Accordion",
           "lui": "Accordion",
+          "status": "stable",
           "calls": ["ui.accordion(group: &str)"],
           "props": [
             { "name": "item", "kind": "item", "args": "title: &'a str, body: Markup", "default": "", "attr": "", "doc": "A section titled `title` with its body." },
@@ -513,6 +530,7 @@
         {
           "builder": "Combobox",
           "lui": "Combobox",
+          "status": "stable",
           "calls": ["ui.combobox(name: &str, action: &str)"],
           "props": [
             { "name": "options", "kind": "value", "args": "values: impl IntoIterator<Item = &'a str>", "default": "", "attr": "", "doc": "Suggestions with no `<optgroup>`." },
@@ -540,6 +558,7 @@
         {
           "builder": "Pager",
           "lui": "Pager",
+          "status": "stable",
           "calls": ["ui.pager(href: &str, total: usize)"],
           "props": [
             { "name": "per_page", "kind": "number", "args": "per_page: usize", "default": "10", "attr": "", "doc": "Rows per page." },
@@ -569,6 +588,7 @@
         {
           "builder": "Row",
           "lui": "Row",
+          "status": "stable",
           "calls": ["Row::new(cells: impl IntoIterator<Item = Markup>)"],
           "props": [
             { "name": "key", "kind": "value", "args": "key: &'a str", "default": "", "attr": "", "doc": "The value posted for this row when its checkbox is ticked; also names its menu." },
@@ -580,6 +600,7 @@
         {
           "builder": "Table",
           "lui": "Table",
+          "status": "stable",
           "calls": ["ui.table(id: &str, href: &str)"],
           "props": [
             { "name": "column", "kind": "item", "args": "key: &'a str, label: &'a str", "default": "", "attr": "", "doc": "A column." },
@@ -628,6 +649,7 @@
         {
           "builder": "Wizard",
           "lui": "Wizard",
+          "status": "stable",
           "calls": ["ui.wizard(id: &str, action: &str)"],
           "props": [
             { "name": "step", "kind": "item", "args": "title: &'a str, body: impl Into<StepBody<'a>>", "default": "", "attr": "", "doc": "A step titled `title` showing `body`." },
@@ -661,6 +683,7 @@
         {
           "builder": "Form",
           "lui": "Form",
+          "status": "stable",
           "calls": ["ui.form(action: &str)", "ui.fields()"],
           "props": [
             { "name": "group", "kind": "item", "args": "legend: &'a str", "default": "", "attr": "", "doc": "A `<fieldset>` with this `<legend>` around the fields added after it." },
@@ -709,6 +732,7 @@
         {
           "builder": "ErrorSummary",
           "lui": "ErrorSummary",
+          "status": "beta",
           "calls": ["ui.error_summary(errors: &[(&str, &str)])"],
           "props": [
             { "name": "title", "kind": "value", "args": "text: &'a str", "default": "There is a problem", "attr": "", "doc": "The heading." }
@@ -731,6 +755,7 @@
         {
           "builder": "Counter",
           "lui": "Counter",
+          "status": "stable",
           "calls": ["ui.counter(action: &str, value: i64)"],
           "props": [
             { "name": "min", "kind": "number", "args": "min: i64", "default": "", "attr": "min", "doc": "Lowest value." },
@@ -755,6 +780,7 @@
         {
           "builder": "ThemeToggle",
           "lui": "ThemeToggle",
+          "status": "stable",
           "calls": ["ui.theme_toggle(action: &str)"],
           "props": []
         }
@@ -776,6 +802,7 @@
         {
           "builder": "Flash",
           "lui": "Flash",
+          "status": "stable",
           "calls": ["ui.flash()"],
           "props": [
             { "name": "dismiss", "kind": "switch", "args": "", "default": "off", "attr": "", "doc": "A dismiss link on each message, back to this page (which no longer has the flash)." },
@@ -810,6 +837,7 @@
         {
           "builder": "Select",
           "lui": "Select",
+          "status": "stable",
           "calls": ["ui.select(name: &str, selected: &str)"],
           "props": [
             { "name": "options", "kind": "value", "args": "options: impl IntoIterator<Item = O>", "default": "", "attr": "", "doc": "Options with no `<optgroup>`." },
@@ -823,6 +851,7 @@
         {
           "builder": "SelectOption",
           "lui": "SelectOption",
+          "status": "stable",
           "calls": ["SelectOption::new(value: &str, text: &str)"],
           "props": [
             { "name": "icon", "kind": "value", "args": "icon: &'a str", "default": "", "attr": "", "doc": "An icon before the label." },
@@ -846,6 +875,7 @@
         {
           "builder": "Range",
           "lui": "Range",
+          "status": "stable",
           "calls": ["ui.range(name: &str, value: i64)", "ui.range_pair(name: &str, (a, b): (i64, i64))"],
           "props": [
             { "name": "min", "kind": "number", "args": "min: i64", "default": "0", "attr": "min", "doc": "Lowest value." },
@@ -869,6 +899,7 @@
         {
           "builder": "Color",
           "lui": "Color",
+          "status": "stable",
           "calls": ["ui.color(name: &str, value: &str)"],
           "props": [
             { "name": "presets", "kind": "value", "args": "presets: &'a [&'a str]", "default": "", "attr": "", "doc": "`#rrggbb` swatches that post `<name>-preset` when clicked." },
@@ -904,6 +935,7 @@
         {
           "builder": "Upload",
           "lui": "Upload",
+          "status": "stable",
           "calls": ["ui.upload(action: &str, name: &str)"],
           "props": [
             { "name": "accept", "kind": "value", "args": "types: &'a str", "default": "", "attr": "accept", "doc": "`accept`." },
@@ -932,6 +964,7 @@
         {
           "builder": "Kanban",
           "lui": "Kanban",
+          "status": "stable",
           "calls": ["ui.kanban(action: &str)"],
           "props": [
             { "name": "column", "kind": "item", "args": "key: &'a str, title: &'a str", "default": "", "attr": "", "doc": "A column." },
@@ -955,6 +988,7 @@
         {
           "builder": "Alert",
           "lui": "Alert",
+          "status": "stable",
           "calls": ["ui.alert(title: &str)"],
           "props": [
             { "name": "description", "kind": "value", "args": "text: &'a str", "default": "", "attr": "", "doc": "A line of text under the title." },
@@ -981,6 +1015,7 @@
         {
           "builder": "Progress",
           "lui": "Progress",
+          "status": "stable",
           "calls": ["ui.progress(value: u64, max: u64)"],
           "props": [
             { "name": "label", "kind": "value", "args": "text: &'a str", "default": "", "attr": "", "doc": "A label above the bar, with the percentage beside it." }
@@ -1000,6 +1035,7 @@
         {
           "builder": "Meter",
           "lui": "Meter",
+          "status": "stable",
           "calls": ["ui.meter(value: i64, min: i64, max: i64)"],
           "props": [
             { "name": "label", "kind": "value", "args": "text: &'a str", "default": "", "attr": "", "doc": "A label above the meter, with the value beside it." },
@@ -1024,6 +1060,7 @@
         {
           "builder": "Tooltip",
           "lui": "Tooltip",
+          "status": "stable",
           "calls": ["ui.tooltip(text: &str, trigger: Markup)"],
           "props": [
             { "name": "below", "kind": "switch", "args": "", "default": "off", "attr": "", "doc": "Show the text under the trigger instead of above it." },
@@ -1045,6 +1082,7 @@
         {
           "builder": "Separator",
           "lui": "Separator",
+          "status": "stable",
           "calls": ["ui.separator()"],
           "props": [
             { "name": "label", "kind": "value", "args": "text: &'a str", "default": "", "attr": "", "doc": "A word in the middle of the line." },
@@ -1069,6 +1107,7 @@
         {
           "builder": "Toasts",
           "lui": "Toasts",
+          "status": "stable",
           "calls": ["ui.toasts()"],
           "props": [
             { "name": "dismiss", "kind": "switch", "args": "", "default": "off", "attr": "", "doc": "A close link on each toast, back to this page." }
@@ -1090,6 +1129,7 @@
         {
           "builder": "Breadcrumbs",
           "lui": "Breadcrumbs",
+          "status": "stable",
           "calls": ["ui.breadcrumbs()"],
           "props": [
             { "name": "link", "kind": "item", "args": "label: &'a str, href: &'a str", "default": "", "attr": "", "doc": "One step from the root towards this page." },
@@ -1113,6 +1153,7 @@
         {
           "builder": "Skeleton",
           "lui": "Skeleton",
+          "status": "stable",
           "calls": ["ui.skeleton(lines: usize)"],
           "props": [
             { "name": "label", "kind": "value", "args": "label: &'a str", "default": "Loading", "attr": "", "doc": "What screen readers hear instead of \"Loading\"." },
@@ -1133,6 +1174,7 @@
         {
           "builder": "EmptyState",
           "lui": "EmptyState",
+          "status": "stable",
           "calls": ["ui.empty_state(title: &str)"],
           "props": [
             { "name": "icon", "kind": "value", "args": "icon: &'a str", "default": "", "attr": "", "doc": "A glyph or emoji above the title, hidden from screen readers." },
@@ -1155,6 +1197,7 @@
         {
           "builder": "Stat",
           "lui": "Stat",
+          "status": "stable",
           "calls": ["ui.stat(label: &str, value: &str)"],
           "props": [
             { "name": "delta", "kind": "value", "args": "text: &'a str", "default": "", "attr": "", "doc": "The change." },
@@ -1182,6 +1225,7 @@
         {
           "builder": "Chart",
           "lui": "Chart",
+          "status": "beta",
           "calls": ["ui.chart(title: &str)"],
           "props": [
             { "name": "point", "kind": "item", "args": "label: &'a str, value: f64", "default": "", "attr": "", "doc": "One value, labelled on the x axis." },
@@ -1208,6 +1252,7 @@
         {
           "builder": "Sidebar",
           "lui": "Sidebar",
+          "status": "beta",
           "calls": ["ui.sidebar(label: &str)"],
           "props": [
             { "name": "group", "kind": "item", "args": "heading: &'a str", "default": "", "attr": "", "doc": "Start a group of links under a small heading." },
@@ -1232,6 +1277,7 @@
         {
           "builder": "NavMenu",
           "lui": "NavMenu",
+          "status": "beta",
           "calls": ["ui.nav_menu(label: &str)"],
           "props": [
             { "name": "link", "kind": "item", "args": "text: &'a str, href: &'a str", "default": "", "attr": "href", "doc": "A link in the row; the one to the current path is marked current." },
@@ -1253,6 +1299,7 @@
         {
           "builder": "DescriptionList",
           "lui": "DescriptionList",
+          "status": "beta",
           "calls": ["ui.description_list()"],
           "props": [
             { "name": "item", "kind": "item", "args": "term: &'a str, detail: impl Render", "default": "", "attr": "", "doc": "A term and its detail (text, or markup such as a badge)." },
@@ -1276,6 +1323,7 @@
         {
           "builder": "ToggleGroup",
           "lui": "ToggleGroup",
+          "status": "beta",
           "calls": ["ui.toggle_group(name: &str, label: &str)"],
           "props": [
             { "name": "item", "kind": "item", "args": "value: &'a str, text: &'a str", "default": "", "attr": "value", "doc": "An option posting `value`, shown as `text`." },
@@ -1300,6 +1348,7 @@
         {
           "builder": "ContextMenu",
           "lui": "ContextMenu",
+          "status": "beta",
           "calls": ["ui.context_menu(label: &str)"],
           "props": [
             { "name": "items", "kind": "value", "args": "items: impl IntoIterator<Item = MenuItem<'a>>", "default": "", "attr": "", "doc": "The actions: `MenuItem::link`, `MenuItem::action`." },
@@ -1323,6 +1372,7 @@
         {
           "builder": "InputOtp",
           "lui": "InputOtp",
+          "status": "beta",
           "calls": ["ui.input_otp(name: &str, label: &str)"],
           "props": [
             { "name": "length", "kind": "number", "args": "digits: u8", "default": "6", "attr": "maxlength", "doc": "How many digits the code has." }
@@ -1346,6 +1396,7 @@
         {
           "builder": "Drawer",
           "lui": "Drawer",
+          "status": "stable",
           "calls": ["ui.drawer(label: &str)"],
           "props": [
             { "name": "nav", "kind": "value", "args": "nav: Markup", "default": "", "attr": "", "doc": "The navigation inside the drawer, usually a `ul` of links." },
@@ -1374,6 +1425,7 @@
         {
           "builder": "Palette",
           "lui": "Palette",
+          "status": "stable",
           "calls": ["ui.palette(action: &str)"],
           "props": [
             { "name": "command", "kind": "item", "args": "label: &'a str, href: &'a str", "default": "", "attr": "", "doc": "A destination." },

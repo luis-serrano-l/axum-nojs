@@ -440,7 +440,7 @@ pub(crate) fn shell(ui: &Ui, title: &str, body: Markup) -> Markup {
     };
     html! {
         (toolbar(ui, true))
-        h1 { (title) }
+        h1 { (title) @if beta(c.0) { " " (ui.badge("beta").warn()) } }
         p class="lui-lede" { (c.4) }
         p class="lui-built" { "Built on " @for f in c.3.split(", ") { code { (f) } " " } }
         // The live component and the code that drew it, joined as one plate.
@@ -457,6 +457,13 @@ pub(crate) fn shell(ui: &Ui, title: &str, body: Markup) -> Markup {
             (props(ui, builders))
         }
     }
+}
+
+/// Whether a component page shows a builder whose API is still beta.
+fn beta(href: &str) -> bool {
+    CODE.iter()
+        .find(|h| h.0 == href)
+        .is_some_and(|h| h.3.iter().any(|b| b.status == loco_ui::props::Status::Beta))
 }
 
 /// `text` with each `` `span` `` as `<code>`, as rustdoc shows it.
@@ -480,6 +487,7 @@ fn props(ui: &Ui, builders: &[&loco_ui::props::Component]) -> Markup {
                     summary {
                         code { (b.lui()) }
                         @for call in b.calls { " " code { (call) } }
+                        " " (ui.badge(b.status.as_str()).outline())
                         span { (b.props.len()) @if b.props.len() == 1 { " prop" } @else { " props" } }
                     }
                     @if !b.props.is_empty() {
@@ -531,7 +539,7 @@ async fn index(ui: Ui) -> Page {
                 @for group in groups.iter() {
                     @if groups.len() > 1 { h3 { (group) } }
                     ul { @for (href, title, _, feats, what) in COMPONENTS.iter().filter(|c| c.2 == *group) {
-                        li { a href=(href) { (title) } div { p { (what) } span { @for f in feats.split(", ") { code { (f) } " " } } } }
+                        li { a href=(href) { (title) } @if beta(href) { " " (ui.badge("beta").warn()) } div { p { (what) } span { @for f in feats.split(", ") { code { (f) } " " } } } }
                     } }
                 }
             } }

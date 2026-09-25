@@ -1179,8 +1179,15 @@ every Loco API named below against loco-rs 1.2 before relying on it, as M27 did.
   custom properties; `/theme.css` downloads the overrides in `Tokens::css`'s cascade order
   (test). Default: a GET form rather than a post, so a theme is a shareable link and no state
   is kept. Index entry, PATHS, `docs/theming.md` links it; axe clean.
-- [ ] Component status (Primer): `stable | beta` in `props::COMPONENTS`, shown on the demo
+- [x] Component status (Primer): `stable | beta` in `props::COMPONENTS`, shown on the demo
   page, the index and the spec JSON; README says what each status promises.
+  Done: `props::Status { Stable, Beta }` and a `status` on every `props::Component`; beta are
+  the 14 builders new in M29 (the six blocks, Chart, ErrorSummary, Sidebar, NavMenu,
+  DescriptionList, ToggleGroup, ContextMenu, InputOtp), the rest stable. The spec JSON's
+  builders carry `"status"`; each builder's props summary shows its status, a page with a
+  beta builder has a "beta" badge by its title and in the index (demo test). README
+  "Component status" says what each promises (stable: breaking changes only in a breaking
+  release with a note; beta: may change in any release until one release passes unchanged).
 - [ ] Copy-paste mode (shadcn, templUI), last: `cargo lui add <component>` vendors a
   component's file into the app, from the spec JSON as the registry. Components read `ui`, so
   first decide whether a vendored file keeps `use loco_ui::…` for `Ui` or copies it; ask

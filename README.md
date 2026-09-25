@@ -300,6 +300,18 @@ dialog fallback as a real modal, closes the `<details>` popover fallback on outs
 searches a combobox as you type. `scripts/browser-check.mjs` proves each of these in headless
 Firefox; the Blitz suite proves every route with no script engine at all.
 
+## Component status
+
+Every builder is `stable` or `beta` (`loco_ui::props()`, the spec JSON, a badge on its demo
+page and in the index):
+
+- **stable**: its constructor, setters and markup change only in a breaking release, with a
+  migration note in the changelog.
+- **beta**: new in the last milestone (the blocks, the chart, the error summary, sidebar,
+  navigation menu, description list, toggle group, context menu and one-time code). It works
+  and is tested like the rest, but a setter may be renamed or reshaped in any release while
+  it is tried; it becomes stable after a release without such a change.
+
 ## Feature matrix
 
 Generated from `loco_ui::spec::SPECS` by `cargo run -p demo -- spec write` (a test fails if it

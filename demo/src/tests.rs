@@ -716,3 +716,28 @@ async fn theme_builder_downloads_its_css() {
         "{css}"
     );
 }
+
+/// A builder's status shows on its page and in the index: new ones are beta.
+#[tokio::test]
+async fn beta_builders_are_marked() {
+    let text = |path: &'static str| async move {
+        let res = router()
+            .oneshot(Request::get(path).body(Body::empty()).unwrap())
+            .await
+            .unwrap();
+        let bytes = axum::body::to_bytes(res.into_body(), usize::MAX)
+            .await
+            .unwrap();
+        String::from_utf8(bytes.to_vec()).unwrap()
+    };
+    let chart = text("/chart").await;
+    assert!(
+        chart.contains("<h1>Charts <span class=\"lui-badge lui-badge-warn\">beta</span></h1>"),
+        "{chart}"
+    );
+    let dialog = text("/dialog").await;
+    assert!(!dialog.contains(">beta</span></h1>") && dialog.contains(">stable</span>"));
+    assert!(text("/").await.contains(
+        "href=\"/chart\">Charts</a> <span class=\"lui-badge lui-badge-warn\">beta</span>"
+    ));
+}
