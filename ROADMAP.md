@@ -1279,7 +1279,7 @@ shadows and motion chosen. The no-script rules are unchanged:
 
   Each effect has a `@supports` fallback that shows the element at rest, and Blitz shots prove
   it.
-- [ ] Budget: measure the stylesheet size before and after, keep the growth under 15 KB
+- [x] Budget: measure the stylesheet size before and after, keep the growth under 15 KB
   gzipped, and put the figure in README. Also run `cargo bench -p loco-ui` for the stylesheet.
 - [ ] README feature matrix, findings and `docs/comparison.md` say "Linear / Magic UI look"
   instead of "shadcn look". FINDINGS gets the Blitz gaps for `@starting-style`, `@property`

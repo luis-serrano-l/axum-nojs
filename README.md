@@ -234,22 +234,25 @@ component gives the HTML to another template engine.
 
 ## What a page weighs
 
-Measured on the demo (M29), gzip at level 9; every page inlines the whole stylesheet, so
+Measured on the demo (M30 and M31), gzip at level 9; every page inlines the whole stylesheet, so
 there is no second request for CSS, and no script is required.
 
 | | raw | gzip |
 |---|---|---|
-| The whole stylesheet, every component and block (`stylesheet()`) | 69.6 KB | 12.3 KB |
-| A demo page, stylesheet and props tables included (`/nav` … `/calendar`) | 78–101 KB | 14.5–16.8 KB |
-| `/stream` with declarative shadow DOM (the stylesheet twice: once for the shadow root) | 145 KB | 25.0 KB |
-| The index, every component live on it (M31) | 213 KB | 36 KB |
+| The whole stylesheet, every component and block (`stylesheet()`) | 82.6 KB | 14.4 KB |
+| A demo page, stylesheet, sidebar and props tables included (`/nav` … `/calendar`) | 97–121 KB | 17.4–20.9 KB |
+| `/stream` with declarative shadow DOM (the stylesheet twice: once for the shadow root) | 178 KB | 30.4 KB |
+| The index, every component live on it (M31) | 220 KB | 37.3 KB |
 | JavaScript required | 0 | 0 |
 | The optional script, `/lui/enhance.js` (cached forever) | 10.6 KB | 3.6 KB |
 
 For comparison, `maud-ui` 0.20.3 (the same stack and look) ships 313 KB of CSS (44 KB gzipped)
 and needs an 89 KB script (24 KB gzipped) plus htmx. Two tests keep these numbers honest: the
 stylesheet stays under 88 KB, and every demo page under 128 KB (180 KB for the shadow-DOM
-stream, 224 KB for the index with every component live on it) in `cargo test`. The sidebar
+stream, 224 KB for the index with every component live on it) in `cargo test`. M30's look
+(the 12-step scales, depth and gradient tokens, motion and the opt-in effects) grew the
+stylesheet by 2.3 KB gzipped, from 12.1 KB (68.7 KB raw) at `cba5165`, under the 15 KB it was
+allowed; `stylesheet()` is built once and then costs about 1 ns (`cargo bench -p loco-ui`). The sidebar
 of every component adds about 6.5 KB to each page since M31. (Before M29 added the blocks, the chart and six more components, the
 same limits were 64, 96 and 128 KB; M30's colour scales, depth tokens and motion raised them
 from 72, 104 and 152 KB.)
