@@ -1,6 +1,8 @@
 # Blocked
 
-Questions only the owner can answer. Everything else in ROADMAP.md is done.
+Questions only the owner can answer. Everything else in ROADMAP.md is done: what is left is
+the name (M26), hosting and posting (M26), publishing (M13) and the Loco decision (M27), which
+the rest of M27 waits on.
 
 ## Name, license and repository (M13, box 1), answered
 
@@ -48,6 +50,21 @@ These are outward actions, so they are yours to take or to approve one by one:
 Done locally: the crates.io keywords are `no-js`, `maud`, `ssr`, `components` and `axum`.
 `progressive-enhancement` is longer than crates.io's 20-character limit, so the phrase is in
 the description instead.
+
+## Make Loco the primary target? (M27, box 1), open
+
+You said Loco looks like the best fit and asked for M27 to be ready "if we go with that
+decision". Every other M27 box depends on this one: a `loco` feature with an `Initializer`
+that mounts `/nojs/enhance.js` and the caps beacon, handlers returning Loco's
+`Result<Response>`, `validator` errors on the right fields, SeaORM's paginator behind the paged
+table, a scaffold that generates Maud views, an example app and `docs/loco.md`.
+
+Suggested answer: **yes, as a feature (`loco`) on the same crate, not a separate crate**, and
+decide the crate name at the same time (the M26 question above). Loco controllers are Axum
+handlers, so `Ui`, `Page`, `Redirect` and `Saved<T>` should work there already; M27 is wiring,
+a generator and docs, not a rewrite. The Loco API names in ROADMAP M27 are from memory and must
+be checked against loco-rs's source before building on them. A no keeps Axum (and any server
+through the plain-string API) as the target, and M27 is dropped.
 
 ## Reply to Blitz issue #923
 

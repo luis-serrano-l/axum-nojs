@@ -723,6 +723,8 @@ loco-rs source (fetch it into `~/.cargo/registry` with a scratch crate) before r
 - [ ] Decision: commit to Loco as the primary target? Owner only; if no, skip this milestone.
   If yes, it also bears on M26's naming box (a `loco-nojs`/`nojs-ui` split, or one crate with
   a `loco` feature).
+  Blocked on the owner: question and suggested answer (yes, as a `loco` feature; decide the
+  name at the same time) in BLOCKED.md. The boxes below wait on it.
 - [ ] `loco` feature (or `axum-nojs-loco` crate): an `Initializer` whose `after_routes` mounts
   `/nojs/enhance.js` and the `/nojs/caps` beacon route, so an app adds one line to
   `app.rs::initializers`.
